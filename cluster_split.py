@@ -70,7 +70,7 @@ def split(file, out_dir, steps):
     x=60
     y=30
     z=10
-    
+
     l=len(reps)
 
     train, test, val = list(reps[:int(x*l/100)]), list(reps[int(x*l/100):int(y*l/100)+int(x*l/100)]), list(reps[int(y*l/100)+int(x*l/100):])
@@ -86,20 +86,32 @@ def split(file, out_dir, steps):
                 for e in elem:
                     group.append(e)
 
-    finaltrain = pd.DataFrame(list(set(train)))
-    finaltest = pd.DataFrame(list(set(test)))
-    finalval = pd.DataFrame(list(set(val)))
 
-    finalval.to_csv("data/finalclusters/vallist.csv")
-    finaltest.to_csv("data/finalclusters/testlist.csv")
-    finaltrain.to_csv("data/finalclusters/trainlist.csv")
+    finaltrain, finaltest, finalval = clean_and_save(train, test, val)
 
-    split_fasta(file, "data/finalclusters/", finaltrain, finaltest, finalval)
+    split_fasta(file, finaltrain, finaltest, finalval)
 
     return None
 
 
-def split_fasta(file, out_dir, train, test, val):
+def clean_and_save(train, test, val):
+
+    train = list(set(train))
+    finaltrain = pd.DataFrame([elem[:4] for elem in train])
+    finaltrain.to_csv("data/finalclusters/trainlist.csv")
+
+    test = list(set(test))
+    finaltest = pd.DataFrame([elem[:4] for elem in test])
+    finaltest.to_csv("data/finalclusters/testlist.csv")
+
+    val = list(set(val))
+    finalval = pd.DataFrame([elem[:4] for elem in val])
+    finalval.to_csv("data/finalclusters/vallist.csv")
+
+    return finaltrain[0].tolist(), finaltest[0].tolist(), finalval[0].tolist()
+
+
+def split_fasta(file, train, test, val):
     """
     splits the original fasta file into train, test, val
     according to the splits defined before
@@ -110,6 +122,7 @@ def split_fasta(file, out_dir, train, test, val):
     outdir: where should splits be saved to
     train, test, val: separated pdb ids
     """
+    print(type(train), train[0])
 
     train_fasta = []
     test_fasta = []
@@ -124,9 +137,12 @@ def split_fasta(file, out_dir, train, test, val):
         if seq.id[:4] in val:
             val_fasta.append(rec)
 
-    SeqIO.write(train_fasta, out_dir, "fasta")
-    SeqIO.write(test_fasta, out_dir, "fasta")
-    SeqIO.write(val_fasta, out_dir, "fasta")
+    with open("data/fasta/trainfasta.fasta", "w") as handle:
+        SeqIO.write(train_fasta, handle, "fasta")
+    with open("data/fasta/testfasta.fasta", "w") as handle:
+        SeqIO.write(test_fasta, handle, "fasta")
+    with open("data/fasta/valfasta.fasta", "w") as handle:
+        SeqIO.write(val_fasta, handle, "fasta")
 
     return None
 
@@ -138,7 +154,7 @@ def main():
     """
 
     file = load_data(file_dir)
-    clustering(file, 'data/cluster/clu', 'data/cluster/tmp', steps=steps)
+    #clustering(file, 'data/cluster/clu', 'data/cluster/tmp', steps=steps)
     split('data/fasta/properfasta.fasta', 'data/cluster/clu', steps=steps)
 
 
