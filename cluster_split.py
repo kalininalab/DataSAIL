@@ -45,93 +45,56 @@ def clustering(file_dir, clu_dir, tmp, steps):
 
     """
     # lowering the sequence identity for clustering with each step
-    seq_id = np.linspace(0.1, 0.9, num=steps, dtype=float)[::-1]
-
+    seq_id = np.linspace(0.8, 0.99, num=steps, dtype=float)[::-1]
+    # seq_id = [0.8, 0.8, 0.8, 0.95][::-1]
+    #+   --
     #step 1 cluster dataset
-    cmd = "mmseqs easy-cluster " + file_dir + clu_dir + str(1) + " " + tmp + str(1) + " --min-seq-id " + str(seq_id[0])
+    cmd = "mmseqs easy-linclust " + file_dir + clu_dir + str(1) + " " + tmp + str(1)  + " --similarity-type 2 -k 8" + " --min-seq-id " + str(seq_id[0])
 
     proc_out = subprocess.run(cmd, shell=True)
-    print(proc_out)
 
     # do again with representatives of clusters for 'steps' iterations
     for i in range(steps):
-        cmd = "mmseqs easy-cluster " + clu_dir + str(i)+"_rep_seq.fasta" + " " + clu_dir + str(i+1) + " " + tmp + str(i+1) + " --min-seq-id " + str(seq_id[i])
+        cmd = "mmseqs easy-linclust " + clu_dir + str(i)+"_rep_seq.fasta" + " " + clu_dir + str(i+1) + " " + tmp + str(i+1) + " --min-seq-id " + str(seq_id[i]) + " --similarity-type 2 -k 13"
         subprocess.run(cmd, shell=True)
 
     return None
 
 
 # split and backtrack clusters
-def split(file, clu_dir, steps):
-    """
-    file: directory to fasta file
-    clu_dir : directory of clusters to be split
-    steps : how many clustering steps have been done
+def split(file, out_dir, steps):
 
-    --------
+    topclu = pd.read_csv("data/cluster/clu" + str(steps) +"_cluster.tsv", sep='\t', names=['rep', 'mem'])
+    reps = np.unique(topclu.rep)
 
-    first separates the "highest" level in the tree -
-    then backtracks all members throughout the other cluster files
+    x=60
+    y=30
+    z=10
+    
+    l=len(reps)
 
-    - saves resulting .csv and .fasta files in data/finalclusters
+    train, test, val = list(reps[:int(x*l/100)]), list(reps[int(x*l/100):int(y*l/100)+int(x*l/100)]), list(reps[int(y*l/100)+int(x*l/100):])
 
-    """
-    x = 60 #percentage train
-    y = 30 #percentage test
-    z = 10 #percentage validation
+    for group in [train, test, val]:
+        for i in range(steps, 0, -1):
+            clu = pd.read_csv("data/cluster/clu" + str(i) +"_cluster.tsv", sep='\t', names=['rep', 'mem'])
+            members = []
+            for elem in group:
+                members.append(clu['mem'].values[clu['rep']==elem])
 
+            for elem in members:
+                for e in elem:
+                    group.append(e)
 
-    topcluster = pd.read_csv(clu_dir + str(steps) + "_cluster.tsv", sep='\t', names=['rep','mem'])
+    finaltrain = pd.DataFrame(list(set(train)))
+    finaltest = pd.DataFrame(list(set(test)))
+    finalval = pd.DataFrame(list(set(val)))
 
-    l = len(topcluster.rep)
+    finalval.to_csv("data/finalclusters/vallist.csv")
+    finaltest.to_csv("data/finalclusters/testlist.csv")
+    finaltrain.to_csv("data/finalclusters/trainlist.csv")
 
-
-    reps = topcluster['rep']
-
-
-        # if I split randomly, I cannot guarantee the resulting split will be most challenging
-    train, test, val = np.array(reps[:int(x*l/100)]), np.array(reps[int(x*l/100):int(y*l/100)+int(x*l/100)]), np.array(reps[int(y*l/100)+int(x*l/100):])
-
-    previous_cluster = topcluster
-    lowercluster = pd.read_csv(clu_dir + str(steps-1) + "_cluster.tsv", sep='\t', names=['rep','mem'])
-
-        # go backwards
-    for step in range(steps-2, -1, -1):
-                # find all members of that cluster - might be highly imbalanced !! (how fix?)
-                # else separation would not be most challenging
-        if step >= 1:
-            for elem in previous_cluster.rep:
-                members = []
-
-                members.append(previous_cluster['mem'][previous_cluster['rep']==elem].values)
-                members.append(lowercluster['rep'][lowercluster['rep']==elem].values)
-                members.append(lowercluster['mem'][lowercluster['rep']==elem].values)
-
-                if elem in train:
-                    np.append(train, members)
-                elif elem in test:
-                    np.append(test, members)
-                else:
-                    np.append(val, members)
-
-                previous_cluster = lowercluster
-                lowercluster = pd.read_csv(clu_dir + str(step) + "_cluster.tsv", sep='\t', names=['rep','mem'])
-
-    print("len of sets: ", len(train), len(test), len(val), "\n", file=open("output.txt", "a"))
-
-    train = [elem[:4] for elem in train]
-    test = [elem[:4] for elem in test]
-    val = [elem[:4] for elem in val]
-
-    split_fasta(file, "data/finalclusters/train"+".fasta", train, test, val)
-    split_fasta(file, "data/finalclusters/test"+".fasta", train, test, val)
-    split_fasta(file, "data/finalclusters/val"+".fasta", train, test, val)
-
-    train, test, val = pd.DataFrame(train), pd.DataFrame(test), pd.DataFrame(val)
-    train.to_csv('data/finalclusters/train'+'_seq.csv')
-    test.to_csv('data/finalclusters/test'+'_seq.csv')
-    val.to_csv('data/finalclusters/val'+'_seq.csv')
-
+    split_fasta(file, "data/finalclusters/", finaltrain, finaltest, finalval)
 
     return None
 
@@ -176,7 +139,7 @@ def main():
 
     file = load_data(file_dir)
     clustering(file, 'data/cluster/clu', 'data/cluster/tmp', steps=steps)
-    split('data/fasta/properfasta.fasta', 'data/cluster/clu', steps)
+    split('data/fasta/properfasta.fasta', 'data/cluster/clu', steps=steps)
 
 
 
