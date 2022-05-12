@@ -8,8 +8,7 @@ from Bio.Seq import Seq
 import subprocess
 import sys
 import random
-# import extract_clusters
-#not sure how best to do this and whether this is even useful
+
 
 
 if not os.path.isdir("data/cluster"):
@@ -61,10 +60,64 @@ def clustering(file_dir, clu_dir, tmp, steps):
     return None
 
 
-# split and backtrack clusters
-def split(file, out_dir, steps):
+    # this is just a test
+def resample(file, change, length, steps, train, test, val):
+    # if the length of train samples vs test / val is not according to the percentage
+    # specified above, we resample the clusters - eg add one cluster from test to train
+    x = 60; y=30; z=10
 
-    topclu = pd.read_csv("data/cluster/clu" + str(steps) +"_cluster.tsv", sep='\t', names=['rep', 'mem'])
+    xf = int(x*length/100)
+    yf = int(y*length/100)
+    zf = int(z*length/100)
+
+    if change == 1:
+        if (len(train) < xf-10):
+            train, test, val = splittop(steps)
+            train.append(test[-1])
+            test = test.pop(-1)
+            split(file, "data/cluster/clu", steps, train, test, val)
+
+        elif (len(train) > xf+10):
+            train, test, val = splittop(steps)
+            test.append(train[-1])
+            train = train.pop(-1)
+            split(file, "data/cluster/clu", steps, train, test, val)
+
+
+    elif change == 2:
+        if (len(test) < yf-10):
+            train, test, val = splittop(steps)
+            test.append(train[-1])
+            train = train.pop(-1)
+            split(file, "data/cluster/clu", steps, train, test, val)
+
+        elif (len(test) > yf+10):
+            train, test, val = splittop(steps)
+            train.append(test[-1])
+            test = test.pop(-1)
+            split(file, "data/cluster/clu", steps, train, test, val)
+
+
+    elif change == 3:
+        if (len(val) < zf-10):
+            train, test, val = splittop(steps)
+            val.append(test[-1])
+            test = test.pop(-1)
+            split(file, "data/cluster/clu", steps, train, test, val)
+
+        elif (len(val) > zf+10):
+            train, test, val = splittop(steps)
+            test.append(val[-1])
+            val = val.pop(-1)
+            split(file, "data/cluster/clu", steps, train, test, val)
+
+    return None
+
+
+
+def splittop(steps):
+    #split only the topcluster and give lists of reps to split()
+    topclu = pd.read_csv("data/cluster/clu" + str(steps) + "_cluster.tsv", sep='\t', names=['rep', 'mem'])
     reps = np.unique(topclu.rep)
 
     x=60
@@ -74,6 +127,12 @@ def split(file, out_dir, steps):
     l=len(reps)
 
     train, test, val = list(reps[:int(x*l/100)]), list(reps[int(x*l/100):int(y*l/100)+int(x*l/100)]), list(reps[int(y*l/100)+int(x*l/100):])
+
+    return train, test, val
+
+
+# split and backtrack clusters
+def split(file, out_dir, steps, train, test, val):
 
     for group in [train, test, val]:
         for i in range(steps, 0, -1):
@@ -87,24 +146,53 @@ def split(file, out_dir, steps):
                     group.append(e)
 
 
-    finaltrain, finaltest, finalval = clean_and_save(train, test, val)
-
-    split_fasta(file, finaltrain, finaltest, finalval)
-
-    return None
+    return train, test, val
 
 
-def clean_and_save(train, test, val):
+# test for correct proportion size of datasets
+def proportion_test(file, train, test, val):
+
+    change = 0
+
+    ids = []
+    for seq in SeqIO.parse(file, "fasta"):
+        ids.append(seq.id)
+
+    filelen = len(ids)
+
+    x = 60; y=30; z=10
+
+    xf = int(x*filelen/100)
+    yf = int(y*filelen/100)
+    zf = int(z*filelen/100)
+
+    if (len(train) < xf-10) | (len(train) > xf+10):
+        change = 1
+    elif (len(test) < yf-10) | (len(test) > yf+10):
+        change = 2
+    elif (len(val) < zf-10) | (len(val) > zf+10):
+        change = 3
+
+    return change, filelen
+
+
+def clean_and_save(file, change, length, steps, train, test, val):
 
     train = list(set(train))
+    test = list(set(test))
+    val = list(set(val))
+
+    # test if sets need to be resampled
+    if  change > 0:
+        resample(file, change, length, steps, train, test, val)
+        # if so, which one?
+
     finaltrain = pd.DataFrame([elem[:4] for elem in train])
     finaltrain.to_csv("data/finalclusters/trainlist.csv")
 
-    test = list(set(test))
     finaltest = pd.DataFrame([elem[:4] for elem in test])
     finaltest.to_csv("data/finalclusters/testlist.csv")
 
-    val = list(set(val))
     finalval = pd.DataFrame([elem[:4] for elem in val])
     finalval.to_csv("data/finalclusters/vallist.csv")
 
@@ -146,6 +234,9 @@ def split_fasta(file, train, test, val):
 
     return None
 
+
+###################
+
 def main():
     """
     please pass :
@@ -155,8 +246,14 @@ def main():
 
     file = load_data(file_dir)
     #clustering(file, 'data/cluster/clu', 'data/cluster/tmp', steps=steps)
-    split('data/fasta/properfasta.fasta', 'data/cluster/clu', steps=steps)
+    trainset, testset, valset = splittop(steps)
+    train, test, val = split(file_dir, 'data/cluster/clu', steps, trainset, testset, valset)
 
+    #check for correct proportions
+    change, filelength = proportion_test(file_dir, list(set(train)), list(set(test)), list(set(val)))
+
+    ftrain, ftest, fval = clean_and_save(file_dir, change, filelength, steps, train, test, val)
+    split_fasta(file_dir, ftrain, ftest, fval)
 
 
 if __name__ == "__main__":
