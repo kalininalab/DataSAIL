@@ -245,7 +245,7 @@ def main():
     """
 
     file = load_data(file_dir)
-    #clustering(file, 'data/cluster/clu', 'data/cluster/tmp', steps=steps)
+    clustering(file, 'data/cluster/clu', 'data/cluster/tmp', steps=steps)
     trainset, testset, valset = splittop(steps)
     train, test, val = split(file_dir, 'data/cluster/clu', steps, trainset, testset, valset)
 
@@ -254,6 +254,7 @@ def main():
 
     ftrain, ftest, fval = clean_and_save(file_dir, change, filelength, steps, train, test, val)
     split_fasta(file_dir, ftrain, ftest, fval)
+
 
 
 if __name__ == "__main__":
