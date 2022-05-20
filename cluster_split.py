@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import os
-import requests
 from Bio import SeqIO
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
@@ -11,29 +10,22 @@ import random
 
 
 
-if not os.path.isdir("data/cluster"):
-    os.makedirs("data/cluster")
-if not os.path.isdir("data/finalclusters"):
-    os.makedirs("data/finalclusters")
-
 file_dir = sys.argv[1]
 steps = int(sys.argv[2])
+out_dir = sys.argv[3]
 
+if not os.path.isdir(out_dir):
+    os.makedirs(out_dir)
+# if not os.path.isdir("data/finalclusters"):
+#     os.makedirs("data/finalclusters")
 
-def load_data(file_dir):
-    """
-    this is not really doing much
-    """
-    file = file_dir + " "
-
-    return file
 
 
 # use mmseqs to cluster x times, cluster directory, tmp
 def clustering(file_dir, clu_dir, tmp, steps):
     """
     file_dir : directory of file to be clustered
-    clu_dir : directory of results
+    out_dir : directory of results
     tmp : tmp directory needed for mmseqs
     steps : number of cluster iterations
 
@@ -44,26 +36,34 @@ def clustering(file_dir, clu_dir, tmp, steps):
 
     """
     # lowering the sequence identity for clustering with each step
-    seq_id = np.linspace(0.8, 0.99, num=steps, dtype=float)[::-1]
-    # seq_id = [0.8, 0.8, 0.8, 0.95][::-1]
-    #+   --
+    seq_id = np.linspace(0.6, 0.99, num=steps, dtype=float)[::-1]
+
     #step 1 cluster dataset
-    cmd = "mmseqs easy-linclust " + file_dir + clu_dir + str(1) + " " + tmp + str(1)  + " --similarity-type 2 -k 8" + " --min-seq-id " + str(seq_id[0])
+    cmd = "mmseqs easy-linclust " + file_dir + " " + clu_dir + str(1) + " " + tmp + str(1)  + " --similarity-type 2 --cov-mode 0 -c 1.0" + " --min-seq-id " + str(seq_id[0])
 
     proc_out = subprocess.run(cmd, shell=True)
 
     # do again with representatives of clusters for 'steps' iterations
     for i in range(steps):
-        cmd = "mmseqs easy-linclust " + clu_dir + str(i)+"_rep_seq.fasta" + " " + clu_dir + str(i+1) + " " + tmp + str(i+1) + " --min-seq-id " + str(seq_id[i]) + " --similarity-type 2 -k 13"
+        cmd = "mmseqs easy-linclust " + clu_dir + str(i)+ "_rep_seq.fasta" + " " + clu_dir + str(i+1) + " " + tmp + str(i+1) + " --cov-mode 0 -c 1.0"+ " --min-seq-id " + str(seq_id[i]) + " --similarity-type 2 -k 13"
         subprocess.run(cmd, shell=True)
 
     return None
 
 
-    # this is just a test
-def resample(file, change, length, steps, train, test, val):
-    # if the length of train samples vs test / val is not according to the percentage
-    # specified above, we resample the clusters - eg add one cluster from test to train
+def resample(file, out_dir, change, length, steps, train, test, val):
+    """
+    file: original file to be clustered
+    out_dir: directory where to save files
+    change: which set is unbalanced
+    length: length of original file
+    steps: clustering steps done
+    train, test, val: prev. split sets
+
+    --if the length of train samples vs test / val is not according to the percentage
+    --specified above, we resample the clusters - eg. add one cluster from test to train
+    """
+
     x = 60; y=30; z=10
 
     xf = int(x*length/100)
@@ -71,58 +71,58 @@ def resample(file, change, length, steps, train, test, val):
     zf = int(z*length/100)
 
     if change == 1:
-        if (len(train) < xf-10):
-            train, test, val = splittop(steps)
+        if (len(train) < xf-int(15*length/100)):
+            train, test, val = splittop(out_dir, steps)
             train.append(test[-1])
             test = test.pop(-1)
-            split(file, "data/cluster/clu", steps, train, test, val)
+            train, test, val = split(file, out_dir, steps, train, test, val)
 
-        elif (len(train) > xf+10):
-            train, test, val = splittop(steps)
+        elif (len(train) > xf+int(15*length/100)):
+            train, test, val = splittop(out_dir, steps)
             test.append(train[-1])
             train = train.pop(-1)
-            split(file, "data/cluster/clu", steps, train, test, val)
+            train, test, val = split(file, out_dir, steps, train, test, val)
 
 
     elif change == 2:
-        if (len(test) < yf-10):
-            train, test, val = splittop(steps)
+        if (len(test) < yf-int(15*length/100)):
+            train, test, val = splittop(out_dir, steps)
             test.append(train[-1])
             train = train.pop(-1)
-            split(file, "data/cluster/clu", steps, train, test, val)
+            train, test, val = split(file, out_dir, steps, train, test, val)
 
-        elif (len(test) > yf+10):
-            train, test, val = splittop(steps)
+        elif (len(test) > yf+int(15*length/100)):
+            train, test, val = splittop(out_dir, steps)
             train.append(test[-1])
             test = test.pop(-1)
-            split(file, "data/cluster/clu", steps, train, test, val)
+            train, test, val = split(file, out_dir, steps, train, test, val)
 
 
     elif change == 3:
-        if (len(val) < zf-10):
-            train, test, val = splittop(steps)
+        if (len(val) < zf-int(15*length/100)):
+            train, test, val = splittop(out_dir, steps)
             val.append(test[-1])
             test = test.pop(-1)
-            split(file, "data/cluster/clu", steps, train, test, val)
+            train, test, val = split(file, out_dir, steps, train, test, val)
 
-        elif (len(val) > zf+10):
-            train, test, val = splittop(steps)
+        elif (len(val) > zf+int(15*length/100)):
+            train, test, val = splittop(out_dir, steps)
             test.append(val[-1])
             val = val.pop(-1)
-            split(file, "data/cluster/clu", steps, train, test, val)
+            train, test, val = split(file, out_dir, steps, train, test, val)
 
-    return None
+    return train, test, val
 
 
 
-def splittop(steps):
+def splittop(out_dir, steps):
     #split only the topcluster and give lists of reps to split()
-    topclu = pd.read_csv("data/cluster/clu" + str(steps) + "_cluster.tsv", sep='\t', names=['rep', 'mem'])
+    topclu = pd.read_csv(out_dir + str(steps) + "_cluster.tsv", sep='\t', names=['rep', 'mem'])
     reps = np.unique(topclu.rep)
 
-    x=60
-    y=30
-    z=10
+    x=60 # train
+    y=30 # test
+    z=10 # val
 
     l=len(reps)
 
@@ -131,12 +131,13 @@ def splittop(steps):
     return train, test, val
 
 
-# split and backtrack clusters
+
 def split(file, out_dir, steps, train, test, val):
+    #  backtrack members of the respective sets throughout the lower clusters
 
     for group in [train, test, val]:
         for i in range(steps, 0, -1):
-            clu = pd.read_csv("data/cluster/clu" + str(i) +"_cluster.tsv", sep='\t', names=['rep', 'mem'])
+            clu = pd.read_csv(out_dir + str(i) +"_cluster.tsv", sep='\t', names=['rep', 'mem'])
             members = []
             for elem in group:
                 members.append(clu['mem'].values[clu['rep']==elem])
@@ -166,40 +167,35 @@ def proportion_test(file, train, test, val):
     yf = int(y*filelen/100)
     zf = int(z*filelen/100)
 
-    if (len(train) < xf-10) | (len(train) > xf+10):
+    if (len(train) < xf-int(15*filelen/100)) | (len(train) > xf+int(15*filelen/100)):
         change = 1
-    elif (len(test) < yf-10) | (len(test) > yf+10):
+    elif (len(test) < yf-int(15*filelen/100)) | (len(test) > yf+int(15*filelen/100)):
         change = 2
-    elif (len(val) < zf-10) | (len(val) > zf+10):
+    elif (len(val) < zf-int(15*filelen/100)) | (len(val) > zf+int(15*filelen/100)):
         change = 3
 
     return change, filelen
 
 
-def clean_and_save(file, change, length, steps, train, test, val):
+def clean_and_save(file, out_dir, steps, train, test, val):
 
     train = list(set(train))
     test = list(set(test))
     val = list(set(val))
 
-    # test if sets need to be resampled
-    if  change > 0:
-        resample(file, change, length, steps, train, test, val)
-        # if so, which one?
-
     finaltrain = pd.DataFrame([elem[:4] for elem in train])
-    finaltrain.to_csv("data/finalclusters/trainlist.csv")
+    finaltrain.to_csv(out_dir+"/trainlist.csv")
 
     finaltest = pd.DataFrame([elem[:4] for elem in test])
-    finaltest.to_csv("data/finalclusters/testlist.csv")
+    finaltest.to_csv(out_dir+"/testlist.csv")
 
     finalval = pd.DataFrame([elem[:4] for elem in val])
-    finalval.to_csv("data/finalclusters/vallist.csv")
+    finalval.to_csv(out_dir+"/vallist.csv")
 
     return finaltrain[0].tolist(), finaltest[0].tolist(), finalval[0].tolist()
 
 
-def split_fasta(file, train, test, val):
+def split_fasta(file, out_dir, train, test, val):
     """
     splits the original fasta file into train, test, val
     according to the splits defined before
@@ -225,11 +221,11 @@ def split_fasta(file, train, test, val):
         if seq.id[:4] in val:
             val_fasta.append(rec)
 
-    with open("data/fasta/trainfasta.fasta", "w") as handle:
+    with open(out_dir+"/trainfasta.fasta", "w") as handle:
         SeqIO.write(train_fasta, handle, "fasta")
-    with open("data/fasta/testfasta.fasta", "w") as handle:
+    with open(out_dir+"/testfasta.fasta", "w") as handle:
         SeqIO.write(test_fasta, handle, "fasta")
-    with open("data/fasta/valfasta.fasta", "w") as handle:
+    with open(out_dir+"/valfasta.fasta", "w") as handle:
         SeqIO.write(val_fasta, handle, "fasta")
 
     return None
@@ -242,18 +238,24 @@ def main():
     please pass :
         1) directory of fasta file to be split
         2) #clustering steps for mmseqs2
+        3) directory to save files
     """
 
-    file = load_data(file_dir)
-    clustering(file, 'data/cluster/clu', 'data/cluster/tmp', steps=steps)
-    trainset, testset, valset = splittop(steps)
-    train, test, val = split(file_dir, 'data/cluster/clu', steps, trainset, testset, valset)
+    clustering(file_dir, out_dir, out_dir+'_tmp', steps)
+    trainset, testset, valset = splittop(out_dir, steps)
+    train, test, val = split(file_dir, out_dir, steps, trainset, testset, valset)
 
     #check for correct proportions
+
     change, filelength = proportion_test(file_dir, list(set(train)), list(set(test)), list(set(val)))
 
-    ftrain, ftest, fval = clean_and_save(file_dir, change, filelength, steps, train, test, val)
-    split_fasta(file_dir, ftrain, ftest, fval)
+    while change > 0:
+        print("got here - need to resample", change)
+        train, test, val = resample(file_dir, out_dir, change, filelength, steps, train, test, val)
+        change, filelength = proportion_test(file_dir, list(set(train)), list(set(test)), list(set(val)))
+
+    ftrain, ftest, fval = clean_and_save(file_dir, out_dir, steps, train, test, val)
+    split_fasta(file_dir, out_dir, ftrain, ftest, fval)
 
 
 
