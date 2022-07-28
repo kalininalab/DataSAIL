@@ -10,35 +10,22 @@ import random
 import argparse
 import shutil
 
-
-parser = argparse.ArgumentParser(
-    prog = 'SCALA',
-    description = "this tool helps providing the most challenging dataset split for a machine learning model in order to prevent information leakage and improve generalizability",
-    epilog = "enjoy :)"
-)
-# parser.add_argument("-h", help="please give directory to input dataset and output directory - other settings are optional")
-parser.add_argument("-i", help="directory to input file (FASTA/FASTQ)", required=True, dest='input', action='store')
-parser.add_argument("-s", help="steps to be clustered - default = 4", default=4, dest='steps', action='store', type=int)
-parser.add_argument("-o", help="directory to save the results in", required=True, dest='output', action='store')
-parser.add_argument("-f", help="optional fasta file output (y/n) - default False", default='n', dest='fasta', action='store', type=str)
-parser.add_argument("-tr", help="size of training set - default ~60%", default=60, dest='tr_size', action='store', type=int)
-parser.add_argument("-te", help="size of test set - default ~30%", default=30, dest='te_size', action='store', type=int)
-args = parser.parse_args()
-
-file_dir = args.input
-steps = args.steps
-out_dir = args.output
-fasta_store = args.fasta
-tr_size = args.tr_size
-te_size = args.te_size
-
-if not os.path.isdir(out_dir):
-    os.makedirs(out_dir)
+from datastructures import Environment
 
 
+def call_mmseqs_clustering(mmseqs2_path, fasta_file, output_path, tmp_folder, seq_id_threshold, silenced = True):
+
+    cmds = [mmseqs2_path, 'easy-linclust', fasta_file, output_path, tmp_folder, '--similarity-type', '2', '--cov-mode', '0', '-c', '1.0', '--min-seq-id', str(seq_id_threshold)]
+
+    if silenced:
+        FNULL = open(os.devnull, 'w')
+        p = subprocess.Popen(cmds, stdout=FNULL)
+    else:
+        p = subprocess.Popen(cmds)
+    p.wait()
 
 # use mmseqs to cluster x times, cluster directory, tmp
-def clustering(file_dir, clu_dir, tmp, steps):
+def clustering(env):
     """
     file_dir : directory of file to be clustered
     clu_dir : directory where clusters are saved
@@ -52,22 +39,19 @@ def clustering(file_dir, clu_dir, tmp, steps):
 
     """
     # lowering the sequence identity for clustering with each step
-    seq_id = np.linspace(0.8, 0.99, num=steps, dtype=float)[::-1]
+    seq_id = np.linspace(0.8, 0.99, num=env.steps, dtype=float)[::-1]
 
     #step 1 cluster dataset
-    cmd = f"mmseqs easy-linclust {file_dir} {clu_dir}1 {tmp}1 --similarity-type 2 --cov-mode 0 -c 1.0 --min-seq-id {str(seq_id[0])}"
-
-    proc_out = subprocess.run(cmd, shell=True)
+    call_mmseqs_clustering('mmseqs', env.input_file, f'{env.out_dir}/1', f'{env.tmp_folder}', seq_id[0])
 
     # do again with representatives of clusters for 'steps' iterations
-    for i in range(steps):
-        cmd = f"mmseqs easy-linclust {clu_dir}{str(i)}_rep_seq.fasta {clu_dir}{str(i+1)} {tmp}{str(i+1)} --cov-mode 0 -c 1.0 --min-seq-id {str(seq_id[i])} --similarity-type 2"
-        subprocess.run(cmd, shell=True)
+    for i in range(env.steps):
+        call_mmseqs_clustering('mmseqs', f'{env.out_dir}/{str(i+1)}_rep_seq.fasta', f'{env.out_dir}/{str(i+1)}', f'{env.tmp_folder}', seq_id[i])
 
     return None
 
 
-def resample(file, out_dir, change, length, steps, train, test, val):
+def resample(env, change, length, train, test, val):
     """
     file: original file to be clustered
     out_dir: directory where to save files
@@ -80,7 +64,7 @@ def resample(file, out_dir, change, length, steps, train, test, val):
     --specified above, we resample the clusters - eg. add one cluster from test to train
     """
 
-    x = tr_size; y=te_size; z=100-tr_size-te_size
+    x = env.tr_size; y=env.te_size; z=100-env.tr_size-env.te_size
 
     xf = int(x*length/100)
     yf = int(y*length/100)
@@ -88,57 +72,57 @@ def resample(file, out_dir, change, length, steps, train, test, val):
 
     if change == 1:
         if (len(train) < xf-int(10*length/100)):
-            train, test, val = splittop(out_dir, steps)
+            train, test, val = splittop(env)
             train.append(test[-1])
             test = test.pop(-1)
-            train, test, val = split(file, out_dir, steps, train, test, val)
+            train, test, val = split(env, train, test, val)
 
         elif (len(train) > xf+int(10*length/100)):
-            train, test, val = splittop(out_dir, steps)
+            train, test, val = splittop(env)
             test.append(train[-1])
             train = train.pop(-1)
-            train, test, val = split(file, out_dir, steps, train, test, val)
+            train, test, val = split(env, train, test, val)
 
 
     elif change == 2:
         if (len(test) < yf-int(10*length/100)):
-            train, test, val = splittop(out_dir, steps)
+            train, test, val = splittop(env)
             test.append(train[-1])
             train = train.pop(-1)
-            train, test, val = split(file, out_dir, steps, train, test, val)
+            train, test, val = split(env, train, test, val)
 
         elif (len(test) > yf+int(10*length/100)):
-            train, test, val = splittop(out_dir, steps)
+            train, test, val = splittop(env)
             train.append(test[-1])
             test = test.pop(-1)
-            train, test, val = split(file, out_dir, steps, train, test, val)
+            train, test, val = split(env, train, test, val)
 
 
     elif change == 3:
         if (len(val) < zf-int(10*length/100)):
-            train, test, val = splittop(out_dir, steps)
+            train, test, val = splittop(env)
             val.append(test[-1])
             test = test.pop(-1)
-            train, test, val = split(file, out_dir, steps, train, test, val)
+            train, test, val = split(env, train, test, val)
 
         elif (len(val) > zf+int(10*length/100)):
-            train, test, val = splittop(out_dir, steps)
+            train, test, val = splittop(env)
             test.append(val[-1])
             val = val.pop(-1)
-            train, test, val = split(file, out_dir, steps, train, test, val)
+            train, test, val = split(env, train, test, val)
 
     return train, test, val
 
 
 
-def splittop(out_dir, steps):
+def splittop(env):
     #split only the topcluster and give lists of reps to split()
-    topclu = pd.read_csv(out_dir + str(steps) + "_cluster.tsv", sep='\t', names=['rep', 'mem'])
+    topclu = pd.read_csv(f'{env.out_dir}/{env.steps}_cluster.tsv', sep='\t', names=['rep', 'mem'])
     reps = np.unique(topclu.rep)
 
-    x=tr_size # train
-    y=te_size # test
-    z=100-tr_size-te_size # val
+    x=env.tr_size # train
+    y=env.te_size # test
+    z=100-env.tr_size-env.te_size # val
 
     l=len(reps)
 
@@ -148,12 +132,12 @@ def splittop(out_dir, steps):
 
 
 
-def split(file, out_dir, steps, train, test, val):
+def split(env, train, test, val):
     #  backtrack members of the respective sets throughout the lower clusters
 
     for group in [train, test, val]:
-        for i in range(steps, 0, -1):
-            clu = pd.read_csv(out_dir + str(i) +"_cluster.tsv", sep='\t', names=['rep', 'mem'])
+        for i in range(env.steps, 0, -1):
+            clu = pd.read_csv(f'{env.out_dir}/{env.steps}_cluster.tsv', sep='\t', names=['rep', 'mem'])
             members = []
 
             for elem in group:
@@ -168,17 +152,17 @@ def split(file, out_dir, steps, train, test, val):
 
 
 # test for correct proportion size of datasets
-def proportion_test(file, train, test, val):
+def proportion_test(env, train, test, val):
 
     change = 0
 
     ids = []
-    for seq in SeqIO.parse(file, "fasta"):
+    for seq in SeqIO.parse(env.input_file, "fasta"):
         ids.append(seq.id)
 
     filelen = len(ids)
 
-    x = tr_size; y=te_size; z=100-tr_size-te_size
+    x = env.tr_size; y=env.te_size; z=100-env.tr_size-env.te_size
 
     xf = int(x*filelen/100)
     yf = int(y*filelen/100)
@@ -194,25 +178,25 @@ def proportion_test(file, train, test, val):
     return change, filelen
 
 
-def clean_and_save(file, out_dir, steps, train, test, val):
+def clean_and_save(env, train, test, val):
 
     train = list(set(train))
     test = list(set(test))
     val = list(set(val))
 
     finaltrain = pd.DataFrame([elem[:4] for elem in train])
-    finaltrain.to_csv(out_dir+"/trainlist.csv")
+    finaltrain.to_csv(env.out_dir+"/trainlist.csv")
 
     finaltest = pd.DataFrame([elem[:4] for elem in test])
-    finaltest.to_csv(out_dir+"/testlist.csv")
+    finaltest.to_csv(env.out_dir+"/testlist.csv")
 
     finalval = pd.DataFrame([elem[:4] for elem in val])
-    finalval.to_csv(out_dir+"/vallist.csv")
+    finalval.to_csv(env.out_dir+"/vallist.csv")
 
     return finaltrain[0].tolist(), finaltest[0].tolist(), finalval[0].tolist()
 
 
-def split_fasta(file, out_dir, train, test, val):
+def split_fasta(env, train, test, val):
     """
     splits the original fasta file into train, test, val
     according to the splits defined before
@@ -228,7 +212,7 @@ def split_fasta(file, out_dir, train, test, val):
     test_fasta = []
     val_fasta = []
 
-    for seq in SeqIO.parse(file, "fasta"):
+    for seq in SeqIO.parse(env.input_file, "fasta"):
         rec = SeqRecord(seq.seq, id=seq.id, description=seq.description)
         if seq.id[:4] in train:
             train_fasta.append(rec)
@@ -237,11 +221,11 @@ def split_fasta(file, out_dir, train, test, val):
         if seq.id[:4] in val:
             val_fasta.append(rec)
 
-    with open(out_dir+"/trainfasta.fasta", "w") as handle:
+    with open(env.out_dir+"/trainfasta.fasta", "w") as handle:
         SeqIO.write(train_fasta, handle, "fasta")
-    with open(out_dir+"/testfasta.fasta", "w") as handle:
+    with open(env.out_dir+"/testfasta.fasta", "w") as handle:
         SeqIO.write(test_fasta, handle, "fasta")
-    with open(out_dir+"/valfasta.fasta", "w") as handle:
+    with open(env.out_dir+"/valfasta.fasta", "w") as handle:
         SeqIO.write(val_fasta, handle, "fasta")
 
     return None
@@ -265,23 +249,39 @@ def cleanup():
 
 def main():
 
-    clustering(file_dir, out_dir, out_dir+'_tmp', steps)
-    trainset, testset, valset = splittop(out_dir, steps)
-    train, test, val = split(file_dir, out_dir, steps, trainset, testset, valset)
+    parser = argparse.ArgumentParser(
+        prog = 'SCALA',
+        description = "this tool helps providing the most challenging dataset split for a machine learning model in order to prevent information leakage and improve generalizability",
+        epilog = "enjoy :)"
+    )
+    # parser.add_argument("-h", help="please give directory to input dataset and output directory - other settings are optional")
+    parser.add_argument("-i", help="directory to input file (FASTA/FASTQ)", required=True, dest='input', action='store')
+    parser.add_argument("-s", help="steps to be clustered - default = 4", default=4, dest='steps', action='store', type=int)
+    parser.add_argument("-o", help="directory to save the results in", required=True, dest='output', action='store')
+    parser.add_argument("-f", help="optional fasta file output (y/n) - default False", default='n', dest='fasta', action='store', type=str)
+    parser.add_argument("-tr", help="size of training set - default ~60%", default=60, dest='tr_size', action='store', type=int)
+    parser.add_argument("-te", help="size of test set - default ~30%", default=30, dest='te_size', action='store', type=int)
+    args = parser.parse_args()
+
+    env = Environment(args.input, args.steps, args.output, args.fasta, args.tr_size, args.te_size)
+
+    clustering(env)
+    trainset, testset, valset = splittop(env)
+    train, test, val = split(env, trainset, testset, valset)
 
     #check for correct proportions
 
-    change, filelength = proportion_test(file_dir, list(set(train)), list(set(test)), list(set(val)))
+    change, filelength = proportion_test(env, list(set(train)), list(set(test)), list(set(val)))
 
     while change > 0:
         print("got here - need to resample", change)
-        train, test, val = resample(file_dir, out_dir, change, filelength, steps, train, test, val)
-        change, filelength = proportion_test(file_dir, list(set(train)), list(set(test)), list(set(val)))
+        train, test, val = resample(env, change, filelength, train, test, val)
+        change, filelength = proportion_test(env, list(set(train)), list(set(test)), list(set(val)))
 
-    ftrain, ftest, fval = clean_and_save(file_dir, out_dir, steps, train, test, val)
+    ftrain, ftest, fval = clean_and_save(env, train, test, val)
 
     if fasta_store == 'y':
-        split_fasta(file_dir, out_dir, ftrain, ftest, fval)
+        split_fasta(env, ftrain, ftest, fval)
 
     cleanup()
 
