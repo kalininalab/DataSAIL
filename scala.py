@@ -10,19 +10,8 @@ import random
 import argparse
 import shutil
 
-from datastructures import Environment
-
-
-def call_mmseqs_clustering(mmseqs2_path, fasta_file, output_path, tmp_folder, seq_id_threshold, silenced = True):
-
-    cmds = [mmseqs2_path, 'easy-linclust', fasta_file, output_path, tmp_folder, '--similarity-type', '2', '--cov-mode', '0', '-c', '1.0', '--min-seq-id', str(seq_id_threshold)]
-
-    if silenced:
-        FNULL = open(os.devnull, 'w')
-        p = subprocess.Popen(cmds, stdout=FNULL)
-    else:
-        p = subprocess.Popen(cmds)
-    p.wait()
+from datastructures import Environment, Sequence_cluster_tree
+from utils import parseFasta, call_mmseqs_clustering
 
 # use mmseqs to cluster x times, cluster directory, tmp
 def clustering(env):
@@ -42,11 +31,11 @@ def clustering(env):
     seq_id = np.linspace(0.8, 0.99, num=env.steps, dtype=float)[::-1]
 
     #step 1 cluster dataset
-    call_mmseqs_clustering('mmseqs', env.input_file, f'{env.out_dir}/1', f'{env.tmp_folder}', seq_id[0])
+    call_mmseqs_clustering(env.input_file, output_path = f'{env.out_dir}/1', seq_id_threshold = seq_id[0])
 
     # do again with representatives of clusters for 'steps' iterations
     for i in range(env.steps):
-        call_mmseqs_clustering('mmseqs', f'{env.out_dir}/{str(i+1)}_rep_seq.fasta', f'{env.out_dir}/{str(i+1)}', f'{env.tmp_folder}', seq_id[i])
+        call_mmseqs_clustering(f'{env.out_dir}/{str(i+1)}_rep_seq.fasta', output_path = f'{env.out_dir}/{str(i+1)}', seq_id_threshold = seq_id[i])
 
     return None
 
@@ -290,6 +279,11 @@ def main():
 
     env = Environment(args.input, args.steps, args.output, args.fasta, args.tr_size, args.te_size)
 
+    sequence_map = parseFasta(path=env.input_file)
+    seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = env.input_file)
+    seq_tree.print_tree()
+
+    """
     clustering(env)
     trainset, testset, valset = splittop(env)
     train, test, val = split(env, trainset, testset, valset)
@@ -309,6 +303,7 @@ def main():
         split_fasta(env, ftrain, ftest, fval)
 
     cleanup()
+    """
 
 if __name__ == "__main__":
     print("starting")
