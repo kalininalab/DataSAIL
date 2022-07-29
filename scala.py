@@ -167,11 +167,36 @@ def proportion_test(env, train, test, val):
     return change, filelen
 
 
+def insane(train, test, val):
+    #checks for insanity - if any sequences are in multiple sets, they are deleted from both
+    doubles = []
+
+    for elem in train:
+        if elem in test:
+            doubles.append(elem)
+        elif elem in val:
+            doubles.append(elem)
+
+    for elem in test:
+        if elem in val:
+            doubles.append(elem)
+
+    for d in doubles:
+        train = [id for id in train if id!=d]
+        test = [id for id in test if id!=d]
+        val = [id for id in val if id!=d]
+
+    #return sets without any doubles
+    return train, test, val
+
+
 def clean_and_save(env, train, test, val):
 
-    train = list(set(train))
-    test = list(set(test))
-    val = list(set(val))
+    ntrain = list(set(train))
+    notest = list(set(test))
+    nval = list(set(val))
+
+    train, test, val = insane(ntrain, ntest, nval)
 
     finaltrain = pd.DataFrame([elem[:4] for elem in train])
     finaltrain.to_csv(env.out_dir+"/trainlist.csv")
