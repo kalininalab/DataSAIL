@@ -11,7 +11,7 @@ import argparse
 import shutil
 
 from datastructures import Environment, Sequence_cluster_tree
-from utils import parseFasta, call_mmseqs_clustering
+from utils import parseFasta, call_mmseqs_clustering, check_input_file
 
 # use mmseqs to cluster x times, cluster directory, tmp
 def clustering(env):
@@ -167,20 +167,6 @@ def proportion_test(env, train, test, val):
     return change, filelen
 
 
-def insane(env):
-    ids = []
-    dups = []
-
-    for seq in SeqIO.parse(env.input_file, "fasta"):
-        ids.append(seq.id)
-
-    for id in ids:
-        if ids.count(id) > 1:
-            dups.append(id)
-
-    return dups
-
-
 def clean_and_save(env, train, test, val):
 
     train = list(set(train))
@@ -268,11 +254,13 @@ def main():
 
     env = Environment(args.input, args.steps, args.output, args.fasta, args.tr_size, args.te_size)
 
-    if insane:
-        print(f"Found following duplicates in Input file: \n {insane}")
+    if check_input_file(env):
+        sequence_map = parseFasta(path=f"{env.tmp_folder}_alt_fasta.fasta")
+        seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = None)
+    else:
+        sequence_map = parseFasta(path=env.input_file)
+        seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = env.input_file)
 
-    sequence_map = parseFasta(path=env.input_file)
-    seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = env.input_file)
     seq_tree.print_tree()
 
     """
