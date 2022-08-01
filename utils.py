@@ -93,17 +93,22 @@ def call_mmseqs_clustering(env, fasta_file, output_path = None, seq_id_threshold
 def check_input_file(env):
     ids = []
     dups = []
-    record = []
 
     for seq in SeqIO.parse(env.input_file, "fasta"):
         ids.append(seq.id)
-        record.append(seq)
 
     for id in ids:
         if ids.count(id) > 1:
             dups.append(id)
 
     if dups:
+        record = []
+
+        for seq in SeqIO.parse(env.input_file, "fasta"):
+            if seq.id not in dups:
+                record.append(seq)
+            if seq.id in dups:
+                dups.remove(seq.id)
         alt_path = f"{env.tmp_folder}_alt_fasta.fasta"
         SeqIO.write(record, alt_path, "fasta")
 
