@@ -107,8 +107,9 @@ def check_input_file(env):
         for seq in SeqIO.parse(env.input_file, "fasta"):
             if seq.id not in dups:
                 record.append(seq)
-            if seq.id in dups:
+            elif seq.id in dups:
                 dups.remove(seq.id)
+                
         alt_path = f"{env.tmp_folder}_alt_fasta.fasta"
         SeqIO.write(record, alt_path, "fasta")
 
