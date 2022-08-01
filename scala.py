@@ -281,7 +281,7 @@ def main():
 
     sequence_map = parseFasta(path=env.input_file)
     seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = env.input_file)
-    seq_tree.print_tree()
+    seq_tree.write_dot_file(f'{env.out_dir}/tree.txt', env)
 
     """
     clustering(env)
