@@ -255,6 +255,7 @@ def main():
     env = Environment(args.input, args.steps, args.output, args.fasta, args.tr_size, args.te_size)
 
     if check_input_file(env):
+        print(f"Input File included duplicates - these were dropped. Continuing with {env.tmp_folder}_alt_fasta.fasta")
         sequence_map = parseFasta(path=f"{env.tmp_folder}_alt_fasta.fasta")
         seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = None)
     else:
