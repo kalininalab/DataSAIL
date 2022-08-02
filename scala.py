@@ -252,9 +252,11 @@ def main():
     parser.add_argument("-te", help="size of test set - default ~30%", default=30, dest='te_size', action='store', type=int)
     parser.add_argument("-st", help="sequence identity threshold for undistinguishable sequences - range: [0.00 - 1.00] -default: 1.0", default=1.0, dest='seq_id_threshold', action='store', type=float)
     parser.add_argument("-v", help="verbosity level - range: [0 - 5] - default: 1", default=1, dest='verbosity', action='store', type=int)
+    parser.add_argument("-w", help="directory to weight file (.tsv) Format: [Sequence ID (corresponding to given input file)]tab[weight value]", dest='weight_file', action='store')
+    parser.add_argument("-lw", help="sequence length weighting - default: False", dest='length_weighting', default = False, action='store', type=bool)
     args = parser.parse_args()
 
-    env = Environment(args.input, args.steps, args.output, args.fasta, args.tr_size, args.te_size, fuse_seq_id_threshold = args.seq_id_threshold, verbosity = args.verbosity)
+    env = Environment(args.input, args.steps, args.output, args.fasta, args.tr_size, args.te_size, fuse_seq_id_threshold = args.seq_id_threshold, verbosity = args.verbosity, weight_file = args.weight_file, length_weighting = args.length_weighting)
 
 
     if check_input_file(env):

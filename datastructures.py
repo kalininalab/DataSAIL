@@ -7,7 +7,7 @@ from Bio import pairwise2
 from utils import randomString, seqMapToFasta, call_mmseqs_clustering, BLOSUM62, getCovSI
 
 class Environment:
-    def __init__(self, input_file, steps, out_dir, fasta_store, tr_size, te_size, fuse_seq_id_threshold = 1.0, verbosity = 1):
+    def __init__(self, input_file, steps, out_dir, fasta_store, tr_size, te_size, fuse_seq_id_threshold = 1.0, verbosity = 1, weight_file = None, length_weighting = False):
         self.input_file = input_file
         self.steps = steps
         self.out_dir = out_dir
@@ -20,6 +20,12 @@ class Environment:
         self.fasta_store = fasta_store
         self.tr_size = tr_size
         self.te_size = te_size
+
+        self.weight_file = weight_file
+        self.length_weighting = length_weighting
+
+        if length_weighting and weight_file is not None:
+            print('\nWarning: length cannot be done, when a weight file is given!\n')
 
         self.tmp_folder = f'{out_dir}/tmp'
 
@@ -72,12 +78,29 @@ def make_fasta(sequence_map, env, subset = None):
     seqMapToFasta(sequence_map, fasta_file, subset = subset)
     return fasta_file
 
+def initialize_weighting(env, sequence_map):
+    if env.weight_file is not None:
+        return parse_weight_file(env.weight_file)
+
+    weight_vector = {}
+    for prot in sequence_map:
+        if env.length_weighting:
+            weight_vector[prot] = len(sequence_map[prot])
+        else:
+            weight_vector[prot] = 1
+
+    return weight_vector
+
+def parse_weight_file(path_to_file):
+    return #TODO
+
 class Sequence_cluster_tree:
 
     class Node:
-        def __init__(self, label, rep, children = None, fused_children = None):
+        def __init__(self, label, rep, weight, children = None, fused_children = None):
             self.label = label
             self.rep = rep
+            self.weight = weight
             if children is None:
                 self.children = []
             else:
@@ -109,6 +132,8 @@ class Sequence_cluster_tree:
         if env.verbosity >= 1:
             print(f'Creating new sequence cluster tree: {initial_fasta_file}')
             t0 = time.time()
+
+        self.weight_vector = initialize_weighting(env, sequence_map)
 
         if initial_fasta_file is not None:
             fasta_file = initial_fasta_file
@@ -226,14 +251,18 @@ class Sequence_cluster_tree:
 
         children_nodes = []
 
+        fused_weight = 0
+
         for member in members:
             children_nodes.append(member)
             if member in self.nodes:
+                fused_weight += self.nodes[member].weight
                 self.delete_node(member)
-
+            else:
+                fused_weight += self.weight_vector[member]
         #Create the fused node (which is a leaf)
         new_node_id = self.get_new_node_id()
-        new_node = self.Node(new_node_id, rep, fused_children = children_nodes)
+        new_node = self.Node(new_node_id, rep, fused_weight, fused_children = children_nodes)
         self.nodes[new_node_id] = new_node
 
 
@@ -254,7 +283,7 @@ class Sequence_cluster_tree:
             if len(members) == 1: #A cluster with one member becomes a leaf node
                 #Create the leaf
                 if not rep in self.nodes:
-                    self.nodes[rep] = self.Node(rep, rep)
+                    self.nodes[rep] = self.Node(rep, rep, self.weight_vector[rep])
 
                 if add_to_node is not None: #If preselected parent exists ...
                     #Connect new parent node to preselected parent
@@ -274,14 +303,18 @@ class Sequence_cluster_tree:
                     children_nodes = []
                     new_node_id = self.get_new_node_id()
 
+                    fused_weight = 0
                     for member in members:
                         if not member in self.nodes: #create a leave and put it to the children list
-                            self.nodes[member] = self.Node(member, member)
+                            self.nodes[member] = self.Node(member, member, self.weight_vector[member])
+                            fused_weight += self.weight_vector[member]
+                        else:
+                            fused_weight += self.nodes[member].weight
                         children_nodes.append(member)
                         self.set_parent(member, new_node_id)
 
                     #Create the parent node
-                    new_node = self.Node(new_node_id, rep, children = children_nodes)
+                    new_node = self.Node(new_node_id, rep, fused_weight, children = children_nodes)
                     self.nodes[new_node_id] = new_node
 
                     if add_to_node is not None: #If preselected parent exists ...
@@ -296,13 +329,17 @@ class Sequence_cluster_tree:
                 children_nodes = []
                 new_node_id = self.get_new_node_id()
 
+                fused_weight = 0
                 for member in members:
                     if not member in self.nodes: #create a leave and put it to the children list
-                        self.nodes[member] = self.Node(member, member)
+                        self.nodes[member] = self.Node(member, member, self.weight_vector[member])
+                        fused_weight += self.weight_vector[member]
+                    else:
+                        fused_weight += self.nodes[member].weight
                     children_nodes.append(member)
                     self.set_parent(member, new_node_id)
 
-                new_node = self.Node(new_node_id, rep, children = children_nodes)
+                new_node = self.Node(new_node_id, rep, fused_weight, children = children_nodes)
                 self.nodes[new_node_id] = new_node
 
                 if add_to_node is not None:  #If preselected parent exists ...
@@ -337,7 +374,7 @@ class Sequence_cluster_tree:
     def connect_nodes(self, node_ids):
         for rep in node_ids:
             if not rep in self.nodes:
-                self.nodes[rep] = self.Node(rep, rep)
+                self.nodes[rep] = self.Node(rep, rep, self.weight_vector[rep])
         rep_a = node_ids[0]
         left_node_id = rep_a
 
@@ -348,7 +385,7 @@ class Sequence_cluster_tree:
 
             new_node_id = self.get_new_node_id()
             self.set_parent(rep_b, new_node_id)
-            new_node = self.Node(new_node_id, rep_b, children = children_nodes)
+            new_node = self.Node(new_node_id, rep_b, self.nodes[left_node_id].weight + self.nodes[rep_b].weight, children = children_nodes)
             self.nodes[new_node_id] = new_node
             left_node_id = new_node_id
 
@@ -362,9 +399,11 @@ class Sequence_cluster_tree:
         lines = ['graph ""\n\t{\n']
         for node_id in self.nodes:
             label = node_id
+            weight_p = self.nodes[node_id].weight
             for child in self.nodes[node_id].children:
+                weight_c = self.nodes[child].weight
                 child_label = self.nodes[child].get_fused_label()
-                lines.append(f'\t{label} -- "{child_label}"\n')
+                lines.append(f'\t"{label} {weight_p}" -- "{child_label} {weight_c}"\n')
         lines.append('\t}\n')
         f = open(outfile, 'w')
         f.write(''.join(lines))
