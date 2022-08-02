@@ -245,14 +245,15 @@ def main():
     )
     # parser.add_argument("-h", help="please give directory to input dataset and output directory - other settings are optional")
     parser.add_argument("-i", help="directory to input file (FASTA/FASTQ)", required=True, dest='input', action='store')
-    parser.add_argument("-s", help="steps to be clustered - default = 4", default=4, dest='steps', action='store', type=int)
+    parser.add_argument("-s", help="steps to be clustered - default = 4", default=4, dest='steps', action='store', type=int) #Probably obsolete, when new algorithm is implemented
     parser.add_argument("-o", help="directory to save the results in", required=True, dest='output', action='store')
     parser.add_argument("-f", help="optional fasta file output (y/n) - default False", default='n', dest='fasta', action='store', type=str)
     parser.add_argument("-tr", help="size of training set - default ~60%", default=60, dest='tr_size', action='store', type=int)
     parser.add_argument("-te", help="size of test set - default ~30%", default=30, dest='te_size', action='store', type=int)
+    parser.add_argument("-st", help="sequence identity threshold for undistinguishable sequences - range: [0.00 - 1.00] -default: 1.0", default=1.0, dest='seq_id_threshold', action='store', type=float)
     args = parser.parse_args()
 
-    env = Environment(args.input, args.steps, args.output, args.fasta, args.tr_size, args.te_size)
+    env = Environment(args.input, args.steps, args.output, args.fasta, args.tr_size, args.te_size, fuse_seq_id_threshold = args.seq_id_threshold)
 
 
     if check_input_file(env):

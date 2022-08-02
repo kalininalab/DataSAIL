@@ -129,13 +129,12 @@ class Sequence_cluster_tree:
 
         self.current_node_id = 0
         self.nodes = {}
-        self.node_pointers = {} #Stores representatives that represent a parent node
 
         roots, broad_nodes, potential_final_root = self.process_cluster(cluster_obj, sequence_map, env)
 
         if env.verbosity >= 3:
             t2 = time.time()
-            print(f'Initial process_cluster: {t2-t1}\n{roots}\n{broad_nodes}\n{self.node_pointers}')
+            print(f'Initial process_cluster: {t2-t1}\n{roots}\n{broad_nodes}')
 
         while len(roots) > 1 or len(broad_nodes) > 0:
             if env.verbosity >= 3:
@@ -147,7 +146,7 @@ class Sequence_cluster_tree:
             new_roots, new_broad_nodes, potential_final_root = self.process_cluster(cluster_obj, sequence_map, env)
 
             if env.verbosity >= 4:
-                print(f'New roots coming from:\n{new_roots}\n{new_broad_nodes}\n{self.node_pointers}\n')
+                print(f'New roots coming from:\n{new_roots}\n{new_broad_nodes}\n')
 
             for rep in broad_nodes:
                 members, node_id = broad_nodes[rep]
@@ -162,7 +161,7 @@ class Sequence_cluster_tree:
                 even_more_new_roots, even_more_new_broad_nodes, _ = self.process_cluster(cluster_obj, sequence_map, env, add_to_node = node_id)
 
                 if env.verbosity >= 4:
-                    print(f'New roots coming from members:\n{even_more_new_roots}\n{even_more_new_broad_nodes}\n{self.node_pointers}\n')
+                    print(f'New roots coming from members:\n{even_more_new_roots}\n{even_more_new_broad_nodes}\n')
 
                 new_roots += even_more_new_roots
                 new_broad_nodes.update(even_more_new_broad_nodes)
@@ -210,12 +209,15 @@ class Sequence_cluster_tree:
         return reps
 
     def fuse_check(self, prot_a, prot_b, sequence_map, env):
-        seq_a = sequence_map[prot_a]
-        seq_b = sequence_map[prot_b]
+        seq_a = sequence_map[prot_a].replace('*','')
+        seq_b = sequence_map[prot_b].replace('*','')
         if env.fuse_seq_id_threshold == 1.0:
             return seq_a == seq_b
         else:
-            (target_aligned_sequence, template_aligned_sequence, a, b, c) = pairwise2.align.globalds(seq_a, seq_b, BLOSUM62, -2.0, -0.5, one_alignment_only=True)[0]
+            try:
+                (target_aligned_sequence, template_aligned_sequence, a, b, c) = pairwise2.align.globalds(seq_a, seq_b, BLOSUM62, -2.0, -0.5, one_alignment_only=True)[0]
+            except:
+                print(f'Alignment failed: {prot_a} {prot_b}\n\n{seq_a}\n\n{seq_b}')
             (aln_length, seq_id) = getCovSI(len(target_aligned_sequence), target_aligned_sequence, template_aligned_sequence)
 
             return seq_id >= env.fuse_seq_id_threshold
