@@ -7,7 +7,7 @@ from Bio import pairwise2
 from utils import randomString, seqMapToFasta, call_mmseqs_clustering, BLOSUM62, getCovSI
 
 class Environment:
-    def __init__(self, input_file, steps, out_dir, fasta_store, tr_size, te_size, fuse_seq_id_threshold = 1.0):
+    def __init__(self, input_file, steps, out_dir, fasta_store, tr_size, te_size, fuse_seq_id_threshold = 1.0, verbosity = 1):
         self.input_file = input_file
         self.steps = steps
         self.out_dir = out_dir
@@ -28,7 +28,7 @@ class Environment:
 
         self.mmseqs2_path = 'mmseqs'
 
-        self.verbosity = 4
+        self.verbosity = verbosity
 
 class Mmseqs_cluster:
     def __init__(self, cluster_file, seq_id_threshold):

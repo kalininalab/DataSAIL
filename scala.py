@@ -251,9 +251,10 @@ def main():
     parser.add_argument("-tr", help="size of training set - default ~60%", default=60, dest='tr_size', action='store', type=int)
     parser.add_argument("-te", help="size of test set - default ~30%", default=30, dest='te_size', action='store', type=int)
     parser.add_argument("-st", help="sequence identity threshold for undistinguishable sequences - range: [0.00 - 1.00] -default: 1.0", default=1.0, dest='seq_id_threshold', action='store', type=float)
+    parser.add_argument("-v", help="verbosity level - range: [0 - 5] - default: 1", default=1, dest='verbosity', action='store', type=int)
     args = parser.parse_args()
 
-    env = Environment(args.input, args.steps, args.output, args.fasta, args.tr_size, args.te_size, fuse_seq_id_threshold = args.seq_id_threshold)
+    env = Environment(args.input, args.steps, args.output, args.fasta, args.tr_size, args.te_size, fuse_seq_id_threshold = args.seq_id_threshold, verbosity = args.verbosity)
 
 
     if check_input_file(env):
