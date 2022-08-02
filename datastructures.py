@@ -370,5 +370,7 @@ class Sequence_cluster_tree:
         f.write(''.join(lines))
         f.close()
 
-        #p = subprocess.Popen(['dot', '-Tpng', outfile, '>', f'{env.out_dir}/tree.png'], shell = True)
-        #p.wait()
+        f = open(f'{env.out_dir}/tree_{env.fuse_seq_id_threshold}.png', 'w')
+        p = subprocess.Popen(['dot', '-Tpng', outfile], stdout = f)
+        p.wait()
+        f.close()
