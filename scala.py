@@ -11,7 +11,7 @@ import argparse
 import shutil
 
 from datastructures import Environment, Sequence_cluster_tree
-from utils import parseFasta, call_mmseqs_clustering
+from utils import parseFasta, call_mmseqs_clustering, check_input_file
 
 # use mmseqs to cluster x times, cluster directory, tmp
 def clustering(env):
@@ -167,36 +167,11 @@ def proportion_test(env, train, test, val):
     return change, filelen
 
 
-def insane(train, test, val):
-    #checks for insanity - if any sequences are in multiple sets, they are deleted from both
-    doubles = []
-
-    for elem in train:
-        if elem in test:
-            doubles.append(elem)
-        elif elem in val:
-            doubles.append(elem)
-
-    for elem in test:
-        if elem in val:
-            doubles.append(elem)
-
-    for d in doubles:
-        train = [id for id in train if id!=d]
-        test = [id for id in test if id!=d]
-        val = [id for id in val if id!=d]
-
-    #return sets without any doubles
-    return train, test, val
-
-
 def clean_and_save(env, train, test, val):
 
-    ntrain = list(set(train))
-    notest = list(set(test))
-    nval = list(set(val))
-
-    train, test, val = insane(ntrain, ntest, nval)
+    train = list(set(train))
+    test = list(set(test))
+    val = list(set(val))
 
     finaltrain = pd.DataFrame([elem[:4] for elem in train])
     finaltrain.to_csv(env.out_dir+"/trainlist.csv")
@@ -279,9 +254,17 @@ def main():
 
     env = Environment(args.input, args.steps, args.output, args.fasta, args.tr_size, args.te_size)
 
-    sequence_map = parseFasta(path=env.input_file)
-    seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = env.input_file)
+
+    if check_input_file(env):
+        print(f"Input File included duplicates - these were dropped. Continuing with {env.tmp_folder}_alt_fasta.fasta")
+        sequence_map = parseFasta(path=f"{env.tmp_folder}_alt_fasta.fasta")
+        seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = None)
+    else:
+        sequence_map = parseFasta(path=env.input_file)
+        seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = env.input_file)
+
     seq_tree.write_dot_file(f'{env.out_dir}/tree.txt', env)
+
 
     """
     clustering(env)

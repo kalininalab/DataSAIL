@@ -3,6 +3,8 @@ import os
 import subprocess
 import string
 
+from Bio import SeqIO
+
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
     letters = string.ascii_lowercase
@@ -89,6 +91,7 @@ def call_mmseqs_clustering(env, fasta_file, output_path = None, seq_id_threshold
     all_seq_file = f'{output_path}_all_seqs.fasta'
     return cluster_file, rep_seq_file, all_seq_file
 
+
 def getCovSI(full_length, target_seq, template_seq):
     target_length = len(target_seq.replace("-", ""))
     template_length = float((target_length - template_seq.count("-")))
@@ -143,3 +146,29 @@ BLOSUM62 = {('W', 'F'): 1, ('L', 'R'): -2, ('S', 'P'): -1, ('V', 'T'): 0, ('Q', 
             ('I', 'A'): -1, ('P', 'I'): -3, ('R', 'R'): 5, ('X', 'M'): -1, ('L', 'I'): 2, ('X', 'I'): -1, ('Z', 'B'): 1, ('X', 'E'): -1,
             ('Z', 'N'): 0, ('X', 'A'): 0, ('B', 'R'): -1, ('B', 'N'): 3, ('F', 'D'): -3, ('X', 'Y'): -1, ('Z', 'R'): 0, ('F', 'H'): -1,
             ('B', 'F'): -3, ('F', 'L'): 0, ('X', 'Q'): -1, ('B', 'B'): 4}
+
+def check_input_file(env):
+    ids = []
+    dups = []
+
+    for seq in SeqIO.parse(env.input_file, "fasta"):
+        ids.append(seq.id)
+
+    for id in ids:
+        if ids.count(id) > 1:
+            dups.append(id)
+
+    if dups:
+        record = []
+
+        for seq in SeqIO.parse(env.input_file, "fasta"):
+            if seq.id not in dups:
+                record.append(seq)
+            elif seq.id in dups:
+                dups.remove(seq.id)
+                
+        alt_path = f"{env.tmp_folder}_alt_fasta.fasta"
+        SeqIO.write(record, alt_path, "fasta")
+
+    return dups
+
