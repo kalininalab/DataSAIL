@@ -11,7 +11,7 @@ import argparse
 import shutil
 
 from datastructures import Environment, Sequence_cluster_tree
-from utils import parseFasta, call_mmseqs_clustering, check_input_file
+from utils import parseFasta, call_mmseqs_clustering
 
 # use mmseqs to cluster x times, cluster directory, tmp
 def clustering(env):
@@ -259,13 +259,8 @@ def main():
     env = Environment(args.input, args.steps, args.output, args.fasta, args.tr_size, args.te_size, fuse_seq_id_threshold = args.seq_id_threshold, verbosity = args.verbosity, weight_file = args.weight_file, length_weighting = args.length_weighting)
 
 
-    if check_input_file(env):
-        print(f"Input File included duplicates - these were dropped. Continuing with {env.tmp_folder}_alt_fasta.fasta")
-        sequence_map = parseFasta(path=f"{env.tmp_folder}_alt_fasta.fasta")
-        seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = None)
-    else:
-        sequence_map = parseFasta(path=env.input_file)
-        seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = env.input_file)
+    sequence_map = parseFasta(path=env.input_file, check_dups = True)
+    seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = env.input_file)
 
     seq_tree.write_dot_file(f'{env.out_dir}/tree.txt', env)
 

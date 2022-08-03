@@ -230,7 +230,10 @@ class Sequence_cluster_tree:
     def get_reps(self, node_ids):
         reps = []
         for node_id in node_ids:
-            reps.append(self.nodes[node_id].rep)
+            if node_id in self.nodes:
+                reps.append(self.nodes[node_id].rep)
+            else:
+                reps.append(node_id)
         return reps
 
     def fuse_check(self, prot_a, prot_b, sequence_map, env):

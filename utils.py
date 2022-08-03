@@ -3,7 +3,6 @@ import os
 import subprocess
 import string
 
-from Bio import SeqIO
 
 def randomString(stringLength=10):
     """Generate a random string of fixed length """
@@ -32,7 +31,7 @@ def seqMapToFasta(seq_map, outfile, subset = None):
     else:
         return 'Empty fasta file'
 
-def parseFasta(path=None, new_file=None, lines=None, page=None, left_split=None, right_split=' '):
+def parseFasta(path=None, new_file=None, lines=None, page=None, left_split=None, right_split=' ', check_dups = False):
     if lines is None and page is None:
         f = open(path, 'r')
         lines = f.read().split('\n')
@@ -51,10 +50,16 @@ def parseFasta(path=None, new_file=None, lines=None, page=None, left_split=None,
             continue
         if line[0] == '>':
             entry_id = line[1:]
+
+            if entry_id[:3] == 'sp|' or entry_id[:3] == 'tr|': #Detect uniprot/tremble ID strings
+                entry_id = entry_id.split('|')[1]
+
             if left_split is not None:
                 entry_id = entry_id.split(left_split, 1)[1]
             if right_split is not None:
                 entry_id = entry_id.split(right_split, 1)[0]
+            if check_dups and entry_id in seq_map:
+                print(f'Duplicate entry in fasta input detected: {entry_id}')
             seq_map[entry_id] = ''
             n += 1
             if new_file is not None:
@@ -147,28 +152,4 @@ BLOSUM62 = {('W', 'F'): 1, ('L', 'R'): -2, ('S', 'P'): -1, ('V', 'T'): 0, ('Q', 
             ('Z', 'N'): 0, ('X', 'A'): 0, ('B', 'R'): -1, ('B', 'N'): 3, ('F', 'D'): -3, ('X', 'Y'): -1, ('Z', 'R'): 0, ('F', 'H'): -1,
             ('B', 'F'): -3, ('F', 'L'): 0, ('X', 'Q'): -1, ('B', 'B'): 4}
 
-def check_input_file(env):
-    ids = []
-    dups = []
-
-    for seq in SeqIO.parse(env.input_file, "fasta"):
-        ids.append(seq.id)
-
-    for id in ids:
-        if ids.count(id) > 1:
-            dups.append(id)
-
-    if dups:
-        record = []
-
-        for seq in SeqIO.parse(env.input_file, "fasta"):
-            if seq.id not in dups:
-                record.append(seq)
-            elif seq.id in dups:
-                dups.remove(seq.id)
-                
-        alt_path = f"{env.tmp_folder}_alt_fasta.fasta"
-        SeqIO.write(record, alt_path, "fasta")
-
-    return dups
 
