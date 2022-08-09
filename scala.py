@@ -10,8 +10,8 @@ import random
 import argparse
 import shutil
 
-from datastructures import Environment, Sequence_cluster_tree
-from utils import parseFasta, call_mmseqs_clustering
+from datastructures import Environment, Sequence_cluster_tree, Bin
+from utils import parseFasta, call_mmseqs_clustering, parse_tree, split
 
 # use mmseqs to cluster x times, cluster directory, tmp
 def clustering(env):
@@ -264,6 +264,9 @@ def main():
 
     seq_tree.write_dot_file(f'{env.out_dir}/tree.txt', env)
 
+    tree = parse_tree(f'{env.out_dir}/tree.txt')
+    root = Bin(label='root', members=[tree.loc[tree.node_ids==tree.iloc[0].node_ids]])
+    bins = split(tree, [], [], root, 0)
 
     """
     clustering(env)

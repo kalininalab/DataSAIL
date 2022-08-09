@@ -152,4 +152,87 @@ BLOSUM62 = {('W', 'F'): 1, ('L', 'R'): -2, ('S', 'P'): -1, ('V', 'T'): 0, ('Q', 
             ('Z', 'N'): 0, ('X', 'A'): 0, ('B', 'R'): -1, ('B', 'N'): 3, ('F', 'D'): -3, ('X', 'Y'): -1, ('Z', 'R'): 0, ('F', 'H'): -1,
             ('B', 'F'): -3, ('F', 'L'): 0, ('X', 'Q'): -1, ('B', 'B'): 4}
 
+def parse_tree(path):
+    with open(path) as f:
+        lines = f.readlines()
 
+    lines = lines[::-1][1:-2]
+
+    node_ids = []
+    node_weights = []
+    labels = []
+    mem_weight = []
+
+    for line in lines:
+        if line[0] == '\t':
+            lh, rh = line.split(" -- ")
+            try:
+                node_id, node_w = lh.split(" ")
+                lab, w_mem = rh.split(" ")
+            except:
+                print(lh, rh)
+            node_ids.append(node_id.replace('\t"',""))
+            node_weights.append(node_w.replace('"', ""))
+            labels.append(lab.replace('"', ""))
+            mem_weight.append(w_mem.replace('"\n', ""))
+
+    tree = pd.DataFrame({'node_ids':node_ids, 'node_weights':node_weights, 'labels': labels, 'mem_weights': mem_weight})
+
+    return tree
+
+
+def get_children(tree, member):
+    children = tree[tree.node_ids==member.labels]
+    if len(children)>0:
+        return children
+    else:
+        return None
+
+        
+def merge_prelims(prelims, nname):
+    if sum([int(mem.mem_weights) for mem in prelims])+threshold >= ideal_bin_size:
+        prelims.clear()
+        return Bin(label=nname, members=[prelims])
+    else:
+        return None
+
+
+def split(tree, bins, prelims, b, depth):
+    #really just a scratch thats not working
+    print(depth)
+
+    m = b.get_members()
+
+    a_mem = m[0].iloc[0]
+    b_mem = m[0].iloc[1]
+
+    neighboring_name = newname()
+
+    a_children = get_children(tree, a_mem)
+    b_children = get_children(tree, b_mem)
+
+    morebins = []
+
+    if int(a_mem.mem_weights)+threshold >= ideal_bin_size:
+        morebins.append(Bin(label=neighboring_name, members=[a_children]))
+        if a_children is not None:
+            split(tree, bins, prelims, morebins[-1], depth+1)
+    else:
+        prelims.append(a_mem)
+
+    if int(b_mem.mem_weights)+threshold >= ideal_bin_size:
+        mor ebins.append(Bin(label=neighboring_name, members=[b_children]))
+        if b_children is not None:
+            split(tree, bins, prelims, morebins[-1], depth+1)
+    else:
+        prelims.append(b_mem)
+
+    pbin = merge_prelims(prelims, neighboring_name)
+
+    if pbin is not None:
+        bins.append(pbin)
+
+    for newbin in morebins:
+        bins.append(newbin)
+
+    return bins

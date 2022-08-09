@@ -193,7 +193,7 @@ class Sequence_cluster_tree:
 
             if len(new_broad_nodes) == 0 and len(roots) == len(new_roots):
                 potential_final_root = self.connect_nodes(roots)
-                
+
                 new_broad_nodes = {}
                 new_roots = [potential_final_root]
 
@@ -281,7 +281,7 @@ class Sequence_cluster_tree:
         broad_nodes = {}
 
         for rep in cluster_obj.clusters:
-            
+
             members = cluster_obj.clusters[rep]
             if len(members) == 1: #A cluster with one member becomes a leaf node
                 #Create the leaf
@@ -406,7 +406,7 @@ class Sequence_cluster_tree:
             for child in self.nodes[node_id].children:
                 weight_c = self.nodes[child].weight
                 child_label = self.nodes[child].get_fused_label()
-                lines.append(f'\t"{label} {weight_p}" -- "{child_label} {weight_c}"\n')
+                lines.append(f'\t"{label} {weight_p}" -- "{child_ label} {weight_c}"\n')
         lines.append('\t}\n')
         f = open(outfile, 'w')
         f.write(''.join(lines))
@@ -416,3 +416,36 @@ class Sequence_cluster_tree:
         p = subprocess.Popen(['dot', '-Tpng', outfile], stdout = f)
         p.wait()
         f.close()
+
+
+
+class Bin:
+    def __init__(self, label=None, members=None, neighbors=None):
+
+        if label==None:
+            self.label = ''
+        else:
+            self.label = label
+
+        if members == None:
+            self.members = []
+        else:
+            self.members = members
+
+        if neighbors == None:
+            self.neighbors = []
+        else:
+            self.neighbors = neighbors
+
+    def get_members(self):
+        return self.members
+
+    def get_label(self):
+        return self.label
+
+    def add_members(self, new_members):
+         for mem in new_members:
+            self.members.append(mem)
+
+    def get_weight(self):
+        return sum([int(mem.mem_weights) for mem in self.members])
