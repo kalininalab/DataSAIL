@@ -188,7 +188,7 @@ def get_children(tree, member):
     else:
         return None
 
-        
+
 def merge_prelims(prelims, nname):
     if sum([int(mem.mem_weights) for mem in prelims])+threshold >= ideal_bin_size:
         prelims.clear()
@@ -206,7 +206,7 @@ def split(tree, bins, prelims, b, depth):
     a_mem = m[0].iloc[0]
     b_mem = m[0].iloc[1]
 
-    neighboring_name = newname()
+    neighboring_name = randomString(5)
 
     a_children = get_children(tree, a_mem)
     b_children = get_children(tree, b_mem)
