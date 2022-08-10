@@ -10,8 +10,8 @@ import random
 import argparse
 import shutil
 
-from datastructures import Environment, Sequence_cluster_tree, Bin
-from utils import parseFasta, call_mmseqs_clustering, parse_tree, split
+from datastructures import Sequence_cluster_tree, Environment, group_bins, bin_list_to_prot_list
+from utils import parseFasta, call_mmseqs_clustering
 
 # use mmseqs to cluster x times, cluster directory, tmp
 def clustering(env):
@@ -264,9 +264,30 @@ def main():
 
     seq_tree.write_dot_file(f'{env.out_dir}/tree.txt', env)
 
-    tree = parse_tree(f'{env.out_dir}/tree.txt')
-    root = Bin(label='root', members=[tree.loc[tree.node_ids==tree.iloc[0].node_ids]])
-    bins = split(tree, [], [], root, 0)
+    bins = seq_tree.split_into_bins()
+
+    """
+    for bin_number, prot_bin in enumerate(bins):
+        print(f'Bin {bin_number}, total weight: {prot_bin.weight}')
+        prot_ids = prot_bin.list_prot_ids(seq_tree.nodes)
+        print(prot_ids)
+        print('\n')
+    """
+
+    validation_set, train_test_pairs = group_bins(bins, env, seq_tree)
+
+    print('Validation set:')
+    print(bin_list_to_prot_list(validation_set, seq_tree.nodes))
+    train_set, test_set = train_test_pairs[0]
+    print('Test set:')
+    print(bin_list_to_prot_list(test_set, seq_tree.nodes))
+    print('Train set:')
+    print(bin_list_to_prot_list(train_set, seq_tree.nodes))
+
+
+    #tree = parse_tree(f'{env.out_dir}/tree.txt')
+    #root = Bin(label='root', members=[tree.loc[tree.node_ids==tree.iloc[0].node_ids]])
+    #bins = split(tree, [], [], root, 0)
 
     """
     clustering(env)

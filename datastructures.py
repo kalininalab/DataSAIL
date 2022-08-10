@@ -20,6 +20,7 @@ class Environment:
         self.fasta_store = fasta_store
         self.tr_size = tr_size
         self.te_size = te_size
+        self.val_size = 100 - tr_size - te_size
 
         self.weight_file = weight_file
         self.length_weighting = length_weighting
@@ -120,6 +121,18 @@ class Sequence_cluster_tree:
                 return self.label
             else:
                 return ' & '.join(self.fused_children)
+
+        def get_all_prot_ids(self, nodes):
+            if self.isLeaf():
+                if len(self.fused_children) == 0:
+                    return [self.label]
+                else:
+                    return self.fused_children
+            else:
+                prot_ids = []
+                for child in self.children:
+                    prot_ids += nodes[child].get_all_prot_ids(nodes)
+                return prot_ids
 
         def print_cascade(self, nodes, level = 0):
             print(f'{" "*level}{self.get_fused_label()}')
@@ -406,7 +419,7 @@ class Sequence_cluster_tree:
             for child in self.nodes[node_id].children:
                 weight_c = self.nodes[child].weight
                 child_label = self.nodes[child].get_fused_label()
-                lines.append(f'\t"{label} {weight_p}" -- "{child_ label} {weight_c}"\n')
+                lines.append(f'\t"{label} {weight_p}" -- "{child_label} {weight_c}"\n')
         lines.append('\t}\n')
         f = open(outfile, 'w')
         f.write(''.join(lines))
@@ -417,7 +430,100 @@ class Sequence_cluster_tree:
         p.wait()
         f.close()
 
+    def split_into_bins(self, bin_weight_variance_threshhold = 0.1, wished_amount_of_bins = 20):
+        nodes_todo = [self.root]
+        done = []
+        bins = []
+        prelim_bin = Bin()
 
+        total_weight = self.root.weight
+
+        ideal_bin_weight = total_weight / wished_amount_of_bins
+
+        lower_weight_thresh = ideal_bin_weight*(1.0-bin_weight_variance_threshhold)
+        upper_weight_thresh = ideal_bin_weight*(1.0+bin_weight_variance_threshhold)
+
+        while len(nodes_todo) > 0:
+
+            current_node = nodes_todo.pop()
+            node_weight = current_node.weight
+
+            if node_weight < lower_weight_thresh:
+                prelim_bin.add_member(current_node)
+                if prelim_bin.weight >= lower_weight_thresh:
+                    bins.append(prelim_bin)
+                    prelim_bin = Bin()
+
+            elif node_weight < upper_weight_thresh:
+                bins.append(Bin(members = [current_node]))
+
+            else:
+                for child in current_node.children:
+                    nodes_todo.append(self.nodes[child])
+
+        if len(prelim_bin.members) > 0:
+            bins.append(prelim_bin)
+
+        return bins
+
+def group_bins(bins, env, seq_tree):
+    val_size = (seq_tree.root.weight * env.val_size) / 100
+    test_size = (seq_tree.root.weight * env.te_size) / 100
+    train_size = (seq_tree.root.weight * env.tr_size) / 100
+
+    validation_set = []
+    if val_size > 0:
+        current_weight = 0
+        while len(bins) > 0:
+            prot_bin = bins.pop()
+            if current_weight + prot_bin.weight < val_size:
+                validation_set.append(prot_bin)
+                current_weight += prot_bin.weight
+            elif (current_weight + prot_bin.weight) - val_size < (val_size - current_weight):
+                validation_set.append(prot_bin)
+                current_weight += prot_bin.weight
+            else:
+                bins.append(prot_bin)
+                break
+
+    train_test_pairs = []
+    current_test_set = {}
+    current_weight = 0
+    for bin_number, prot_bin in enumerate(bins):
+        if current_weight + prot_bin.weight < test_size:
+            current_test_set[bin_number] = prot_bin
+            current_weight += prot_bin.weight
+        elif (current_weight + prot_bin.weight) - test_size < (test_size - current_weight):
+            current_test_set[bin_number] = prot_bin
+            current_weight += prot_bin.weight
+        else:
+            test_set = current_test_set.values()
+            train_set = []
+            for inner_bin_number, inner_prot_bin in enumerate(bins):
+                if inner_bin_number in current_test_set:
+                    continue
+                train_set.append(inner_prot_bin)
+            train_test_pairs.append((train_set, test_set))
+            current_test_set = {bin_number:prot_bin}
+            current_weight = prot_bin.weight
+
+    if len(current_test_set) > 0:
+        test_set = current_test_set.values()
+        train_set = []
+        for inner_bin_number, inner_prot_bin in enumerate(bins):
+            if inner_bin_number in current_test_set:
+                continue
+            train_set.append(inner_prot_bin)
+        train_test_pairs.append((train_set, test_set))
+
+    return validation_set, train_test_pairs
+
+def bin_list_to_prot_list(bins, nodes):
+    prot_ids = []
+    for prot_bin in bins:
+        prot_ids += prot_bin.list_prot_ids(nodes)
+
+    return prot_ids
 
 class Bin:
     def __init__(self, label=None, members=None, neighbors=None):
@@ -429,8 +535,10 @@ class Bin:
 
         if members == None:
             self.members = []
+            self.weight = 0
         else:
             self.members = members
+            self.weight = sum([mem.weight for mem in self.members])
 
         if neighbors == None:
             self.neighbors = []
@@ -443,9 +551,16 @@ class Bin:
     def get_label(self):
         return self.label
 
+    def add_member(self, member):
+        self.members.append(member)
+        self.weight += member.weight
+
     def add_members(self, new_members):
          for mem in new_members:
-            self.members.append(mem)
+            self.add_member(mem)
 
-    def get_weight(self):
-        return sum([int(mem.mem_weights) for mem in self.members])
+    def list_prot_ids(self, nodes):
+        prot_ids = []
+        for mem in self.members:
+            prot_ids += mem.get_all_prot_ids(nodes)
+        return prot_ids

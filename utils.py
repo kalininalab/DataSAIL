@@ -221,7 +221,7 @@ def split(tree, bins, prelims, b, depth):
         prelims.append(a_mem)
 
     if int(b_mem.mem_weights)+threshold >= ideal_bin_size:
-        mor ebins.append(Bin(label=neighboring_name, members=[b_children]))
+        morebins.append(Bin(label=neighboring_name, members=[b_children]))
         if b_children is not None:
             split(tree, bins, prelims, morebins[-1], depth+1)
     else:
