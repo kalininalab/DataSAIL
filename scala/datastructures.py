@@ -36,6 +36,7 @@ class Environment:
         self.mmseqs2_path = 'mmseqs'
 
         self.verbosity = verbosity
+        self.write_tree_file = False
 
 class Mmseqs_cluster:
     def __init__(self, cluster_file, seq_id_threshold):
