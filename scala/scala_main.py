@@ -10,8 +10,8 @@ import random
 import argparse
 import shutil
 
-from datastructures import Sequence_cluster_tree, Environment, group_bins, bin_list_to_prot_list
-from utils import parseFasta, call_mmseqs_clustering
+from scala.datastructures import Sequence_cluster_tree, Environment, group_bins, bin_list_to_prot_list
+from scala.utils import parseFasta, call_mmseqs_clustering
 
 # use mmseqs to cluster x times, cluster directory, tmp
 def clustering(env):

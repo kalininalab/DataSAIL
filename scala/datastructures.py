@@ -4,7 +4,7 @@ import subprocess
 
 from Bio import pairwise2
 
-from utils import randomString, seqMapToFasta, call_mmseqs_clustering, BLOSUM62, getCovSI
+from scala.utils import randomString, seqMapToFasta, call_mmseqs_clustering, BLOSUM62, getCovSI
 
 class Environment:
     def __init__(self, input_file, steps, out_dir, fasta_store, tr_size, te_size, fuse_seq_id_threshold = 1.0, verbosity = 1, weight_file = None, length_weighting = False):
