@@ -114,7 +114,6 @@ def main():
     # parser.add_argument("-h", help="please give directory to input dataset and output directory - other settings are optional")
     parser.add_argument("-i", help="directory to input file (FASTA/FASTQ)", required=True, dest='input', action='store')
     parser.add_argument("-o", help="directory to save the results in", required=True, dest='output', action='store')
-    parser.add_argument("-f", help="optional fasta file output (y/n) - default False", default='n', dest='fasta', action='store', type=str)
     parser.add_argument("-tr", help="size of training set - default ~60%", default=60, dest='tr_size', action='store', type=int)
     parser.add_argument("-te", help="size of test set - default ~30%", default=30, dest='te_size', action='store', type=int)
     parser.add_argument("-st", help="sequence identity threshold for undistinguishable sequences - range: [0.00 - 1.00] -default: 1.0", default=1.0, dest='seq_id_threshold', action='store', type=float)
@@ -123,9 +122,9 @@ def main():
     parser.add_argument("-lw", help="sequence length weighting - default: False", dest='length_weighting', default = False, action='store', type=bool)
     args = parser.parse_args()
 
-    env = Environment(args.input, args.output, args.fasta, args.tr_size, args.te_size, fuse_seq_id_threshold = args.seq_id_threshold, verbosity = args.verbosity, weight_file = args.weight_file, length_weighting = args.length_weighting)
+    env = Environment(args.input, args.output, args.tr_size, args.te_size, fuse_seq_id_threshold = args.seq_id_threshold, verbosity = args.verbosity, weight_file = args.weight_file, length_weighting = args.length_weighting)
 
-    core_routine(env)
+    validation_set, train_test_pairs = core_routine(env)
 
 
 if __name__ == "__main__":

@@ -49,7 +49,7 @@ def parseFasta(path=None, new_file=None, lines=None, page=None, left_split=None,
         if len(line) == 0:
             continue
         if line[0] == '>':
-            entry_id = line[1:]
+            entry_id = line[1:].replace('β', 'beta')
 
             if entry_id[:3] == 'sp|' or entry_id[:3] == 'tr|': #Detect uniprot/tremble ID strings
                 entry_id = entry_id.split('|')[1]

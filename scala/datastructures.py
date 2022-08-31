@@ -7,7 +7,7 @@ from Bio import pairwise2
 from scala.utils import randomString, seqMapToFasta, call_mmseqs_clustering, BLOSUM62, getCovSI
 
 class Environment:
-    def __init__(self, input_file, out_dir, fasta_store, tr_size, te_size, fuse_seq_id_threshold = 1.0, verbosity = 1, weight_file = None, length_weighting = False):
+    def __init__(self, input_file, out_dir, tr_size, te_size, fuse_seq_id_threshold = 1.0, verbosity = 1, weight_file = None, length_weighting = False):
         self.input_file = input_file
 
         self.out_dir = out_dir
@@ -17,12 +17,12 @@ class Environment:
         if not os.path.isdir(out_dir):
             os.makedirs(out_dir)
 
-        self.fasta_store = fasta_store
         self.tr_size = tr_size
         self.te_size = te_size
         self.val_size = 100 - tr_size - te_size
 
         self.weight_file = weight_file
+        self.weight_vector = None
         self.length_weighting = length_weighting
 
         if length_weighting and weight_file is not None:
@@ -48,10 +48,11 @@ class Mmseqs_cluster:
         self.clusters = {}
 
         for line in lines:
-            words = line[:-1].split('\t')
+            words = line[:-1].replace('β', 'beta').split('\t')
             if len(words) != 2:
                 continue
             cluster_head, cluster_member = words
+            
             if not cluster_head in self.clusters:
                 self.clusters[cluster_head] = []
             self.clusters[cluster_head].append(cluster_member)
@@ -80,9 +81,24 @@ def make_fasta(sequence_map, env, subset = None):
     seqMapToFasta(sequence_map, fasta_file, subset = subset)
     return fasta_file
 
+def fill_weight_vector(sequence_map, weight_vector):
+
+    for prot_id in sequence_map:
+        if not prot_id in weight_vector:
+            weight_vector[prot_id] = 0
+    return weight_vector
+
+
+
 def initialize_weighting(env, sequence_map):
     if env.weight_file is not None:
-        return parse_weight_file(env.weight_file)
+        weight_vector =  parse_weight_file(env.weight_file)
+        weight_vector = fill_weight_vector(sequence_map, weight_vector)
+        return weight_vector
+
+    if env.weight_vector is not None:
+        env.weight_vector = fill_weight_vector(sequence_map, env.weight_vector)
+        return env.weight_vector
 
     weight_vector = {}
     for prot in sequence_map:
@@ -94,6 +110,7 @@ def initialize_weighting(env, sequence_map):
     return weight_vector
 
 def parse_weight_file(path_to_file):
+    
     return #TODO
 
 class Sequence_cluster_tree:
