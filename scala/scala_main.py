@@ -88,7 +88,7 @@ def transform_output(validation_set, train_test_pairs, seq_tree):
         tr_train_test_pairs.append((bin_list_to_prot_list(train_set, seq_tree.nodes), bin_list_to_prot_list(test_set, seq_tree.nodes)))
     return tr_validation_set, tr_train_test_pairs
 
-def core_routine(env):
+def core_routine(env, return_lists = False):
     sequence_map = parseFasta(path=env.input_file, check_dups = True)
     seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = env.input_file)
 
@@ -98,6 +98,9 @@ def core_routine(env):
     bins = seq_tree.split_into_bins()
 
     validation_set, train_test_pairs = group_bins(bins, env, seq_tree)
+
+    if return_lists:
+        return transform_output(validation_set, train_test_pairs, seq_tree)
 
     return validation_set, train_test_pairs
 
