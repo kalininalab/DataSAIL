@@ -13,5 +13,3 @@ additional optional parameters:
 -te : size of test set (default=30%)
 
 Output:
-- lists of IDs for training, test and validation sets
-- optional: fasta files split accordingly

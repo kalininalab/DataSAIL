@@ -13,64 +13,20 @@ import shutil
 from scala.datastructures import Sequence_cluster_tree, Environment, group_bins, bin_list_to_prot_list
 from scala.utils import parseFasta, call_mmseqs_clustering
 
-# use mmseqs to cluster x times, cluster directory, tmp
-def clustering(env):
-    """
-    file_dir : directory of file to be clustered
-    clu_dir : directory where clusters are saved
-    tmp : tmp directory needed for mmseqs
-    steps : number of cluster iterations
 
-    ---
-
-    clustering hierarchically - result are multiple cluster files in mmseqs style
-        -> .tsv, .fasta
-
-    """
-    # lowering the sequence identity for clustering with each step
-    seq_id = np.linspace(0.8, 0.99, num=env.steps, dtype=float)[::-1]
-
-    #step 1 cluster dataset
-    call_mmseqs_clustering(env.input_file, output_path = f'{env.out_dir}/1', seq_id_threshold = seq_id[0])
-
-    # do again with representatives of clusters for 'steps' iterations
-    for i in range(env.steps):
-        call_mmseqs_clustering(f'{env.out_dir}/{str(i+1)}_rep_seq.fasta', output_path = f'{env.out_dir}/{str(i+1)}', seq_id_threshold = seq_id[i])
-
-    return None
-
-
-def clean_and_save(env, train, test, val):
-
-    train = list(set(train))
-    test = list(set(test))
-    val = list(set(val))
-
-    finaltrain = pd.DataFrame([elem[:4] for elem in train])
-    finaltrain.to_csv(env.out_dir+"/trainlist.csv")
-
-    finaltest = pd.DataFrame([elem[:4] for elem in test])
-    finaltest.to_csv(env.out_dir+"/testlist.csv")
-
-    finalval = pd.DataFrame([elem[:4] for elem in val])
-    finalval.to_csv(env.out_dir+"/vallist.csv")
-
-    return finaltrain[0].tolist(), finaltest[0].tolist(), finalval[0].tolist()
-
-
-def cleanup():
-    DIR = os.getcwd()
-    deleteItem=False
-    for filename in os.listdir(DIR):
-        if 'tmp' in filename:
-            deleteItem=True
-        elif '.fasta' in filename:
-            deleteItem=True
-            break
-        if deleteItem:
-            shutil.rmtree(filename)
-
-    return None
+# def cleanup():
+#     DIR = os.getcwd()
+#     deleteItem=False
+#     for filename in os.listdir(DIR):
+#         if 'tmp' in filename:
+#             deleteItem=True
+#         elif '.fasta' in filename:
+#             deleteItem=True
+#             break
+#         if deleteItem:
+#             shutil.rmtree(filename)
+#
+#     return None
 
 def print_output(validation_set, train_test_pairs, seq_tree):
     print('Validation set:')
@@ -129,6 +85,13 @@ def main():
 
     validation_set, train_test_pairs = core_routine(env)
 
+    with open(f'{args.output}/train_test_pairs.txt', 'w') as f:
+        for line in train_test_pairs:
+            f.write("%s\n" % line)
+
+    with open(f'{args.output}/val.txt', 'w') as f:
+        for line in validation_set:
+            f.write("%s\n" % line)
 
 if __name__ == "__main__":
     print("starting")

@@ -32,6 +32,10 @@ def seqMapToFasta(seq_map, outfile, subset = None):
         return 'Empty fasta file'
 
 def parseFasta(path=None, new_file=None, lines=None, page=None, left_split=None, right_split=' ', check_dups = False):
+    """
+    parse varying fasta files + return a unified sequence map in form of dict('entry_id':sequence, ...)
+    + check for duplicates + remove them from the resulting sequence map
+    """
     if lines is None and page is None:
         f = open(path, 'r')
         lines = f.read().split('\n')
@@ -79,9 +83,11 @@ def parseFasta(path=None, new_file=None, lines=None, page=None, left_split=None,
 def call_mmseqs_clustering(env, fasta_file, output_path = None, seq_id_threshold = 0.0, silenced = True):
 
     if output_path is None:
+        #where to save mmseqs cluster files
         infile_trunk = fasta_file.split('/')[-1].rsplit('.',1)[0]
         output_path = f'{env.out_dir}/{infile_trunk}'
 
+        # can we somehow individualize this based on the file ? -- see mmseqs documentation for details on additional options
     cmds = [env.mmseqs2_path, 'easy-linclust', fasta_file, output_path, env.tmp_folder, '--similarity-type', '2', '--cov-mode', '0', '-c', '1.0', '--min-seq-id', str(seq_id_threshold)]
 
     if silenced:
@@ -94,6 +100,7 @@ def call_mmseqs_clustering(env, fasta_file, output_path = None, seq_id_threshold
     cluster_file = f'{output_path}_cluster.tsv'
     rep_seq_file = f'{output_path}_rep_seq.fasta'
     all_seq_file = f'{output_path}_all_seqs.fasta'
+
     return cluster_file, rep_seq_file, all_seq_file
 
 
@@ -152,33 +159,7 @@ BLOSUM62 = {('W', 'F'): 1, ('L', 'R'): -2, ('S', 'P'): -1, ('V', 'T'): 0, ('Q', 
             ('Z', 'N'): 0, ('X', 'A'): 0, ('B', 'R'): -1, ('B', 'N'): 3, ('F', 'D'): -3, ('X', 'Y'): -1, ('Z', 'R'): 0, ('F', 'H'): -1,
             ('B', 'F'): -3, ('F', 'L'): 0, ('X', 'Q'): -1, ('B', 'B'): 4}
 
-def parse_tree(path):
-    with open(path) as f:
-        lines = f.readlines()
 
-    lines = lines[::-1][1:-2]
-
-    node_ids = []
-    node_weights = []
-    labels = []
-    mem_weight = []
-
-    for line in lines:
-        if line[0] == '\t':
-            lh, rh = line.split(" -- ")
-            try:
-                node_id, node_w = lh.split(" ")
-                lab, w_mem = rh.split(" ")
-            except:
-                print(lh, rh)
-            node_ids.append(node_id.replace('\t"',""))
-            node_weights.append(node_w.replace('"', ""))
-            labels.append(lab.replace('"', ""))
-            mem_weight.append(w_mem.replace('"\n', ""))
-
-    tree = pd.DataFrame({'node_ids':node_ids, 'node_weights':node_weights, 'labels': labels, 'mem_weights': mem_weight})
-
-    return tree
 
 
 def get_children(tree, member):
@@ -196,43 +177,43 @@ def merge_prelims(prelims, nname):
     else:
         return None
 
-
-def split(tree, bins, prelims, b, depth):
-    #really just a scratch thats not working
-    print(depth)
-
-    m = b.get_members()
-
-    a_mem = m[0].iloc[0]
-    b_mem = m[0].iloc[1]
-
-    neighboring_name = randomString(5)
-
-    a_children = get_children(tree, a_mem)
-    b_children = get_children(tree, b_mem)
-
-    morebins = []
-
-    if int(a_mem.mem_weights)+threshold >= ideal_bin_size:
-        morebins.append(Bin(label=neighboring_name, members=[a_children]))
-        if a_children is not None:
-            split(tree, bins, prelims, morebins[-1], depth+1)
-    else:
-        prelims.append(a_mem)
-
-    if int(b_mem.mem_weights)+threshold >= ideal_bin_size:
-        morebins.append(Bin(label=neighboring_name, members=[b_children]))
-        if b_children is not None:
-            split(tree, bins, prelims, morebins[-1], depth+1)
-    else:
-        prelims.append(b_mem)
-
-    pbin = merge_prelims(prelims, neighboring_name)
-
-    if pbin is not None:
-        bins.append(pbin)
-
-    for newbin in morebins:
-        bins.append(newbin)
-
-    return bins
+#
+# def split(tree, bins, prelims, b, depth):
+#     #really just a scratch thats not working
+#     print(depth)
+#
+#     m = b.get_members()
+#
+#     a_mem = m[0].iloc[0]
+#     b_mem = m[0].iloc[1]
+#
+#     neighboring_name = randomString(5)
+#
+#     a_children = get_children(tree, a_mem)
+#     b_children = get_children(tree, b_mem)
+#
+#     morebins = []
+#
+#     if int(a_mem.mem_weights)+threshold >= ideal_bin_size:
+#         morebins.append(Bin(label=neighboring_name, members=[a_children]))
+#         if a_children is not None:
+#             split(tree, bins, prelims, morebins[-1], depth+1)
+#     else:
+#         prelims.append(a_mem)
+#
+#     if int(b_mem.mem_weights)+threshold >= ideal_bin_size:
+#         morebins.append(Bin(label=neighboring_name, members=[b_children]))
+#         if b_children is not None:
+#             split(tree, bins, prelims, morebins[-1], depth+1)
+#     else:
+#         prelims.append(b_mem)
+#
+#     pbin = merge_prelims(prelims, neighboring_name)
+#
+#     if pbin is not None:
+#         bins.append(pbin)
+#
+#     for newbin in morebins:
+#         bins.append(newbin)
+#
+#     return bins

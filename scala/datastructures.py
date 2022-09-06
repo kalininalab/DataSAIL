@@ -7,6 +7,7 @@ from Bio import pairwise2
 from scala.utils import randomString, seqMapToFasta, call_mmseqs_clustering, BLOSUM62, getCovSI
 
 class Environment:
+    # storing all the variables & path directories
     def __init__(self, input_file, out_dir, tr_size, te_size, fuse_seq_id_threshold = 1.0, verbosity = 1, weight_file = None, length_weighting = False):
         self.input_file = input_file
 
@@ -39,6 +40,7 @@ class Environment:
         self.write_tree_file = False
 
 class Mmseqs_cluster:
+    #make mmseqs output files accessible
     def __init__(self, cluster_file, seq_id_threshold):
         self.seq_id_threshold = seq_id_threshold
         f = open(cluster_file, 'r')
@@ -52,7 +54,7 @@ class Mmseqs_cluster:
             if len(words) != 2:
                 continue
             cluster_head, cluster_member = words
-            
+
             if not cluster_head in self.clusters:
                 self.clusters[cluster_head] = []
             self.clusters[cluster_head].append(cluster_member)
@@ -69,6 +71,7 @@ def get_mmseqs_cluster(env, input_file, seq_id_threshold = 0.0, cleanup = True):
     cluster_obj = Mmseqs_cluster(cluster_file, seq_id_threshold)
 
     if cleanup:
+        #remove old cluster files
         os.remove(cluster_file)
         os.remove(rep_seq_file)
         os.remove(all_seq_file)
@@ -110,12 +113,14 @@ def initialize_weighting(env, sequence_map):
     return weight_vector
 
 def parse_weight_file(path_to_file):
-    
+
     return #TODO
+
 
 class Sequence_cluster_tree:
 
     class Node:
+        # one Node representing one Sequence
         def __init__(self, label, rep, weight, children = None, fused_children = None):
             self.label = label
             self.rep = rep
@@ -153,6 +158,7 @@ class Sequence_cluster_tree:
                 return prot_ids
 
         def print_cascade(self, nodes, level = 0):
+            # ????????
             print(f'{" "*level}{self.get_fused_label()}')
             for child in self.children:
                 nodes[child].print_cascade(nodes, level = level+1)
@@ -171,6 +177,7 @@ class Sequence_cluster_tree:
         else:
             fasta_file = make_fasta(sequence_map, env)
 
+        # first cluster step with initial file
         cluster_obj = get_mmseqs_cluster(env, fasta_file, seq_id_threshold = (env.fuse_seq_id_threshold/2))
 
         if env.verbosity >= 3:
@@ -186,6 +193,7 @@ class Sequence_cluster_tree:
         self.current_node_id = 0
         self.nodes = {}
 
+        # analyze initial cluster results
         roots, broad_nodes, potential_final_root = self.process_cluster(cluster_obj, sequence_map, env)
 
         if env.verbosity >= 3:
