@@ -85,8 +85,9 @@ def make_fasta(sequence_map, env, subset = None):
     seqMapToFasta(sequence_map, fasta_file, subset = subset)
     return fasta_file
 
-def fill_weight_vector(sequence_map, weight_vector):
 
+def fill_weight_vector(sequence_map, weight_vector):
+    # in case there is no weight given for a sequence
     for prot_id in sequence_map:
         if not prot_id in weight_vector:
             weight_vector[prot_id] = 0
@@ -115,12 +116,14 @@ def initialize_weighting(env, sequence_map):
     return weight_vector
 
 def parse_weight_file(path_to_file):
-    wf = pd.read_csv(path_to_file, sep="\t")
+    # parse a tab separated weight file in form ProtId \t weight
+
+    weight_file = pd.read_csv(path_to_file, sep="\t")
 
     weight_vector = {}
 
-    for prot in wf.iterrows():
-        weight_vector[prot[0]]=prot[1]
+    for entryId, weight in weight_file.iterrows():
+        weight_vector[entryId]=weight
 
     return weight_vector
 
@@ -420,6 +423,7 @@ class Sequence_cluster_tree:
             potential_final_root = None
         return roots, broad_nodes, potential_final_root
 
+
     def connect_nodes(self, node_ids):
         for rep in node_ids:
             if not rep in self.nodes:
@@ -463,7 +467,7 @@ class Sequence_cluster_tree:
         p.wait()
         f.close()
 
-    def split_into_bins(self, bin_weight_variance_threshhold = 0.1, wished_amount_of_bins = 20):
+    def split_into_bins(self, bin_weight_variance_threshhold = 0.15, wished_amount_of_bins = 20):
         nodes_todo = [self.root]
         done = []
         bins = []
