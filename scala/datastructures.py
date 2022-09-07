@@ -94,6 +94,7 @@ def fill_weight_vector(sequence_map, weight_vector):
 
 
 def initialize_weighting(env, sequence_map):
+    # construct a weight vector in form dict(protID: weight, ...)
     if env.weight_file is not None:
         weight_vector =  parse_weight_file(env.weight_file)
         weight_vector = fill_weight_vector(sequence_map, weight_vector)
@@ -113,8 +114,14 @@ def initialize_weighting(env, sequence_map):
     return weight_vector
 
 def parse_weight_file(path_to_file):
+    wf = pd.read_csv(path_to_file, sep="\t")
+    
+    weight_vector = {}
 
-    return #TODO
+    for prot in wf.iterrows():
+        weight_vector[prot[0]]=prot[1]
+
+    return weight_vector
 
 
 class Sequence_cluster_tree:
@@ -158,7 +165,6 @@ class Sequence_cluster_tree:
                 return prot_ids
 
         def print_cascade(self, nodes, level = 0):
-            # ????????
             print(f'{" "*level}{self.get_fused_label()}')
             for child in self.children:
                 nodes[child].print_cascade(nodes, level = level+1)
