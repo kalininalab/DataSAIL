@@ -1,6 +1,7 @@
 import os
 import time
 import subprocess
+import pandas as pd
 
 from Bio import pairwise2
 
@@ -115,7 +116,7 @@ def initialize_weighting(env, sequence_map):
 
 def parse_weight_file(path_to_file):
     wf = pd.read_csv(path_to_file, sep="\t")
-    
+
     weight_vector = {}
 
     for prot in wf.iterrows():
