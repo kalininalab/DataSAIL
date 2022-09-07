@@ -85,13 +85,9 @@ def main():
 
     validation_set, train_test_pairs = core_routine(env)
 
-    with open(f'{args.output}/train_test_pairs.txt', 'w') as f:
-        for line in train_test_pairs:
-            f.write("%s\n" % line)
-
-    with open(f'{args.output}/val.txt', 'w') as f:
-        for line in validation_set:
-            f.write("%s\n" % line)
+    valset, tpairs = pd.DataFrame(validation_set), pd.DataFrame(train_test_pairs)
+    valset.to_csv(f'{args.output}/valset.csv')
+    tpairs.to_csv(f'{args.output}/tpairs.csv')
 
 if __name__ == "__main__":
     print("starting")
