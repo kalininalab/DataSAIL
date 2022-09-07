@@ -83,7 +83,7 @@ def main():
 
     env = Environment(args.input, args.output, args.tr_size, args.te_size, fuse_seq_id_threshold = args.seq_id_threshold, verbosity = args.verbosity, weight_file = args.weight_file, length_weighting = args.length_weighting)
 
-    validation_set, train_test_pairs = core_routine(env)
+    validation_set, train_test_pairs = core_routine(env, return_lists=True)
 
     valset, tpairs = pd.DataFrame(validation_set), pd.DataFrame(train_test_pairs)
     valset.to_csv(f'{args.output}/valset.csv')
