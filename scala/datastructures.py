@@ -115,16 +115,13 @@ def initialize_weighting(env, sequence_map):
 
     return weight_vector
 
-def parse_weight_file(path_to_file):
-    # parse a tab separated weight file in form ProtId \t weight
-
-    weight_file = pd.read_csv(path_to_file, sep="\t")
-
+def parse_weight_file(path):
     weight_vector = {}
 
-    for entryId, weight in weight_file.iterrows():
-        weight_vector[entryId]=weight
+    weight_file = pd.read_csv(path, sep='\t')
 
+    for i in range(len(weight_file)):
+        weight_vector[weight_file.iloc[i][0]]=weight_file.iloc[i][1]
     return weight_vector
 
 
