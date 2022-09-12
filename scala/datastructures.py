@@ -188,9 +188,10 @@ class Sequence_cluster_tree:
         # first cluster step with initial file
         cluster_obj = get_mmseqs_cluster(env, fasta_file, seq_id_threshold = (env.fuse_seq_id_threshold/2))
 
-        if len(cluster_obj) < len(seq_map): 
+##### check if where we loose the sequences ?
+        if len(cluster_obj.clusters) < len(seq_map):
             warnings.warn("Lost Sequences in first clustering step !!")
-
+#####
 
         if env.verbosity >= 3:
             t1 = time.time()
@@ -469,7 +470,7 @@ class Sequence_cluster_tree:
         p.wait()
         f.close()
 
-    def split_into_bins(self, bin_weight_variance_threshhold = 0.15, wished_amount_of_bins = 20):
+    def split_into_bins(self, bin_weight_variance_threshhold = 0.1, wished_amount_of_bins = 20):
         nodes_todo = [self.root]
         done = []
         bins = []
@@ -504,6 +505,9 @@ class Sequence_cluster_tree:
             bins.append(prelim_bin)
 
         return bins
+
+
+######### not the class function anymore
 
 def group_bins(bins, env, seq_tree):
     val_size = (seq_tree.root.weight * env.val_size) / 100
