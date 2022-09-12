@@ -2,6 +2,7 @@ import os
 import time
 import subprocess
 import pandas as pd
+import warnings
 
 from Bio import pairwise2
 
@@ -117,7 +118,7 @@ def initialize_weighting(env, sequence_map):
 
 def parse_weight_file(path):
     weight_vector = {}
-
+#TODO: read the lines with open() to also catch comma separated or other file formats
     weight_file = pd.read_csv(path, sep='\t')
 
     for i in range(len(weight_file)):
@@ -186,6 +187,10 @@ class Sequence_cluster_tree:
 
         # first cluster step with initial file
         cluster_obj = get_mmseqs_cluster(env, fasta_file, seq_id_threshold = (env.fuse_seq_id_threshold/2))
+
+        if len(cluster_obj) < len(seq_map): 
+            warnings.warn("Lost Sequences in first clustering step !!")
+
 
         if env.verbosity >= 3:
             t1 = time.time()
@@ -558,6 +563,8 @@ def bin_list_to_prot_list(bins, nodes):
         prot_ids += prot_bin.list_prot_ids(nodes)
 
     return prot_ids
+
+
 
 class Bin:
     def __init__(self, label=None, members=None, neighbors=None):

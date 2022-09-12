@@ -9,24 +9,12 @@ import sys
 import random
 import argparse
 import shutil
+import warnings
 
 from scala.datastructures import Sequence_cluster_tree, Environment, group_bins, bin_list_to_prot_list
 from scala.utils import parseFasta, call_mmseqs_clustering
 
 
-# def cleanup():
-#     DIR = os.getcwd()
-#     deleteItem=False
-#     for filename in os.listdir(DIR):
-#         if 'tmp' in filename:
-#             deleteItem=True
-#         elif '.fasta' in filename:
-#             deleteItem=True
-#             break
-#         if deleteItem:
-#             shutil.rmtree(filename)
-#
-#     return None
 
 def print_output(validation_set, train_test_pairs, seq_tree):
     print('Validation set:')
@@ -52,6 +40,11 @@ def core_routine(env, return_lists = False):
         seq_tree.write_dot_file(f'{env.out_dir}/tree.txt', env)
 
     bins = seq_tree.split_into_bins()
+
+    #check if we still have all the Sequences
+    all_seq = sum([len(b.get_members()) for b in bins])
+    if len(sequence_map) < all_seq:
+        warnings.warn("lost sequences while splitting into bins!")
 
     validation_set, train_test_pairs = group_bins(bins, env, seq_tree)
 
