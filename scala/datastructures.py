@@ -189,7 +189,7 @@ class Sequence_cluster_tree:
         cluster_obj = get_mmseqs_cluster(env, fasta_file, seq_id_threshold = (env.fuse_seq_id_threshold/2))
 
 ##### check if where we loose the sequences ?
-        if len(cluster_obj.clusters) < len(seq_map):
+        if len(cluster_obj.clusters) < len(sequence_map):
             warnings.warn("Lost Sequences in first clustering step !!")
 #####
 
