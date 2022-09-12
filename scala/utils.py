@@ -80,7 +80,7 @@ def parseFasta(path=None, new_file=None, lines=None, page=None, left_split=None,
 
     return seq_map
 
-def call_mmseqs_clustering(env, fasta_file, output_path = None, seq_id_threshold = 0.0, silenced = True):
+def call_mmseqs_clustering(env, fasta_file, output_path = None, seq_id_threshold = 0.0, silenced = False):
 
     if output_path is None:
         #where to save mmseqs cluster files
