@@ -88,7 +88,7 @@ def call_mmseqs_clustering(env, fasta_file, output_path = None, seq_id_threshold
         output_path = f'{env.out_dir}/{infile_trunk}'
 
         # can we somehow individualize this based on the file ? -- see mmseqs documentation for details on additional options [ '-c', '1.0',]
-    cmds = [env.mmseqs2_path, 'easy-cluster', fasta_file, output_path, env.tmp_folder,'--single-step-clustering', '--similarity-type', '2', '--min-seq-id', str(seq_id_threshold)]
+    cmds = [env.mmseqs2_path, 'easy-cluster', fasta_file, output_path, env.tmp_folder, '--cluster-reassign', '1',  '--similarity-type', '2', '--min-seq-id', str(seq_id_threshold)]
 
     if silenced:
         FNULL = open(os.devnull, 'w')
@@ -176,44 +176,3 @@ def merge_prelims(prelims, nname):
         return Bin(label=nname, members=[prelims])
     else:
         return None
-
-#
-# def split(tree, bins, prelims, b, depth):
-#     #really just a scratch thats not working
-#     print(depth)
-#
-#     m = b.get_members()
-#
-#     a_mem = m[0].iloc[0]
-#     b_mem = m[0].iloc[1]
-#
-#     neighboring_name = randomString(5)
-#
-#     a_children = get_children(tree, a_mem)
-#     b_children = get_children(tree, b_mem)
-#
-#     morebins = []
-#
-#     if int(a_mem.mem_weights)+threshold >= ideal_bin_size:
-#         morebins.append(Bin(label=neighboring_name, members=[a_children]))
-#         if a_children is not None:
-#             split(tree, bins, prelims, morebins[-1], depth+1)
-#     else:
-#         prelims.append(a_mem)
-#
-#     if int(b_mem.mem_weights)+threshold >= ideal_bin_size:
-#         morebins.append(Bin(label=neighboring_name, members=[b_children]))
-#         if b_children is not None:
-#             split(tree, bins, prelims, morebins[-1], depth+1)
-#     else:
-#         prelims.append(b_mem)
-#
-#     pbin = merge_prelims(prelims, neighboring_name)
-#
-#     if pbin is not None:
-#         bins.append(pbin)
-#
-#     for newbin in morebins:
-#         bins.append(newbin)
-#
-#     return bins
