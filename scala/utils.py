@@ -87,8 +87,8 @@ def call_mmseqs_clustering(env, fasta_file, output_path = None, seq_id_threshold
         infile_trunk = fasta_file.split('/')[-1].rsplit('.',1)[0]
         output_path = f'{env.out_dir}/{infile_trunk}'
 
-        # can we somehow individualize this based on the file ? -- see mmseqs documentation for details on additional options ['--similarity-type', '2', '-c', '1.0',]
-    cmds = [env.mmseqs2_path, 'easy-linclust', fasta_file, output_path, env.tmp_folder,'--single-step-clustering', '--min-seq-id', str(seq_id_threshold)]
+        # can we somehow individualize this based on the file ? -- see mmseqs documentation for details on additional options [ '-c', '1.0',]
+    cmds = [env.mmseqs2_path, 'easy-cluster', fasta_file, output_path, env.tmp_folder,'--single-step-clustering', '--similarity-type', '2', '--min-seq-id', str(seq_id_threshold)]
 
     if silenced:
         FNULL = open(os.devnull, 'w')
