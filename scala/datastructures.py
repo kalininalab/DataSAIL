@@ -254,6 +254,9 @@ class Sequence_cluster_tree:
 
         self.root = self.nodes[potential_final_root]
 
+        if len(self.nodes) < 1388:
+            warnings.warn("lost sequences while building the tree")
+
     def get_new_node_id(self):
         self.current_node_id += 1
         return self.current_node_id
