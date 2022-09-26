@@ -67,9 +67,10 @@ def main():
     parser.add_argument("-v", help="verbosity level - range: [0 - 5] - default: 1", default=1, dest='verbosity', action='store', type=int)
     parser.add_argument("-w", help="directory to weight file (.tsv) Format: [Sequence ID (corresponding to given input file)]tab[weight value]", dest='weight_file', action='store')
     parser.add_argument("-lw", help="sequence length weighting - default: False", dest='length_weighting', default = False, action='store', type=bool)
+    parser.add_argument("-tree", help="print tree file - default: False", dest='tree_file', default=False, action='store', type=bool)
     args = parser.parse_args()
 
-    env = Environment(args.input, args.output, args.tr_size, args.te_size, fuse_seq_id_threshold = args.seq_id_threshold, verbosity = args.verbosity, weight_file = args.weight_file, length_weighting = args.length_weighting)
+    env = Environment(args.input, args.output, args.tr_size, args.te_size, fuse_seq_id_threshold = args.seq_id_threshold, verbosity = args.verbosity, weight_file = args.weight_file, length_weighting = args.length_weighting, tree_file=env.write_tree_file)
 
     validation_set, train_test_pairs = core_routine(env, return_lists=True)
 
