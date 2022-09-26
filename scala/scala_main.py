@@ -36,9 +36,9 @@ def core_routine(env, return_lists = False):
     sequence_map = parseFasta(path=env.input_file, check_dups = True)
     seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = env.input_file)
 
-    if len(seq_tree.nodes) < len(sequence_map):
+    if len(seq_tree.nodes) < 1388:
         warnings.warn("lost sequences building the tree")
-        
+
     if env.write_tree_file:
         seq_tree.write_dot_file(f'{env.out_dir}/tree.txt', env)
 
