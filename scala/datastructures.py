@@ -10,7 +10,7 @@ from scala.utils import randomString, seqMapToFasta, call_mmseqs_clustering, BLO
 
 class Environment:
     # storing all the variables & path directories
-    def __init__(self, input_file, out_dir, tr_size, te_size, fuse_seq_id_threshold = 1.0, verbosity = 1, weight_file = None, length_weighting = False):
+    def __init__(self, input_file, out_dir, tr_size, te_size, fuse_seq_id_threshold = 1.0, verbosity = 1, weight_file = None, length_weighting = False, tree_file = False):
         self.input_file = input_file
 
         self.out_dir = out_dir
@@ -39,7 +39,7 @@ class Environment:
         self.mmseqs2_path = 'mmseqs'
 
         self.verbosity = verbosity
-        self.write_tree_file = False
+        self.write_tree_file = tree_file
 
 class Mmseqs_cluster:
     #make mmseqs output files accessible

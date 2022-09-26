@@ -70,7 +70,7 @@ def main():
     parser.add_argument("-tree", help="print tree file - default: False", dest='tree_file', default=False, action='store', type=bool)
     args = parser.parse_args()
 
-    env = Environment(args.input, args.output, args.tr_size, args.te_size, fuse_seq_id_threshold = args.seq_id_threshold, verbosity = args.verbosity, weight_file = args.weight_file, length_weighting = args.length_weighting, tree_file=env.write_tree_file)
+    env = Environment(args.input, args.output, args.tr_size, args.te_size, fuse_seq_id_threshold = args.seq_id_threshold, verbosity = args.verbosity, weight_file = args.weight_file, length_weighting = args.length_weighting, tree_file=args.write_tree_file)
 
     validation_set, train_test_pairs = core_routine(env, return_lists=True)
 
