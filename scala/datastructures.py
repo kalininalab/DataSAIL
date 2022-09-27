@@ -116,13 +116,24 @@ def initialize_weighting(env, sequence_map):
 
     return weight_vector
 
-def parse_weight_file(path):
-    weight_vector = {}
-#TODO: read the lines with open() to also catch comma separated or other file formats
-    weight_file = pd.read_csv(path, sep='\t')
 
-    for i in range(len(weight_file)):
-        weight_vector[weight_file.iloc[i][0]]=weight_file.iloc[i][1]
+def parse_weight_file(path):
+    with open(path) as f:
+        lines = f.readlines()
+
+        weight_vector = {}
+
+        if lines[0].find('\t'):
+            for line in lines:
+                targetid, weight = line.strip().split('\t')
+                weight_vector[targetid]=weight
+
+        elif lines[0].find(','):
+            for line in lines:
+                targetid, weight = line.strip().split(',')
+                weight_vector[targetid]=weight
+
+
     return weight_vector
 
 
