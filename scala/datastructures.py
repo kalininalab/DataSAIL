@@ -124,12 +124,12 @@ def parse_weight_file(path):
         weight_vector = {}
 
         if lines[0].find('\t'):
-            for line in lines:
+            for line in lines[1:]:
                 targetid, weight = line.strip().split('\t')
                 weight_vector[targetid]=weight
 
         elif lines[0].find(','):
-            for line in lines:
+            for line in lines[1:]:
                 targetid, weight = line.strip().split(',')
                 weight_vector[targetid]=weight
 
