@@ -133,7 +133,6 @@ def parse_weight_file(path):
                 targetid, weight = line.strip().split(',')
                 weight_vector[targetid]=weight
 
-
     return weight_vector
 
 
@@ -265,7 +264,7 @@ class Sequence_cluster_tree:
 
         self.root = self.nodes[potential_final_root]
 
-        if len(self.nodes) < 1388:
+        if len(self.nodes) < 1388: #current amount of sequences
             warnings.warn("lost sequences while building the tree")
 
     def get_new_node_id(self):
