@@ -75,12 +75,14 @@ def parse_args():
 
 def validate_args(args):
     logging.basicConfig(level=verb_map[args.verbosity])
-    if os.path.exists(args.input):
-        logging.error("Protein input does not exist.")
+    if not os.path.exists(args.input):
+        logging.error("The protein file does not exist.")
         exit(5)
     if args.weight_file is not None and not os.path.exists(args.weight_file):
         logging.error(f"Weight file {args.weight_file} for protein weighting does not exist.")
         exit(6)
+
+    os.makedirs(args.output, exist_ok=True)
 
 
 def main():
