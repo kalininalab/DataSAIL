@@ -1,12 +1,8 @@
 from setuptools import setup, find_packages
 
-path_to_readme = "ReadMe.txt"
 
-if path_to_readme is not None:
-    with open(path_to_readme, "r") as desc_file:
-        long_description = desc_file.read()
-else:
-    long_description = ''
+with open("README.md", "r") as desc_file:
+    long_description = desc_file.read()
 
 path_to_version_file = "./misc/_version.py"
 
@@ -15,21 +11,20 @@ with open(path_to_version_file) as version_file:
 
 setup(
     name="SCALA",
-    version=__version__,
+    version="0.0.1",
     description="Sequence Clustering Against Leaking informAtion",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license='LGPL-2.1',
-    author="Anne Tolkmitt, Alexander Gress",
-    maintainer="Anne Tolkmitt, Alexander Gress",
+    author="Roman Joeres, Anne Tolkmitt, Alexander Gress",
+    maintainer="Roman Joeres, Anne Tolkmitt, Alexander Gress",
 
     classifiers=[
         "Development Status :: 4 - Beta",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Intended Audience :: Science/Research",
         "Natural Language :: English",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
@@ -38,7 +33,7 @@ setup(
     setup_requires=['setuptools_scm'],
     include_package_data=True,
     install_requires=[
-        "biopython>=1.79",
+        "biopython>=1.78",
         "matplotlib>=3.3.2",
         "numpy>=1.22.3",
         "psutil>=5.8.0",
