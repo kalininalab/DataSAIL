@@ -34,6 +34,7 @@ setup(
         "psutil>=5.8.0",
         "pandas>=1.3.3",
         "autopep8>=1.5.7",
+        "ortools~=9.4.1874",
     ],
 
     package_data={

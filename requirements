@@ -1,0 +1,5 @@
+numpy~=1.19.2
+ortools~=9.4.1874
+pandas~=1.3.3
+setuptools~=65.5.0
+sortedcontainers~=2.4.0

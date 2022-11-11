@@ -1,11 +1,13 @@
 from typing import Tuple, Generator, Dict, List, Union
 
+from sortedcontainers import SortedList
+
 
 def read_data(args) -> Dict[str, Union[List, Dict]]:
     data = {}
 
     if args.inter is not None:
-        data["interactions"] = list(read_csv(args.inter, args.header, args.sep))
+        data["interactions"] = SortedList(read_csv(args.inter, args.header, args.sep))
 
     if args.drugs is not None:
         data["drugs"] = dict(read_csv(args.drugs, args.header, args.sep))

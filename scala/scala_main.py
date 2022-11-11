@@ -75,6 +75,7 @@ def parse_args():
 
 def validate_args(args):
     logging.basicConfig(level=verb_map[args.verbosity])
+    logging.info("Validating arguments")
     if not os.path.exists(args.input):
         logging.error("The protein file does not exist.")
         exit(5)
