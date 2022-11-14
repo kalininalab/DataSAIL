@@ -4,10 +4,6 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as desc_file:
     long_description = desc_file.read()
 
-path_to_version_file = "./misc/_version.py"
-
-with open(path_to_version_file) as version_file:
-    exec(version_file.read().strip())
 
 setup(
     name="SCALA",

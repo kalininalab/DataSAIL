@@ -32,8 +32,8 @@ def seq_map_to_fasta(seq_map, outfile, subset=None):
 
     with open(outfile, 'w') as f:
         for prot_id in iterator:
-            f.write(f">{prot_id}")
-            f.write(f"{seq_map[prot_id]}")
+            f.write(f">{prot_id}\n")
+            f.write(f"{seq_map[prot_id]}\n")
 
 
 def parse_fasta(path=None, left_split=None, right_split=' ', check_dups=False):

@@ -8,7 +8,7 @@ import pandas as pd
 from Bio import pairwise2
 
 from scala.utils.blossum62 import BLOSUM62
-from scala.utils.mmseqs import mmseqs_clustering
+from scala.utils.mmseqs import mmseqs_clustering, call_mmseqs_clustering
 from scala.utils.utils import random_string, seq_map_to_fasta, get_cov_seq_ident, parse_fasta
 
 
@@ -41,29 +41,64 @@ def print_output(validation_set, train_test_pairs, seq_tree):
     print('Train set:')
     print(bin_list_to_prot_list(train_set, seq_tree.nodes))
 
-
-def transform_output(validation_set, train_test_pairs, seq_tree):
+def transform_output(validation_set, train_test_pairs, seq_tree, subslices = None, verbosity = 0):
     tr_validation_set = bin_list_to_prot_list(validation_set, seq_tree.nodes)
     tr_train_test_pairs = []
     for train_set, test_set in train_test_pairs:
-        tr_train_test_pairs.append(
-            (bin_list_to_prot_list(train_set, seq_tree.nodes), bin_list_to_prot_list(test_set, seq_tree.nodes)))
+        tr_train_test_pairs.append((bin_list_to_prot_list(train_set, seq_tree.nodes), bin_list_to_prot_list(test_set, seq_tree.nodes)))
+
+    if subslices is not None:
+        transformed_subslices = []
+        for subslice in subslices:
+            transformed_subslices.append(bin_list_to_prot_list([subslice], seq_tree.nodes))
+        if verbosity >= 3:
+            print(f'SCALA output with sublices:')
+            print(f'Validation set:\n{tr_validation_set}')
+            print(f'Train Test Pairs:\n{tr_train_test_pairs}')
+            print(f'Sublices:\ntransformed_subslices')
+        return tr_validation_set, tr_train_test_pairs, transformed_subslices
+
+    if verbosity >= 3:
+        print(f'SCALA output:')
+        print(f'Validation set:\n{tr_validation_set}')
+        print(f'Train Test Pairs:\n{tr_train_test_pairs}')
     return tr_validation_set, tr_train_test_pairs
 
 
-def core_routine(env, return_lists=False):
-    sequence_map = parse_fasta(path=env.input_file, check_dups=True)
-    seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file=env.input_file)
+def core_routine(env, return_lists = False, add_subslice = False):
+    if env.verbosity >= 2:
+        print(f'Core routine step 1: parse input - {env.input_file}')
+    sequence_map = parse_fasta(path=env.input_file, check_dups = True)
+
+    if env.verbosity >= 2: 
+        print('Core routine step 2: sequence cluster tree creation')
+    seq_tree = Sequence_cluster_tree(sequence_map, env, initial_fasta_file = env.input_file)
 
     if env.write_tree_file:
         seq_tree.write_dot_file(f'{env.out_dir}/tree.txt', env)
 
+    if env.verbosity >= 3:
+        print('Sequence tree print out:')
+        seq_tree.print_tree()
+
+    if env.verbosity >= 2: 
+        print('Core routine step 3: bin splitting')
     bins = seq_tree.split_into_bins()
 
-    validation_set, train_test_pairs = group_bins(bins, env, seq_tree)
+    if env.verbosity >= 3:
+        for bi in bins:
+            bi.print_out(seq_tree.nodes)
+
+    if env.verbosity >= 2: 
+        print('Core routine step 4: bin grouping')
+    if add_subslice:
+        validation_set, train_test_pairs, subslices = group_bins(bins, env, seq_tree, add_subslice = True)
+    else:
+        validation_set, train_test_pairs = group_bins(bins, env, seq_tree, add_subslice = False)
+        subslices = None
 
     if return_lists:
-        return transform_output(validation_set, train_test_pairs, seq_tree)
+        return transform_output(validation_set, train_test_pairs, seq_tree, subslices = subslices, verbosity = env.verbosity)
 
     return validation_set, train_test_pairs
 
@@ -162,8 +197,7 @@ def get_mmseqs_cluster(env, input_file, seq_id_threshold=0.0, cleanup=True):
     Returns:
 
     """
-    cluster_file, rep_seq_file, all_seq_file = mmseqs_clustering(input_file, env.tmp_dir,
-                                                                 seq_id_threshold=seq_id_threshold)
+    cluster_file, rep_seq_file, all_seq_file = call_mmseqs_clustering(env, input_file, seq_id_threshold = seq_id_threshold)
     cluster_obj = MmseqsCluster(cluster_file, seq_id_threshold)
 
     if cleanup:
@@ -248,9 +282,9 @@ def fuse_check(prot_a, prot_b, sequence_map, env):
 
 
 class Sequence_cluster_tree:
+
     class Node:
-        # one Node representing one Sequence
-        def __init__(self, label, rep, weight, children=None, fused_children=None):
+        def __init__(self, label, rep, weight, children = None, fused_children = None):
             self.label = label
             self.rep = rep
             self.weight = weight
@@ -286,12 +320,13 @@ class Sequence_cluster_tree:
                     prot_ids += nodes[child].get_all_prot_ids(nodes)
                 return prot_ids
 
-        def print_cascade(self, nodes, level=0):
-            print(f'{" " * level}{self.get_fused_label()}')
+        def print_cascade(self, nodes, level = 0):
+            print(f'{" "*level}{self.get_fused_label()}')
             for child in self.children:
-                nodes[child].print_cascade(nodes, level=level + 1)
+                nodes[child].print_cascade(nodes, level = level+1)
 
-    def __init__(self, sequence_map, env, initial_fasta_file=None):
+
+    def __init__(self, sequence_map, env, initial_fasta_file = None):
 
         if env.verbosity >= 1:
             print(f'Creating new sequence cluster tree: {initial_fasta_file}')
@@ -304,13 +339,12 @@ class Sequence_cluster_tree:
         else:
             fasta_file = make_fasta(sequence_map, env)
 
-        # first cluster step with initial file
-        cluster_obj = get_mmseqs_cluster(env, fasta_file, seq_id_threshold=(env.fuse_seq_id_threshold / 2))
+        cluster_obj = get_mmseqs_cluster(env, fasta_file, seq_id_threshold = (env.fuse_seq_id_threshold/2))
 
         if env.verbosity >= 3:
             t1 = time.time()
             cluster_obj.print_all()
-            print(f'Initial mmseqs call: {t1 - t0}\n')
+            print(f'Initial mmseqs call: {t1-t0}\n')
 
         if initial_fasta_file is None:
             if env.verbosity >= 1:
@@ -320,18 +354,17 @@ class Sequence_cluster_tree:
         self.current_node_id = 0
         self.nodes = {}
 
-        # analyze initial cluster results
         roots, broad_nodes, potential_final_root = self.process_cluster(cluster_obj, sequence_map, env)
 
         if env.verbosity >= 3:
             t2 = time.time()
-            print(f'Initial process_cluster: {t2 - t1}\n{roots}\n{broad_nodes}')
+            print(f'Initial process_cluster: {t2-t1}\n{roots}\n{broad_nodes}')
 
         while len(roots) > 1 or len(broad_nodes) > 0:
             if env.verbosity >= 3:
                 tl0 = time.time()
-            fasta_file = make_fasta(sequence_map, env, subset=self.get_reps(roots))
-            cluster_obj = get_mmseqs_cluster(env, fasta_file, seq_id_threshold=0.0)
+            fasta_file = make_fasta(sequence_map, env, subset = self.get_reps(roots))
+            cluster_obj = get_mmseqs_cluster(env, fasta_file, seq_id_threshold = 0.0)
             os.remove(fasta_file)
 
             new_roots, new_broad_nodes, potential_final_root = self.process_cluster(cluster_obj, sequence_map, env)
@@ -341,16 +374,15 @@ class Sequence_cluster_tree:
 
             for rep in broad_nodes:
                 members, node_id = broad_nodes[rep]
-                fasta_file = make_fasta(sequence_map, env, subset=self.get_reps(members))
-                cluster_obj = get_mmseqs_cluster(env, fasta_file, seq_id_threshold=env.fuse_seq_id_threshold)
+                fasta_file = make_fasta(sequence_map, env, subset = self.get_reps(members))
+                cluster_obj = get_mmseqs_cluster(env, fasta_file, seq_id_threshold = env.fuse_seq_id_threshold)
                 os.remove(fasta_file)
 
                 if env.verbosity >= 4:
                     print(f'Member clustering:\n{members}, {node_id}')
                     cluster_obj.print_all()
 
-                even_more_new_roots, even_more_new_broad_nodes, _ = self.process_cluster(cluster_obj, sequence_map, env,
-                                                                                         add_to_node=node_id)
+                even_more_new_roots, even_more_new_broad_nodes, _ = self.process_cluster(cluster_obj, sequence_map, env, add_to_node = node_id)
 
                 if env.verbosity >= 4:
                     print(f'New roots coming from members:\n{even_more_new_roots}\n{even_more_new_broad_nodes}\n')
@@ -369,12 +401,9 @@ class Sequence_cluster_tree:
 
             if env.verbosity >= 3:
                 tl1 = time.time()
-                print(f'Next iteration of process_cluster: {tl1 - tl0}\n{roots}\n{broad_nodes}\n')
+                print(f'Next iteration of process_cluster: {tl1-tl0}\n{roots}\n{broad_nodes}\n')
 
         self.root = self.nodes[potential_final_root]
-
-        if len(self.nodes) < 1388:  # current amount of sequences
-            warnings.warn("lost sequences while building the tree")
 
     def get_new_node_id(self):
         self.current_node_id += 1
@@ -406,7 +435,21 @@ class Sequence_cluster_tree:
                 reps.append(node_id)
         return reps
 
-    def create_fused_node(self, rep, members, roots, add_to_node=None):
+    def fuse_check(self, prot_a, prot_b, sequence_map, env):
+        seq_a = sequence_map[prot_a].replace('*','')
+        seq_b = sequence_map[prot_b].replace('*','')
+        if env.fuse_seq_id_threshold == 1.0:
+            return seq_a == seq_b
+        else:
+            try:
+                (target_aligned_sequence, template_aligned_sequence, a, b, c) = pairwise2.align.globalds(seq_a, seq_b, BLOSUM62, -2.0, -0.5, one_alignment_only=True)[0]
+            except:
+                print(f'Alignment failed: {prot_a} {prot_b}\n\n{seq_a}\n\n{seq_b}')
+            (aln_length, seq_id) = getCovSI(len(target_aligned_sequence), target_aligned_sequence, template_aligned_sequence)
+
+            return seq_id >= env.fuse_seq_id_threshold
+
+    def create_fused_node(self, rep, members, roots, add_to_node = None):
 
         children_nodes = []
 
@@ -419,52 +462,52 @@ class Sequence_cluster_tree:
                 self.delete_node(member)
             else:
                 fused_weight += self.weight_vector[member]
-        # Create the fused node (which is a leaf)
+        #Create the fused node (which is a leaf)
         new_node_id = self.get_new_node_id()
-        new_node = self.Node(new_node_id, rep, fused_weight, fused_children=children_nodes)
+        new_node = self.Node(new_node_id, rep, fused_weight, fused_children = children_nodes)
         self.nodes[new_node_id] = new_node
 
-        if add_to_node is not None:  # If preselected parent exists ...
+
+        if add_to_node is not None:  #If preselected parent exists ...
             self.nodes[add_to_node].children.append(new_node_id)
             self.set_parent(new_node_id, add_to_node)
-        else:  # Else, send the representative to a new round of clustering with lower sequence id threshold
+        else: #Else, send the representative to a new round of clustering with lower sequence id threshold
             roots.append(new_node_id)
         return roots
 
-    def process_cluster(self, cluster_obj, sequence_map, env, add_to_node=None):
+    def process_cluster(self, cluster_obj, sequence_map, env, add_to_node = None):
         roots = []
         broad_nodes = {}
 
         for rep in cluster_obj.clusters:
 
             members = cluster_obj.clusters[rep]
-            if len(members) == 1:  # A cluster with one member becomes a leaf node
-                # Create the leaf
+            if len(members) == 1: #A cluster with one member becomes a leaf node
+                #Create the leaf
                 if not rep in self.nodes:
                     self.nodes[rep] = self.Node(rep, rep, self.weight_vector[rep])
 
-                if add_to_node is not None:  # If preselected parent exists ...
-                    # Connect new parent node to preselected parent
+                if add_to_node is not None: #If preselected parent exists ...
+                    #Connect new parent node to preselected parent
                     self.nodes[add_to_node].children.append(rep)
                     self.set_parent(rep, add_to_node)
-                else:  # Else, send the representative to a new round of clustering with lower sequence id threshold
+                else: #Else, send the representative to a new round of clustering with lower sequence id threshold
                     roots.append(rep)
 
-            elif cluster_obj.seq_id_threshold == env.fuse_seq_id_threshold:  # A cluster with more than two members get fused, if the sequence threshold reached the fusing threshold parameter (since they are undistinguishable)
-                roots = self.create_fused_node(rep, members, roots, add_to_node=add_to_node)
+            elif cluster_obj.seq_id_threshold == env.fuse_seq_id_threshold: #A cluster with more than two members get fused, if the sequence threshold reached the fusing threshold parameter (since they are undistinguishable)
+                roots = self.create_fused_node(rep, members, roots, add_to_node = add_to_node)
 
-            elif len(members) == 2:  # A cluster with exactly two members is transformed into a node with two leafs
+            elif len(members) == 2: #A cluster with exactly two members is transformed into a node with two leafs
 
-                if fuse_check(members[0], members[1], sequence_map,
-                                   env):  # Or, if they are undistinguishable, fuse them and create a leaf
-                    roots = self.create_fused_node(rep, members, roots, add_to_node=add_to_node)
+                if self.fuse_check(members[0], members[1], sequence_map, env): #Or, if they are undistinguishable, fuse them and create a leaf
+                    roots = self.create_fused_node(rep, members, roots, add_to_node = add_to_node)
                 else:
                     children_nodes = []
                     new_node_id = self.get_new_node_id()
 
                     fused_weight = 0
                     for member in members:
-                        if not member in self.nodes:  # create a leave and put it to the children list
+                        if not member in self.nodes: #create a leave and put it to the children list
                             self.nodes[member] = self.Node(member, member, self.weight_vector[member])
                             fused_weight += self.weight_vector[member]
                         else:
@@ -472,25 +515,25 @@ class Sequence_cluster_tree:
                         children_nodes.append(member)
                         self.set_parent(member, new_node_id)
 
-                    # Create the parent node
-                    new_node = self.Node(new_node_id, rep, fused_weight, children=children_nodes)
+                    #Create the parent node
+                    new_node = self.Node(new_node_id, rep, fused_weight, children = children_nodes)
                     self.nodes[new_node_id] = new_node
 
-                    if add_to_node is not None:  # If preselected parent exists ...
-                        # Connect new parent node to preselected parent
+                    if add_to_node is not None: #If preselected parent exists ...
+                        #Connect new parent node to preselected parent
                         self.nodes[add_to_node].children.append(new_node_id)
                         self.set_parent(new_node_id, add_to_node)
-                    else:  # Else, send the representative to a new round of clustering with lower sequence id threshold
+                    else: #Else, send the representative to a new round of clustering with lower sequence id threshold
                         roots.append(new_node_id)
 
-            else:  # A cluster with more than one member gets clustered again with higher sequence identity threshold. A parent node needs to be created and handed down as preselected parent
-                # Create the parent node
+            else: #A cluster with more than one member gets clustered again with higher sequence identity threshold. A parent node needs to be created and handed down as preselected parent
+                #Create the parent node
                 children_nodes = []
                 new_node_id = self.get_new_node_id()
 
                 fused_weight = 0
                 for member in members:
-                    if not member in self.nodes:  # create a leave and put it to the children list
+                    if not member in self.nodes: #create a leave and put it to the children list
                         self.nodes[member] = self.Node(member, member, self.weight_vector[member])
                         fused_weight += self.weight_vector[member]
                     else:
@@ -498,18 +541,18 @@ class Sequence_cluster_tree:
                     children_nodes.append(member)
                     self.set_parent(member, new_node_id)
 
-                new_node = self.Node(new_node_id, rep, fused_weight, children=children_nodes)
+                new_node = self.Node(new_node_id, rep, fused_weight, children = children_nodes)
                 self.nodes[new_node_id] = new_node
 
-                if add_to_node is not None:  # If preselected parent exists ...
-                    # Connect new parent node to preselected parent
+                if add_to_node is not None:  #If preselected parent exists ...
+                    #Connect new parent node to preselected parent
                     self.nodes[add_to_node].children.append(new_node_id)
                     self.set_parent(new_node_id, add_to_node)
 
-                else:  # Else, send the representative to a new round of clustering with lower sequence id threshold
+                else: #Else, send the representative to a new round of clustering with lower sequence id threshold
                     roots.append(new_node_id)
 
-                # broad_nodes gets clustered again
+                #broad_nodes gets clustered again
                 broad_nodes[rep] = members, new_node_id
 
         if add_to_node is not None:
@@ -544,12 +587,12 @@ class Sequence_cluster_tree:
 
             new_node_id = self.get_new_node_id()
             self.set_parent(rep_b, new_node_id)
-            new_node = self.Node(new_node_id, rep_b, self.nodes[left_node_id].weight + self.nodes[rep_b].weight,
-                                 children=children_nodes)
+            new_node = self.Node(new_node_id, rep_b, self.nodes[left_node_id].weight + self.nodes[rep_b].weight, children = children_nodes)
             self.nodes[new_node_id] = new_node
             left_node_id = new_node_id
 
         return new_node_id
+
 
     def print_tree(self):
         self.root.print_cascade(self.nodes)
@@ -569,11 +612,11 @@ class Sequence_cluster_tree:
         f.close()
 
         f = open(f'{env.out_dir}/tree_{env.fuse_seq_id_threshold}.png', 'w')
-        p = subprocess.Popen(['dot', '-Tpng', outfile], stdout=f)
+        p = subprocess.Popen(['dot', '-Tpng', outfile], stdout = f)
         p.wait()
         f.close()
 
-    def split_into_bins(self, bin_weight_variance_threshhold=0.1, wished_amount_of_bins=20):
+    def split_into_bins(self, bin_weight_variance_threshhold = 0.1, wished_amount_of_bins = 20):
         nodes_todo = [self.root]
         done = []
         bins = []
@@ -583,8 +626,8 @@ class Sequence_cluster_tree:
 
         ideal_bin_weight = total_weight / wished_amount_of_bins
 
-        lower_weight_thresh = ideal_bin_weight * (1.0 - bin_weight_variance_threshhold)
-        upper_weight_thresh = ideal_bin_weight * (1.0 + bin_weight_variance_threshhold)
+        lower_weight_thresh = ideal_bin_weight*(1.0-bin_weight_variance_threshhold)
+        upper_weight_thresh = ideal_bin_weight*(1.0+bin_weight_variance_threshhold)
 
         while len(nodes_todo) > 0:
 
@@ -597,8 +640,8 @@ class Sequence_cluster_tree:
                     bins.append(prelim_bin)
                     prelim_bin = Bin()
 
-            elif node_weight < upper_weight_thresh:
-                bins.append(Bin(members=[current_node]))
+            elif node_weight < upper_weight_thresh or current_node.isLeaf():
+                bins.append(Bin(members = [current_node]))
 
             else:
                 for child in current_node.children:
@@ -612,7 +655,7 @@ class Sequence_cluster_tree:
 
 ######### not the class anymore
 
-def group_bins(bins, env, seq_tree):
+def group_bins(bins, env, seq_tree, add_subslice = False):
     val_size = (seq_tree.root.weight * env.val_size) / 100
     test_size = (seq_tree.root.weight * env.te_size) / 100
     train_size = (seq_tree.root.weight * env.tr_size) / 100
@@ -632,6 +675,7 @@ def group_bins(bins, env, seq_tree):
                 bins.append(prot_bin)
                 break
 
+    subslices = []
     train_test_pairs = []
     current_test_set = {}
     current_weight = 0
@@ -645,29 +689,43 @@ def group_bins(bins, env, seq_tree):
         else:
             test_set = current_test_set.values()
             train_set = []
+            subslice = None
             for inner_bin_number, inner_prot_bin in enumerate(bins):
                 if inner_bin_number in current_test_set:
                     continue
                 train_set.append(inner_prot_bin)
+                if len(train_set) == 2 and subslice is None:
+                    subslice = inner_prot_bin
+            if add_subslice:
+                subslices.append(subslice)
             train_test_pairs.append((train_set, test_set))
-            current_test_set = {bin_number: prot_bin}
+            current_test_set = {bin_number:prot_bin}
             current_weight = prot_bin.weight
 
     if len(current_test_set) > 0:
         test_set = current_test_set.values()
         train_set = []
+        subslice = None
         for inner_bin_number, inner_prot_bin in enumerate(bins):
             if inner_bin_number in current_test_set:
                 continue
             train_set.append(inner_prot_bin)
+            if len(train_set) == 2 and subslice is None:
+                subslice = inner_prot_bin
+        if add_subslice:
+            subslices.append(subslice)
         train_test_pairs.append((train_set, test_set))
 
+    if add_subslice:
+        return validation_set, train_test_pairs, subslices
     return validation_set, train_test_pairs
 
 
 def bin_list_to_prot_list(bins, nodes):
     prot_ids = []
     for prot_bin in bins:
+        if prot_bin is None:
+            continue
         prot_ids += prot_bin.list_prot_ids(nodes)
 
     return prot_ids
@@ -676,7 +734,7 @@ def bin_list_to_prot_list(bins, nodes):
 class Bin:
     def __init__(self, label=None, members=None, neighbors=None):
 
-        if label == None:
+        if label==None:
             self.label = ''
         else:
             self.label = label
@@ -704,7 +762,7 @@ class Bin:
         self.weight += member.weight
 
     def add_members(self, new_members):
-        for mem in new_members:
+         for mem in new_members:
             self.add_member(mem)
 
     def list_prot_ids(self, nodes):
@@ -712,3 +770,8 @@ class Bin:
         for mem in self.members:
             prot_ids += mem.get_all_prot_ids(nodes)
         return prot_ids
+
+    def print_out(self, nodes):
+        print(f'Printing status of Bin {self.label}')
+        for pos, member in enumerate(self.members):
+            print(f'Member {pos}: {member.get_all_prot_ids(nodes)}')
