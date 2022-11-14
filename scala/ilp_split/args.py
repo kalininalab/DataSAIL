@@ -94,6 +94,20 @@ def ilp_args(parser: ArgumentParser):
         type=str,
         help="Names of the splits in order of the -s argument."
     )
+    ilp.add_argument(
+        "--to_sec",
+        default=120,
+        dest="max_sec",
+        type=int,
+        help="Maximal time to run optimization algorithm in seconds."
+    )
+    ilp.add_argument(
+        "--to_sol",
+        default=10,
+        dest="max_sol",
+        type=int,
+        help="Maximal number of solutions to compute until end of search (in case no optimum was found)."
+    )
 
 
 def validate_args(args):

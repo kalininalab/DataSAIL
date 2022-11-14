@@ -4,9 +4,53 @@ from typing import Dict, List, Optional, Tuple, Set
 
 import numpy as np
 from ortools.linear_solver import pywraplp
+from ortools.sat.python import cp_model
 from sortedcontainers import SortedList
 
+from scala.ilp_split.ilps.id_cold_double import solve_mpk_ilp_ic
+from scala.ilp_split.ilps.id_cold_single import solve_mpk_ilp_icx
 from scala.ilp_split.read_data import read_data
+
+
+ALGORITHM = "CP_SAT"
+
+
+class MaxSolutionTerminator(cp_model.CpSolverSolutionCallback):
+    def __init__(self, max_sol):
+        super(MaxSolutionTerminator, self).__init__()
+        self.__sol_count = 0
+        self.__max_num_sol = max_sol
+
+    def on_solution_callback(self):
+        self.__sol_count += 1
+        if self.__sol_count >= self.__max_num_sol:
+            self.StopSearch()
+
+    def solution_count(self):
+        return self.__sol_count
+
+
+class SATObjectiveCallback(cp_model.CpSolverSolutionCallback):
+    def __init__(self, max_sol, objective, variables):
+        super(SATObjectiveCallback, self).__init__()
+
+        self.__sol_count = 0
+        self.__max_num_sol = max_sol
+
+        self.__objective = objective
+        self.__variables = variables
+        self.best_score = 0
+        # self.best_sol = 0
+
+    def on_solution_callback(self):
+        self.__sol_count += 1
+
+        score = self.__objective(self.Value(v) for v in self.__variables)
+        if score > self.best_score:
+            self.best_score = score
+
+        if self.__sol_count >= self.__max_num_sol:
+            self.StopSearch()
 
 
 def ilp_main(args):
@@ -32,6 +76,8 @@ def ilp_main(args):
             args.limit,
             args.splits,
             args.names,
+            args.max_sec,
+            args.max_sol,
         )
     if args.technique == "ICP":
         prot = SortedList(data["proteins"].keys())
@@ -41,6 +87,8 @@ def ilp_main(args):
             args.limit,
             args.splits,
             args.names,
+            args.max_sec,
+            args.max_sol,
         )
     if args.technique == "IC":
         solution = solve_mpk_ilp_ic(
@@ -52,6 +100,8 @@ def ilp_main(args):
             args.limit,
             args.splits,
             args.names,
+            args.max_sec,
+            args.max_sol,
         )
         if solution is not None:
             output["inter"], output["drugs"], output["proteins"] = solution
@@ -115,166 +165,3 @@ def sample_categorical(
     for i, split in enumerate(gen()):
         output += [(d, p, names[i]) for d, p in split]
     return output
-
-
-def solve_mpk_ilp_icx(
-        molecules: SortedList,
-        weights: List[float],
-        limit: float,
-        splits: List[float],
-        names: List[str],
-) -> Optional[Dict[str, str]]:
-    # np.random.shuffle(molecules)
-    d = {
-        "weights": weights,
-        "values": weights,
-        "num_items": len(molecules),
-        "all_items": range(len(molecules)),
-        "bin_capacities": [s * sum(weights) * (1 + limit) for s in splits],
-        "num_bins": len(splits),
-        "all_bins": range(len(splits)),
-    }
-
-    # Create the mip solver with the SCIP backend.
-    solver = pywraplp.Solver.CreateSolver('SCIP')
-    if solver is None:
-        print('SCIP solver unavailable.')
-        return None
-
-    # Variables.
-    # x[i, b] = 1 if item i is packed in bin b.
-    x = {}
-    for i in d['all_items']:
-        for b in d['all_bins']:
-            x[i, b] = solver.BoolVar(f'x_{i}_{b}')
-
-    # Constraints.
-    # Each item is assigned to at most one bin.
-    for i in d['all_items']:
-        solver.Add(sum(x[i, b] for b in d['all_bins']) <= 1)
-
-    # The amount packed in each bin cannot exceed its capacity.
-    for b in d['all_bins']:
-        solver.Add(sum(x[i, b] * d['weights'][i] for i in d['all_items']) <= d['bin_capacities'][b])
-
-    # Objective. Maximize total value of packed items.
-    objective = solver.Objective()
-    for i in d['all_items']:
-        for b in d['all_bins']:
-            objective.SetCoefficient(x[i, b], d['values'][i])
-    objective.SetMaximization()
-
-    status = solver.Solve()
-
-    output = {}
-    if status == pywraplp.Solver.OPTIMAL:
-        for b in d['all_bins']:
-            for i in d['all_items']:
-                if x[i, b].solution_value() > 0:
-                    output[molecules[i]] = names[b]
-        return output
-    else:
-        logging.warning(
-            'The ILP cannot be solved. Please consider a relaxed clustering, i.e., more clusters, or a higher limit.'
-        )
-    return None
-
-
-def solve_mpk_ilp_ic(
-        drugs: SortedList,
-        drug_weights: Dict[str, float],
-        proteins: SortedList,
-        protein_weights: Dict[str, float],
-        inter: Set[Tuple[str, str]],
-        limit: float,
-        splits: List[float],
-        names: List[str],
-) -> Optional[List[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
-    # Create the mip solver with the SCIP backend.
-    solver = pywraplp.Solver.CreateSolver('SCIP')
-    if solver is None:
-        print('SCIP solver unavailable.')
-        return None
-
-    # Variables.
-    # x[i, b] = 1 if item i is packed in bin b.
-    x_d = {}
-    for i in range(len(drugs)):
-        for b in range(len(splits)):
-            x_d[i, b] = solver.BoolVar(f'x_d_{i}_{b}')
-    x_p = {}
-    for j in range(len(proteins)):
-        for b in range(len(splits)):
-            x_p[j, b] = solver.BoolVar(f'x_p_{j}_{b}')
-    x_e = {}
-    for i, drug in enumerate(drugs):
-        for j, protein in enumerate(proteins):
-            if (drug, protein) in inter:
-                x_e[i, j] = solver.BoolVar(f'x_e_{i}_{j}')
-
-    for i in range(len(drugs)):
-        solver.Add(sum(x_d[i, b] for b in range(len(splits))) <= 1)
-    for j in range(len(proteins)):
-        solver.Add(sum(x_p[j, b] for b in range(len(splits))) <= 1)
-
-    for b in range(len(splits)):
-        solver.Add(
-            sum(x_d[i, b] * drug_weights[drugs[i]]
-                for i in range(len(drugs))) <= splits[b] * len(inter) * (1 + limit)
-        )
-        solver.Add(
-            sum(x_p[j, b] * protein_weights[proteins[j]]
-                for j in range(len(proteins))) <= splits[b] * len(inter) * (1 + limit)
-        )
-
-    for b in range(len(splits)):
-        for i, drug in enumerate(drugs):
-            for j, protein in enumerate(proteins):
-                if (drug, protein) in inter:
-                    solver.Add(x_e[i, j] <= 0.75 * (x_d[i, b] + x_p[j, b]))
-
-    # Objective. Maximize total value of packed items.
-    objective = solver.Objective()
-    for i in range(len(drugs)):
-        for b in range(len(splits)):
-            objective.SetCoefficient(x_d[i, b], 1)
-    for j in range(len(proteins)):
-        for b in range(len(splits)):
-            objective.SetCoefficient(x_p[j, b], 1)
-    for i, drug in enumerate(drugs):
-        for j, protein in enumerate(proteins):
-            if (drug, protein) in inter:
-                objective.SetCoefficient(x_e[i, j], 1)
-    objective.SetMaximization()
-
-    logging.info("Start optimization")
-
-    status = solver.Solve()
-
-    output = [[], {}, {}]
-    if status == pywraplp.Solver.OPTIMAL:
-        for i, drug in enumerate(drugs):
-            for b in range(len(splits)):
-                if x_d[i, b].solution_value() > 0:
-                    output[1][drug] = names[b]
-            if drug not in output[1]:
-                output[1][drug] = "not selected"
-        for j, protein in enumerate(proteins):
-            for b in range(len(splits)):
-                if x_p[j, b].solution_value() > 0:
-                    output[2][protein] = names[b]
-            if protein not in output[2]:
-                output[2][protein] = "not selected"
-        for i, drug in enumerate(drugs):
-            for j, protein in enumerate(proteins):
-                if (drug, protein) in inter:
-                    if x_e[i, j].solution_value() > 0:
-                        output[0].append((drug, protein, output[1][drug]))
-                    else:
-                        output[0].append((drug, protein, "not selected"))
-        return output
-    else:
-        logging.warning(
-            'The ILP cannot be solved. Please consider a relaxed clustering, i.e., more clusters, or a higher limit.'
-        )
-    return None
