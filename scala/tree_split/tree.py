@@ -226,6 +226,12 @@ def fill_weight_vector(sequence_map, weight_vector):
 
 def initialize_weighting(env, sequence_map):
     # construct a weight vector in form dict(protID: weight, ...)
+    if env.verbosity >= 1:
+        if env.weight_vector is None:
+            l = None
+        else:
+            l = len(env.weight_vector)
+        print(f'Initializing weight vector: Weight file - {env.weight_file}, Given vector : {l}, Number of sequences - {len(sequence_map)}')
     if env.weight_file is not None:
         weight_vector = parse_weight_file(env.weight_file)
         weight_vector = fill_weight_vector(sequence_map, weight_vector)

@@ -53,6 +53,7 @@ def parse_fasta(path=None, left_split=None, right_split=' ', check_dups=False):
 
     with open(path, "r") as fasta:
         for line in fasta.readlines():
+            line = line.replace('\n','')
             if len(line) == 0:
                 continue
             if line[0] == '>':
