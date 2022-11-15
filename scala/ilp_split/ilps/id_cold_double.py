@@ -40,7 +40,7 @@ def solve_mkp_ilp_ic(
             if (drug, protein) in inter:
                 x_e[i, j] = model.NewBoolVar(f'x_e_{i}_{j}')
                 for b in range(len(splits)):
-                    x_dp[i, j, b] = model.AddBoolOr(x_d[i, b], x_p[j, b])
+                    x_dp[i, j, b] = model.NewBoolVar(f"x_dp_{i}_{j}_{b}")
 
     for i in range(len(drugs)):
         model.Add(sum(x_d[i, b] for b in range(len(splits))) <= 1)
@@ -49,72 +49,65 @@ def solve_mkp_ilp_ic(
 
     for b in range(len(splits)):
         model.Add(
-            sum(x_d[i, b] * drug_weights[drugs[i]]
-                for i in range(len(drugs))) <= int(splits[b] * len(inter) * (1 + limit))
+            # int(splits[b] * len(inter) * (1 - limit)) <=
+            sum(x_d[i, b] * drug_weights[drugs[i]] for i in range(len(drugs))) <=
+            int(splits[b] * len(inter) * (1 + limit))
         )
         model.Add(
-            sum(x_p[j, b] * protein_weights[proteins[j]]
-                for j in range(len(proteins))) <= int(splits[b] * len(inter) * (1 + limit))
+            # int(splits[b] * len(inter) * (1 + limit)) <=
+            sum(x_p[j, b] * protein_weights[proteins[j]] for j in range(len(proteins))) <=
+            int(splits[b] * len(inter) * (1 + limit))
         )
 
     for b in range(len(splits)):
         for i, drug in enumerate(drugs):
             for j, protein in enumerate(proteins):
                 if (drug, protein) in inter:
-                    model.Add(x_e[i, j] == 1).OnlyEnforceIf(x_dp[i, j, b] == 1)
-                    model.Add(x_e[i, j] == 0).OnlyEnforceIf(x_dp[i, j, b] != 1)
+                    model.Add(x_dp[i, j, b] == 1).OnlyEnforceIf(x_d[i, b]).OnlyEnforceIf(x_p[j, b])
+                    model.Add(x_d[i, b] == 1).OnlyEnforceIf(x_dp[i, j, b])
+                    model.Add(x_p[j, b] == 1).OnlyEnforceIf(x_dp[i, j, b])
 
-    # Objective. Maximize total value of packed items.
-    """objective = solver.Objective()
-    for i in range(len(drugs)):
-        for b in range(len(splits)):
-            objective.SetCoefficient(x_d[i, b], 1)
-    for j in range(len(proteins)):
-        for b in range(len(splits)):
-            objective.SetCoefficient(x_p[j, b], 1)
     for i, drug in enumerate(drugs):
         for j, protein in enumerate(proteins):
             if (drug, protein) in inter:
-                objective.SetCoefficient(x_e[i, j], 1)
-    objective.SetMaximization()
-
-    solver.set_time_limit(max_sec * 1000)
-
-    logging.info("Start optimization")
-
-    status = solver.Solve()  # solution_callback=MaxSolutionTerminator(max_sol))"""
+                model.Add(x_e[i, j] == sum(x_dp[i, j, b] for b in range(len(splits))))
 
     model.Maximize(
         sum(x_d[i, b] for i in range(len(drugs)) for b in range(len(splits))) +
         sum(x_p[j, b] for j in range(len(proteins)) for b in range(len(splits))) +
-        sum(x_e[i, j] for i in range(len(drugs)) for j in range(len(proteins)))
+        sum(x_e[i, j] for i in range(len(drugs)) for j in range(len(proteins)) if (i, j) in inter)
     )
-    # callback = SATObjectiveCallback(10, sum, set(x_d.keys()).union(set(x_p.keys())).union(set(x_e.keys())))
+
     solver = cp_model.CpSolver()
-    # solver.enumerate_all_solutions = True
-    status = solver.Solve(model)  # , callback)
+    if max_sec != -1:
+        solver.parameters.max_time_in_seconds = max_sec
+    status = solver.Solve(model)
 
     output = [[], {}, {}]
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
         for i, drug in enumerate(drugs):
             for b in range(len(splits)):
-                if x_d[i, b].solution_value() > 0:
+                if solver.Value(x_d[i, b]) > 0:
                     output[1][drug] = names[b]
             if drug not in output[1]:
                 output[1][drug] = "not selected"
         for j, protein in enumerate(proteins):
             for b in range(len(splits)):
-                if x_p[j, b].solution_value() > 0:
+                if solver.Value(x_p[j, b]) > 0:
                     output[2][protein] = names[b]
             if protein not in output[2]:
                 output[2][protein] = "not selected"
+        count = 0
         for i, drug in enumerate(drugs):
             for j, protein in enumerate(proteins):
                 if (drug, protein) in inter:
-                    if x_e[i, j].solution_value() > 0:
+                    count += 1
+                    print(drug, protein)
+                    if solver.Value(x_e[i, j]) > 0:
                         output[0].append((drug, protein, output[1][drug]))
                     else:
                         output[0].append((drug, protein, "not selected"))
+        print(count)
         return output
     else:
         logging.warning(

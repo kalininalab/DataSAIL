@@ -14,7 +14,6 @@ from scala.ilp_split.ilps.id_cold_double import solve_mkp_ilp_ic
 from scala.ilp_split.ilps.id_cold_single import solve_mkp_ilp_icx
 from scala.ilp_split.read_data import read_data
 
-
 ALGORITHM = "CP_SAT"
 
 
@@ -139,7 +138,7 @@ def ilp_main(args):
                 print(drug, prot, split, sep=args.sep, file=stream)
                 split_stats[split] += 1
         print("Interaction-split statistics:")
-        print('\n'.join([f"\t{k}\t: {v} {100 * v / len(data['interactions']):.2f}%" for k, v in split_stats.items()]))
+        print(stats_string(len(data["interactions"]), split_stats))
 
     if output["drugs"] is not None:
         split_stats = dict((n, 0) for n in args.names + ["not selected"])
@@ -148,7 +147,7 @@ def ilp_main(args):
                 print(drug, split, sep=args.sep, file=stream)
                 split_stats[split] += 1
         print("Drug distribution over splits:")
-        print('\n'.join([f"\t{k}\t: {v} {100 * v / len(data['drugs']):.2f}%" for k, v in split_stats.items()]))
+        print(stats_string(len(data["drugs"]), split_stats))
 
     if output["proteins"] is not None:
         split_stats = dict((n, 0) for n in args.names + ["not selected"])
@@ -157,9 +156,17 @@ def ilp_main(args):
                 print(protein, split, sep=args.sep, file=stream)
                 split_stats[split] += 1
         print("Protein distribution over splits:")
-        print('\n'.join([f"\t{k}\t: {v} {100 * v / len(data['proteins']):.2f}%" for k, v in split_stats.items()]))
+        print(stats_string(len(data["proteins"]), split_stats))
 
     logging.info("ILP splitting finished and results stored.")
+
+
+def stats_string(count, split_stats):
+    output = '\n'.join([f"\t{k:13}: {v:6} {100 * v / count:>6.2f}% "
+                        f"{100 * v / (count - split_stats['not selected']):>6.2f}%"
+                        for k, v in split_stats.items() if k != 'not selected'])
+    return output + f"\n\t{'not selected':13}: {split_stats['not selected']:6} " \
+                    f"{100 * split_stats['not selected'] / count:>6.2f}%"
 
 
 def sample_categorical(
