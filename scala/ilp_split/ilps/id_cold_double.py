@@ -5,7 +5,7 @@ from ortools.sat.python import cp_model
 from sortedcontainers import SortedList
 
 
-def solve_mpk_ilp_ic(
+def solve_mkp_ilp_ic(
         drugs: SortedList,
         drug_weights: Dict[str, float],
         proteins: SortedList,

@@ -6,35 +6,8 @@ import numpy as np
 import networkx as nx
 from ortools.linear_solver import pywraplp
 
+from scala.cluster.wl_kernels.protein import smiles_to_grakel
 from scala.cluster.wl_kernels.wlk import run_wl_kernel
-
-
-def mol_to_grakel(mol):
-    r"""
-    Convert an RDKit molecule into a grakel graph to apply Weisfeiler-Lehman kernels later.
-
-    Args:
-        mol: rdkit Molecule
-
-    Returns:
-        grakel graph object
-    """
-    # grakel requires a dict of adjacency lists with each node as a key and for every node a node feature (atom type)
-    nodes = {}
-    edges = {}
-
-    # for every node, insert the atom type into a dict and initialize the adjacency matrices for each node
-    for atom in mol.GetAtoms():
-        nodes[atom.GetIdx()] = atom.GetAtomicNum()
-        edges[atom.GetIdx()] = []
-
-    # for every bond in the molecule insert the nodes into the corresponding adjacency lists
-    for edge in mol.GetBonds():
-        edges[edge.GetBeginAtomIdx()].append(edge.GetEndAtomIdx())
-        edges[edge.GetEndAtomIdx()].append(edge.GetBeginAtomIdx())
-
-    # create the final grakel graph from it
-    return grakel.Graph(edges, node_labels=nodes)
 
 
 def node_disjoint_cliques(g):
@@ -138,7 +111,7 @@ def main():
             mol = Chem.MolFromSmiles(smiles)
             if mol is not None and len(smiles) > 10:
                 valid.append(parts[0])
-                graphs.append(mol_to_grakel(mol))
+                graphs.append(smiles_to_grakel(mol))
 
     # compute a matrix of pairwise graph similarities using Weisfeiler-Lehman kernels
     results = run_wl_kernel(graphs)

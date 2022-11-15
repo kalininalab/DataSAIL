@@ -7,8 +7,11 @@ from ortools.linear_solver import pywraplp
 from ortools.sat.python import cp_model
 from sortedcontainers import SortedList
 
-from scala.ilp_split.ilps.id_cold_double import solve_mpk_ilp_ic
-from scala.ilp_split.ilps.id_cold_single import solve_mpk_ilp_icx
+from scala.cluster.wl_kernels.protein import smiles_to_grakel
+from scala.cluster.wl_kernels.wlk import run_wl_kernel
+from scala.ilp_split.ilps.cluster_cold_single import solve_mkp_ilp_ccx
+from scala.ilp_split.ilps.id_cold_double import solve_mkp_ilp_ic
+from scala.ilp_split.ilps.id_cold_single import solve_mkp_ilp_icx
 from scala.ilp_split.read_data import read_data
 
 
@@ -70,7 +73,7 @@ def ilp_main(args):
         )
     if args.technique == "ICD":
         drug = SortedList(data["drugs"].keys())
-        output["drugs"] = solve_mpk_ilp_icx(
+        output["drugs"] = solve_mkp_ilp_icx(
             drug,
             [data["drug_weights"][d] for d in drug],
             args.limit,
@@ -81,7 +84,7 @@ def ilp_main(args):
         )
     if args.technique == "ICP":
         prot = SortedList(data["proteins"].keys())
-        output["proteins"] = solve_mpk_ilp_icx(
+        output["proteins"] = solve_mkp_ilp_icx(
             prot,
             [data["prot_weights"][p] for p in prot],
             args.limit,
@@ -91,7 +94,7 @@ def ilp_main(args):
             args.max_sol,
         )
     if args.technique == "IC":
-        solution = solve_mpk_ilp_ic(
+        solution = solve_mkp_ilp_ic(
             SortedList(data["drugs"].keys()),
             data["drug_weights"],
             SortedList(data["proteins"].keys()),
@@ -106,7 +109,17 @@ def ilp_main(args):
         if solution is not None:
             output["inter"], output["drugs"], output["proteins"] = solution
     if args.technique == "CCD":
-        pass
+        clusters, cluster_sim, cluster_map = cluster(data["drugs"], "WLK")
+        cluster_weights = [sum(data["drug_weights"][d] for d in c) for c in clusters]
+        cluster_split = solve_mkp_ilp_ccx(
+            clusters,
+            cluster_weights,
+            args.limit,
+            args.splits,
+            args.names,
+            args.max_sec,
+            args.max_sol,
+        )
     if args.technique == "CCP":
         pass
     if args.technique == "CC":
@@ -165,3 +178,15 @@ def sample_categorical(
     for i, split in enumerate(gen()):
         output += [(d, p, names[i]) for d, p in split]
     return output
+
+
+def cluster(mols: Dict[str, str], method: str) -> Tuple[int, Dict[str, int], List[List[int]]]:
+    if method == "WLK":
+        ids = list(mols.keys())
+        graphs = [smiles_to_grakel(mols[idx[0]]) for idx in ids]
+        cluster_sim = run_wl_kernel(graphs)
+        cluster_map = dict((idx[0], i) for i, idx in enumerate(ids))
+    else:
+        raise ValueError("Unknown clustering method.")
+
+    return len(cluster_sim), cluster_map, cluster_sim

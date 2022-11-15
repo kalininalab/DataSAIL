@@ -8,7 +8,7 @@ from sortedcontainers import SortedList
 ALGORITHM = "GLOP"
 
 
-def solve_mpk_ilp_icx(
+def solve_mkp_ilp_icx(
         molecules: SortedList,
         weights: List[float],
         limit: float,
