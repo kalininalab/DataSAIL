@@ -1,3 +1,7 @@
 .idea/
 __pycache__/
+tests/data/min_ic/
+tests/data/split_ic/
+tests/data/split_icd/
+tests/data/split_icp/
 tests/data/split_r/
