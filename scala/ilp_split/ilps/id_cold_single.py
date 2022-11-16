@@ -1,14 +1,59 @@
 import logging
 from typing import List, Dict, Optional
 
-from ortools.linear_solver import pywraplp
+from ortools.sat.python import cp_model
 from sortedcontainers import SortedList
 
 
-ALGORITHM = "GLOP"
+STATUS = {
+    cp_model.OPTIMAL: "Optimal",
+    cp_model.FEASIBLE: "Feasible",
+    cp_model.INFEASIBLE: "Infeasible",
+    cp_model.MODEL_INVALID: "Invalid model",
+    cp_model.UNKNOWN: "Unknown",
+}
 
 
-def solve_mkp_ilp_icx(
+class SolutionTracker(cp_model.CpSolverSolutionCallback):
+    def __init__(self, sol_max, variables, weights, splits):
+        super(SolutionTracker, self).__init__()
+        self.solution = None
+        self.best_score = float('inf')
+
+        self.sol_max = sol_max
+        self.sol_count = 0
+
+        self.variables = variables
+        self.weights = weights
+        self.splits = splits
+
+    def on_solution_callback(self):
+        self.sol_count += 1
+
+        score = sum((sum(self.Value(self.variables[i, b])
+                         for i in range(len(self.weights))) - self.splits[b]) ** 2 for b in range(len(self.splits)))
+        # print(f"{score:.5f}", [self.Value(self.variables[i, b])
+        #                        for i in range(len(self.weights)) for b in range(len(self.splits))], end="")
+
+        if score < self.best_score:
+            print(" <=")
+            self.best_score = score
+            self.solution = dict((self.variables[i, b], self.Value(self.variables[i, b]))
+                                 for i in range(len(self.weights)) for b in range(len(self.splits)))
+        else:
+            print()
+
+        if 0 <= self.sol_max <= self.sol_count:
+            self.StopSearch()
+
+    def solution_count(self):
+        return self.sol_count
+
+    def get_value(self, v):
+        return self.solution[v]
+
+
+def solve_icx_sat(
         molecules: SortedList,
         weights: List[float],
         limit: float,
@@ -17,60 +62,55 @@ def solve_mkp_ilp_icx(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Dict[str, str]]:
-    # np.random.shuffle(molecules)
-    d = {
-        "weights": weights,
-        "values": weights,
-        "num_items": len(molecules),
-        "all_items": range(len(molecules)),
-        "bin_capacities": [s * sum(weights) * (1 + limit) for s in splits],
-        "num_bins": len(splits),
-        "all_bins": range(len(splits)),
-    }
-
     # Create the mip solver with the algorithm backend.
-    solver = pywraplp.Solver.CreateSolver(ALGORITHM)
-    if solver is None:
-        print(f"{ALGORITHM} solver unavailable.")
+    model = cp_model.CpModel()
+    if model is None:
+        print(f"SAT solver unavailable.")
         return None
 
-    # Variables.
-    # x[i, b] = 1 if item i is packed in bin b.
+    # Variables
     x = {}
-    for i in d['all_items']:
-        for b in d['all_bins']:
-            x[i, b] = solver.BoolVar(f'x_{i}_{b}')
+    for i in range(len(molecules)):
+        for b in range(len(splits)):
+            x[i, b] = model.NewBoolVar(f'x_{i}_{b}')
 
     # Constraints.
     # Each item is assigned to at most one bin.
-    for i in d['all_items']:
-        solver.Add(sum(x[i, b] for b in d['all_bins']) <= 1)
+    for i in range(len(molecules)):
+        model.Add(sum(x[i, b] for b in range(len(splits))) == 1)
 
     # The amount packed in each bin cannot exceed its capacity.
-    for b in d['all_bins']:
-        solver.Add(sum(x[i, b] * d['weights'][i] for i in d['all_items']) <= d['bin_capacities'][b])
+    for b in range(len(splits)):
+        model.Add(sum(x[i, b] * weights[i] for i in range(len(molecules))) <= int(splits[b] * sum(weights) * limit))
 
-    # Objective. Maximize total value of packed items.
-    objective = solver.Objective()
-    for i in d['all_items']:
-        for b in d['all_bins']:
-            objective.SetCoefficient(x[i, b], d['values'][i])
-    objective.SetMaximization()
-
-    solver.set_time_limit(max_sec * 1000)
+    solver = cp_model.CpSolver()
+    if max_sec != -1:
+        solver.parameters.max_time_in_seconds = max_sec
+    sol_tracker = SolutionTracker(
+        max_sol,
+        x,
+        weights,
+        splits,
+    )
+    solver.parameters.enumerate_all_solutions = True
 
     logging.info("Start optimizing")
 
-    status = solver.Solve()
+    status = solver.SearchForAllSolutions(model, sol_tracker)
+    # print(sol_tracker.solution)
 
     output = {}
-    if status == pywraplp.Solver.OPTIMAL:
-        for b in d['all_bins']:
-            for i in d['all_items']:
-                if x[i, b].solution_value() > 0:
+    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+        logging.info(STATUS[status])
+        for i in range(len(molecules)):
+            for b in range(len(splits)):
+                if sol_tracker.solution[x[i, b]] > 0:
                     output[molecules[i]] = names[b]
+            if molecules[i] not in output:
+                molecules[i] = "not selected"
         return output
     else:
+        logging.warning(STATUS[status])
         logging.warning(
             'The ILP cannot be solved. Please consider a relaxed clustering, i.e., more clusters, or a higher limit.'
         )

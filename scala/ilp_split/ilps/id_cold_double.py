@@ -5,7 +5,7 @@ from ortools.sat.python import cp_model
 from sortedcontainers import SortedList
 
 
-def solve_mkp_ilp_ic(
+def solve_ic_sat(
         drugs: SortedList,
         drug_weights: Dict[str, float],
         proteins: SortedList,
@@ -24,7 +24,7 @@ def solve_mkp_ilp_ic(
         return None
 
     # Variables.
-    # x[i, b] = 1 if item i is packed in bin b.
+    # Each item is assigned to at most one bin.
     x_d = {}
     for i in range(len(drugs)):
         for b in range(len(splits)):
@@ -49,15 +49,21 @@ def solve_mkp_ilp_ic(
 
     for b in range(len(splits)):
         model.Add(
-            # int(splits[b] * len(inter) * (1 - limit)) <=
             sum(x_d[i, b] * drug_weights[drugs[i]] for i in range(len(drugs))) <=
             int(splits[b] * len(inter) * (1 + limit))
         )
+        # model.Add(
+        #     int(splits[b] * len(inter) * (1 - limit)) <=
+        #     sum(x_d[i, b] * drug_weights[drugs[i]] for i in range(len(drugs)))
+        # )
         model.Add(
-            # int(splits[b] * len(inter) * (1 + limit)) <=
             sum(x_p[j, b] * protein_weights[proteins[j]] for j in range(len(proteins))) <=
             int(splits[b] * len(inter) * (1 + limit))
         )
+        # model.Add(
+        #     int(splits[b] * len(inter) * (1 + limit)) <=
+        #     sum(x_p[j, b] * protein_weights[proteins[j]] for j in range(len(proteins)))
+        # )
 
     for b in range(len(splits)):
         for i, drug in enumerate(drugs):
@@ -73,17 +79,19 @@ def solve_mkp_ilp_ic(
                 model.Add(x_e[i, j] == sum(x_dp[i, j, b] for b in range(len(splits))))
 
     model.Maximize(
-        sum(x_d[i, b] for i in range(len(drugs)) for b in range(len(splits))) +
-        sum(x_p[j, b] for j in range(len(proteins)) for b in range(len(splits))) +
+        sum(x_d[i, b] * drug_weights[drugs[i]] for i in range(len(drugs)) for b in range(len(splits))) +
+        sum(x_p[j, b] * protein_weights[proteins[j]] for j in range(len(proteins)) for b in range(len(splits))) +
         sum(x_e[i, j] for i in range(len(drugs)) for j in range(len(proteins)) if (i, j) in inter)
     )
 
     solver = cp_model.CpSolver()
     if max_sec != -1:
         solver.parameters.max_time_in_seconds = max_sec
-    status = solver.Solve(model)
 
-    output = [[], {}, {}]
+    logging.info("Start optimizing")
+
+    status = solver.Solve(model)
+    output = ([], {}, {})
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
         for i, drug in enumerate(drugs):
             for b in range(len(splits)):
@@ -97,17 +105,13 @@ def solve_mkp_ilp_ic(
                     output[2][protein] = names[b]
             if protein not in output[2]:
                 output[2][protein] = "not selected"
-        count = 0
         for i, drug in enumerate(drugs):
             for j, protein in enumerate(proteins):
                 if (drug, protein) in inter:
-                    count += 1
-                    print(drug, protein)
                     if solver.Value(x_e[i, j]) > 0:
                         output[0].append((drug, protein, output[1][drug]))
                     else:
                         output[0].append((drug, protein, "not selected"))
-        print(count)
         return output
     else:
         logging.warning(

@@ -10,8 +10,8 @@ from sortedcontainers import SortedList
 from scala.cluster.wl_kernels.protein import smiles_to_grakel
 from scala.cluster.wl_kernels.wlk import run_wl_kernel
 from scala.ilp_split.ilps.cluster_cold_single import solve_mkp_ilp_ccx
-from scala.ilp_split.ilps.id_cold_double import solve_mkp_ilp_ic
-from scala.ilp_split.ilps.id_cold_single import solve_mkp_ilp_icx
+from scala.ilp_split.ilps.id_cold_double import solve_ic_sat
+from scala.ilp_split.ilps.id_cold_single import solve_icx_sat
 from scala.ilp_split.read_data import read_data
 
 ALGORITHM = "CP_SAT"
@@ -72,7 +72,7 @@ def ilp_main(args):
         )
     if args.technique == "ICD":
         drug = SortedList(data["drugs"].keys())
-        output["drugs"] = solve_mkp_ilp_icx(
+        output["drugs"] = solve_icx_sat(
             drug,
             [data["drug_weights"][d] for d in drug],
             args.limit,
@@ -83,7 +83,7 @@ def ilp_main(args):
         )
     if args.technique == "ICP":
         prot = SortedList(data["proteins"].keys())
-        output["proteins"] = solve_mkp_ilp_icx(
+        output["proteins"] = solve_icx_sat(
             prot,
             [data["prot_weights"][p] for p in prot],
             args.limit,
@@ -93,7 +93,7 @@ def ilp_main(args):
             args.max_sol,
         )
     if args.technique == "IC":
-        solution = solve_mkp_ilp_ic(
+        solution = solve_ic_sat(
             SortedList(data["drugs"].keys()),
             data["drug_weights"],
             SortedList(data["proteins"].keys()),
@@ -162,11 +162,20 @@ def ilp_main(args):
 
 
 def stats_string(count, split_stats):
-    output = '\n'.join([f"\t{k:13}: {v:6} {100 * v / count:>6.2f}% "
-                        f"{100 * v / (count - split_stats['not selected']):>6.2f}%"
-                        for k, v in split_stats.items() if k != 'not selected'])
-    return output + f"\n\t{'not selected':13}: {split_stats['not selected']:6} " \
-                    f"{100 * split_stats['not selected'] / count:>6.2f}%"
+    output = ""
+    for k, v in split_stats.items():
+        output += f"\t{k:13}: {v:6}"
+        if count > 0:
+            output += f" {100 * v / count:>6.2f}%"
+        else:
+            output += f" {0:>6.2f}%"
+        if k != "not selected":
+            if (count - split_stats['not selected']) > 0:
+                output += f" {100 * v / (count - split_stats['not selected']):>6.2f}%"
+            else:
+                output += f" {0:>6.2f}%"
+        output += "\n"
+    return output[:-1]
 
 
 def sample_categorical(
