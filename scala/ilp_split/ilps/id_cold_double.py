@@ -4,6 +4,24 @@ from typing import Dict, Tuple, Set, List, Optional
 from ortools.sat.python import cp_model
 from sortedcontainers import SortedList
 
+from scala.ilp_split.ilps.id_cold_single import STATUS
+
+
+class SolutionTracker(cp_model.CpSolverSolutionCallback):
+    def __init__(self, variables):
+        super(SolutionTracker, self).__init__()
+        self.variables = variables.values()
+        self.maxv = 0
+        self.count = 0
+
+    def on_solution_callback(self):
+        self.count += 1
+        print(f"\r{self.count}", end="")
+        val = sum(self.Value(var) for var in self.variables)
+        if val > self.maxv:
+            print(f"\r{self.maxv}")
+            self.maxv = val
+
 
 def solve_ic_sat(
         drugs: SortedList,
@@ -38,61 +56,73 @@ def solve_ic_sat(
     for i, drug in enumerate(drugs):
         for j, protein in enumerate(proteins):
             if (drug, protein) in inter:
-                x_e[i, j] = model.NewBoolVar(f'x_e_{i}_{j}')
+                # x_e[i, j] = model.NewBoolVar(f'x_e_{i}_{j}')
                 for b in range(len(splits)):
                     x_dp[i, j, b] = model.NewBoolVar(f"x_dp_{i}_{j}_{b}")
 
-    for i in range(len(drugs)):
+    """for i in range(len(drugs)):
         model.Add(sum(x_d[i, b] for b in range(len(splits))) <= 1)
     for j in range(len(proteins)):
-        model.Add(sum(x_p[j, b] for b in range(len(splits))) <= 1)
+        model.Add(sum(x_p[j, b] for b in range(len(splits))) <= 1)"""
 
+    """
     for b in range(len(splits)):
+        model.Add(
+            int(splits[b] * len(inter) * (1 - limit)) <=
+            sum(x_d[i, b] * drug_weights[drugs[i]] for i in range(len(drugs)))
+        )
         model.Add(
             sum(x_d[i, b] * drug_weights[drugs[i]] for i in range(len(drugs))) <=
             int(splits[b] * len(inter) * (1 + limit))
         )
-        # model.Add(
-        #     int(splits[b] * len(inter) * (1 - limit)) <=
-        #     sum(x_d[i, b] * drug_weights[drugs[i]] for i in range(len(drugs)))
-        # )
+        model.Add(
+            int(splits[b] * len(inter) * (1 - limit)) <=
+            sum(x_p[j, b] * protein_weights[proteins[j]] for j in range(len(proteins)))
+        )
         model.Add(
             sum(x_p[j, b] * protein_weights[proteins[j]] for j in range(len(proteins))) <=
             int(splits[b] * len(inter) * (1 + limit))
         )
-        # model.Add(
-        #     int(splits[b] * len(inter) * (1 + limit)) <=
-        #     sum(x_p[j, b] * protein_weights[proteins[j]] for j in range(len(proteins)))
-        # )
-
+    """
     for b in range(len(splits)):
+        print(int(splits[b] * len(inter) * (1 - limit)), int(splits[b] * len(inter) * (1 + limit)))
+        # model.Add(int(splits[b] * len(inter) * (1 - limit)) <= sum(x_dp[i, j, b] for i in range(len(drugs)) for j in range(len(proteins)) if (i, j) in inter))
+        # model.Add(sum(x_dp[i, j, b] for i in range(len(drugs)) for j in range(len(proteins)) if (i, j) in inter) <= int(splits[b] * len(inter) * (1 + limit)))
+        model.Add(int(splits[b] * len(inter) * (1 - limit)) <= sum(x_dp[i, j, b] for i in range(len(drugs)) for j in range(len(proteins)) if (i, j) in inter) <= int(splits[b] * len(inter) * (1 + limit)))
         for i, drug in enumerate(drugs):
             for j, protein in enumerate(proteins):
                 if (drug, protein) in inter:
-                    model.Add(x_dp[i, j, b] == 1).OnlyEnforceIf(x_d[i, b]).OnlyEnforceIf(x_p[j, b])
-                    model.Add(x_d[i, b] == 1).OnlyEnforceIf(x_dp[i, j, b])
-                    model.Add(x_p[j, b] == 1).OnlyEnforceIf(x_dp[i, j, b])
+                    pass
+                    # model.Add(x_dp[i, j, b] == 1).OnlyEnforceIf(x_d[i, b]).OnlyEnforceIf(x_p[j, b])
 
-    for i, drug in enumerate(drugs):
-        for j, protein in enumerate(proteins):
-            if (drug, protein) in inter:
-                model.Add(x_e[i, j] == sum(x_dp[i, j, b] for b in range(len(splits))))
+                    # model.Add(x_d[i, b] == 1).OnlyEnforceIf(x_dp[i, j, b])
+                    # model.Add(x_p[j, b] == 1).OnlyEnforceIf(x_dp[i, j, b])
 
-    model.Maximize(
-        sum(x_d[i, b] * drug_weights[drugs[i]] for i in range(len(drugs)) for b in range(len(splits))) +
-        sum(x_p[j, b] * protein_weights[proteins[j]] for j in range(len(proteins)) for b in range(len(splits))) +
-        sum(x_e[i, j] for i in range(len(drugs)) for j in range(len(proteins)) if (i, j) in inter)
-    )
+                    # model.Add(x_d[i, b] == 0).OnlyEnforceIf(x_dp[i, j, b].Not())
+                    # model.Add(x_p[j, b] == 0).OnlyEnforceIf(x_dp[i, j, b].Not())
+
+    # for i, drug in enumerate(drugs):
+    #     for j, protein in enumerate(proteins):
+    #         if (drug, protein) in inter:
+    #             model.Add(x_e[i, j] == sum(x_dp[i, j, b] for b in range(len(splits))))
+
+    # model.Maximize(
+        # sum(x_d[i, b] * drug_weights[drugs[i]] for i in range(len(drugs)) for b in range(len(splits))) +
+        # sum(x_p[j, b] * protein_weights[proteins[j]] for j in range(len(proteins)) for b in range(len(splits))) +
+    #     sum(x_e[i, j] for i in range(len(drugs)) for j in range(len(proteins)) if (i, j) in inter)
+    # )
 
     solver = cp_model.CpSolver()
     if max_sec != -1:
         solver.parameters.max_time_in_seconds = max_sec
 
     logging.info("Start optimizing")
+    tracker = SolutionTracker(x_e)
+    status = solver.SearchForAllSolutions(model, tracker)
 
-    status = solver.Solve(model)
     output = ([], {}, {})
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+        print(STATUS[status])
         for i, drug in enumerate(drugs):
             for b in range(len(splits)):
                 if solver.Value(x_d[i, b]) > 0:
@@ -108,7 +138,7 @@ def solve_ic_sat(
         for i, drug in enumerate(drugs):
             for j, protein in enumerate(proteins):
                 if (drug, protein) in inter:
-                    if solver.Value(x_e[i, j]) > 0:
+                    if sum(solver.Value(x_dp[i, j, b]) for b in range(len(splits))) > 0:
                         output[0].append((drug, protein, output[1][drug]))
                     else:
                         output[0].append((drug, protein, "not selected"))
