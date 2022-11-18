@@ -43,6 +43,8 @@ def solve_icx_sat(
     )
 
     logging.info("Start optimizing")
+
+    # set up the solver and set constraints for time and number of considered solutions on the solver
     solver = cp_model.CpSolver()
     if max_sec != -1:
         solver.parameters.max_time_in_seconds = max_sec
