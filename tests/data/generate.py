@@ -1,8 +1,10 @@
+import os.path
 import random
 
 
 def generate(train_frac=0.8, size=100, folder="perf_80_20"):
-
+    if not os.path.exists(folder):
+        os.makedirs(folder, exist_ok=True)
     with open(folder + "/inter.tsv", "w") as inter, open(folder + "/lig.tsv", "w") as lig, open(folder + "/prot.tsv", "w") as prot:
         for d in range(int(train_frac * size)):
             print(f"D{d + 1:05}\tCCC", file=lig)

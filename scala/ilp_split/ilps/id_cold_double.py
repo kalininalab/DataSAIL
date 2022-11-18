@@ -4,26 +4,10 @@ from typing import Dict, Tuple, Set, List, Optional
 from ortools.sat.python import cp_model
 from sortedcontainers import SortedList
 
-from scala.ilp_split.ilps.id_cold_single import STATUS
+from scala.ilp_split.sats.id_cold_single import STATUS
 
 
-class SolutionTracker(cp_model.CpSolverSolutionCallback):
-    def __init__(self, variables):
-        super(SolutionTracker, self).__init__()
-        self.variables = variables.values()
-        self.maxv = 0
-        self.count = 0
-
-    def on_solution_callback(self):
-        self.count += 1
-        print(f"\r{self.count}", end="")
-        val = sum(self.Value(var) for var in self.variables)
-        if val > self.maxv:
-            print(f"\r{self.maxv}")
-            self.maxv = val
-
-
-def solve_ic_sat(
+def solve_ic_ilp(
         drugs: SortedList,
         drug_weights: Dict[str, float],
         proteins: SortedList,
@@ -35,116 +19,141 @@ def solve_ic_sat(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
-    # Create the mip solver with the algorithm backend.
     model = cp_model.CpModel()
     if model is None:
-        print(f"SAT solver unavailable.")
+        print(f"GLOP solver not available.")
         return None
 
-    # Variables.
-    # Each item is assigned to at most one bin.
     x_d = {}
-    for i in range(len(drugs)):
-        for b in range(len(splits)):
+    for b in range(len(splits)):
+        for i in range(len(drugs)):
             x_d[i, b] = model.NewBoolVar(f'x_d_{i}_{b}')
     x_p = {}
-    for j in range(len(proteins)):
-        for b in range(len(splits)):
+    for b in range(len(splits)):
+        for j in range(len(proteins)):
             x_p[j, b] = model.NewBoolVar(f'x_p_{j}_{b}')
     x_e = {}
-    x_dp = {}
+    for b in range(len(splits)):
+        for i, drug in enumerate(drugs):
+            for j, protein in enumerate(proteins):
+                if (drug, protein) in inter:
+                    x_e[i, j, b] = model.NewBoolVar(f'x_e_{i}_{j}_{b}')
+
+    for i in range(len(drugs)):
+        model.Add(sum(x_d[i, b] for b in range(len(splits))) == 1)
+    for j in range(len(proteins)):
+        model.Add(sum(x_p[j, b] for b in range(len(splits))) == 1)
     for i, drug in enumerate(drugs):
         for j, protein in enumerate(proteins):
             if (drug, protein) in inter:
-                # x_e[i, j] = model.NewBoolVar(f'x_e_{i}_{j}')
-                for b in range(len(splits)):
-                    x_dp[i, j, b] = model.NewBoolVar(f"x_dp_{i}_{j}_{b}")
+                model.Add(sum(x_e[i, j, b] for b in range(len(splits))) <= 1)
 
-    """for i in range(len(drugs)):
-        model.Add(sum(x_d[i, b] for b in range(len(splits))) <= 1)
-    for j in range(len(proteins)):
-        model.Add(sum(x_p[j, b] for b in range(len(splits))) <= 1)"""
+    for b in range(len(splits)):
+        var = sum(x_e[i, j, b] for i in range(len(drugs)) for j in range(len(proteins)) if (drugs[i], proteins[j]) in inter)
+        model.Add(0 < var)
 
-    """
-    for b in range(len(splits)):
-        model.Add(
-            int(splits[b] * len(inter) * (1 - limit)) <=
-            sum(x_d[i, b] * drug_weights[drugs[i]] for i in range(len(drugs)))
-        )
-        model.Add(
-            sum(x_d[i, b] * drug_weights[drugs[i]] for i in range(len(drugs))) <=
-            int(splits[b] * len(inter) * (1 + limit))
-        )
-        model.Add(
-            int(splits[b] * len(inter) * (1 - limit)) <=
-            sum(x_p[j, b] * protein_weights[proteins[j]] for j in range(len(proteins)))
-        )
-        model.Add(
-            sum(x_p[j, b] * protein_weights[proteins[j]] for j in range(len(proteins))) <=
-            int(splits[b] * len(inter) * (1 + limit))
-        )
-    """
-    for b in range(len(splits)):
-        print(int(splits[b] * len(inter) * (1 - limit)), int(splits[b] * len(inter) * (1 + limit)))
-        # model.Add(int(splits[b] * len(inter) * (1 - limit)) <= sum(x_dp[i, j, b] for i in range(len(drugs)) for j in range(len(proteins)) if (i, j) in inter))
-        # model.Add(sum(x_dp[i, j, b] for i in range(len(drugs)) for j in range(len(proteins)) if (i, j) in inter) <= int(splits[b] * len(inter) * (1 + limit)))
-        model.Add(int(splits[b] * len(inter) * (1 - limit)) <= sum(x_dp[i, j, b] for i in range(len(drugs)) for j in range(len(proteins)) if (i, j) in inter) <= int(splits[b] * len(inter) * (1 + limit)))
         for i, drug in enumerate(drugs):
             for j, protein in enumerate(proteins):
                 if (drug, protein) in inter:
-                    pass
-                    # model.Add(x_dp[i, j, b] == 1).OnlyEnforceIf(x_d[i, b]).OnlyEnforceIf(x_p[j, b])
+                    model.Add(x_e[i, j, b] == 1).OnlyEnforceIf(x_d[i, b]).OnlyEnforceIf(x_p[j, b])
 
-                    # model.Add(x_d[i, b] == 1).OnlyEnforceIf(x_dp[i, j, b])
-                    # model.Add(x_p[j, b] == 1).OnlyEnforceIf(x_dp[i, j, b])
+                    model.Add(x_d[i, b] == 1).OnlyEnforceIf(x_e[i, j, b])
+                    model.Add(x_p[j, b] == 1).OnlyEnforceIf(x_e[i, j, b])
 
-                    # model.Add(x_d[i, b] == 0).OnlyEnforceIf(x_dp[i, j, b].Not())
-                    # model.Add(x_p[j, b] == 0).OnlyEnforceIf(x_dp[i, j, b].Not())
-
-    # for i, drug in enumerate(drugs):
-    #     for j, protein in enumerate(proteins):
-    #         if (drug, protein) in inter:
-    #             model.Add(x_e[i, j] == sum(x_dp[i, j, b] for b in range(len(splits))))
-
-    # model.Maximize(
-        # sum(x_d[i, b] * drug_weights[drugs[i]] for i in range(len(drugs)) for b in range(len(splits))) +
-        # sum(x_p[j, b] * protein_weights[proteins[j]] for j in range(len(proteins)) for b in range(len(splits))) +
-    #     sum(x_e[i, j] for i in range(len(drugs)) for j in range(len(proteins)) if (i, j) in inter)
-    # )
+    model.Maximize(
+        sum(x_e[i, j, b] for i in range(len(drugs)) for j in range(len(proteins)) for b in range(len(splits)) if (drugs[i], proteins[j]) in inter)
+    )
 
     solver = cp_model.CpSolver()
-    if max_sec != -1:
-        solver.parameters.max_time_in_seconds = max_sec
 
     logging.info("Start optimizing")
-    tracker = SolutionTracker(x_e)
-    status = solver.SearchForAllSolutions(model, tracker)
+    status = solver.Solve(model)
+
+    print(STATUS[status])
+    print("Blube")
 
     output = ([], {}, {})
     if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-        print(STATUS[status])
         for i, drug in enumerate(drugs):
             for b in range(len(splits)):
                 if solver.Value(x_d[i, b]) > 0:
-                    output[1][drug] = names[b]
-            if drug not in output[1]:
-                output[1][drug] = "not selected"
+                    print(drugs[i], names[b])
         for j, protein in enumerate(proteins):
             for b in range(len(splits)):
                 if solver.Value(x_p[j, b]) > 0:
-                    output[2][protein] = names[b]
-            if protein not in output[2]:
-                output[2][protein] = "not selected"
+                    print(proteins[j], names[b])
         for i, drug in enumerate(drugs):
             for j, protein in enumerate(proteins):
                 if (drug, protein) in inter:
-                    if sum(solver.Value(x_dp[i, j, b]) for b in range(len(splits))) > 0:
-                        output[0].append((drug, protein, output[1][drug]))
-                    else:
-                        output[0].append((drug, protein, "not selected"))
+                    for b in range(len(splits)):
+                        if solver.Value(x_e[i, j, b]) > 0:
+                            print(drugs[i], proteins[j], names[b])
+                    if sum(solver.Value(x_e[i, j, b]) for b in range(len(splits))) == 0:
+                        print(drugs[i], proteins[j], "not selected")
         return output
     else:
         logging.warning(
             'The ILP cannot be solved. Please consider a relaxed clustering, i.e., more clusters, or a higher limit.'
         )
     return None
+
+
+def manually():
+    model = cp_model.CpModel()
+    x_d = {
+        0: model.NewIntVar(0, 2, "x_d_0"),
+        1: model.NewIntVar(0, 2, "x_d_1"),
+        2: model.NewIntVar(0, 2, "x_d_2"),
+        3: model.NewIntVar(0, 2, "x_d_3"),
+    }
+    x_p = {
+        0: model.NewIntVar(0, 2, "x_p_0"),
+        1: model.NewIntVar(0, 2, "x_p_1"),
+        2: model.NewIntVar(0, 2, "x_p_2"),
+        3: model.NewIntVar(0, 2, "x_p_3"),
+    }
+    x_e = {
+        (0, 0): model.NewIntVar(-1, 2, "x_e_0_0"),
+        (0, 1): model.NewIntVar(-1, 2, "x_e_0_1"),
+        (1, 0): model.NewIntVar(-1, 2, "x_e_1_0"),
+        (1, 1): model.NewIntVar(-1, 2, "x_e_1_1"),
+        (2, 2): model.NewIntVar(-1, 2, "x_e_2_2"),
+        (2, 3): model.NewIntVar(-1, 2, "x_e_2_3"),
+        (3, 2): model.NewIntVar(-1, 2, "x_e_3_2"),
+        (3, 3): model.NewIntVar(-1, 2, "x_e_3_3"),
+    }
+    model.Add(0 < sum([
+        x_e[0, 0] == 0, x_e[0, 1] == 0, x_e[1, 0] == 0, x_e[1, 1] == 0,
+        x_e[2, 2] == 0, x_e[2, 3] == 0, x_e[3, 2] == 0, x_e[3, 3] == 0,
+    ]))
+    model.Add(0 < sum([
+        x_e[0, 0] == 1, x_e[0, 1] == 1, x_e[1, 0] == 1, x_e[1, 1] == 1,
+        x_e[2, 2] == 1, x_e[2, 3] == 1, x_e[3, 2] == 1, x_e[3, 3] == 1,
+    ]))
+
+    solver = cp_model.CpSolver()
+
+    status = solver.Solve(model)
+
+    print(STATUS[status])
+
+
+if __name__ == '__main__':
+    if False:
+        manually()
+    else:
+        solve_ic_ilp(
+            SortedList(["D1", "D2", "D3", "D4"]),
+            {"D1": 1, "D2": 1, "D3": 1, "D4": 1},
+            SortedList(["P1", "P2", "P3", "P4"]),
+            {"P1": 1, "P2": 1, "P3": 1, "P4": 1},
+            {
+                ("D1", "P1"), ("D1", "P2"), ("D2", "P1"), ("D2", "P2"),
+                ("D3", "P3"), ("D3", "P4"), ("D4", "P3"), ("D4", "P4"),
+            },
+            1,
+            [0.5, 0.5],
+            ["S1", "S2"],
+            -1,
+            -1,
+        )

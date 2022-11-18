@@ -1,17 +1,17 @@
 import logging
 import os
-from typing import Dict, List, Optional, Tuple, Set
+from typing import Dict, List, Tuple
 
 import numpy as np
-from ortools.linear_solver import pywraplp
 from ortools.sat.python import cp_model
 from sortedcontainers import SortedList
 
-from scala.cluster.wl_kernels.protein import smiles_to_grakel
-from scala.cluster.wl_kernels.wlk import run_wl_kernel
-from scala.ilp_split.ilps.cluster_cold_single import solve_mkp_ilp_ccx
-from scala.ilp_split.ilps.id_cold_double import solve_ic_sat
-from scala.ilp_split.ilps.id_cold_single import solve_icx_sat
+# from scala.cluster.wl_kernels.protein import smiles_to_grakel
+# from scala.cluster.wl_kernels.wlk import run_wl_kernel
+from scala.ilp_split.ilps.id_cold_double import solve_ic_ilp
+from scala.ilp_split.sats.cluster_cold_single import solve_mkp_ilp_ccx
+from scala.ilp_split.sats.id_cold_double import solve_ic_sat
+from scala.ilp_split.sats.id_cold_single import solve_icx_sat
 from scala.ilp_split.read_data import read_data
 
 ALGORITHM = "CP_SAT"
@@ -93,7 +93,7 @@ def ilp_main(args):
             args.max_sol,
         )
     if args.technique == "IC":
-        solution = solve_ic_sat(
+        solution = solve_ic_ilp(
             SortedList(data["drugs"].keys()),
             data["drug_weights"],
             SortedList(data["proteins"].keys()),
@@ -199,10 +199,11 @@ def sample_categorical(
 def cluster(mols: Dict[str, str], method: str) -> Tuple[int, Dict[str, int], List[List[int]]]:
     if method == "WLK":
         ids = list(mols.keys())
-        graphs = [smiles_to_grakel(mols[idx[0]]) for idx in ids]
-        cluster_sim = run_wl_kernel(graphs)
+        # graphs = [smiles_to_grakel(mols[idx[0]]) for idx in ids]
+        # cluster_sim = run_wl_kernel(graphs)
         cluster_map = dict((idx[0], i) for i, idx in enumerate(ids))
     else:
         raise ValueError("Unknown clustering method.")
 
-    return len(cluster_sim), cluster_map, cluster_sim
+    # return len(cluster_sim), cluster_map, cluster_sim
+    return 0, cluster_map, None
