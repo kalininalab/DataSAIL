@@ -3,56 +3,14 @@ import os
 from typing import Dict, List, Tuple
 
 import numpy as np
-from ortools.sat.python import cp_model
 from sortedcontainers import SortedList
 
-# from scala.cluster.wl_kernels.protein import smiles_to_grakel
-# from scala.cluster.wl_kernels.wlk import run_wl_kernel
-from scala.ilp_split.ilps.id_cold_double import solve_ic_ilp
-from scala.ilp_split.sats.cluster_cold_single import solve_mkp_ilp_ccx
-from scala.ilp_split.sats.id_cold_double import solve_ic_sat
-from scala.ilp_split.sats.id_cold_single import solve_icx_sat
-from scala.ilp_split.read_data import read_data
-
-ALGORITHM = "CP_SAT"
-
-
-class MaxSolutionTerminator(cp_model.CpSolverSolutionCallback):
-    def __init__(self, max_sol):
-        super(MaxSolutionTerminator, self).__init__()
-        self.__sol_count = 0
-        self.__max_num_sol = max_sol
-
-    def on_solution_callback(self):
-        self.__sol_count += 1
-        if self.__sol_count >= self.__max_num_sol:
-            self.StopSearch()
-
-    def solution_count(self):
-        return self.__sol_count
-
-
-class SATObjectiveCallback(cp_model.CpSolverSolutionCallback):
-    def __init__(self, max_sol, objective, variables):
-        super(SATObjectiveCallback, self).__init__()
-
-        self.__sol_count = 0
-        self.__max_num_sol = max_sol
-
-        self.__objective = objective
-        self.__variables = variables
-        self.best_score = 0
-        # self.best_sol = 0
-
-    def on_solution_callback(self):
-        self.__sol_count += 1
-
-        score = self.__objective(self.Value(v) for v in self.__variables)
-        if score > self.best_score:
-            self.best_score = score
-
-        if self.__sol_count >= self.__max_num_sol:
-            self.StopSearch()
+from scala.cluster.wl_kernels.protein import smiles_to_grakel
+from scala.cluster.wl_kernels.wlk import run_wl_kernel
+from scala.sat_split.sat_solvers.cluster_cold_single import solve_mkp_ilp_ccx
+from scala.sat_split.sat_solvers.id_cold_double import solve_ic_sat
+from scala.sat_split.sat_solvers.id_cold_single import solve_icx_sat
+from scala.sat_split.read_data import read_data
 
 
 def ilp_main(args):
@@ -72,7 +30,7 @@ def ilp_main(args):
         )
     if args.technique == "ICD":
         drug = SortedList(data["drugs"].keys())
-        output["drugs"] = solve_icx_sat(
+        solution = solve_icx_sat(
             drug,
             [data["drug_weights"][d] for d in drug],
             args.limit,
@@ -81,9 +39,11 @@ def ilp_main(args):
             args.max_sec,
             args.max_sol,
         )
+        if solution is not None:
+            output["drugs"] = solution
     if args.technique == "ICP":
         prot = SortedList(data["proteins"].keys())
-        output["proteins"] = solve_icx_sat(
+        solution = solve_icx_sat(
             prot,
             [data["prot_weights"][p] for p in prot],
             args.limit,
@@ -92,12 +52,12 @@ def ilp_main(args):
             args.max_sec,
             args.max_sol,
         )
+        if solution is not None:
+            output["proteins"] = solution
     if args.technique == "IC":
-        solution = solve_ic_ilp(
-            SortedList(data["drugs"].keys()),
-            data["drug_weights"],
-            SortedList(data["proteins"].keys()),
-            data["prot_weights"],
+        solution = solve_ic_sat(
+            list(data["drugs"].keys()),
+            list(data["proteins"].keys()),
             set(tuple(x) for x in data["interactions"]),
             args.limit,
             args.splits,
@@ -109,7 +69,7 @@ def ilp_main(args):
             output["inter"], output["drugs"], output["proteins"] = solution
     if args.technique == "CCD":
         clusters, cluster_sim, cluster_map = cluster(data["drugs"], "WLK")
-        cluster_weights = [sum(data["drug_weights"][d] for d in c) for c in clusters]
+        cluster_weights = []
         cluster_split = solve_mkp_ilp_ccx(
             clusters,
             cluster_weights,
@@ -199,11 +159,10 @@ def sample_categorical(
 def cluster(mols: Dict[str, str], method: str) -> Tuple[int, Dict[str, int], List[List[int]]]:
     if method == "WLK":
         ids = list(mols.keys())
-        # graphs = [smiles_to_grakel(mols[idx[0]]) for idx in ids]
-        # cluster_sim = run_wl_kernel(graphs)
+        graphs = [smiles_to_grakel(mols[idx[0]]) for idx in ids]
+        cluster_sim = run_wl_kernel(graphs)
         cluster_map = dict((idx[0], i) for i, idx in enumerate(ids))
     else:
         raise ValueError("Unknown clustering method.")
 
-    # return len(cluster_sim), cluster_map, cluster_sim
-    return 0, cluster_map, None
+    return len(cluster_sim), cluster_map, cluster_sim

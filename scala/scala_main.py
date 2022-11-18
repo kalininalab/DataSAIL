@@ -2,8 +2,8 @@ import argparse
 import logging
 import os
 
-from scala.ilp_split.args import ilp_args, validate_args as ilp_validate
-from scala.ilp_split.ilp import ilp_main
+from scala.sat_split.args import ilp_args, validate_args as ilp_validate
+from scala.sat_split.sat import ilp_main
 from scala.tree_split.args import tree_args, validate_args as tree_validate
 from scala.tree_split.tree import tree_main
 
