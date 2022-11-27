@@ -7,7 +7,7 @@ from sortedcontainers import SortedList
 
 # from scala.cluster.wl_kernels.protein import smiles_to_grakel
 # from scala.cluster.wl_kernels.wlk import run_wl_kernel
-from scala.qilp.id_cold_single import solve_icx_qilp
+from scala.qilp.id_cold_single import solve_icx_qip
 from scala.sat_split.sat_solvers.cluster_cold_single import solve_mkp_ilp_ccx
 from scala.sat_split.sat_solvers.id_cold_double import solve_ic_sat
 from scala.sat_split.sat_solvers.id_cold_single import solve_icx_sat
@@ -31,7 +31,7 @@ def ilp_main(args):
         )
     if args.technique == "ICD":
         drug = SortedList(data["drugs"].keys())
-        solution = solve_icx_qilp(
+        solution = solve_icx_qip(
             drug,
             [data["drug_weights"][d] for d in drug],
             args.limit,
