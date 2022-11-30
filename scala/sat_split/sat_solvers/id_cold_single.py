@@ -2,13 +2,12 @@ import logging
 from typing import List, Dict, Optional
 
 from ortools.sat.python import cp_model
-from sortedcontainers import SortedList
 
 from scala.sat_split.sat_solvers.utils import STATUS, SolutionTracker
 
 
 def solve_icx_sat(
-        molecules: SortedList,
+        molecules: List[str],
         weights: List[float],
         limit: float,
         splits: List[float],

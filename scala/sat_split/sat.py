@@ -7,11 +7,16 @@ from sortedcontainers import SortedList
 
 from scala.cluster.wl_kernels.protein import smiles_to_grakel
 from scala.cluster.wl_kernels.wlk import run_wl_kernel
+from scala.iqp.cluster_cold_double import solve_cc_iqp_cvxpy
 from scala.iqp.id_cold_single import solve_icx_qip
 from scala.iqp.cluster_cold_single import solve_ccx_iqp_cvxpy
 from scala.sat_split.sat_solvers.id_cold_double import solve_ic_sat
 from scala.sat_split.sat_solvers.id_cold_single import solve_icx_sat
 from scala.sat_split.read_data import read_data
+
+
+def cluster_interactions(param, drug_cluster_sim, prot_cluster_sim) -> List[List[float]]:
+    return [[]]
 
 
 def ilp_main(args):
@@ -69,23 +74,43 @@ def ilp_main(args):
         if solution is not None:
             output["inter"], output["drugs"], output["proteins"] = solution
     if args.technique == "CCD":
-        clusters, cluster_sim, cluster_map = cluster(data["drugs"], "WLK")
+        clusters, cluster_map, cluster_sim = cluster(data["drugs"], "WLK")
         cluster_weights = []
         cluster_split = solve_ccx_iqp_cvxpy(
-            clusters,
+            list(range(clusters)),
             cluster_weights,
-            None,
-            None,
+            cluster_sim,
+            0.75,
             args.limit,
             args.splits,
             args.names,
             args.max_sec,
             args.max_sol,
         )
+        if solution is not None:
+            output["inter"], output["drugs"], output["proteins"] = solution
     if args.technique == "CCP":
-        pass
+        pass  # same as CCD case if CCD works
     if args.technique == "CC":
-        pass
+        drug_clusters, drug_cluster_map, drug_cluster_sim = cluster(data["drugs"], "WLK")
+        prot_clusters, prot_cluster_map, prot_cluster_sim = cluster(data["proteins"], "WLK")
+        cluster_inter = cluster_interactions(data["inter"], drug_cluster_sim, prot_cluster_sim)
+        cluster_split = solve_cc_iqp_cvxpy(
+            list(range(drug_clusters)),
+            [],
+            drug_cluster_sim,
+            0.75,
+            list(range(prot_clusters)),
+            [],
+            prot_cluster_sim,
+            0.75,
+            cluster_inter,
+            args.limit,
+            args.splits,
+            args.names,
+            args.max_sec,
+            args.max_sol,
+        )
 
     logging.info("Store results")
 

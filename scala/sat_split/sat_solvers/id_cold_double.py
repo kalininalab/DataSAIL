@@ -88,16 +88,18 @@ def solve_ic_sat(
 
     # Maximize the number of edges in the final dataset
     model.Maximize(
-        sum(x_e[i, j, b]
+        sum(
+            x_e[i, j, b]
             for i in range(len(drugs))
             for j in range(len(proteins))
             for b in range(len(splits))
-            if (drugs[i], proteins[j]) in inter)
+            if (drugs[i], proteins[j]) in inter
+        )
     )
 
     logging.info("Start optimizing")
 
-    # setup the solver and set constraints for time and number of considered solutions on the solver
+    # set up the solver and set constraints for time and number of considered solutions on the solver
     solver = cp_model.CpSolver()
     if max_sec != -1:
         solver.parameters.max_time_in_seconds = max_sec

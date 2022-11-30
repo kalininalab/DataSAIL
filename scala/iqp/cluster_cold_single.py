@@ -93,7 +93,8 @@ def solve_ccx_iqp_cvxpy(
     objective = cvxpy.Minimize(cmb)
     problem = cvxpy.Problem(objective, constraints)
 
-    """for algo in SOLVERS:
+    """
+    for algo in SOLVERS:
         print(algo)
         try:
             problem.solve(solver=SOLVERS[algo], qcp=True)
@@ -103,7 +104,8 @@ def solve_ccx_iqp_cvxpy(
         print("\tWorked")
         print(f"\t{problem.status}")
         print(f"\t{problem.value}")
-    exit(0)"""
+    exit(0)
+    """
 
     problem.solve(solver=cvxpy.MOSEK, qcp=True)
     print(problem.status)
