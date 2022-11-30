@@ -5,10 +5,10 @@ from typing import Dict, List, Tuple
 import numpy as np
 from sortedcontainers import SortedList
 
-# from scala.cluster.wl_kernels.protein import smiles_to_grakel
-# from scala.cluster.wl_kernels.wlk import run_wl_kernel
-from scala.qilp.id_cold_single import solve_icx_qip
-from scala.sat_split.sat_solvers.cluster_cold_single import solve_mkp_ilp_ccx
+from scala.cluster.wl_kernels.protein import smiles_to_grakel
+from scala.cluster.wl_kernels.wlk import run_wl_kernel
+from scala.iqp.id_cold_single import solve_icx_qip
+from scala.iqp.cluster_cold_single import solve_ccx_iqp_cvxpy
 from scala.sat_split.sat_solvers.id_cold_double import solve_ic_sat
 from scala.sat_split.sat_solvers.id_cold_single import solve_icx_sat
 from scala.sat_split.read_data import read_data
@@ -30,7 +30,7 @@ def ilp_main(args):
             args.names
         )
     if args.technique == "ICD":
-        drug = SortedList(data["drugs"].keys())
+        drug = list(data["drugs"].keys())
         solution = solve_icx_qip(
             drug,
             [data["drug_weights"][d] for d in drug],
@@ -71,9 +71,11 @@ def ilp_main(args):
     if args.technique == "CCD":
         clusters, cluster_sim, cluster_map = cluster(data["drugs"], "WLK")
         cluster_weights = []
-        cluster_split = solve_mkp_ilp_ccx(
+        cluster_split = solve_ccx_iqp_cvxpy(
             clusters,
             cluster_weights,
+            None,
+            None,
             args.limit,
             args.splits,
             args.names,
@@ -160,11 +162,10 @@ def sample_categorical(
 def cluster(mols: Dict[str, str], method: str) -> Tuple[int, Dict[str, int], List[List[int]]]:
     if method == "WLK":
         ids = list(mols.keys())
-        # graphs = [smiles_to_grakel(mols[idx[0]]) for idx in ids]
-        # cluster_sim = run_wl_kernel(graphs)
+        graphs = [smiles_to_grakel(mols[idx[0]]) for idx in ids]
+        cluster_sim = run_wl_kernel(graphs)
         cluster_map = dict((idx[0], i) for i, idx in enumerate(ids))
     else:
         raise ValueError("Unknown clustering method.")
 
-    # return len(cluster_sim), cluster_map, cluster_sim
-    return 0, cluster_map, None
+    return len(cluster_sim), cluster_map, cluster_sim
