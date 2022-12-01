@@ -3,7 +3,7 @@ import logging
 import os
 
 from scala.bqp.args import ilp_args, validate_args as ilp_validate
-from scala.bqp.run import ilp_main
+from scala.bqp.run import bqp_main
 from scala.tree.args import tree_args, validate_args as tree_validate
 from scala.tree.tree import tree_main
 
@@ -98,7 +98,7 @@ def main():
     elif args.method == "ilp":
         ilp_validate(args)
         os.makedirs(args.output, exist_ok=True)
-        ilp_main(args)
+        bqp_main(**vars(args))
 
 
 if __name__ == "__main__":

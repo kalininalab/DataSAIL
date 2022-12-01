@@ -5,7 +5,7 @@ import cvxpy
 
 
 def solve_ccx_iqp(
-        clusters: List[object],
+        clusters: List[str],
         weights: List[float],
         similarities: List[List[float]],
         threshold: float,
@@ -14,7 +14,7 @@ def solve_ccx_iqp(
         names: List[str],
         max_sec: int,
         max_sol: int,
-) -> Optional[Dict[object, str]]:
+) -> Optional[Dict[str, str]]:
 
     alpha = 0.5
 

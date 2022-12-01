@@ -1,37 +1,31 @@
-from typing import Tuple, Generator, Dict, List, Union
+from typing import Tuple, Generator, Dict, List, Union, Optional
 
 from sortedcontainers import SortedList
 
 
-def read_data(args) -> Dict[str, Union[List, Dict]]:
-    data = {}
+def read_data(**kwargs) -> Tuple[List[Tuple[str, str]], Optional[Dict], Dict, Optional[Dict], Dict]:
+    if kwargs["inter"]:
+        inter = list(read_csv(kwargs["inter"], kwargs["header"], kwargs["sep"]))
+    else:
+        raise ValueError()
 
-    if args.inter is not None:
-        data["interactions"] = SortedList(read_csv(args.inter, args.header, args.sep))
+    drugs = dict(read_csv(kwargs["drugs"], kwargs["header"], kwargs["sep"])) if kwargs["drugs"] else None
+    drug_weights = dict(read_csv(kwargs["drug_weights"], kwargs["header"], kwargs["sep"])
+                        if kwargs["drug_weights"] else count_inter(inter, "drugs"))
 
-    if args.drugs is not None:
-        data["drugs"] = dict(read_csv(args.drugs, args.header, args.sep))
-    data["drug_weights"] = dict(read_csv(args.drug_weights, args.header, args.sep) if args.drug_weights is not None
-                                else count_inter(data["interactions"], "drugs"))
-    if args.technique in {}:
-        data["drug_sim"] = compute_drug_similarity(data["drugs"])
+    proteins = dict(read_csv(kwargs["input"], kwargs["header"], kwargs["sep"])) if kwargs["input"] else None
+    protein_weights = dict(read_csv(kwargs["weight_file"], kwargs["header"], kwargs["sep"])
+                           if kwargs["weight_file"] else count_inter(inter, "prots"))
 
-    if args.input is not None:
-        data["proteins"] = dict(read_csv(args.input, args.header, args.sep))
-    data["prot_weights"] = dict(read_csv(args.weight_file, args.header, args.sep) if args.weight_file is not None
-                                else count_inter(data["interactions"], "prots"))
-    if args.technique in {}:
-        data["prot_sim"] = compute_protein_similarity(data["proteins"])
+    # TODO: validate arguments on a semantic level
+    # inter_drugs = set(d for p, d in data["interactions"])
+    # drugs = set(data["drugs"])
+    # weight_drugs = set(data["drug_weights"])
 
-    # validate arguments on a semantic level
-    inter_drugs = set(d for p, d in data["interactions"])
-    drugs = set(data["drugs"])
-    weight_drugs = set(data["drug_weights"])
-
-    return data
+    return inter, drugs, drug_weights, proteins, protein_weights
 
 
-def read_csv(filepath: str, header: bool = False, sep: str = "\t") -> Generator[Tuple[int, int], None, None]:
+def read_csv(filepath: str, header: bool = False, sep: str = "\t") -> Generator[Tuple[str, str], None, None]:
     with open(filepath, "r") as inter:
         for line in inter.readlines()[(1 if header else 0):]:
             yield line.strip().split(sep)[:2]
