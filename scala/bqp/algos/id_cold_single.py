@@ -1,9 +1,10 @@
-from typing import List
+import logging
+from typing import List, Dict, Optional
 
 import cvxpy
 
 
-def solve_icx_qip(
+def solve_icx_iqp(
         molecules: List[str],
         weights: List[float],
         limit: float,
@@ -11,7 +12,8 @@ def solve_icx_qip(
         names: List[str],
         max_sec: int,
         max_sol: int,
-):
+) -> Optional[Dict[str, str]]:
+
     x = {}
     for i in range(len(molecules)):
         for b in range(len(splits)):
@@ -31,16 +33,43 @@ def solve_icx_qip(
         (sum(x[i, b] * weights[i] for i in range(len(molecules))) - splits[b] * sum(weights)) ** 2
         for b in range(len(splits))
     )
+
     objective = cvxpy.Minimize(dist_loss)
     problem = cvxpy.Problem(objective, constraints)
-
     problem.solve(solver=cvxpy.MOSEK, qcp=True)
+
+    logging.info(f"MOSEK status: {problem.status}")
+    logging.info(f"Solution's score: {problem.value}")
+
+    if problem.status != "optimal":
+        logging.warning(
+            'MOSEK cannot solve the problem. Please consider relaxing split restrictions, '
+            'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
+        )
+        return None
 
     output = {}
     for i in range(len(molecules)):
         for b in range(len(splits)):
             if x[i, b].value > 0.1:
-                print(i, b, x[i, b].value, names[b])
                 output[molecules[i]] = names[b]
 
     return output
+
+
+def main():
+    print(
+        solve_icx_iqp(
+            ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"],
+            [6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
+            0.2,
+            [0.7, 0.3],
+            ["train", "test"],
+            0,
+            0,
+        )
+    )
+
+
+if __name__ == '__main__':
+    main()

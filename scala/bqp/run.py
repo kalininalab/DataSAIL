@@ -3,16 +3,14 @@ import os
 from typing import Dict, List, Tuple
 
 import numpy as np
-from sortedcontainers import SortedList
 
+from scala.bqp.algos.cluster_cold_double import solve_cc_iqp
+from scala.bqp.algos.cluster_cold_single import solve_ccx_iqp
+from scala.bqp.algos.id_cold_double import solve_ic_iqp
+from scala.bqp.algos.id_cold_single import solve_icx_iqp
 from scala.cluster.wl_kernels.protein import smiles_to_grakel
 from scala.cluster.wl_kernels.wlk import run_wl_kernel
-from scala.iqp.cluster_cold_double import solve_cc_iqp_cvxpy
-from scala.iqp.id_cold_single import solve_icx_qip
-from scala.iqp.cluster_cold_single import solve_ccx_iqp_cvxpy
-from scala.sat_split.sat_solvers.id_cold_double import solve_ic_sat
-from scala.sat_split.sat_solvers.id_cold_single import solve_icx_sat
-from scala.sat_split.read_data import read_data
+from scala.bqp.read_data import read_data
 
 
 def cluster_interactions(param, drug_cluster_sim, prot_cluster_sim) -> List[List[float]]:
@@ -36,7 +34,7 @@ def ilp_main(args):
         )
     if args.technique == "ICD":
         drug = list(data["drugs"].keys())
-        solution = solve_icx_qip(
+        solution = solve_icx_iqp(
             drug,
             [data["drug_weights"][d] for d in drug],
             args.limit,
@@ -48,8 +46,8 @@ def ilp_main(args):
         if solution is not None:
             output["drugs"] = solution
     if args.technique == "ICP":
-        prot = SortedList(data["proteins"].keys())
-        solution = solve_icx_sat(
+        prot = list(data["proteins"].keys())
+        solution = solve_icx_iqp(
             prot,
             [data["prot_weights"][p] for p in prot],
             args.limit,
@@ -61,7 +59,7 @@ def ilp_main(args):
         if solution is not None:
             output["proteins"] = solution
     if args.technique == "IC":
-        solution = solve_ic_sat(
+        solution = solve_ic_iqp(
             list(data["drugs"].keys()),
             list(data["proteins"].keys()),
             set(tuple(x) for x in data["interactions"]),
@@ -76,7 +74,7 @@ def ilp_main(args):
     if args.technique == "CCD":
         clusters, cluster_map, cluster_sim = cluster(data["drugs"], "WLK")
         cluster_weights = []
-        cluster_split = solve_ccx_iqp_cvxpy(
+        cluster_split = solve_ccx_iqp(
             list(range(clusters)),
             cluster_weights,
             cluster_sim,
@@ -87,15 +85,29 @@ def ilp_main(args):
             args.max_sec,
             args.max_sol,
         )
-        if solution is not None:
+        if cluster_split:
             output["inter"], output["drugs"], output["proteins"] = solution
     if args.technique == "CCP":
-        pass  # same as CCD case if CCD works
+        clusters, cluster_map, cluster_sim = cluster(data["proteins"], "WLK")
+        cluster_weights = []
+        cluster_split = solve_ccx_iqp(
+            list(range(clusters)),
+            cluster_weights,
+            cluster_sim,
+            0.75,
+            args.limit,
+            args.splits,
+            args.names,
+            args.max_sec,
+            args.max_sol,
+        )
+        if cluster_split:
+            output["inter"], output["drugs"], output["proteins"] = solution
     if args.technique == "CC":
         drug_clusters, drug_cluster_map, drug_cluster_sim = cluster(data["drugs"], "WLK")
         prot_clusters, prot_cluster_map, prot_cluster_sim = cluster(data["proteins"], "WLK")
         cluster_inter = cluster_interactions(data["inter"], drug_cluster_sim, prot_cluster_sim)
-        cluster_split = solve_cc_iqp_cvxpy(
+        cluster_split = solve_cc_iqp(
             list(range(drug_clusters)),
             [],
             drug_cluster_sim,

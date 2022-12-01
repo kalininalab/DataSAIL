@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Dict
 import cvxpy
 
 
-def solve_cc_iqp_cvxpy(
+def solve_cc_iqp(
         drug_clusters: List[object],
         drug_weights: List[float],
         drug_similarities: List[List[float]],
@@ -20,6 +20,7 @@ def solve_cc_iqp_cvxpy(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
+
     alpha = 0.1
     inter_count = sum(sum(row) for row in inter)
 
@@ -85,59 +86,68 @@ def solve_cc_iqp_cvxpy(
     problem = cvxpy.Problem(objective, constraints)
     problem.solve(solver=cvxpy.MOSEK, qcp=True)
 
-    # report the found solution
-    output = ([], {}, {})
-    if problem.status == "optimal":
-        for i, drug in enumerate(drug_clusters):
-            for b in range(len(splits)):
-                if x_d[i, b].value > 0:
-                    output[1][drug_clusters[i]] = names[b]
-        for j, protein in enumerate(prot_clusters):
-            for b in range(len(splits)):
-                if x_p[j, b].value > 0:
-                    output[2][prot_clusters[j]] = names[b]
-        for i, drug in enumerate(drug_clusters):
-            for j, protein in enumerate(prot_clusters):
-                for b in range(len(splits)):
-                    if x_e[i, j, b].value > 0:
-                        output[0].append((drug_clusters[i], prot_clusters[j], names[b]))
-                if sum(x_e[i, j, b].value for b in range(len(splits))) == 0:
-                    output[0].append((drug_clusters[i], prot_clusters[j], "not selected"))
-        return output
-    else:
+    logging.info(f"MOSEK status: {problem.status}")
+    logging.info(f"Solution's score: {problem.value}")
+
+    if problem.status != "optimal":
         logging.warning(
             'MOSEK cannot solve the problem. Please consider relaxing split restrictions, '
             'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
         )
-    return None
+        return None
+
+    # report the found solution
+    output = ([], {}, {})
+    for i, drug in enumerate(drug_clusters):
+        for b in range(len(splits)):
+            if x_d[i, b].value > 0:
+                output[1][drug_clusters[i]] = names[b]
+    for j, protein in enumerate(prot_clusters):
+        for b in range(len(splits)):
+            if x_p[j, b].value > 0:
+                output[2][prot_clusters[j]] = names[b]
+    for i, drug in enumerate(drug_clusters):
+        for j, protein in enumerate(prot_clusters):
+            for b in range(len(splits)):
+                if x_e[i, j, b].value > 0:
+                    output[0].append((drug_clusters[i], prot_clusters[j], names[b]))
+            if sum(x_e[i, j, b].value for b in range(len(splits))) == 0:
+                output[0].append((drug_clusters[i], prot_clusters[j], "not selected"))
+    return output
+
+
+def main():
+    print(
+        solve_cc_iqp(
+            ["D1", "D2", "D3"],
+            [],
+            [
+                [5, 5, 0],
+                [5, 5, 0],
+                [0, 0, 5],
+            ],
+            4,
+            ["P1", "P2", "P3"],
+            [],
+            [
+                [5, 5, 0],
+                [5, 5, 0],
+                [0, 0, 5],
+            ],
+            4,
+            [
+                [9, 9, 0],
+                [9, 9, 0],
+                [0, 0, 9],
+            ],
+            0.2,
+            [0.8, 0.2],
+            ["train", "test"],
+            0,
+            0,
+        )
+    )
 
 
 if __name__ == '__main__':
-    solve_cc_iqp_cvxpy(
-        ["D1", "D2", "D3"],
-        [],
-        [
-            [5, 5, 0],
-            [5, 5, 0],
-            [0, 0, 5],
-        ],
-        4,
-        ["P1", "P2", "P3"],
-        [],
-        [
-            [5, 5, 0],
-            [5, 5, 0],
-            [0, 0, 5],
-        ],
-        4,
-        [
-            [9, 9, 0],
-            [9, 9, 0],
-            [0, 0, 9],
-        ],
-        0.2,
-        [0.8, 0.2],
-        ["train", "test"],
-        0,
-        0,
-    )
+    main()

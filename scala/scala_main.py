@@ -2,10 +2,10 @@ import argparse
 import logging
 import os
 
-from scala.sat_split.args import ilp_args, validate_args as ilp_validate
-from scala.sat_split.sat import ilp_main
-from scala.tree_split.args import tree_args, validate_args as tree_validate
-from scala.tree_split.tree import tree_main
+from scala.bqp.args import ilp_args, validate_args as ilp_validate
+from scala.bqp.run import ilp_main
+from scala.tree.args import tree_args, validate_args as tree_validate
+from scala.tree.tree import tree_main
 
 
 verb_map = {
