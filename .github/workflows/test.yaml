@@ -26,7 +26,7 @@ jobs:
           python-version: 3.9
       - name: Install dependencies
         run: |
-          $CONDA/bin/conda update --file environment.yml -n base
+          $CONDA/bin/conda env update --file environment.yml --prune
       - name: Lint with flake8
         run: |
           $CONDA/bin/conda install flake8
