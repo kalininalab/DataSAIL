@@ -25,4 +25,4 @@ def generate(train_frac=0.8, size=100, folder="perf_80_20"):
                 print(f"D{d + 1:05}\tP{p + 1:05}\t{int(random.random() + 0.5)}", file=inter)
 
 
-generate(0.8, 10, "perf_8_2")
+generate(0.7, 100, "perf_70_30")

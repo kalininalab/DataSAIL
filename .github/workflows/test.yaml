@@ -1,0 +1,38 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Testing
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "test"
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          $CONDA/bin/conda env update --file environment.yaml --name base
+      - name: Lint with flake8
+        run: |
+          $CONDA/bin/conda install flake8
+          # $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Run tests
+        run: |
+          cd tests
+          $CONDA/bin/pytest

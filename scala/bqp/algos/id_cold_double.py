@@ -95,28 +95,3 @@ def solve_ic_iqp(
                 if sum(x_e[i, j, b].value for b in range(len(splits))) == 0:
                     output[0].append((drug, protein, "not selected"))
     return output
-
-
-def main():
-    print(
-        solve_ic_iqp(
-            ["D1", "D2", "D3", "D4", "D5"],
-            ["P1", "P2", "P3", "P4", "P5"],
-            {
-                ("D1", "P1"), ("D1", "P2"), ("D1", "P3"),
-                ("D2", "P1"), ("D2", "P2"), ("D2", "P3"),
-                ("D3", "P1"), ("D3", "P2"), ("D3", "P3"),
-                ("D4", "P4"), ("D4", "P5"),
-                ("D5", "P4"), ("D5", "P5"),
-            },
-            0.2,
-            [0.7, 0.3],
-            ["train", "test"],
-            0,
-            0,
-        )
-    )
-
-
-if __name__ == '__main__':
-    main()

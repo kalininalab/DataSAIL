@@ -62,7 +62,8 @@ def ilp_args(parser: ArgumentParser):
         default=None,
         dest="prot_sim",
         help="Provide the name of a method to determine similarity between proteins. This can either be >WLK<, "
-             ">mmseqs<, or a filepath to a file storing the clusters in TSV."
+             ">mmseqs<, or a filepath to a file storing the clusters in TSV. In case of a TSV, the clusters are "
+             "assumed to be independent."
     )
     ilp.add_argument(
         "--drug-sim",
@@ -70,7 +71,8 @@ def ilp_args(parser: ArgumentParser):
         default=None,
         dest="drug_sim",
         help="Provide the name of a method to determine similarity between proteins. This can either be >WLK< or a "
-             "filepath to a file storing the clusters in TSV."
+             "filepath to a file storing the clusters in TSV. In case of a TSV, the clusters are assumed to be "
+             "independent."
     )
     ilp.add_argument(
         "--header",

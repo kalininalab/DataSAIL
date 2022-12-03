@@ -124,8 +124,8 @@ def bqp_main(**kwargs):
 
     logging.info("Store results")
 
-    if output_inter is None and output_inter is not None and output_proteins is None:
-        output_inter = [(d, p, output_inter[d]) for d, p in inter]
+    if output_inter is None and output_drugs is not None and output_proteins is None:
+        output_inter = [(d, p, output_drugs[d]) for d, p in inter]
     elif output_inter is None and output_drugs is None and output_proteins is not None:
         output_inter = [(d, p, output_proteins[p]) for d, p in inter]
 
@@ -143,7 +143,7 @@ def bqp_main(**kwargs):
 
     if output_drugs is not None:
         split_stats = dict((n, 0) for n in kwargs["names"] + ["not selected"])
-        with open(os.path.join(kwargs["output"], "drug.tsv"), "w") as stream:
+        with open(os.path.join(kwargs["output"], "drugs.tsv"), "w") as stream:
             for drug, split in output_drugs.items():
                 print(drug, split, sep=kwargs["sep"], file=stream)
                 split_stats[split] += 1
@@ -152,7 +152,7 @@ def bqp_main(**kwargs):
 
     if output_proteins is not None:
         split_stats = dict((n, 0) for n in kwargs["names"] + ["not selected"])
-        with open(os.path.join(kwargs["output"], "prot.tsv"), "w") as stream:
+        with open(os.path.join(kwargs["output"], "proteins.tsv"), "w") as stream:
             for protein, split in output_proteins.items():
                 print(protein, split, sep=kwargs["sep"], file=stream)
                 split_stats[split] += 1
