@@ -35,18 +35,13 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: 3.9
-          miniconda-version: latest
+          miniforge-version: latest
           activate-environment: scala
           
-      - uses: actions/cache@v3
-        id: cache
-        with:
-          path: ${{ matrix.prefix }}
-          key: ${{ matrix.label }}-conda-${{ hashFiles('requirements.txt') }}
-
-      - if: ${{ steps.cache.outputs.cache-hit == false }}
-        name: Update environment
-        run: conda env update -n scala -f requirements.txt
+      - name: Update environment
+        run: |
+          conda install -c conda-forge -y numpy pandas networkx matplotlib pyplot setuptools
+          pip install grakel cvxpy rdkit
         
       - name: Run tests
         shell: bash -l {0}
