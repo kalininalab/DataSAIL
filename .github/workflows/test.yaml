@@ -18,16 +18,6 @@ on:
 jobs:
   # This workflow contains a single job called "test"
   test:
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            label: linux-64
-            prefix: /usr/share/miniconda3/envs/scala
-
-    name: ${{ matrix.label }}
-    runs-on: ${{ matrix.os }}
-
     steps:
       - uses: actions/checkout@v3
       
@@ -40,7 +30,7 @@ jobs:
           
       - name: Update environment
         run: |
-          conda install -c conda-forge -y numpy pandas networkx matplotlib pyplot setuptools
+          conda install -c conda-forge -y numpy pandas networkx matplotlib pytest setuptools
           pip install grakel cvxpy rdkit
         
       - name: Run tests
