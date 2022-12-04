@@ -1,0 +1,10 @@
+cvxpy
+numpy
+sortedcontainers
+pandas
+grakel
+networkx
+rdkit
+matplotlib
+pytest
+setuptools
