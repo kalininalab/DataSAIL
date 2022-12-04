@@ -18,21 +18,35 @@ on:
 jobs:
   # This workflow contains a single job called "test"
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: linux-64
+            prefix: /usr/share/miniconda3/envs/scala
+
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: 3.9
-      - name: Install dependencies
-        run: |
-          $CONDA/bin/conda env update --file environment.yml --prune
-      - name: Lint with flake8
-        run: |
-          $CONDA/bin/conda install flake8
-          # $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          miniforge-version: latest
+          activate-environment: scala
+          
+      - uses: actions/cache@v3
+        id: cache
+        with:
+          path: ${{ matrix.prefix }}
+          key: ${{ matrix.label }}-conda-${{ hashFiles('environment.yml') }}
+
+      - if: ${{ steps.cache.outputs.cache-hit == false }}
+        name: Update environment
+        run: conda env update -n scala -f environment.yml
+        
       - name: Run tests
-        run: |
-          cd tests
-          $CONDA/bin/pytest
+        shell: bash -l {0}
+        run: pytest
