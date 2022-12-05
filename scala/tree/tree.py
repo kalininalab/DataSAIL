@@ -19,7 +19,7 @@ def tree_main(args):
         args.tr_size,
         args.te_size,
         fuse_seq_id_threshold=args.seq_id_threshold,
-        verbosity=args.verbosity,
+        verbosity=2,  # args.verbosity,
         weight_file=args.weight_file,
         length_weighting=args.length_weighting,
         tree_file=args.tree_file

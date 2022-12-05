@@ -7,7 +7,7 @@ def ilp_args(parser: ArgumentParser):
     ilp = parser.add_argument_group(description="Argument for ILP Solver")
     ilp.add_argument(
         "--inter",
-        required=True,
+        default=None,
         type=str,
         dest="inter",
         help="Path to TSV file of drug-protein interactions.",
@@ -15,7 +15,7 @@ def ilp_args(parser: ArgumentParser):
     ilp.add_argument(
         "-d",
         "--drugs",
-        required=True,
+        default=None,
         type=str,
         dest="drugs",
         help="Path to TSV file of drugs and their SMILES string.",
