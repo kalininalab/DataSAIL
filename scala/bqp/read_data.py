@@ -1,6 +1,4 @@
-from typing import Tuple, Generator, Dict, List, Union, Optional
-
-from sortedcontainers import SortedList
+from typing import Tuple, Generator, Dict, List, Optional
 
 
 def read_data(**kwargs) -> Tuple[List[Tuple[str, str]], Optional[Dict], Dict, Optional[Dict], Dict]:

@@ -39,6 +39,7 @@ jobs:
           activate-environment: scala
           
       - name: Update environment
+        shell: bash -l {0}
         run: |
           conda install -c conda-forge -y numpy pandas networkx matplotlib pytest setuptools
           pip install grakel cvxpy rdkit
