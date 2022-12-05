@@ -5,9 +5,7 @@ import random
 def generate(train_frac=0.8, size=100, folder="perf_80_20"):
     if not os.path.exists(folder):
         os.makedirs(folder, exist_ok=True)
-    print(train_frac)
     train_frac = (train_frac - (train_frac - train_frac ** 2) ** 0.5) / (2 * train_frac - 1)
-    print(train_frac)
     if not os.path.exists(folder):
         os.makedirs(folder, exist_ok=True)
     with open(folder + "/inter.tsv", "w") as inter, open(folder + "/lig.tsv", "w") as lig, open(folder + "/prot.tsv", "w") as prot:
@@ -23,6 +21,3 @@ def generate(train_frac=0.8, size=100, folder="perf_80_20"):
                 if d == int(train_frac * size):
                     print(f"P{p + 1:05}\tAAT", file=prot)
                 print(f"D{d + 1:05}\tP{p + 1:05}\t{int(random.random() + 0.5)}", file=inter)
-
-
-generate(0.7, 100, "perf_70_30")
