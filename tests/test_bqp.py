@@ -42,13 +42,6 @@ def test_perf_bin(root_dir, mode):
 
     inter = read_tsv(f"{root_dir}/{mode[1]}/inter.tsv")
 
-    """if mode[0] == "ICD":
-        molecules = read_tsv(f"{root_dir}/{mode[1]}/drugs.tsv")
-    elif mode[0] == "ICP":
-        molecules = read_tsv(f"{root_dir}/{mode[1]}/proteins.tsv")
-    else:
-        molecules = None"""
-
     _, _, splits = list(zip(*inter))
     trains, tests = splits.count("train"), splits.count("test")
     train_frac, test_frac = trains / (trains + tests), tests / (trains + tests)
