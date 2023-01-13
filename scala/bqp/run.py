@@ -8,16 +8,27 @@ from scala.bqp.algos.cluster_cold_double import solve_cc_iqp
 from scala.bqp.algos.cluster_cold_single import solve_ccx_iqp
 from scala.bqp.algos.id_cold_double import solve_ic_iqp
 from scala.bqp.algos.id_cold_single import solve_icx_iqp
-from scala.cluster.wl_kernels.protein import smiles_to_grakel
-from scala.cluster.wl_kernels.wlk import run_wl_kernel
-from scala.bqp.read_data import read_data
+from scala.bqp.clustering import cluster
+from scala.bqp.parsing import read_data
 
 
 def bqp_main(**kwargs):
     logging.info("Starting ILP solving")
     logging.info("Read data")
 
-    inter, drugs, drug_weights, proteins, protein_weights = read_data(**kwargs)
+    (protein_names, proteins, protein_weights, protein_similarity, prot_min_sim), (
+    drug_names, drugs, drug_weights, drug_similarity, drug_min_sim), inter = read_data(**kwargs)
+    if isinstance(drug_similarity, str):
+        drug_cluster_map, drug_cluster_similarity = cluster(drugs, drug_similarity)
+        drug_cluster_weights = None
+    else:
+        drug_cluster_map = dict([(d, d) for d in drugs])
+        drug_cluster_similarity = drug_similarity
+        drug_cluster_weights = None
+
+    clusters, cluster_map, cluster_sim = cluster(proteins, kwargs["prot_sim"], **kwargs)
+    cluster_weights = []
+
     output_inter, output_drugs, output_proteins = None, None, None
 
     logging.info("Split data")
@@ -68,8 +79,6 @@ def bqp_main(**kwargs):
         if solution is not None:
             output_inter, output_drugs, output_proteins = solution
     if kwargs["technique"] == "CCD":
-        clusters, cluster_map, cluster_sim = cluster(drugs, "WLK")
-        cluster_weights = []
         cluster_split = solve_ccx_iqp(
             list(range(clusters)),
             cluster_weights,
@@ -84,8 +93,6 @@ def bqp_main(**kwargs):
         if cluster_split:
             output_inter, output_drugs = infer_interactions(cluster_split, set(inter))
     if kwargs["technique"] == "CCP":
-        clusters, cluster_map, cluster_sim = cluster(proteins, "WLK")
-        cluster_weights = []
         cluster_split = solve_ccx_iqp(
             list(range(clusters)),
             cluster_weights,
@@ -101,7 +108,7 @@ def bqp_main(**kwargs):
             output_inter, output_proteins = infer_interactions(cluster_split, set(inter))
     if kwargs["technique"] == "CC":
         drug_clusters, drug_cluster_map, drug_cluster_sim = cluster(drugs, "WLK")
-        prot_clusters, prot_cluster_map, prot_cluster_sim = cluster(proteins, "WLK")
+        prot_clusters, prot_cluster_map, prot_cluster_sim = cluster(proteins, kwargs["prot_sim"])
         cluster_inter = cluster_interactions(inter, drug_clusters, drug_cluster_sim, prot_clusters, prot_cluster_sim)
         cluster_split = solve_cc_iqp(
             list(range(drug_clusters)),
@@ -221,15 +228,3 @@ def sample_categorical(
     for i, split in enumerate(gen()):
         output += [(d, p, names[i]) for d, p in split]
     return output
-
-
-def cluster(mols: Dict[str, str], method: str) -> Tuple[int, Dict[str, int], List[List[int]]]:
-    if method == "WLK":
-        ids = list(mols.keys())
-        graphs = [smiles_to_grakel(mols[idx[0]]) for idx in ids]
-        cluster_sim = run_wl_kernel(graphs)
-        cluster_map = dict((idx[0], i) for i, idx in enumerate(ids))
-    else:
-        raise ValueError("Unknown clustering method.")
-
-    return len(cluster_sim), cluster_map, cluster_sim

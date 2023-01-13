@@ -178,6 +178,9 @@ class MmseqsCluster:
                     self.clusters[cluster_head] = []
                 self.clusters[cluster_head].append(cluster_member)
 
+    def to_dict(self):
+        return self.clusters
+
     def print_all(self):
         for cluster in self.clusters:
             print(f'Rep: {cluster}')

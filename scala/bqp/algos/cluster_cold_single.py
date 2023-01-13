@@ -2,12 +2,13 @@ import logging
 from typing import List, Optional, Dict
 
 import cvxpy
+import numpy as np
 
 
 def solve_ccx_iqp(
         clusters: List[str],
         weights: List[float],
-        similarities: List[List[float]],
+        similarities: np.ndarray,
         threshold: float,
         limit: float,
         splits: List[float],
