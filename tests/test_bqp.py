@@ -52,7 +52,7 @@ def test_perf_bin(root_dir,):
 @pytest.mark.mosek
 @pytest.mark.parametrize("root_dir", ["data/perf_7_3", "data/perf_70_30"])
 @pytest.mark.parametrize("mode", [("ICD", "id_cold_drug"), ("ICP", "id_cold_protein")])
-def test_perf_bin(root_dir, mode):
+def test_perf_bin_2(root_dir, mode):
     run_identity_splitting(root_dir, mode[1], mode[0])
 
     inter = read_tsv(f"{root_dir}/{mode[1]}/inter.tsv")
