@@ -1,5 +1,6 @@
 import string
 import random
+from typing import Dict
 
 
 def random_string(string_length=10):
@@ -36,7 +37,7 @@ def seq_map_to_fasta(seq_map, outfile, subset=None):
             f.write(f"{seq_map[prot_id]}\n")
 
 
-def parse_fasta(path=None, left_split=None, right_split=' ', check_dups=False):
+def parse_fasta(path=None, left_split=None, right_split=' ', check_dups=False) -> Dict[str, str]:
     """
     Parse a FASTA file and do some validity checks if requested.
 

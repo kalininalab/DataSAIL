@@ -8,26 +8,20 @@ from scala.bqp.algos.cluster_cold_double import solve_cc_iqp
 from scala.bqp.algos.cluster_cold_single import solve_ccx_iqp
 from scala.bqp.algos.id_cold_double import solve_ic_iqp
 from scala.bqp.algos.id_cold_single import solve_icx_iqp
-from scala.bqp.clustering import cluster
+from scala.bqp.clustering import cluster, cluster_interactions
 from scala.bqp.parsing import read_data
 
 
 def bqp_main(**kwargs):
-    logging.info("Starting ILP solving")
+    logging.info("Starting BQP solving")
     logging.info("Read data")
 
-    (protein_names, proteins, protein_weights, protein_similarity, prot_min_sim), (
-    drug_names, drugs, drug_weights, drug_similarity, drug_min_sim), inter = read_data(**kwargs)
-    if isinstance(drug_similarity, str):
-        drug_cluster_map, drug_cluster_similarity = cluster(drugs, drug_similarity)
-        drug_cluster_weights = None
-    else:
-        drug_cluster_map = dict([(d, d) for d in drugs])
-        drug_cluster_similarity = drug_similarity
-        drug_cluster_weights = None
-
-    clusters, cluster_map, cluster_sim = cluster(proteins, kwargs["prot_sim"], **kwargs)
-    cluster_weights = []
+    (protein_names, proteins, protein_weights, protein_similarity, prot_min_sim), \
+        (drug_names, drugs, drug_weights, drug_similarity, drug_min_sim), inter = read_data(**kwargs)
+    drug_cluster_names, drug_cluster_map, drug_cluster_similarity, drug_cluster_weights = \
+        cluster(drug_similarity, drugs, drug_weights, **kwargs)
+    prot_cluster_names, prot_cluster_map, prot_cluster_similarity, prot_cluster_weights = \
+        cluster(protein_similarity, proteins, protein_weights, **kwargs)
 
     output_inter, output_drugs, output_proteins = None, None, None
 
@@ -40,10 +34,9 @@ def bqp_main(**kwargs):
             kwargs["names"],
         )
     elif kwargs["technique"] == "ICD":
-        drug = list(drugs.keys())
         solution = solve_icx_iqp(
-            drug,
-            [drug_weights[d] for d in drug],
+            drug_names,
+            [drug_weights[d] for d in drug_names],
             kwargs["limit"],
             kwargs["splits"],
             kwargs["names"],
@@ -53,10 +46,9 @@ def bqp_main(**kwargs):
         if solution:
             output_drugs = solution
     if kwargs["technique"] == "ICP":
-        prot = list(proteins.keys())
         solution = solve_icx_iqp(
-            prot,
-            [protein_weights[p] for p in prot],
+            protein_names,
+            [protein_weights[p] for p in protein_names],
             kwargs["limit"],
             kwargs["splits"],
             kwargs["names"],
@@ -67,8 +59,8 @@ def bqp_main(**kwargs):
             output_proteins = solution
     if kwargs["technique"] == "IC":
         solution = solve_ic_iqp(
-            list(drugs.keys()),
-            list(proteins.keys()),
+            drug_names,
+            protein_names,
             set(inter),
             kwargs["limit"],
             kwargs["splits"],
@@ -80,9 +72,9 @@ def bqp_main(**kwargs):
             output_inter, output_drugs, output_proteins = solution
     if kwargs["technique"] == "CCD":
         cluster_split = solve_ccx_iqp(
-            list(range(clusters)),
-            cluster_weights,
-            cluster_sim,
+            drug_cluster_names,
+            [drug_cluster_weights[dc] for dc in drug_cluster_names],
+            drug_cluster_similarity,
             0.75,
             kwargs["limit"],
             kwargs["splits"],
@@ -94,9 +86,9 @@ def bqp_main(**kwargs):
             output_inter, output_drugs = infer_interactions(cluster_split, set(inter))
     if kwargs["technique"] == "CCP":
         cluster_split = solve_ccx_iqp(
-            list(range(clusters)),
-            cluster_weights,
-            cluster_sim,
+            prot_cluster_names,
+            [prot_cluster_weights[pc] for pc in prot_cluster_names],
+            prot_cluster_similarity,
             0.75,
             kwargs["limit"],
             kwargs["splits"],
@@ -107,18 +99,20 @@ def bqp_main(**kwargs):
         if cluster_split:
             output_inter, output_proteins = infer_interactions(cluster_split, set(inter))
     if kwargs["technique"] == "CC":
-        drug_clusters, drug_cluster_map, drug_cluster_sim = cluster(drugs, "WLK")
-        prot_clusters, prot_cluster_map, prot_cluster_sim = cluster(proteins, kwargs["prot_sim"])
-        cluster_inter = cluster_interactions(inter, drug_clusters, drug_cluster_sim, prot_clusters, prot_cluster_sim)
+        cluster_inter = cluster_interactions(
+            inter,
+            len(drug_cluster_names),
+            drug_cluster_map,
+            len(prot_cluster_names),
+            prot_cluster_map
+        )
         cluster_split = solve_cc_iqp(
-            list(range(drug_clusters)),
-            [],
-            drug_cluster_sim,
-            0.75,
-            list(range(prot_clusters)),
-            [],
-            prot_cluster_sim,
-            0.75,
+            drug_cluster_names,
+            drug_cluster_similarity,
+            drug_min_sim,
+            prot_cluster_names,
+            prot_cluster_similarity,
+            prot_min_sim,
             cluster_inter,
             kwargs["limit"],
             kwargs["splits"],
@@ -184,21 +178,6 @@ def stats_string(count, split_stats):
                 output += f" {0:>6.2f}%"
         output += "\n"
     return output[:-1]
-
-
-def cluster_interactions(
-        inter,
-        num_drug_clusters,
-        drug_cluster_map,
-        num_prot_clusters,
-        prot_cluster_map
-) -> List[List[int]]:
-    output = [[0 for _ in range(num_prot_clusters)] for _ in range(num_drug_clusters)]
-
-    for drug, protein in inter:
-        output[drug_cluster_map[drug]][prot_cluster_map[protein]] += 1
-
-    return output
 
 
 def infer_interactions(

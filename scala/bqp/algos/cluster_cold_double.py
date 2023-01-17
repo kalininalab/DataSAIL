@@ -7,11 +7,9 @@ import numpy as np
 
 def solve_cc_iqp(
         drug_clusters: List[object],
-        drug_weights: List[float],
         drug_similarities: np.ndarray,
         drug_threshold: float,
         prot_clusters: List[object],
-        prot_weights: List[float],
         prot_similarities: np.ndarray,
         prot_threshold: float,
         inter: List[List[int]],
