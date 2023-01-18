@@ -13,6 +13,7 @@ def solve_icx_iqp(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Dict[str, str]]:
+    return None
 
     x = {}
     for i in range(len(molecules)):

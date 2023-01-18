@@ -14,6 +14,7 @@ def solve_ic_iqp(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
+    return None
 
     x_d = {}
     for b in range(len(splits)):

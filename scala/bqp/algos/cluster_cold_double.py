@@ -19,6 +19,7 @@ def solve_cc_iqp(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
+    return None
 
     alpha = 0.1
     inter_count = sum(sum(row) for row in inter)

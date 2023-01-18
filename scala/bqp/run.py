@@ -43,7 +43,7 @@ def bqp_main(**kwargs):
             kwargs["max_sec"],
             kwargs["max_sol"],
         )
-        if solution:
+        if solution is not None:
             output_drugs = solution
     if kwargs["technique"] == "ICP":
         solution = solve_icx_iqp(
@@ -55,7 +55,7 @@ def bqp_main(**kwargs):
             kwargs["max_sec"],
             kwargs["max_sol"],
         )
-        if solution:
+        if solution is not None:
             output_proteins = solution
     if kwargs["technique"] == "IC":
         solution = solve_ic_iqp(
@@ -82,7 +82,7 @@ def bqp_main(**kwargs):
             kwargs["max_sec"],
             kwargs["max_sol"],
         )
-        if cluster_split:
+        if cluster_split is not None:
             output_inter, output_drugs = infer_interactions(cluster_split, set(inter))
     if kwargs["technique"] == "CCP":
         cluster_split = solve_ccx_iqp(
@@ -96,15 +96,15 @@ def bqp_main(**kwargs):
             kwargs["max_sec"],
             kwargs["max_sol"],
         )
-        if cluster_split:
+        if cluster_split is not None:
             output_inter, output_proteins = infer_interactions(cluster_split, set(inter))
     if kwargs["technique"] == "CC":
         cluster_inter = cluster_interactions(
             inter,
-            len(drug_cluster_names),
             drug_cluster_map,
-            len(prot_cluster_names),
-            prot_cluster_map
+            drug_cluster_names,
+            prot_cluster_map,
+            prot_cluster_names,
         )
         cluster_split = solve_cc_iqp(
             drug_cluster_names,
@@ -120,7 +120,7 @@ def bqp_main(**kwargs):
             kwargs["max_sec"],
             kwargs["max_sol"],
         )
-        if cluster_split:
+        if cluster_split is not None:
             output_inter, output_drugs, output_proteins = cluster_split
 
     logging.info("Store results")

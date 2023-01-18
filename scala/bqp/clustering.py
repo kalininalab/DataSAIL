@@ -2,22 +2,25 @@ import os
 from typing import Dict, Tuple, List
 
 import numpy as np
+from rdkit.Chem import MolFromSmiles
 
-from scala.cluster.wl_kernels.protein import smiles_to_grakel, pdb_to_grakel
+from scala.cluster.wl_kernels.protein import mol_to_grakel, pdb_to_grakel
 from scala.cluster.wl_kernels.wlk import run_wl_kernel
 
 
 def cluster_interactions(
         inter,
-        num_drug_clusters,
         drug_cluster_map,
-        num_prot_clusters,
-        prot_cluster_map
+        drug_cluster_names,
+        prot_cluster_map,
+        prot_cluster_names,
 ) -> List[List[int]]:
-    output = [[0 for _ in range(num_prot_clusters)] for _ in range(num_drug_clusters)]
+    output = [[0 for _ in range(len(prot_cluster_names))] for _ in range(len(drug_cluster_names))]
+    drug_mapping = dict((y, x) for x, y in enumerate(drug_cluster_names))
+    prot_mapping = dict((y, x) for x, y in enumerate(prot_cluster_names))
 
     for drug, protein in inter:
-        output[drug_cluster_map[drug]][prot_cluster_map[protein]] += 1
+        output[drug_mapping[drug_cluster_map[drug]]][prot_mapping[prot_cluster_map[protein]]] += 1
 
     return output
 
@@ -27,7 +30,7 @@ def cluster(similarity: np.ndarray, molecules: Dict[str, str], weights: Dict[str
 ]:
     if isinstance(similarity, str):
         cluster_names, cluster_map, cluster_similarity, cluster_weights = clustering(molecules, similarity, **kwargs)
-    elif similarity:
+    elif similarity is not None:
         cluster_names = molecules.keys()
         cluster_map = dict([(d, d) for d, _ in molecules.items()])
         cluster_similarity = similarity
@@ -41,9 +44,9 @@ def cluster(similarity: np.ndarray, molecules: Dict[str, str], weights: Dict[str
 def clustering(mols, cluster_method: str, **kwargs) -> Tuple[
     List[str], Dict[str, str], np.ndarray, Dict[str, float],
 ]:
-    if cluster_method == "WLK":
+    if cluster_method.lower() == "wlk":
         cluster_names, cluster_map, cluster_sim = run_wlk(mols, **kwargs)
-    elif cluster_method == "mmseqs":
+    elif cluster_method.lower() == "mmseqs":
         cluster_names, cluster_map, cluster_sim = run_mmseqs(**kwargs)
     else:
         raise ValueError("Unknown clustering method.")
@@ -59,17 +62,21 @@ def clustering(mols, cluster_method: str, **kwargs) -> Tuple[
 
 
 def run_wlk(molecules: Dict = None, **kwargs) -> Tuple[List[str], Dict[str, str], np.ndarray]:
-    if not molecules:  # cluster proteins with WLK
+    if molecules is None:  # cluster proteins with WLK
         graphs = [pdb_to_grakel(os.path.join(kwargs["pdb_folder"], pdb_path)) for pdb_path in
                   os.listdir(kwargs["pdb_folder"])]
         cluster_names = list(os.listdir(kwargs["pdb_folder"]))
     else:  # cluster molecules (drugs) with WLK
-        cluster_names, graphs = list(zip(*((name, smiles_to_grakel(mol)) for name, mol in molecules)))
+        cluster_names, graphs = list(zip(*((name, mol_to_grakel(notation_to_mol(mol))) for name, mol in molecules.items())))
 
     cluster_sim = run_wl_kernel(graphs)
-    cluster_map = {(name, name) for name, _ in molecules.items()}
+    cluster_map = dict((name, name) for name, _ in molecules.items())
 
     return cluster_names, cluster_map, cluster_sim
+
+
+def notation_to_mol(mol: str):
+    return MolFromSmiles(mol)
 
 
 def run_mmseqs(**kwargs) -> Tuple[List[str], Dict[str, str], np.ndarray]:

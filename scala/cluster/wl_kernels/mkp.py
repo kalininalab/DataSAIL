@@ -6,7 +6,7 @@ import numpy as np
 import networkx as nx
 from ortools.linear_solver import pywraplp
 
-from scala.cluster.wl_kernels.protein import smiles_to_grakel
+from scala.cluster.wl_kernels.protein import mol_to_grakel
 from scala.cluster.wl_kernels.wlk import run_wl_kernel
 
 
@@ -111,7 +111,7 @@ def main():
             mol = Chem.MolFromSmiles(smiles)
             if mol is not None and len(smiles) > 10:
                 valid.append(parts[0])
-                graphs.append(smiles_to_grakel(mol))
+                graphs.append(mol_to_grakel(mol))
 
     # compute a matrix of pairwise graph similarities using Weisfeiler-Lehman kernels
     results = run_wl_kernel(graphs)

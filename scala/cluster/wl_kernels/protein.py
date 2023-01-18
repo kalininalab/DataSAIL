@@ -110,7 +110,7 @@ def pdb_to_grakel(pdb: Union[str, PDBStructure], threshold: float = 7) -> grakel
     return Graph(edges, node_labels=pdb.get_nodes())
 
 
-def smiles_to_grakel(mol) -> grakel.graph.Graph:
+def mol_to_grakel(mol) -> grakel.graph.Graph:
     r"""
     Convert an RDKit molecule into a grakel graph to apply Weisfeiler-Lehman kernels later.
 

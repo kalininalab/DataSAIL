@@ -16,7 +16,9 @@ def solve_ccx_iqp(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Dict[str, str]]:
+    # return None
 
+    print("Defining the optimization problem")
     alpha = 0.5
 
     x = {}
@@ -48,6 +50,7 @@ def solve_ccx_iqp(
     )
 
     # solve
+    logging.info("Start solving with MOSEK")
     objective = cvxpy.Minimize(cmb)
     problem = cvxpy.Problem(objective, constraints)
     problem.solve(
@@ -59,8 +62,8 @@ def solve_ccx_iqp(
         # verbose=True,
     )
 
-    logging.info(f"MOSEK status: {problem.status}")
-    logging.info(f"Solution's score: {problem.value}")
+    print(f"MOSEK status: {problem.status}")
+    print(f"Solution's score: {problem.value}")
 
     if problem.status != "optimal":
         logging.warning(
