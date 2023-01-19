@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple, Set
 import numpy as np
 
 from scala.bqp.algos.cluster_cold_double_sim_sim import solve_cc_iqp
-from scala.bqp.algos.cluster_sim_cold_single import solve_ccx_iqp
+from scala.bqp.algos.cluster_cold_single_sim import solve_ccx_iqp
 from scala.bqp.algos.id_cold_double import solve_ic_iqp
 from scala.bqp.algos.id_cold_single import solve_icx_iqp
 from scala.bqp.clustering import cluster, cluster_interactions

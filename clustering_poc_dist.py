@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 
-from scala.bqp.algos.cluster_sim_cold_single import solve_ccx_iqp
+from scala.bqp.algos.cluster_cold_single_sim import solve_ccx_iqp
 
 file = "tests/data/amay/pairwise_distance.tsv"
 items = []

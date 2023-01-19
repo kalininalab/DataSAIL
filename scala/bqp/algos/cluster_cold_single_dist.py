@@ -37,13 +37,13 @@ def solve_ccx_iqp(
     for b in range(len(splits)):
         for i in range(len(clusters)):
             for j in range(len(clusters)):
-                constraints.append((x[i, b] - x[j, b]) ** 2 * similarities[i][j] <= threshold)
+                constraints.append(cvxpy.maximum((x[i, b] + x[j, b]) - 1, 0) * distances[i][j] <= threshold)
 
     cmb = sum(
         # minimize distance to target size of clusters
         alpha * (sum(x[i, b] * weights[i] for i in range(len(clusters))) - splits[b] * sum(weights)) ** 2 +
         # minimize similarities between elements of clusters
-        sum((x[i, b] - x[j, b]) ** 2 * similarities[i][j] for i in range(len(clusters)) for j in range(len(clusters)))
+        sum(cvxpy.maximum((x[i, b] + x[j, b]) - 1, 0) * distances[i][j] for i in range(len(clusters)) for j in range(len(clusters)))
         for b in range(len(splits))
     )
 
@@ -77,3 +77,52 @@ def solve_ccx_iqp(
                 output[clusters[i]] = names[b]
 
     return output
+
+
+if __name__ == '__main__':
+    print("5 clusters")
+    print(
+        solve_ccx_iqp(
+            ["1", "2", "3", "4", "5"],
+            [3, 3, 3, 2, 2],
+            np.asarray([
+                [0, 0, 0, 4, 4],
+                [0, 0, 0, 4, 4],
+                [0, 0, 0, 4, 4],
+                [4, 4, 4, 0, 0],
+                [4, 4, 4, 0, 0],
+            ]),
+            2,
+            0.2,
+            [0.7, 0.3],
+            ["train", "test"],
+            0,
+            0,
+        )
+    )
+
+    print("10 clusters")
+    print(
+        solve_ccx_iqp(
+            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+            [6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
+            np.asarray([
+                [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
+                [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
+                [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
+                [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
+            ]),
+            0,
+            0.2,
+            [0.7, 0.3],
+            ["train", "test"],
+            0,
+            0,
+        )
+    )
