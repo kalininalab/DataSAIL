@@ -19,7 +19,6 @@ def solve_cc_iqp(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
-    return None
 
     alpha = 0.1
     inter_count = sum(sum(row) for row in inter)
@@ -48,12 +47,13 @@ def solve_cc_iqp(
         for j in range(len(prot_clusters)):
             constraints.append(sum(x_e[i, j, b] for b in range(len(splits))) <= 1)
 
+    all_inter = sum(x_e[i, j, b] for i in range(len(drug_clusters)) for j in range(len(prot_clusters)) for b in range(len(splits)))
     for b in range(len(splits)):
         var = sum(
             x_e[i, j, b] * inter[i][j] for i in range(len(drug_clusters)) for j in range(len(prot_clusters))
         )
-        constraints.append(int(splits[b] * inter_count * (1 - limit)) <= var)
-        constraints.append(var <= int(splits[b] * inter_count * (1 + limit)))
+        # constraints.append(splits[b] * all_inter * (1 - limit) <= var)
+        # constraints.append(var <= splits[b] * all_inter * (1 + limit))
 
         for i in range(len(drug_clusters)):
             for j in range(len(prot_clusters)):

@@ -4,7 +4,6 @@ from sklearn.cluster import AgglomerativeClustering
 from scala.bqp.algos.cluster_sim_cold_single import solve_ccx_iqp
 
 file = "tests/data/amay/pairwise_distance.tsv"
-# file = "tests/data/pipeline/prot_sim.tsv"
 items = []
 dists = []
 with open(file, "r") as data:
@@ -14,12 +13,14 @@ with open(file, "r") as data:
         dists.append([float(x) for x in parts[1:]])
 
 dists = np.array(dists)
-ca = AgglomerativeClustering(n_clusters=None, metric='precomputed', linkage="average",
-                             distance_threshold=np.average(dists) * 0.9)
+ca = AgglomerativeClustering(n_clusters=None, metric='precomputed', linkage="average", distance_threshold=np.average(dists) * 0.9)
 labels = ca.fit_predict(dists)
 
-cluster_dists, cluster_count = np.zeros((max(labels) + 1, max(labels) + 1)), np.zeros(
-    (max(labels) + 1, max(labels) + 1))
+print(labels)
+counts = np.asarray(np.unique(labels, return_counts=True)).T
+print(counts)
+
+cluster_dists, cluster_count = np.zeros((max(labels) + 1, max(labels) + 1)), np.zeros((max(labels) + 1, max(labels) + 1))
 for i in range(len(items)):
     for j in range(i + 1, len(items)):
         if labels[i] != labels[j]:
@@ -28,13 +29,12 @@ for i in range(len(items)):
 
             cluster_dists[labels[j], labels[i]] += dists[i, j]
             cluster_count[labels[j], labels[i]] += 1
-
 cluster_dists /= np.max((cluster_count + np.eye(max(labels) + 1), np.ones_like(cluster_count)))
 cluster_sims = 1 - cluster_dists / np.max(cluster_dists)
 
 split = solve_ccx_iqp(
     clusters=list(range(max(labels) + 1)),
-    weights=[1 for _ in range(max(labels) + 1)],
+    weights=[c for _, c in counts],
     similarities=cluster_sims,
     threshold=1.0,
     limit=0.1,

@@ -16,8 +16,6 @@ def solve_ccx_iqp(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Dict[str, str]]:
-    # return None
-
     print("Defining the optimization problem")
     alpha = 0.5
 

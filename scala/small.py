@@ -28,10 +28,10 @@ for i in range(len(proteins)):
 with open("../tests/data/pipeline/inter.tsv", "w") as inter:
     for d, drug in enumerate(drugs):
         for p, protein in enumerate(proteins):
-            if ((d < 33) == (p < 20) and np.random.random() > 0.1) or \
-                    ((d < 33) == (p < 20) and np.random.random() < 0.1):
+            if ((((d < 33) == (p < 20)) or ((d < 33) == (p < 20))) and np.random.random() > 0.1) or \
+                    ((((d > 33) == (p < 20)) or ((d < 33) == (p > 20))) and np.random.random() > 0.1):
                 print(drug, protein, 1, sep="\t", file=inter)
-
+exit(0)
 
 with open("../tests/data/pipeline/prot_sim.tsv", "w") as prot_sim_file:
     for i, prot in enumerate(proteins):

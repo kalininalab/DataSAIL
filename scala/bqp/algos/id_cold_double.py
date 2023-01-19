@@ -2,6 +2,7 @@ import logging
 from typing import Optional, Tuple, List, Set, Dict
 
 import cvxpy
+import mosek
 
 
 def solve_ic_iqp(
@@ -14,8 +15,6 @@ def solve_ic_iqp(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
-    return None
-
     x_d = {}
     for b in range(len(splits)):
         for i in range(len(drugs)):
@@ -32,6 +31,7 @@ def solve_ic_iqp(
                     x_e[i, j, b] = cvxpy.Variable(boolean=True)
 
     constraints = []
+    print("Constraint defining")
 
     for i in range(len(drugs)):
         constraints.append(sum(x_d[i, b] for b in range(len(splits))) == 1)
@@ -41,14 +41,21 @@ def solve_ic_iqp(
         for j, protein in enumerate(proteins):
             if (drug, protein) in inter:
                 constraints.append(sum(x_e[i, j, b] for b in range(len(splits))) <= 1)
+    print("D, P, and I constraints defined")
 
+    all_inter = sum(
+        x_e[i, j, b] for b in range(len(splits)) for i, drug in enumerate(drugs) for j, protein in enumerate(proteins)
+        if (drug, protein) in inter
+    )
+
+    print("Define size constraints")
     for b in range(len(splits)):
         var = sum(
-            x_e[i, j, b] for i, drug in enumerate(drugs) for j, protein in enumerate(proteins) if (drug, protein) in inter
+            x_e[i, j, b] for i, drug in enumerate(drugs) for j, protein in enumerate(proteins) if
+            (drug, protein) in inter
         )
-        print(names[b], int(splits[b] * len(inter) * (1 - limit)), int(splits[b] * len(inter) * (1 + limit)))
-        constraints.append(int(splits[b] * len(inter) * (1 - limit)) <= var)
-        constraints.append(var <= int(splits[b] * len(inter) * (1 + limit)))
+        # constraints.append(splits[b] * all_inter * (1 - limit) <= var)
+        # constraints.append(var <= splits[b] * all_inter * (1 + limit))
 
         for i, drug in enumerate(drugs):
             for j, protein in enumerate(proteins):
@@ -58,20 +65,34 @@ def solve_ic_iqp(
                     constraints.append(x_d[i, b] >= x_e[i, j, b])
                     constraints.append(x_p[j, b] >= x_e[i, j, b])
 
+    print("Define objective")
+
     inter_loss = sum(
         (1 - sum(x_e[i, j, b] for b in range(len(splits)))) for i, drug in enumerate(drugs)
         for j, protein in enumerate(proteins) if (drug, protein) in inter
     )
 
+    print("Start solving the problem")
+
     objective = cvxpy.Minimize(inter_loss)
     problem = cvxpy.Problem(objective, constraints)
-    problem.solve(solver=cvxpy.MOSEK, qcp=True)
+    problem.solve(solver=cvxpy.MOSEK, qcp=True, mosek_params={
+            mosek.dparam.optimizer_max_time: max_sec * 1_000,
+            # mosek.iparam.max_iterations: max_sol,
+        }
+    )
 
     logging.info(f"MOSEK status: {problem.status}")
     logging.info(f"Solution's score: {problem.value}")
+    print(f"MOSEK status: {problem.status}")
+    print(f"Solution's score: {problem.value}")
 
     if problem.status != "optimal":
         logging.warning(
+            'MOSEK cannot solve the problem. Please consider relaxing split restrictions, '
+            'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
+        )
+        print(
             'MOSEK cannot solve the problem. Please consider relaxing split restrictions, '
             'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
         )

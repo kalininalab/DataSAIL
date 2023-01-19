@@ -34,7 +34,7 @@ def cluster(
     if isinstance(similarity, str):
         cluster_names, cluster_map, cluster_similarity, cluster_weights = clustering(molecules, similarity, **kwargs)
     elif similarity is not None:
-        cluster_names = molecules.keys()
+        cluster_names = list(molecules.keys())
         cluster_map = dict([(d, d) for d, _ in molecules.items()])
         cluster_similarity = similarity
         cluster_weights = weights

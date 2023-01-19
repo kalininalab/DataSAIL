@@ -46,7 +46,7 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
         else:
             protein_similarity = kwargs["prot_sim"]
             protein_names = list(proteins.keys())
-        protein_min_sim = kwargs.get("prot_min_sim", 0)
+        protein_min_sim = kwargs.get("prot_min_sim", 1)
     else:
         proteins, protein_names, protein_weights, protein_similarity, protein_min_sim = None, None, None, None, 0
 
@@ -71,7 +71,7 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
         else:
             drug_similarity = kwargs["drug_sim"]
             drug_names = list(drugs.keys())
-        drug_min_sim = kwargs.get("drug_min_sim", 0)
+        drug_min_sim = kwargs.get("drug_min_sim", 1)
     else:
         drugs, drug_names, drug_weights, drug_similarity, drug_min_sim = None, None, None, None, 0
 
