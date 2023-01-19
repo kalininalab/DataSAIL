@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Optional, Union
 
 import numpy as np
 from rdkit.Chem import MolFromSmiles
@@ -25,9 +25,12 @@ def cluster_interactions(
     return output
 
 
-def cluster(similarity: np.ndarray, molecules: Dict[str, str], weights: Dict[str, float], **kwargs) -> Tuple[
-    List[str], Dict[str, str], np.ndarray, Dict[str, float],
-]:
+def cluster(
+        similarity: Optional[Union[np.ndarray, str]],
+        molecules: Optional[Dict[str, str]],
+        weights: Dict[str, float],
+        **kwargs
+) -> Tuple[List[str], Dict[str, str], np.ndarray, Dict[str, float]]:
     if isinstance(similarity, str):
         cluster_names, cluster_map, cluster_similarity, cluster_weights = clustering(molecules, similarity, **kwargs)
     elif similarity is not None:
@@ -41,7 +44,7 @@ def cluster(similarity: np.ndarray, molecules: Dict[str, str], weights: Dict[str
     return cluster_names, cluster_map, cluster_similarity, cluster_weights
 
 
-def clustering(mols, cluster_method: str, **kwargs) -> Tuple[
+def clustering(mols: Optional, cluster_method: str, **kwargs) -> Tuple[
     List[str], Dict[str, str], np.ndarray, Dict[str, float],
 ]:
     if cluster_method.lower() == "wlk":
@@ -61,11 +64,9 @@ def clustering(mols, cluster_method: str, **kwargs) -> Tuple[
     return cluster_names, cluster_map, cluster_sim, cluster_weights
 
 
-def run_wlk(molecules: Dict = None, **kwargs) -> Tuple[List[str], Dict[str, str], np.ndarray]:
-    if molecules is None:  # cluster proteins with WLK
-        graphs = [pdb_to_grakel(os.path.join(kwargs["pdb_folder"], pdb_path)) for pdb_path in
-                  os.listdir(kwargs["pdb_folder"])]
-        cluster_names = list(os.listdir(kwargs["pdb_folder"]))
+def run_wlk(molecules: Dict, **kwargs) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+    if os.path.isfile(list(molecules.values())[1]):  # cluster proteins with WLK
+        cluster_names, graphs = list(zip(*((name, pdb_to_grakel(pdb_path)) for name, pdb_path in molecules.items())))
     else:  # cluster molecules (drugs) with WLK
         cluster_names, graphs = list(zip(*((name, mol_to_grakel(notation_to_mol(mol))) for name, mol in molecules.items())))
 

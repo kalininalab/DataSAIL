@@ -22,8 +22,12 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
     if kwargs["input"] is not None:
         if kwargs["input"].endswith(".fasta") or kwargs["input"].endswith(".fa"):
             proteins = parse_fasta(kwargs["input"])
-        else:
+        elif os.path.isfile(kwargs["input"]):
             proteins = dict(read_csv(kwargs["input"], kwargs["header"], kwargs["sep"]))
+        elif os.path.isdir(kwargs["input"]):
+            proteins = dict(read_pdb_folder(kwargs["input"]))
+        else:
+            raise ValueError()
 
         # parse the protein weights
         if kwargs["weight_file"] is not None:
@@ -93,6 +97,12 @@ def read_csv(filepath: str, header: bool = False, sep: str = "\t") -> Generator[
     with open(filepath, "r") as inter:
         for line in inter.readlines()[(1 if header else 0):]:
             yield line.strip().split(sep)[:2]
+
+
+def read_pdb_folder(folder_path: str) -> Generator[Tuple[str, str], None, None]:
+    for filename in os.listdir(folder_path):
+        if filename.endswith(".pdb"):
+            yield filename[:-4], os.path.join(folder_path, filename)
 
 
 def count_inter(inter, mode) -> Generator[Tuple[str, int], None, None]:

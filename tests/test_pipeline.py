@@ -60,14 +60,14 @@ def test_pipeline(
 
 
 def test_detail(
-        pdb: bool = True,
+        pdb: bool = False,
         prot_weights: bool = True,
         prot_sim: Optional[str] = 'data/pipeline/prot_sim.tsv',
         drugs: Optional[str] = 'data/pipeline/drugs.tsv',
-        drug_weights: bool = True,
+        drug_weights: bool = False,
         drug_sim: Optional[str] = 'data/pipeline/drug_sim.tsv',
         inter: bool = True,
-        mode: str = 'IC',
+        mode: str = 'CC',
         out_folder: str = "data/pipeline/out",
 ):
     base = "data/pipeline"
