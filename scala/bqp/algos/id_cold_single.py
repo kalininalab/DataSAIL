@@ -61,3 +61,21 @@ def solve_icx_iqp(
                 output[molecules[i]] = names[b]
 
     return output
+
+
+def main():
+    print(
+        solve_icx_iqp(
+            ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"],
+            [6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
+            0.2,
+            [0.7, 0.3],
+            ["train", "test"],
+            0,
+            0,
+        )
+    )
+
+
+if __name__ == '__main__':
+    main()

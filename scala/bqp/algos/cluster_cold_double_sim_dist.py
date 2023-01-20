@@ -10,7 +10,7 @@ def solve_cc_iqp(
         drug_similarities: np.ndarray,
         drug_threshold: float,
         prot_clusters: List[object],
-        prot_similarities: np.ndarray,
+        prot_distances: np.ndarray,
         prot_threshold: float,
         inter: List[List[int]],
         limit: float,
@@ -66,7 +66,7 @@ def solve_cc_iqp(
 
         for i in range(len(prot_clusters)):
             for j in range(i + 1, len(prot_clusters)):
-                constraints.append((x_p[i, b] - x_p[j, b]) ** 2 * prot_similarities[i][j] <= prot_threshold)
+                constraints.append(cvxpy.maximum((x_p[i, b] + x_p[j, b]) - 1, 0) * prot_distances[i][j] <= prot_threshold)
 
     inter_loss = sum(
         alpha * sum(
@@ -75,7 +75,7 @@ def solve_cc_iqp(
             (x_d[i, b] - x_d[j, b]) ** 2 * drug_similarities[i][j] for i in range(len(drug_clusters))
             for j in range(i + 1, len(drug_clusters))
         ) + sum(
-            (x_p[i, b] - x_p[j, b]) ** 2 * prot_similarities[i][j] for i in range(len(prot_clusters))
+            cvxpy.maximum((x_p[i, b] + x_p[j, b]) - 1, 0) * prot_distances[i][j] for i in range(len(prot_clusters))
             for j in range(i + 1, len(prot_clusters))
         ) for b in range(len(splits))
     )
@@ -112,3 +112,38 @@ def solve_cc_iqp(
             if sum(x_e[i, j, b].value for b in range(len(splits))) == 0:
                 output[0].append((drug_clusters[i], prot_clusters[j], "not selected"))
     return output
+
+
+def main():
+    print(
+        solve_cc_iqp(
+            ["D1", "D2", "D3"],
+            np.asarray([
+                [5, 5, 0],
+                [5, 5, 0],
+                [0, 0, 5],
+            ]),
+            4,
+            ["P1", "P2", "P3"],
+            np.asarray([
+                [0, 0, 4],
+                [0, 0, 4],
+                [4, 4, 0],
+            ]),
+            4,
+            [
+                [9, 9, 0],
+                [9, 9, 0],
+                [0, 0, 9],
+            ],
+            0.2,
+            [0.8, 0.2],
+            ["train", "test"],
+            0,
+            0,
+        )
+    )
+
+
+if __name__ == '__main__':
+    main()

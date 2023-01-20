@@ -47,13 +47,13 @@ def solve_cc_iqp(
         for j in range(len(prot_clusters)):
             constraints.append(sum(x_e[i, j, b] for b in range(len(splits))) <= 1)
 
-    all_inter = sum(x_e[i, j, b] for i in range(len(drug_clusters)) for j in range(len(prot_clusters)) for b in range(len(splits)))
+    # all_inter = sum(x_e[i, j, b] for i in range(len(drug_clusters)) for j in range(len(prot_clusters)) for b in range(len(splits)))
     for b in range(len(splits)):
         var = sum(
             x_e[i, j, b] * inter[i][j] for i in range(len(drug_clusters)) for j in range(len(prot_clusters))
         )
-        # constraints.append(splits[b] * all_inter * (1 - limit) <= var)
-        # constraints.append(var <= splits[b] * all_inter * (1 + limit))
+        constraints.append(splits[b] * inter_count * (1 - limit) <= var)
+        constraints.append(var <= splits[b] * inter_count * (1 + limit))
 
         for i in range(len(drug_clusters)):
             for j in range(len(prot_clusters)):
@@ -114,3 +114,38 @@ def solve_cc_iqp(
             if sum(x_e[i, j, b].value for b in range(len(splits))) == 0:
                 output[0].append((drug_clusters[i], prot_clusters[j], "not selected"))
     return output
+
+
+def main():
+    print(
+        solve_cc_iqp(
+            ["D1", "D2", "D3"],
+            np.asarray([
+                [5, 5, 0],
+                [5, 5, 0],
+                [0, 0, 5],
+            ]),
+            4,
+            ["P1", "P2", "P3"],
+            np.asarray([
+                [5, 5, 0],
+                [5, 5, 0],
+                [0, 0, 5],
+            ]),
+            4,
+            [
+                [9, 9, 0],
+                [9, 9, 0],
+                [0, 0, 9],
+            ],
+            0.2,
+            [0.8, 0.2],
+            ["train", "test"],
+            0,
+            0,
+        )
+    )
+
+
+if __name__ == '__main__':
+    main()

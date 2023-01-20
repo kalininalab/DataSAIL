@@ -4,6 +4,8 @@ from typing import Optional, Tuple, List, Set, Dict
 import cvxpy
 import mosek
 
+from scala.bqp.algos.utils import estimate_surviving_interactions
+
 
 def solve_ic_iqp(
         drugs: List[object],
@@ -16,6 +18,8 @@ def solve_ic_iqp(
         max_sol: int,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
     x_d = {}
+    all_inter = len(inter)  # estimate_surviving_interactions(len(inter), len(drugs), len(proteins), splits)
+    print(all_inter)
     for b in range(len(splits)):
         for i in range(len(drugs)):
             x_d[i, b] = cvxpy.Variable(boolean=True)
@@ -43,10 +47,10 @@ def solve_ic_iqp(
                 constraints.append(sum(x_e[i, j, b] for b in range(len(splits))) <= 1)
     print("D, P, and I constraints defined")
 
-    all_inter = sum(
-        x_e[i, j, b] for b in range(len(splits)) for i, drug in enumerate(drugs) for j, protein in enumerate(proteins)
-        if (drug, protein) in inter
-    )
+    # all_inter = sum(
+    #     x_e[i, j, b] for b in range(len(splits)) for i, drug in enumerate(drugs) for j, protein in enumerate(proteins)
+    #     if (drug, protein) in inter
+    # )
 
     print("Define size constraints")
     for b in range(len(splits)):
@@ -54,8 +58,8 @@ def solve_ic_iqp(
             x_e[i, j, b] for i, drug in enumerate(drugs) for j, protein in enumerate(proteins) if
             (drug, protein) in inter
         )
-        # constraints.append(splits[b] * all_inter * (1 - limit) <= var)
-        # constraints.append(var <= splits[b] * all_inter * (1 + limit))
+        constraints.append(splits[b] * all_inter * (1 - limit) <= var)
+        constraints.append(var <= splits[b] * all_inter * (1 + limit))
 
         for i, drug in enumerate(drugs):
             for j, protein in enumerate(proteins):
@@ -77,7 +81,7 @@ def solve_ic_iqp(
     objective = cvxpy.Minimize(inter_loss)
     problem = cvxpy.Problem(objective, constraints)
     problem.solve(solver=cvxpy.MOSEK, qcp=True, mosek_params={
-            mosek.dparam.optimizer_max_time: max_sec * 1_000,
+            mosek.dparam.optimizer_max_time: max_sec,
             # mosek.iparam.max_iterations: max_sol,
         }
     )
@@ -87,7 +91,7 @@ def solve_ic_iqp(
     print(f"MOSEK status: {problem.status}")
     print(f"Solution's score: {problem.value}")
 
-    if problem.status != "optimal":
+    if "optimal" not in problem.status:
         logging.warning(
             'MOSEK cannot solve the problem. Please consider relaxing split restrictions, '
             'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
@@ -117,3 +121,28 @@ def solve_ic_iqp(
                 if sum(x_e[i, j, b].value for b in range(len(splits))) == 0:
                     output[0].append((drug, protein, "not selected"))
     return output
+
+
+def main():
+    print(
+        solve_ic_iqp(
+            ["D1", "D2", "D3", "D4", "D5"],
+            ["P1", "P2", "P3", "P4", "P5"],
+            {
+                ("D1", "P1"), ("D1", "P2"), ("D1", "P3"),
+                ("D2", "P1"), ("D2", "P2"), ("D2", "P3"),
+                ("D3", "P1"), ("D3", "P2"), ("D3", "P3"),
+                ("D4", "P4"), ("D4", "P5"),
+                ("D5", "P4"), ("D5", "P5"),
+            },
+            0.2,
+            [0.7, 0.3],
+            ["train", "test"],
+            10,
+            0,
+        )
+    )
+
+
+if __name__ == '__main__':
+    main()
