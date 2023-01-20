@@ -1,20 +1,21 @@
 import logging
-from typing import List, Optional, Tuple, Dict
+from typing import List, Optional, Tuple, Dict, Union
 
 import cvxpy
+import mosek
 import numpy as np
 
 
 def solve_ccd_bqp(
-        drug_clusters: List[object],
+        drug_clusters: List[Union[str, int]],
         drug_similarities: Optional[np.ndarray],
         drug_distances: Optional[np.ndarray],
         drug_threshold: float,
-        prot_clusters: List[object],
+        prot_clusters: List[Union[str, int]],
         prot_similarities: Optional[np.ndarray],
         prot_distances: Optional[np.ndarray],
         prot_threshold: float,
-        inter: List[List[int]],
+        inter: np.ndarray,
         limit: float,
         splits: List[float],
         names: List[str],
@@ -23,7 +24,7 @@ def solve_ccd_bqp(
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
 
     alpha = 0.1
-    inter_count = sum(sum(row) for row in inter)
+    inter_count = np.sum(inter)
 
     x_d = {}
     for b in range(len(splits)):
@@ -52,7 +53,7 @@ def solve_ccd_bqp(
     # all_inter = sum(x_e[i, j, b] for i in range(len(drug_clusters)) for j in range(len(prot_clusters)) for b in range(len(splits)))
     for b in range(len(splits)):
         var = sum(
-            x_e[i, j, b] * inter[i][j] for i in range(len(drug_clusters)) for j in range(len(prot_clusters))
+            x_e[i, j, b] * inter[i, j] for i in range(len(drug_clusters)) for j in range(len(prot_clusters))
         )
         constraints.append(splits[b] * inter_count * (1 - limit) <= var)
         constraints.append(var <= splits[b] * inter_count * (1 + limit))
@@ -83,7 +84,7 @@ def solve_ccd_bqp(
                     constraints.append(cvxpy.maximum((x_p[i, b] + x_p[j, b]) - 1, 0) * prot_distances[i][j] <= prot_threshold)
 
     inter_loss = sum(
-        (1 - x_e[i, j, b]) * inter[i][j]
+        (1 - x_e[i, j, b]) * inter[i, j]
         for i in range(len(drug_clusters)) for j in range(len(prot_clusters)) for b in range(len(splits))
     )
 
@@ -111,7 +112,13 @@ def solve_ccd_bqp(
 
     objective = cvxpy.Minimize(alpha * inter_loss + drug_loss + prot_loss)
     problem = cvxpy.Problem(objective, constraints)
-    problem.solve(solver=cvxpy.MOSEK, qcp=True)
+    problem.solve(
+        solver=cvxpy.MOSEK,
+        qcp=True,
+        mosek_params={
+            mosek.dparam.optimizer_max_time: max_sec,
+        },
+    )
 
     logging.info(f"MOSEK status: {problem.status}")
     logging.info(f"Solution's score: {problem.value}")

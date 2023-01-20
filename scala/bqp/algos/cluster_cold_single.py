@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union
 
 import cvxpy
 import mosek
@@ -7,7 +7,7 @@ import numpy as np
 
 
 def solve_ccs_bqp(
-        clusters: List[str],
+        clusters: List[Union[str, int]],
         weights: List[float],
         similarities: Optional[np.ndarray],
         distances: Optional[np.ndarray],

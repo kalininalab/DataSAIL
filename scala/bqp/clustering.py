@@ -3,6 +3,7 @@ from typing import Dict, Tuple, List, Optional, Union
 
 import numpy as np
 from rdkit.Chem import MolFromSmiles
+from sklearn.cluster import AffinityPropagation, AgglomerativeClustering
 
 from scala.cluster.wl_kernels.protein import mol_to_grakel, pdb_to_grakel
 from scala.cluster.wl_kernels.wlk import run_wl_kernel
@@ -10,17 +11,18 @@ from scala.cluster.wl_kernels.wlk import run_wl_kernel
 
 def cluster_interactions(
         inter,
-        drug_cluster_map,
-        drug_cluster_names,
-        prot_cluster_map,
-        prot_cluster_names,
-) -> List[List[int]]:
-    output = [[0 for _ in range(len(prot_cluster_names))] for _ in range(len(drug_cluster_names))]
+        drug_cluster_map: Dict[str, Union[str, int]],
+        drug_cluster_names: List[Union[str, int]],
+        prot_cluster_map: Dict[str, Union[str, int]],
+        prot_cluster_names: List[Union[str, int]],
+) -> np.ndarray:
     drug_mapping = dict((y, x) for x, y in enumerate(drug_cluster_names))
     prot_mapping = dict((y, x) for x, y in enumerate(prot_cluster_names))
 
+    output = np.zeros((len(drug_cluster_names), len(prot_cluster_names)))
     for drug, protein in inter:
         output[drug_mapping[drug_cluster_map[drug]]][prot_mapping[prot_cluster_map[protein]]] += 1
+        output[prot_mapping[prot_cluster_map[protein]]][drug_mapping[drug_cluster_map[drug]]] += 1
 
     return output
 
@@ -31,7 +33,7 @@ def cluster(
         molecules: Optional[Dict[str, str]],
         weights: Dict[str, float],
         **kwargs
-) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray], Optional[np.ndarray], Dict[str, float]]:
+) -> Tuple[List[Union[str, int]], Dict[str, str], Optional[np.ndarray], Optional[np.ndarray], Dict[str, float]]:
     cluster_similarity, cluster_distance = None, None
     if isinstance(similarity, str):
         cluster_names, cluster_map, cluster_similarity, cluster_weights = \
@@ -47,6 +49,11 @@ def cluster(
         cluster_weights = weights
     else:
         cluster_names, cluster_map, cluster_weights = None, None, None
+
+    while len(cluster_names) > 50:
+        cluster_names, cluster_map, cluster_similarity, cluster_distance, cluster_weights = additional_clustering(
+            cluster_names, cluster_map, cluster_similarity, cluster_distance, cluster_weights
+        )
 
     return cluster_names, cluster_map, cluster_similarity, cluster_distance, cluster_weights
 
@@ -75,6 +82,56 @@ def distance_clustering(mols: Optional, cluster_method: str, **kwargs) -> Tuple[
     List[str], Dict[str, str], np.ndarray, Dict[str, float],
 ]:
     return [], {}, np.array(1), {}
+
+
+def additional_clustering(
+        cluster_names: List[Union[str, int]],
+        cluster_map: Dict[str, str],
+        cluster_similarity: Optional[np.ndarray],
+        cluster_distance: Optional[np.ndarray],
+        cluster_weights: Dict[str, float],
+):
+    # assert (cluster_similarity is None) != (cluster_distance is None)
+    if cluster_similarity is not None:
+        ca = AffinityPropagation(affinity='precomputed', random_state=42)
+        cluster_matrix = cluster_similarity
+    else:
+        ca = AgglomerativeClustering(
+            n_clusters=None,
+            metric='precomputed',
+            linkage="average",
+            distance_threshold=np.average(cluster_distance) * 0.9
+        )
+        cluster_matrix = cluster_distance
+
+    labels = ca.fit_predict(cluster_matrix)
+
+    old_cluster_map = dict((y, x) for x, y in enumerate(cluster_names))
+    new_cluster_names = list(np.unique(labels))
+    new_cluster_map = dict((n, labels[old_cluster_map[c]]) for n, c in cluster_map.items())
+
+    new_cluster_matrix = np.zeros((len(new_cluster_names), len(new_cluster_names)))
+    cluster_count = np.zeros((len(new_cluster_names), len(new_cluster_names)))
+    for i in range(len(cluster_names)):
+        for j in range(i + 1, len(cluster_names)):
+            if labels[i] != labels[j]:
+                new_cluster_matrix[labels[i], labels[j]] += cluster_matrix[i, j]
+                cluster_count[labels[i], labels[j]] += 1
+
+                new_cluster_matrix[labels[j], labels[i]] += cluster_matrix[i, j]
+                cluster_count[labels[j], labels[i]] += 1
+    cluster_matrix /= np.max((cluster_count + np.eye(max(labels) + 1), np.ones_like(cluster_count)))
+
+    new_cluster_weights = {}
+    for name in cluster_names:
+        new_cluster = new_cluster_map[name]
+        if new_cluster not in new_cluster_weights:
+            new_cluster_weights[new_cluster] = 0
+        new_cluster_weights[new_cluster] += cluster_weights[name]
+
+    if cluster_similarity is not None:
+        return new_cluster_names, new_cluster_map, new_cluster_matrix, None, new_cluster_weights
+    return new_cluster_names, new_cluster_map, None, new_cluster_matrix, new_cluster_weights
 
 
 def run_wlk(molecules: Dict, **kwargs) -> Tuple[List[str], Dict[str, str], np.ndarray]:

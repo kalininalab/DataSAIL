@@ -39,6 +39,7 @@ split = solve_ccs_bqp(
     clusters=list(range(max(labels) + 1)),
     weights=[c for _, c in counts],
     similarities=cluster_sims,
+    distances=None,
     threshold=np.average(cluster_sims),
     limit=0.1,
     splits=[0.7, 0.3],
