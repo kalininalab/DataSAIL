@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.cluster import AffinityPropagation
 
-from scala.bqp.algos.cluster_cold_single_sim import solve_ccx_iqp
+from scala.bqp.algos.cluster_cold_single import solve_ccs_bqp
 
 file = "tests/data/pipeline/prot_sim.tsv"
 items = []
@@ -35,7 +35,7 @@ print(cluster_sims)
 
 print(np.average(cluster_sims))
 
-split = solve_ccx_iqp(
+split = solve_ccs_bqp(
     clusters=list(range(max(labels) + 1)),
     weights=[c for _, c in counts],
     similarities=cluster_sims,

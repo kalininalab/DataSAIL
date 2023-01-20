@@ -2,13 +2,15 @@ import logging
 from typing import List, Optional, Dict
 
 import cvxpy
+import mosek
 import numpy as np
 
 
-def solve_ccx_iqp(
+def solve_ccs_bqp(
         clusters: List[str],
         weights: List[float],
-        similarities: np.ndarray,
+        similarities: Optional[np.ndarray],
+        distances: Optional[np.ndarray],
         threshold: float,
         limit: float,
         splits: List[float],
@@ -34,30 +36,42 @@ def solve_ccx_iqp(
         constraints.append(int(splits[b] * sum(weights) * (1 - limit)) <= var)
         constraints.append(var <= int(splits[b] * sum(weights) * (1 + limit)))
 
-    for b in range(len(splits)):
-        for i in range(len(clusters)):
-            for j in range(len(clusters)):
-                constraints.append((x[i, b] - x[j, b]) ** 2 * similarities[i][j] <= threshold)
+    if distances is not None:
+        for b in range(len(splits)):
+            for i in range(len(clusters)):
+                for j in range(len(clusters)):
+                    constraints.append(cvxpy.maximum((x[i, b] + x[j, b]) - 1, 0) * distances[i, j] <= threshold)
+    else:
+        for b in range(len(splits)):
+            for i in range(len(clusters)):
+                for j in range(len(clusters)):
+                    constraints.append((x[i, b] - x[j, b]) ** 2 * similarities[i, j] <= threshold)
 
-    cmb = sum(
-        # minimize distance to target size of clusters
-        alpha * (sum(x[i, b] * weights[i] for i in range(len(clusters))) - splits[b] * sum(weights)) ** 2 +
-        # minimize similarities between elements of clusters
-        sum((x[i, b] - x[j, b]) ** 2 * similarities[i][j] for i in range(len(clusters)) for j in range(len(clusters)))
+    size_loss = sum(
+        (sum(x[i, b] * weights[i] for i in range(len(clusters))) - splits[b] * sum(weights)) ** 2
         for b in range(len(splits))
     )
+    if distances is not None:
+        cluster_loss = sum(
+            (x[i, b] - x[j, b]) ** 2 * similarities[i][j]
+            for i in range(len(clusters)) for j in range(len(clusters)) for b in range(len(splits))
+        )
+    else:
+        cluster_loss = sum(
+            (x[i, b] - x[j, b]) ** 2 * similarities[i, j]
+            for i in range(len(clusters)) for j in range(len(clusters)) for b in range(len(splits))
+        )
 
     # solve
     logging.info("Start solving with MOSEK")
-    objective = cvxpy.Minimize(cmb)
+    objective = cvxpy.Minimize(alpha * size_loss + cluster_loss)
     problem = cvxpy.Problem(objective, constraints)
     problem.solve(
         solver=cvxpy.MOSEK,
         qcp=True,
-        # mosek_params={
-        #     mosek.dparam.optimizer_max_time: max_sec * 1_000,
-        # },
-        # verbose=True,
+        mosek_params={
+            mosek.dparam.optimizer_max_time: max_sec,
+        },
     )
 
     print(f"MOSEK status: {problem.status}")
@@ -82,7 +96,7 @@ def solve_ccx_iqp(
 if __name__ == '__main__':
     print("5 clusters")
     print(
-        solve_ccx_iqp(
+        solve_ccs_bqp(
             ["1", "2", "3", "4", "5"],
             [3, 3, 3, 2, 2],
             np.asarray([
@@ -92,6 +106,7 @@ if __name__ == '__main__':
                 [4, 4, 4, 0, 0],
                 [4, 4, 4, 0, 0],
             ]),
+            None,
             1,
             0.2,
             [0.7, 0.3],
@@ -104,7 +119,7 @@ if __name__ == '__main__':
 
     print("10 clusters")
     print(
-        solve_ccx_iqp(
+        solve_ccs_bqp(
             ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
             [6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
             np.asarray([
@@ -119,6 +134,7 @@ if __name__ == '__main__':
                 [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
                 [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
             ]),
+            None,
             1,
             0.2,
             [0.7, 0.3],

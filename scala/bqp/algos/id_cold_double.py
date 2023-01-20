@@ -4,10 +4,8 @@ from typing import Optional, Tuple, List, Set, Dict
 import cvxpy
 import mosek
 
-from scala.bqp.algos.utils import estimate_surviving_interactions
 
-
-def solve_ic_iqp(
+def solve_icd_bqp(
         drugs: List[object],
         proteins: List[object],
         inter: Set[Tuple[str, str]],
@@ -125,7 +123,7 @@ def solve_ic_iqp(
 
 def main():
     print(
-        solve_ic_iqp(
+        solve_icd_bqp(
             ["D1", "D2", "D3", "D4", "D5"],
             ["P1", "P2", "P3", "P4", "P5"],
             {

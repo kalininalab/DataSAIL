@@ -5,7 +5,7 @@ import cvxpy
 import mosek
 
 
-def solve_icx_iqp(
+def solve_ics_bqp(
         molecules: List[str],
         weights: List[float],
         limit: float,
@@ -65,7 +65,7 @@ def solve_icx_iqp(
 
 def main():
     print(
-        solve_icx_iqp(
+        solve_ics_bqp(
             ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"],
             [6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
             0.2,

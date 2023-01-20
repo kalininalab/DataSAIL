@@ -5,12 +5,14 @@ import cvxpy
 import numpy as np
 
 
-def solve_cc_iqp(
+def solve_ccd_bqp(
         drug_clusters: List[object],
-        drug_distances: np.ndarray,
+        drug_similarities: Optional[np.ndarray],
+        drug_distances: Optional[np.ndarray],
         drug_threshold: float,
         prot_clusters: List[object],
-        prot_distances: np.ndarray,
+        prot_similarities: Optional[np.ndarray],
+        prot_distances: Optional[np.ndarray],
         prot_threshold: float,
         inter: List[List[int]],
         limit: float,
@@ -19,6 +21,7 @@ def solve_cc_iqp(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
+
     alpha = 0.1
     inter_count = sum(sum(row) for row in inter)
 
@@ -46,12 +49,13 @@ def solve_cc_iqp(
         for j in range(len(prot_clusters)):
             constraints.append(sum(x_e[i, j, b] for b in range(len(splits))) <= 1)
 
+    # all_inter = sum(x_e[i, j, b] for i in range(len(drug_clusters)) for j in range(len(prot_clusters)) for b in range(len(splits)))
     for b in range(len(splits)):
         var = sum(
             x_e[i, j, b] * inter[i][j] for i in range(len(drug_clusters)) for j in range(len(prot_clusters))
         )
-        constraints.append(int(splits[b] * inter_count * (1 - limit)) <= var)
-        constraints.append(var <= int(splits[b] * inter_count * (1 + limit)))
+        constraints.append(splits[b] * inter_count * (1 - limit) <= var)
+        constraints.append(var <= splits[b] * inter_count * (1 + limit))
 
         for i in range(len(drug_clusters)):
             for j in range(len(prot_clusters)):
@@ -60,27 +64,52 @@ def solve_cc_iqp(
                 constraints.append(x_d[i, b] >= x_e[i, j, b])
                 constraints.append(x_p[j, b] >= x_e[i, j, b])
 
-        for i in range(len(drug_clusters)):
-            for j in range(i + 1, len(drug_clusters)):
-                constraints.append(cvxpy.maximum((x_d[i, b] + x_d[j, b]) - 1, 0) * drug_distances[i][j] <= drug_threshold)
+        if drug_similarities is not None:
+            for i in range(len(drug_clusters)):
+                for j in range(i + 1, len(drug_clusters)):
+                    constraints.append((x_d[i, b] - x_d[j, b]) ** 2 * drug_similarities[i][j] <= drug_threshold)
+        else:
+            for i in range(len(drug_clusters)):
+                for j in range(i + 1, len(drug_clusters)):
+                    constraints.append(cvxpy.maximum((x_d[i, b] + x_d[j, b]) - 1, 0) * drug_distances[i][j] <= drug_threshold)
 
-        for i in range(len(prot_clusters)):
-            for j in range(i + 1, len(prot_clusters)):
-                constraints.append(cvxpy.maximum((x_p[i, b] + x_p[j, b]) - 1, 0) * prot_distances[i][j] <= prot_threshold)
+        if prot_similarities is not None:
+            for i in range(len(prot_clusters)):
+                for j in range(i + 1, len(prot_clusters)):
+                    constraints.append((x_p[i, b] - x_p[j, b]) ** 2 * prot_similarities[i][j] <= prot_threshold)
+        else:
+            for i in range(len(prot_clusters)):
+                for j in range(i + 1, len(prot_clusters)):
+                    constraints.append(cvxpy.maximum((x_p[i, b] + x_p[j, b]) - 1, 0) * prot_distances[i][j] <= prot_threshold)
 
     inter_loss = sum(
-        alpha * sum(
-            (1 - x_e[i, j, b]) * inter[i][j] for i in range(len(drug_clusters)) for j in range(len(prot_clusters))
-        ) + sum(
-            cvxpy.maximum((x_d[i, b] + x_d[j, b]) - 1, 0) * drug_distances[i][j] for i in range(len(drug_clusters))
-            for j in range(i + 1, len(drug_clusters))
-        ) + sum(
-            cvxpy.maximum((x_p[i, b] + x_p[j, b]) - 1, 0) * prot_distances[i][j] for i in range(len(prot_clusters))
-            for j in range(i + 1, len(prot_clusters))
-        ) for b in range(len(splits))
+        (1 - x_e[i, j, b]) * inter[i][j]
+        for i in range(len(drug_clusters)) for j in range(len(prot_clusters)) for b in range(len(splits))
     )
 
-    objective = cvxpy.Minimize(inter_loss)
+    if drug_similarities is not None:
+        drug_loss = sum(
+            (x_d[i, b] - x_d[j, b]) ** 2 * drug_similarities[i][j]
+            for i in range(len(drug_clusters)) for j in range(i + 1, len(drug_clusters)) for b in range(len(splits))
+        )
+    else:
+        drug_loss = sum(
+            cvxpy.maximum((x_d[i, b] + x_d[j, b]) - 1, 0) * drug_distances[i][j]
+            for i in range(len(drug_clusters)) for j in range(i + 1, len(drug_clusters)) for b in range(len(splits))
+        )
+
+    if prot_similarities is not None:
+        prot_loss = sum(
+            (x_p[i, b] - x_p[j, b]) ** 2 * prot_similarities[i][j]
+            for i in range(len(prot_clusters)) for j in range(i + 1, len(prot_clusters)) for b in range(len(splits))
+        )
+    else:
+        prot_loss = sum(
+            cvxpy.maximum((x_p[i, b] + x_p[j, b]) - 1, 0) * prot_distances[i][j]
+            for i in range(len(prot_clusters)) for j in range(i + 1, len(prot_clusters)) for b in range(len(splits))
+        )
+
+    objective = cvxpy.Minimize(alpha * inter_loss + drug_loss + prot_loss)
     problem = cvxpy.Problem(objective, constraints)
     problem.solve(solver=cvxpy.MOSEK, qcp=True)
 
@@ -116,20 +145,22 @@ def solve_cc_iqp(
 
 def main():
     print(
-        solve_cc_iqp(
+        solve_ccd_bqp(
             ["D1", "D2", "D3"],
             np.asarray([
-                [0, 0, 4],
-                [0, 0, 4],
-                [4, 4, 0],
+                [5, 5, 0],
+                [5, 5, 0],
+                [0, 0, 5],
             ]),
+            None,
             4,
             ["P1", "P2", "P3"],
             np.asarray([
-                [0, 0, 4],
-                [0, 0, 4],
-                [4, 4, 0],
+                [5, 5, 0],
+                [5, 5, 0],
+                [0, 0, 5],
             ]),
+            None,
             4,
             [
                 [9, 9, 0],

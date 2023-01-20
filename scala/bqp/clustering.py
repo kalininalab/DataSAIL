@@ -27,24 +27,31 @@ def cluster_interactions(
 
 def cluster(
         similarity: Optional[Union[np.ndarray, str]],
+        distance: Optional[Union[np.ndarray, str]],
         molecules: Optional[Dict[str, str]],
         weights: Dict[str, float],
         **kwargs
-) -> Tuple[List[str], Dict[str, str], np.ndarray, Dict[str, float]]:
+) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray], Optional[np.ndarray], Dict[str, float]]:
+    cluster_similarity, cluster_distance = None, None
     if isinstance(similarity, str):
-        cluster_names, cluster_map, cluster_similarity, cluster_weights = clustering(molecules, similarity, **kwargs)
-    elif similarity is not None:
+        cluster_names, cluster_map, cluster_similarity, cluster_weights = \
+            similarity_clustering(molecules, similarity, **kwargs)
+    if isinstance(distance, str):
+        cluster_names, cluster_map, cluster_distance, cluster_weights = \
+            distance_clustering(molecules, distance, **kwargs)
+    elif similarity is not None or distance is not None:
         cluster_names = list(molecules.keys())
         cluster_map = dict([(d, d) for d, _ in molecules.items()])
         cluster_similarity = similarity
+        cluster_distance = distance
         cluster_weights = weights
     else:
-        cluster_names, cluster_map, cluster_similarity, cluster_weights = None, None, None, None
+        cluster_names, cluster_map, cluster_weights = None, None, None
 
-    return cluster_names, cluster_map, cluster_similarity, cluster_weights
+    return cluster_names, cluster_map, cluster_similarity, cluster_distance, cluster_weights
 
 
-def clustering(mols: Optional, cluster_method: str, **kwargs) -> Tuple[
+def similarity_clustering(mols: Optional, cluster_method: str, **kwargs) -> Tuple[
     List[str], Dict[str, str], np.ndarray, Dict[str, float],
 ]:
     if cluster_method.lower() == "wlk":
@@ -62,6 +69,12 @@ def clustering(mols: Optional, cluster_method: str, **kwargs) -> Tuple[
 
     # cluster_map maps members to their cluster names
     return cluster_names, cluster_map, cluster_sim, cluster_weights
+
+
+def distance_clustering(mols: Optional, cluster_method: str, **kwargs) -> Tuple[
+    List[str], Dict[str, str], np.ndarray, Dict[str, float],
+]:
+    return [], {}, np.array(1), {}
 
 
 def run_wlk(molecules: Dict, **kwargs) -> Tuple[List[str], Dict[str, str], np.ndarray]:

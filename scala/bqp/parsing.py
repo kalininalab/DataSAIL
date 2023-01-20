@@ -10,6 +10,7 @@ ParseInfo = Tuple[
     Optional[Dict[str, str]],
     Optional[Dict[str, float]],
     Optional[Union[np.ndarray, str]],
+    Optional[Union[np.ndarray, str]],
     float
 ]
 
@@ -38,17 +39,28 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
             protein_weights = np.zeros(len(proteins))  # TODO: Check if it needs to be np.ones(...)
 
         # parse the protein similarity measure
-        if kwargs["prot_sim"] is None:
+        protein_similarity, protein_distance = None, None
+        if kwargs["prot_sim"] is None and kwargs["prot_dist"] is None:
             protein_similarity = np.ones((len(proteins), len(proteins)))
             protein_names = list(proteins.keys())
-        elif os.path.isfile(kwargs["prot_sim"]):
+            protein_threshold = 1
+        elif kwargs["prot_sim"] is not None and os.path.isfile(kwargs["prot_sim"]):
             protein_names, protein_similarity = read_similarity_file(kwargs["prot_sim"])
+            protein_threshold = kwargs.get("prot_min_sim", 1)
+        elif kwargs["prot_dist"] is not None and os.path.isfile(kwargs["prot_dist"]):
+            protein_names, protein_distance = read_similarity_file(kwargs["prot_sim"])
+            protein_threshold = kwargs.get("prot_max_dist", 1)
         else:
-            protein_similarity = kwargs["prot_sim"]
+            if kwargs["prot_sim"] is not None:
+                protein_similarity = kwargs["prot_sim"]
+                protein_threshold = kwargs.get("prot_min_sim", 1)
+            else:
+                protein_distance = kwargs["prot_dist"]
+                protein_threshold = kwargs.get("prot_max_dist", 1)
             protein_names = list(proteins.keys())
-        protein_min_sim = kwargs.get("prot_min_sim", 1)
     else:
-        proteins, protein_names, protein_weights, protein_similarity, protein_min_sim = None, None, None, None, 0
+        proteins, protein_names, protein_weights, protein_similarity, protein_distance, protein_threshold = \
+            None, None, None, None, None, 0
 
     # parse molecules
     if kwargs["drugs"] is not None:
@@ -63,17 +75,28 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
             drug_weights = None
 
         # parse molecular similarity
-        if kwargs["drug_sim"] is None:
+        drug_similarity, drug_distance = None, None
+        if kwargs["drug_sim"] is None and kwargs["drug_dist"] is None:
             drug_similarity = np.ones((len(drugs), len(drugs)))
             drug_names = list(drugs.keys())
-        elif os.path.isfile(kwargs["drug_sim"]):
+            drug_threshold = 1
+        elif kwargs["drug_sim"] is not None and os.path.isfile(kwargs["drug_sim"]):
             drug_names, drug_similarity = read_similarity_file(kwargs["drug_sim"])
+            drug_threshold = kwargs.get("drug_min_sim", 1)
+        elif kwargs["drug_dist"] is not None and os.path.isfile(kwargs["drug_dist"]):
+            drug_names, drug_similarity = read_similarity_file(kwargs["drug_dist"])
+            drug_threshold = kwargs.get("drug_max_dist", 1)
         else:
-            drug_similarity = kwargs["drug_sim"]
+            if kwargs["drug_sim"] is not None:
+                drug_similarity = kwargs["drug_sim"]
+                drug_threshold = kwargs.get("drug_min_sim", 1)
+            else:
+                drug_distance = kwargs["drug_dist"]
+                drug_threshold = kwargs.get("drug_max_dist", 1)
             drug_names = list(drugs.keys())
-        drug_min_sim = kwargs.get("drug_min_sim", 1)
     else:
-        drugs, drug_names, drug_weights, drug_similarity, drug_min_sim = None, None, None, None, 0
+        drugs, drug_names, drug_weights, drug_similarity, drug_distance, drug_threshold = \
+            None, None, None, None, None, 0
 
     return (
         (
@@ -81,13 +104,15 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
             proteins,
             protein_weights,
             protein_similarity,
-            protein_min_sim,
+            protein_distance,
+            protein_threshold,
         ), (
             drug_names,
             drugs,
             drug_weights,
             drug_similarity,
-            drug_min_sim,
+            drug_distance,
+            drug_threshold,
         ),
         inter,
     )

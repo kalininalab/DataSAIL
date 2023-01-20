@@ -61,18 +61,37 @@ def ilp_args(parser: ArgumentParser):
         type=str,
         default=None,
         dest="prot_sim",
-        help="Provide the name of a method to determine similarity between proteins. This can either be >WLK<, "
-             ">mmseqs<, or a filepath to a file storing the clusters in TSV. In case of a TSV, the clusters are "
-             "assumed to be independent."
+        help="Provide the name of a method to determine similarity between proteins or to cluster them. This can "
+             "either be >WLK<, >mmseqs<, or a filepath to a file storing the pairwise similarities in TSV. If left "
+             "blank, the proteins are assumed to have neither similarity nor distance. --prot-sim and --prot-dist are "
+             "mutually exclusive."
+    )
+    ilp.add_argument(
+        "--prot-dist",
+        type=str,
+        default=None,
+        dest="prot_dist",
+        help="Provide the name of a method to determine distance between proteins or to cluster them. This can be a "
+             "filepath to a file storing the pairwise distances in TSV. If left blank, the proteins are assumed to "
+             "have neither similarity nor distance. --prot-sim and --prot-dist are mutually exclusive."
     )
     ilp.add_argument(
         "--drug-sim",
         type=str,
         default=None,
         dest="drug_sim",
-        help="Provide the name of a method to determine similarity between proteins. This can either be >WLK< or a "
-             "filepath to a file storing the clusters in TSV. In case of a TSV, the clusters are assumed to be "
-             "independent."
+        help="Provide the name of a method to determine similarity between drugs or to cluster them. This can either "
+             "be >WLK< or a filepath to a file storing the pairwise similarities in TSV. If left blank, the drugs are "
+             "assumed to have neither similarity nor distance. --drug-sim and --drug-dist are mutually exclusive."
+    )
+    ilp.add_argument(
+        "--drug-dist",
+        type=str,
+        default=None,
+        dest="drug_dist",
+        help="Provide the name of a method to determine distance between drugs or to cluster them. This can be a "
+             "filepath to a file storing the pairwise distances in TSV. If left blank, the drugs are assumed to "
+             "have neither similarity nor distance. --drug-sim and --drug-dist are mutually exclusive."
     )
     ilp.add_argument(
         "--header",

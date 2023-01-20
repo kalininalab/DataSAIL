@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 
-from scala.bqp.algos.cluster_cold_single_sim import solve_ccx_iqp
+from scala.bqp.algos.cluster_cold_single import solve_ccs_bqp
 
 file = "tests/data/amay/pairwise_distance.tsv"
 items = []
@@ -32,7 +32,7 @@ for i in range(len(items)):
 cluster_dists /= np.max((cluster_count + np.eye(max(labels) + 1), np.ones_like(cluster_count)))
 cluster_sims = 1 - cluster_dists / np.max(cluster_dists)
 
-split = solve_ccx_iqp(
+split = solve_ccs_bqp(
     clusters=list(range(max(labels) + 1)),
     weights=[c for _, c in counts],
     similarities=cluster_sims,
