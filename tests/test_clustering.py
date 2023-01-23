@@ -36,6 +36,9 @@ def test_additional_clustering():
         names, base_map, similarity, None, weights
     )
     assert len(cluster_names) < 10
+    assert set(cluster_names) == set(cluster_map.values())
+    assert set(cluster_names) == set(cluster_weights.keys())
+    assert set(names) == set(cluster_map.keys())
     assert len(set(cluster_map[x] for x in names[:6]).intersection(set(cluster_map[x] for x in names[6:]))) == 0
     assert np.min(cluster_similarity) == 0
     assert np.max(cluster_similarity) == 5
@@ -46,6 +49,9 @@ def test_additional_clustering():
         names, base_map, None, distance, weights
     )
     assert len(cluster_names) < 10
+    assert set(cluster_names) == set(cluster_map.values())
+    assert set(cluster_names) == set(cluster_weights.keys())
+    assert set(names) == set(cluster_map.keys())
     assert len(set(cluster_map[x] for x in names[:6]).intersection(set(cluster_map[x] for x in names[6:]))) == 0
     assert cluster_similarity is None
     assert np.min(cluster_distance) == 0

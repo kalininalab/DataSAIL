@@ -50,7 +50,9 @@ def cluster(
     else:
         cluster_names, cluster_map, cluster_weights = None, None, None
 
-    while len(cluster_names) > 50:
+    num_old_cluster = len(cluster_names) + 1
+    while 50 < len(cluster_names) < num_old_cluster:
+        num_old_cluster = len(cluster_names)
         cluster_names, cluster_map, cluster_similarity, cluster_distance, cluster_weights = additional_clustering(
             cluster_names, cluster_map, cluster_similarity, cluster_distance, cluster_weights
         )
@@ -123,7 +125,7 @@ def additional_clustering(
     new_cluster_matrix /= (cluster_count + np.eye(max(labels) + 1))
 
     new_cluster_weights = {}
-    for name in cluster_names:
+    for name in list(cluster_map.keys()):
         new_cluster = new_cluster_map[name]
         if new_cluster not in new_cluster_weights:
             new_cluster_weights[new_cluster] = 0
