@@ -94,15 +94,15 @@ def additional_clustering(
     # assert (cluster_similarity is None) != (cluster_distance is None)
     if cluster_similarity is not None:
         ca = AffinityPropagation(affinity='precomputed', random_state=42)
-        cluster_matrix = cluster_similarity
+        cluster_matrix = np.array(cluster_similarity, dtype=float)
     else:
         ca = AgglomerativeClustering(
             n_clusters=None,
             metric='precomputed',
-            linkage="average",
+            linkage='average',
             distance_threshold=np.average(cluster_distance) * 0.9
         )
-        cluster_matrix = cluster_distance
+        cluster_matrix = np.array(cluster_distance, dtype=float)
 
     labels = ca.fit_predict(cluster_matrix)
 
@@ -120,7 +120,7 @@ def additional_clustering(
 
                 new_cluster_matrix[labels[j], labels[i]] += cluster_matrix[i, j]
                 cluster_count[labels[j], labels[i]] += 1
-    cluster_matrix /= np.max((cluster_count + np.eye(max(labels) + 1), np.ones_like(cluster_count)))
+    new_cluster_matrix /= (cluster_count + np.eye(max(labels) + 1))
 
     new_cluster_weights = {}
     for name in cluster_names:
