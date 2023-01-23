@@ -53,7 +53,7 @@ def solve_ccs_bqp(
     )
     if distances is not None:
         cluster_loss = sum(
-            (x[i, b] - x[j, b]) ** 2 * similarities[i][j]
+            cvxpy.maximum((x[i, b] + x[j, b]) - 1, 0) * distances[i, j]
             for i in range(len(clusters)) for j in range(len(clusters)) for b in range(len(splits))
         )
     else:
@@ -94,52 +94,46 @@ def solve_ccs_bqp(
 
 
 if __name__ == '__main__':
-    print("5 clusters")
+    print("5 clusters - distance")
     print(
         solve_ccs_bqp(
-            ["1", "2", "3", "4", "5"],
-            [3, 3, 3, 2, 2],
-            np.asarray([
+            clusters=["1", "2", "3", "4", "5"],
+            weights=[3, 3, 3, 2, 2],
+            similarities=None,
+            distances=np.asarray([
                 [0, 0, 0, 4, 4],
                 [0, 0, 0, 4, 4],
                 [0, 0, 0, 4, 4],
                 [4, 4, 4, 0, 0],
                 [4, 4, 4, 0, 0],
             ]),
-            None,
-            1,
-            0.2,
-            [0.7, 0.3],
-            ["train", "test"],
-            0,
-            0,
+            threshold=1,
+            limit=0.2,
+            splits=[0.7, 0.3],
+            names=["train", "test"],
+            max_sec=10,
+            max_sol=0,
         )
     )
-    exit(0)
 
-    print("10 clusters")
+    print("5 clusters - similarity")
     print(
         solve_ccs_bqp(
-            ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
-            [6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
-            np.asarray([
-                [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-                [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-                [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-                [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-                [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-                [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-                [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
-                [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
-                [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
-                [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
+            clusters=["1", "2", "3", "4", "5"],
+            weights=[3, 3, 3, 2, 2],
+            similarities=np.asarray([
+                [5, 5, 5, 0, 0],
+                [5, 5, 5, 0, 0],
+                [5, 5, 5, 0, 0],
+                [0, 0, 0, 5, 5],
+                [0, 0, 0, 5, 5],
             ]),
-            None,
-            1,
-            0.2,
-            [0.7, 0.3],
-            ["train", "test"],
-            0,
-            0,
+            distances=None,
+            threshold=1,
+            limit=0.2,
+            splits=[0.7, 0.3],
+            names=["train", "test"],
+            max_sec=10,
+            max_sol=0,
         )
     )

@@ -16,6 +16,21 @@ ParseInfo = Tuple[
 
 
 def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, str]]]]:
+    """
+    Read data from the input arguments.
+
+    Args:
+        **kwargs: Arguments from commandline
+
+    Returns:
+        Two tuples consisting of
+          - The names of the current clusters
+          - The mapping from cluster names to cluster representatives
+          - Symmetric matrix of pairwise similarities between the current clusters
+          - Symmetric matrix of pairwise similarities between the current clusters
+          - Mapping from current clusters to their weights
+        for both, protein data and drug data, as well as a list of interactions between
+    """
     # TODO: Semantic checks of arguments
     inter = list(tuple(x) for x in read_csv(kwargs["inter"], kwargs["header"], kwargs["sep"])) if kwargs["inter"] else None
 
@@ -119,18 +134,48 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
 
 
 def read_csv(filepath: str, header: bool = False, sep: str = "\t") -> Generator[Tuple[str, str], None, None]:
+    """
+    Read in a CSV file as pairs of data.
+
+    Args:
+        filepath: Path to the CSV file to read 2-tuples from
+        header: bool flag indicating whether the file has a header-line
+        sep: separator character used to separate the values
+
+    Yields:
+        Pairs of strings from the file
+    """
     with open(filepath, "r") as inter:
         for line in inter.readlines()[(1 if header else 0):]:
             yield line.strip().split(sep)[:2]
 
 
 def read_pdb_folder(folder_path: str) -> Generator[Tuple[str, str], None, None]:
+    """
+    Read in all PDB file from a folder and ignore non-PDB files.
+
+    Args:
+        folder_path: Path to the folder storing the PDB files
+
+    Yields:
+        Pairs of the PDB files name and the path to the file
+    """
     for filename in os.listdir(folder_path):
         if filename.endswith(".pdb"):
             yield filename[:-4], os.path.join(folder_path, filename)
 
 
-def count_inter(inter, mode) -> Generator[Tuple[str, int], None, None]:
+def count_inter(inter: List[Tuple[str, str]], mode: str) -> Generator[Tuple[str, int], None, None]:
+    """
+    Count interactions per protein or drug in a set of interactions.
+
+    Args:
+        inter: List of pairwise interactions of proteins and drugs
+        mode: mode to read data for, either >protein> or >drug<
+
+    Yields:
+        Pairs of protein or drug names and the number of interactions they participate in
+    """
     tmp = list(zip(*inter))
     mode = 0 if mode == "drugs" else 1
     keys = set(tmp[mode])
@@ -139,6 +184,16 @@ def count_inter(inter, mode) -> Generator[Tuple[str, int], None, None]:
 
 
 def read_similarity_file(filepath: str, sep: str = "\t") -> Tuple[List[str], np.ndarray]:
+    """
+    Read a similarity or distance matrix from a file.
+
+    Args:
+        filepath: Path to the file storing the matrix in CSV format
+        sep: separator used to separate the values of the matrix
+
+    Returns:
+        A list of names of the entities and their pairwise interactions in and numpy array
+    """
     names = []
     similarities = []
     with open(filepath, "r") as data:
