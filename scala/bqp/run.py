@@ -84,7 +84,7 @@ def bqp_main(**kwargs):
             max_sol=kwargs["max_sol"],
         )
         if cluster_split is not None:
-            output_inter, output_drugs = infer_interactions(cluster_split, set(inter))
+            output_drugs = cluster_split
     if kwargs["technique"] == "CCP":
         cluster_split = solve_ccs_bqp(
             clusters=prot_cluster_names,
@@ -99,7 +99,7 @@ def bqp_main(**kwargs):
             max_sol=kwargs["max_sol"],
         )
         if cluster_split is not None:
-            output_inter, output_proteins = infer_interactions(cluster_split, set(inter))
+            output_proteins = cluster_split
     if kwargs["technique"] == "CC":
         cluster_inter = cluster_interactions(
             inter,

@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import pytest
 
@@ -57,6 +58,8 @@ def test_pipeline(data):
     if os.path.exists("data/pipeline/out/inter.tsv"):
         split_data.append(read_tsv("data/pipeline/out/drugs.tsv"))
 
+    assert len(split_data) > 0
+
     for data in split_data:
         splits = list(zip(*data))[-1]
         trains, tests = splits.count("train"), splits.count("test")
@@ -64,5 +67,50 @@ def test_pipeline(data):
         assert 0.7 * (1 - 0.25) <= train_frac <= 0.7 * (1 + 0.25)
         assert 0.3 * (1 - 0.25) <= test_frac <= 0.3 * (1 + 0.25)
 
-    for filename in os.listdir("data/pipeline/out"):
-        os.remove(f"data/pipeline/out/{filename}")
+    shutil.rmtree("data/pipeline/out")
+
+
+def test_algos():
+    bqp_main(
+        output="data/pipeline/out/",
+        method="ilp",
+        verbosity="I",
+        input="data/pipeline/pdbs",
+        weight_file="data/pipeline/prot_weights.tsv",
+        prot_sim="data/pipeline/prot_sim.tsv",
+        prot_dist=None,
+        drugs="data/pipeline/drugs.tsv",
+        drug_weights="data/pipeline/drug_weights.tsv",
+        # drug_sim="data/pipeline/drug_sim.tsv",
+        # drug_dist=None,
+        drug_sim=None,
+        drug_dist="data/pipeline/drug_dist.tsv",
+        inter="data/pipeline/inter.tsv",
+        technique="CCD",
+        header=None,
+        sep="\t",
+        names=["train", "test"],
+        splits=[0.7, 0.3],
+        limit=0.25,
+        max_sec=5,
+        max_sol=-1,
+    )
+
+    split_data = []
+    if os.path.exists("data/pipeline/out/inter.tsv"):
+        split_data.append(read_tsv("data/pipeline/out/inter.tsv"))
+    if os.path.exists("data/pipeline/out/inter.tsv"):
+        split_data.append(read_tsv("data/pipeline/out/proteins.tsv"))
+    if os.path.exists("data/pipeline/out/inter.tsv"):
+        split_data.append(read_tsv("data/pipeline/out/drugs.tsv"))
+
+    assert len(split_data) > 0
+
+    for data in split_data:
+        splits = list(zip(*data))[-1]
+        trains, tests = splits.count("train"), splits.count("test")
+        train_frac, test_frac = trains / (trains + tests), tests / (trains + tests)
+        assert 0.7 * (1 - 0.25) <= train_frac <= 0.7 * (1 + 0.25)
+        assert 0.3 * (1 - 0.25) <= test_frac <= 0.3 * (1 + 0.25)
+
+    shutil.rmtree("data/pipeline/out")

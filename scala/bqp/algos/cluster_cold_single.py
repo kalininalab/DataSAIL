@@ -115,6 +115,7 @@ if __name__ == '__main__':
             max_sol=0,
         )
     )
+    exit(0)
 
     print("5 clusters - similarity")
     print(

@@ -99,7 +99,7 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
             drug_names, drug_similarity = read_similarity_file(kwargs["drug_sim"])
             drug_threshold = kwargs.get("drug_min_sim", 1)
         elif kwargs["drug_dist"] is not None and os.path.isfile(kwargs["drug_dist"]):
-            drug_names, drug_similarity = read_similarity_file(kwargs["drug_dist"])
+            drug_names, drug_distance = read_similarity_file(kwargs["drug_dist"])
             drug_threshold = kwargs.get("drug_max_dist", 1)
         else:
             if kwargs["drug_sim"] is not None:

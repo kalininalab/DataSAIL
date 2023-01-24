@@ -29,7 +29,7 @@ for i in range(len(items)):
 
             cluster_sims[labels[j], labels[i]] += dists[i, j]
             cluster_count[labels[j], labels[i]] += 1
-cluster_sims /= np.max((cluster_count + np.eye(max(labels) + 1), np.ones_like(cluster_count)))
+cluster_sims /= (cluster_count + np.eye(max(labels) + 1))
 
 print(cluster_sims)
 
