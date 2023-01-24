@@ -11,7 +11,7 @@ from tests.test_bqp import read_tsv
     (True, False, None, None, None, False, None, None, False, "ICP"),
     (True, False, "wlk", None, None, False, None, None, False, "ICP"),
     (False, False, None, None, None, False, None, None, False, "ICP"),
-    # (False, False, "mmseqs", None, None, False, None, None, False, "ICP"),
+    (False, False, "mmseqs", None, None, False, None, None, False, "ICP"),
     (False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "ICP"),
     (False, False, None, "data/pipeline/prot_dist.tsv", None, False, None, None, False, "ICP"),
     (False, True, None, None, None, False, None, None, False, "ICP"),

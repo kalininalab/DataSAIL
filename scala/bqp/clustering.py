@@ -1,4 +1,5 @@
 import os
+import shutil
 from typing import Dict, Tuple, List, Optional, Union
 
 import numpy as np
@@ -270,21 +271,27 @@ def run_mmseqs(**kwargs) -> Tuple[List[str], Dict[str, str], np.ndarray]:
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    cmd = f"mmseqs " \
+    cmd = f"cd mmseqs_results && " \
+          f"mmseqs " \
           f"easy-linclust " \
-          f"{kwargs['input']} " \
+          f"../{kwargs['input']} " \
           f"mmseqs_out " \
           f"mmseqs_tmp " \
           f"--similarity-type 2 " \
           f"--cov-mode 0 " \
           f"-c 1.0 " \
           f"--min-seq-id 0.0"
+
+    if not os.path.exists("mmseqs_results"):
+        cmd = "mkdir mmseqs_results && " + cmd
+
     print(cmd)
     os.system(cmd)
 
-    cluster_map = get_mmseqs_map("mmseqs_out_cluster.tsv")
+    cluster_map = get_mmseqs_map("mmseqs_results/mmseqs_out_cluster.tsv")
     cluster_sim = np.ones((len(cluster_map), len(cluster_map)))
     cluster_names = list(set(cluster_map.values()))
+    shutil.rmtree("mmseqs_results")
 
     return cluster_names, cluster_map, cluster_sim
 
