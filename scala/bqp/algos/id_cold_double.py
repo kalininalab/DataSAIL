@@ -2,7 +2,6 @@ import logging
 from typing import Optional, Tuple, List, Set, Dict
 
 import cvxpy
-import mosek
 
 
 def solve_icd_bqp(
@@ -78,24 +77,20 @@ def solve_icd_bqp(
 
     objective = cvxpy.Minimize(inter_loss)
     problem = cvxpy.Problem(objective, constraints)
-    problem.solve(solver=cvxpy.MOSEK, qcp=True, mosek_params={
-            mosek.dparam.optimizer_max_time: max_sec,
-            # mosek.iparam.max_iterations: max_sol,
+    problem.solve(
+        solver=cvxpy.SCIP,
+        qcp=True,
+        scip_params={
+            "limits/time": max_sec,
         }
     )
 
-    logging.info(f"MOSEK status: {problem.status}")
+    logging.info(f"SCIP status: {problem.status}")
     logging.info(f"Solution's score: {problem.value}")
-    print(f"MOSEK status: {problem.status}")
-    print(f"Solution's score: {problem.value}")
 
     if "optimal" not in problem.status:
         logging.warning(
-            'MOSEK cannot solve the problem. Please consider relaxing split restrictions, '
-            'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
-        )
-        print(
-            'MOSEK cannot solve the problem. Please consider relaxing split restrictions, '
+            'SCIP cannot solve the problem. Please consider relaxing split restrictions, '
             'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
         )
         return None

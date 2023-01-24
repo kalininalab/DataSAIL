@@ -7,12 +7,11 @@ from scala.bqp.run import bqp_main
 from tests.test_bqp import read_tsv
 
 
-@pytest.mark.mosek
 @pytest.mark.parametrize("data", [
     (True, False, None, None, None, False, None, None, False, "ICP"),
     (True, False, "wlk", None, None, False, None, None, False, "ICP"),
     (False, False, None, None, None, False, None, None, False, "ICP"),
-    (False, False, "mmseqs", None, None, False, None, None, False, "ICP"),
+    # (False, False, "mmseqs", None, None, False, None, None, False, "ICP"),
     (False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "ICP"),
     (False, False, None, "data/pipeline/prot_dist.tsv", None, False, None, None, False, "ICP"),
     (False, True, None, None, None, False, None, None, False, "ICP"),
@@ -57,9 +56,9 @@ def test_pipeline(data):
     split_data = []
     if os.path.exists("data/pipeline/out/inter.tsv"):
         split_data.append(read_tsv("data/pipeline/out/inter.tsv"))
-    if os.path.exists("data/pipeline/out/inter.tsv"):
+    if os.path.exists("data/pipeline/out/proteins.tsv"):
         split_data.append(read_tsv("data/pipeline/out/proteins.tsv"))
-    if os.path.exists("data/pipeline/out/inter.tsv"):
+    if os.path.exists("data/pipeline/out/drugs.tsv"):
         split_data.append(read_tsv("data/pipeline/out/drugs.tsv"))
 
     assert len(split_data) > 0

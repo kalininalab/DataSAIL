@@ -63,7 +63,7 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
             protein_names, protein_similarity = read_similarity_file(kwargs["prot_sim"])
             protein_threshold = kwargs.get("prot_min_sim", 1)
         elif kwargs["prot_dist"] is not None and os.path.isfile(kwargs["prot_dist"]):
-            protein_names, protein_distance = read_similarity_file(kwargs["prot_sim"])
+            protein_names, protein_distance = read_similarity_file(kwargs["prot_dist"])
             protein_threshold = kwargs.get("prot_max_dist", 1)
         else:
             if kwargs["prot_sim"] is not None:

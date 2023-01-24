@@ -2,7 +2,6 @@ import logging
 from typing import List, Optional, Dict, Union
 
 import cvxpy
-import mosek
 import numpy as np
 
 
@@ -63,24 +62,23 @@ def solve_ccs_bqp(
         )
 
     # solve
-    logging.info("Start solving with MOSEK")
+    logging.info("Start solving with SCIP")
     objective = cvxpy.Minimize(alpha * size_loss + cluster_loss)
     problem = cvxpy.Problem(objective, constraints)
     problem.solve(
         solver=cvxpy.SCIP,
         qcp=True,
-        # mosek_params={
-        #     mosek.dparam.optimizer_max_time: max_sec,
-        # },
-        verbose=True,
+        scip_params={
+            "limits/time": 10,
+        },
     )
 
-    print(f"MOSEK status: {problem.status}")
+    print(f"SCIP status: {problem.status}")
     print(f"Solution's score: {problem.value}")
 
-    if problem.status != "optimal":
+    if "optimal" not in problem.status:
         logging.warning(
-            'MOSEK cannot solve the problem. Please consider relaxing split restrictions, '
+            'SCIP cannot solve the problem. Please consider relaxing split restrictions, '
             'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
         )
         return None

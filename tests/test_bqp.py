@@ -51,7 +51,6 @@ def test_perf_bin(root_dir,):
     assert 0.3 * 0.95 <= test_frac <= 0.3 * 1.05
 
 
-@pytest.mark.mosek
 @pytest.mark.parametrize("root_dir", ["data/perf_7_3", "data/perf_70_30"])
 @pytest.mark.parametrize("mode", [("ICD", "id_cold_drug"), ("ICP", "id_cold_protein")])
 def test_perf_bin_2(root_dir, mode):
