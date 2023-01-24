@@ -23,6 +23,10 @@ from tests.test_bqp import read_tsv
     (False, False, None, None, "data/pipeline/drugs.tsv", True, "wlk", None, False, "ICD"),
     (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "ICD"),
     (True, False, "wlk", None, "data/pipeline/drugs.tsv", False, "wlk", None, True, "ICD"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "CCP"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "CCD"),
+    (True, False, "data/pipeline/prot_sim.tsv", None, "data/pipeline/drugs.tsv", False, None,
+     "data/pipeline/drug_dist.tsv", True, "CCD"),
 ])
 def test_pipeline(data):
     pdb, prot_weights, prot_sim, prot_dist, drugs, drug_weights, drug_sim, drug_dist, inter, mode = data

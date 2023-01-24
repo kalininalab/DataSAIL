@@ -67,11 +67,12 @@ def solve_ccs_bqp(
     objective = cvxpy.Minimize(alpha * size_loss + cluster_loss)
     problem = cvxpy.Problem(objective, constraints)
     problem.solve(
-        solver=cvxpy.MOSEK,
+        solver=cvxpy.SCIP,
         qcp=True,
-        mosek_params={
-            mosek.dparam.optimizer_max_time: max_sec,
-        },
+        # mosek_params={
+        #     mosek.dparam.optimizer_max_time: max_sec,
+        # },
+        verbose=True,
     )
 
     print(f"MOSEK status: {problem.status}")
