@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 import pytest
 
@@ -16,6 +15,7 @@ from tests.test_bqp import read_tsv
     (False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "ICP"),
     (False, False, None, "data/pipeline/prot_dist.tsv", None, False, None, None, False, "ICP"),
     (False, True, None, None, None, False, None, None, False, "ICP"),
+    (None, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "ICD"),
     (False, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "ICD"),
     (False, False, None, None, "data/pipeline/drugs.tsv", True, None, None, False, "ICD"),
     (False, False, None, None, "data/pipeline/drugs.tsv", False, "data/pipeline/drug_sim.tsv", None, False, "ICD"),
@@ -30,7 +30,7 @@ def test_pipeline(data):
         output="data/pipeline/out/",
         method="ilp",
         verbosity="I",
-        input="data/pipeline/pdbs" if pdb else "data/pipeline/seqs.fasta",
+        input=None if pdb is None else ("data/pipeline/pdbs" if pdb else "data/pipeline/seqs.fasta"),
         weight_file="data/pipeline/prot_weights.tsv" if prot_weights else None,
         prot_sim=prot_sim,
         prot_dist=prot_dist,
