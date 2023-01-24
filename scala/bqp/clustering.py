@@ -46,7 +46,13 @@ def cluster(
         molecules: Optional[Dict[str, str]],
         weights: Dict[str, float],
         **kwargs
-) -> Tuple[List[Union[str, int]], Dict[str, str], Optional[np.ndarray], Optional[np.ndarray], Dict[str, float]]:
+) -> Tuple[
+    Optional[List[Union[str, int]]],
+    Optional[Dict[str, str]],
+    Optional[np.ndarray],
+    Optional[np.ndarray],
+    Optional[Dict[str, float]]
+]:
     """
     Cluster molecules based on a similarity or distance metric.
 
@@ -80,6 +86,9 @@ def cluster(
         cluster_weights = weights
     else:
         cluster_names, cluster_map, cluster_weights = None, None, None
+
+    if cluster_names is None:
+        return cluster_names, cluster_map, cluster_similarity, cluster_distance, cluster_weights
 
     # if there are too many clusters, reduce their number based on some clustering algorithms.
     num_old_cluster = len(cluster_names) + 1

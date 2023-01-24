@@ -130,10 +130,11 @@ def bqp_main(**kwargs):
 
     logging.info("Store results")
 
-    if output_inter is None and output_drugs is not None and output_proteins is None:
-        output_inter = [(d, p, output_drugs[d]) for d, p in inter]
-    elif output_inter is None and output_drugs is None and output_proteins is not None:
-        output_inter = [(d, p, output_proteins[p]) for d, p in inter]
+    if inter is not None:
+        if output_inter is None and output_drugs is not None and output_proteins is None:
+            output_inter = [(d, p, output_drugs[d]) for d, p in inter]
+        elif output_inter is None and output_drugs is None and output_proteins is not None:
+            output_inter = [(d, p, output_proteins[p]) for d, p in inter]
 
     if not os.path.exists(kwargs["output"]):
         os.makedirs(kwargs["output"], exist_ok=True)

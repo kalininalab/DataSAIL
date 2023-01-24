@@ -186,7 +186,7 @@ REMARK 200
 REMARK 200 DIFFRACTION PROTOCOL: SINGLE WAVELENGTH                              
 REMARK 200 METHOD USED TO DETERMINE THE STRUCTURE: MOLECULAR REPLACEMENT        
 REMARK 200 SOFTWARE USED: PHASER                                                
-REMARK 200 STARTING MODEL: 4WOV                                                 
+REMARK 200 STARTING MODEL: 3WOV
 REMARK 200                                                                      
 REMARK 200 REMARK: NULL                                                         
 REMARK 280                                                                      

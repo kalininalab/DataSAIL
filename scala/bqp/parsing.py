@@ -47,11 +47,11 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
 
         # parse the protein weights
         if kwargs["weight_file"] is not None:
-            protein_weights = dict(read_csv(kwargs["weight_file"], kwargs["header"], kwargs["sep"]))
+            protein_weights = dict((n, float(w)) for n, w in read_csv(kwargs["weight_file"], kwargs["header"], kwargs["sep"]))
         elif inter is not None:
             protein_weights = dict(count_inter(inter, "prots"))
         else:
-            protein_weights = np.zeros(len(proteins))  # TODO: Check if it needs to be np.ones(...)
+            protein_weights = dict((p, 1) for p in list(proteins.keys()))
 
         # parse the protein similarity measure
         protein_similarity, protein_distance = None, None
@@ -87,7 +87,7 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
         elif inter is not None:
             drug_weights = dict(count_inter(inter, "drugs"))
         else:
-            drug_weights = None
+            drug_weights = dict((d, 1) for d in list(drugs.keys()))
 
         # parse molecular similarity
         drug_similarity, drug_distance = None, None

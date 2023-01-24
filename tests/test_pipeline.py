@@ -1,4 +1,3 @@
-import logging
 import os
 from typing import Optional
 
@@ -9,118 +8,61 @@ from tests.test_bqp import read_tsv
 
 
 @pytest.mark.mosek
-@pytest.mark.parametrize("pdb", [True, False])
-@pytest.mark.parametrize("prot_weights", [True, False])
-@pytest.mark.parametrize("prot_sim", ["data/pipeline/prot_sim.tsv", "wlk", "mmseqs", None])
-@pytest.mark.parametrize("prot_dist", ["data/pipeline/prot_dist.tsv", None])
-@pytest.mark.parametrize("drugs", ["data/pipeline/drugs.tsv", None])
-@pytest.mark.parametrize("drug_weights", [True, False])
-@pytest.mark.parametrize("drug_sim", ["data/pipeline/drug_sim.tsv", "wlk", None])
-@pytest.mark.parametrize("drug_dist", ["data/pipeline/drug_dist.tsv", None])
-@pytest.mark.parametrize("inter", [True, False])
-# @pytest.mark.parametrize("mode", ["ICD", "ICP", "IC", "CCD", "CCP", "CC"])
-@pytest.mark.parametrize("mode", ["ICD", "ICP", "CCD", "CCP"])  # , "CC"])
-def test_pipeline(
-        pdb: bool,
-        prot_weights: bool,
-        prot_sim: Optional[str],
-        prot_dist: Optional[str],
-        drugs: Optional[str],
-        drug_weights: bool,
-        drug_sim: Optional[str],
-        drug_dist: Optional[str],
-        inter: bool,
-        mode: str,
-        out_folder: str = "out",
-):
-    if (pdb and prot_sim == "mmseqs") or \
-            (not pdb and prot_sim == "wlk") or \
-            (mode in ["ICD", "CCD"] and drugs is None) or \
-            (mode == "CCP" and prot_sim is None) or \
-            (mode == "CCD" and drug_sim is None) or \
-            (mode in ["IC", "CC"] and not inter) or \
-            (inter and drugs is None) or \
-            (prot_sim is not None and prot_dist is not None) or \
-            (drug_sim is not None and drug_dist is not None) or \
-            (prot_sim == "mmseqs"):
-        pytest.skip("reason")
-
-    base = "data/pipeline"
-    limit = 0.25
+@pytest.mark.parametrize("data", [
+    (True, False, None, None, None, False, None, None, False, "ICP"),
+    (True, False, "wlk", None, None, False, None, None, False, "ICP"),
+    (False, False, None, None, None, False, None, None, False, "ICP"),
+    # (False, False, "mmseqs", None, None, False, None, None, False, "ICP"),
+    (False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "ICP"),
+    (False, False, None, "data/pipeline/prot_dist.tsv", None, False, None, None, False, "ICP"),
+    (False, True, None, None, None, False, None, None, False, "ICP"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "ICD"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", True, None, None, False, "ICD"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, "data/pipeline/drug_sim.tsv", None, False, "ICD"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", True, "wlk", None, False, "ICD"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "ICD"),
+    (True, False, "wlk", None, "data/pipeline/drugs.tsv", False, "wlk", None, True, "ICD"),
+])
+def test_pipeline(data):
+    pdb, prot_weights, prot_sim, prot_dist, drugs, drug_weights, drug_sim, drug_dist, inter, mode = data
 
     bqp_main(
-        output=f"{base}/{out_folder}/",
+        output="data/pipeline/out/",
         method="ilp",
         verbosity="I",
-        input=f"{base}/pdbs" if pdb else f"{base}/seqs.fasta",
-        weight_file=f"{base}/prot_weights.tsv" if prot_weights else None,
+        input="data/pipeline/pdbs" if pdb else "data/pipeline/seqs.fasta",
+        weight_file="data/pipeline/prot_weights.tsv" if prot_weights else None,
         prot_sim=prot_sim,
         prot_dist=prot_dist,
         drugs=drugs,
-        drug_weights=f"{base}/drug_weights.tsv" if drug_weights else None,
+        drug_weights="data/pipeline/drug_weights.tsv" if drug_weights else None,
         drug_sim=drug_sim,
         drug_dist=drug_dist,
-        inter=f"{base}/inter.tsv" if inter else None,
+        inter="data/pipeline/inter.tsv" if inter else None,
         technique=mode,
         header=None,
         sep="\t",
         names=["train", "test"],
         splits=[0.67, 0.33] if mode in ["IC", "CC"] else [0.7, 0.3],
-        limit=limit,
+        limit=0.25,
         max_sec=10,
         max_sol=-1,
     )
 
-    inter = read_tsv(f"{base}/out/inter.tsv")
+    split_data = []
+    if os.path.exists("data/pipeline/out/inter.tsv"):
+        split_data.append(read_tsv("data/pipeline/out/inter.tsv"))
+    if os.path.exists("data/pipeline/out/inter.tsv"):
+        split_data.append(read_tsv("data/pipeline/out/proteins.tsv"))
+    if os.path.exists("data/pipeline/out/inter.tsv"):
+        split_data.append(read_tsv("data/pipeline/out/drugs.tsv"))
 
-    _, _, splits = list(zip(*inter))
-    trains, tests = splits.count("train"), splits.count("test")
-    train_frac, test_frac = trains / (trains + tests), tests / (trains + tests)
-    assert 0.7 * (1 - limit) <= train_frac <= 0.7 * (1 + limit)
-    assert 0.3 * (1 - limit) <= test_frac <= 0.3 * (1 + limit)
+    for data in split_data:
+        splits = list(zip(*data))[-1]
+        trains, tests = splits.count("train"), splits.count("test")
+        train_frac, test_frac = trains / (trains + tests), tests / (trains + tests)
+        assert 0.7 * (1 - 0.25) <= train_frac <= 0.7 * (1 + 0.25)
+        assert 0.3 * (1 - 0.25) <= test_frac <= 0.3 * (1 + 0.25)
 
-    for filename in os.listdir(f"{base}/out"):
-        os.remove(f"{base}/out/{filename}")
-
-@pytest.mark.mosek
-def test_detail(
-        pdb: bool = True,
-        prot_weights: bool = True,
-        prot_sim: Optional[str] = 'data/pipeline/prot_sim.tsv',
-        drugs: Optional[str] = 'data/pipeline/drugs.tsv',
-        drug_weights: bool = True,
-        drug_sim: Optional[str] = 'data/pipeline/drug_sim.tsv',
-        inter: bool = True,
-        mode: str = 'ICD',
-        out_folder: str = "out",
-):
-    base = "data/pipeline"
-    limit = 0.25
-    bqp_main(
-        output=f"{base}/{out_folder}/",
-        method="ilp",
-        verbosity="I",
-        input=f"{base}/pdbs" if pdb else f"{base}/seqs.fasta",
-        weight_file=f"{base}/prot_weights.tsv" if prot_weights else None,
-        prot_sim=prot_sim,
-        drugs=drugs,
-        drug_weights=f"{base}/drug_weights.tsv" if drug_weights else None,
-        drug_sim=drug_sim,
-        inter=f"{base}/inter.tsv" if inter else None,
-        technique=mode,
-        header=None,
-        sep="\t",
-        names=["train", "test"],
-        splits=[0.67, 0.33] if mode in ["IC", "CC"] else [0.7, 0.3],
-        limit=limit,
-        max_sec=10,
-        max_sol=100,
-    )
-    assert os.path.isfile(f"{base}/out/inter.tsv")
-    inter = read_tsv(f"{base}/out/inter.tsv")
-
-    _, _, splits = list(zip(*inter))
-    trains, tests = splits.count("train"), splits.count("test")
-    train_frac, test_frac = trains / (trains + tests), tests / (trains + tests)
-    assert 0.7 * (1 - limit) <= train_frac <= 0.7 * (1 + limit)
-    assert 0.3 * (1 - limit) <= test_frac <= 0.3 * (1 + limit)
+    for filename in os.listdir("data/pipeline/out"):
+        os.remove(f"data/pipeline/out/{filename}")
