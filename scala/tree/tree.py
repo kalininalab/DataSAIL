@@ -12,7 +12,7 @@ from scala.utils.mmseqs import mmseqs_clustering, call_mmseqs_clustering
 from scala.utils.utils import random_string, seq_map_to_fasta, get_cov_seq_ident, parse_fasta
 
 
-def tree_main(args):
+def scala(args):
     env = Environment(
         args.input,
         args.output,
