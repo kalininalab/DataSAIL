@@ -2,11 +2,11 @@ import os
 
 import pytest
 
-from scala.bqp.run import bqp_main
+from scala.salsa import salsa
 
 
 def run_identity_splitting(root_dir, out_folder, mode):
-    bqp_main(
+    salsa(
         input=f"{root_dir}/prot.tsv",
         output=f"{root_dir}/{out_folder}/",
         method="ilp",

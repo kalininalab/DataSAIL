@@ -3,6 +3,7 @@ import shutil
 
 import pytest
 
+from scala.salsa import salsa
 from scala.bqp.run import bqp_main
 from tests.test_bqp import read_tsv
 
@@ -30,7 +31,7 @@ from tests.test_bqp import read_tsv
 def test_pipeline(data):
     pdb, prot_weights, prot_sim, prot_dist, drugs, drug_weights, drug_sim, drug_dist, inter, mode = data
 
-    bqp_main(
+    salsa(
         output="data/pipeline/out/",
         method="ilp",
         verbosity="I",
@@ -74,7 +75,7 @@ def test_pipeline(data):
 
 
 def test_algos():
-    bqp_main(
+    salsa(
         output="data/pipeline/out/",
         method="ilp",
         verbosity="I",
