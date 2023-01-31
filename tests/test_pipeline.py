@@ -4,7 +4,6 @@ import shutil
 import pytest
 
 from scala.salsa import salsa
-from scala.bqp.run import bqp_main
 from tests.test_bqp import read_tsv
 
 
@@ -33,7 +32,6 @@ def test_pipeline(data):
 
     salsa(
         output="data/pipeline/out/",
-        method="ilp",
         verbosity="I",
         input=None if pdb is None else ("data/pipeline/pdbs" if pdb else "data/pipeline/seqs.fasta"),
         weight_file="data/pipeline/prot_weights.tsv" if prot_weights else None,

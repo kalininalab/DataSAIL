@@ -2,7 +2,7 @@ import argparse
 import logging
 import os.path
 
-from scala.bqp.run import bqp_main
+from bqp.run import bqp_main
 
 verb_map = {
     "C": logging.CRITICAL,
@@ -38,7 +38,7 @@ def parse_args():
         help="Output directory to store the splits in.",
     )
     parser.add_argument(
-        "--to_sec",
+        "--to-sec",
         default=10,
         dest="max_sec",
         type=int,
@@ -46,7 +46,7 @@ def parse_args():
              "as parsing data and clustering the input."
     )
     parser.add_argument(
-        "--to_sol",
+        "--to-sol",
         default=1000,
         dest="max_sol",
         type=int,
@@ -92,7 +92,6 @@ def parse_args():
         help="Names of the splits in order of the -s argument."
     )
     split.add_argument(
-        "-l",
         "--limit",
         default=0.05,
         type=float,

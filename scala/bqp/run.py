@@ -1,18 +1,20 @@
 import logging
 import os
+import time
 from typing import Dict, List, Tuple, Set
 
 import numpy as np
 
-from scala.bqp.algos.cluster_cold_double import solve_ccd_bqp
-from scala.bqp.algos.cluster_cold_single import solve_ccs_bqp
-from scala.bqp.algos.id_cold_double import solve_icd_bqp
-from scala.bqp.algos.id_cold_single import solve_ics_bqp
-from scala.bqp.clustering import cluster, cluster_interactions
-from scala.bqp.parsing import read_data
+from .algos.cluster_cold_double import solve_ccd_bqp
+from .algos.cluster_cold_single import solve_ccs_bqp
+from .algos.id_cold_double import solve_icd_bqp
+from .algos.id_cold_single import solve_ics_bqp
+from .clustering import cluster, cluster_interactions, reverse_clustering
+from .parsing import read_data
 
 
-def bqp_main(**kwargs):
+def bqp_main(**kwargs) -> None:
+    start = time.time()
     logging.info("Starting BQP solving")
     logging.info("Read data")
 
@@ -21,7 +23,7 @@ def bqp_main(**kwargs):
     drug_cluster_names, drug_cluster_map, drug_cluster_similarity, drug_cluster_distance, drug_cluster_weights = \
         cluster(drug_similarity, drug_distance, drugs, drug_weights, **kwargs)
     prot_cluster_names, prot_cluster_map, prot_cluster_similarity, prot_cluster_distance, prot_cluster_weights = \
-        cluster(protein_similarity, drug_distance, proteins, protein_weights, **kwargs)
+        cluster(protein_similarity, protein_distance, proteins, protein_weights, **kwargs)
 
     output_inter, output_drugs, output_proteins = None, None, None
 
@@ -84,7 +86,7 @@ def bqp_main(**kwargs):
             max_sol=kwargs["max_sol"],
         )
         if cluster_split is not None:
-            output_drugs = cluster_split
+            output_drugs = reverse_clustering(cluster_split, drug_cluster_map)
     if kwargs["technique"] == "CCP":
         cluster_split = solve_ccs_bqp(
             clusters=prot_cluster_names,
@@ -99,7 +101,7 @@ def bqp_main(**kwargs):
             max_sol=kwargs["max_sol"],
         )
         if cluster_split is not None:
-            output_proteins = cluster_split
+            output_proteins = reverse_clustering(cluster_split, prot_cluster_names)
     if kwargs["technique"] == "CC":
         cluster_inter = cluster_interactions(
             inter,
@@ -143,7 +145,7 @@ def bqp_main(**kwargs):
         split_stats = dict((n, 0) for n in kwargs["names"] + ["not selected"])
         with open(os.path.join(kwargs["output"], "inter.tsv"), "w") as stream:
             for drug, prot, split in output_inter:
-                print(drug, prot, split, sep=kwargs["sep"], file=stream)
+                print(drug, prot, split, sep="\t", file=stream)
                 split_stats[split] += 1
         print("Interaction-split statistics:")
         print(stats_string(len(inter), split_stats))
@@ -152,7 +154,7 @@ def bqp_main(**kwargs):
         split_stats = dict((n, 0) for n in kwargs["names"] + ["not selected"])
         with open(os.path.join(kwargs["output"], "drugs.tsv"), "w") as stream:
             for drug, split in output_drugs.items():
-                print(drug, split, sep=kwargs["sep"], file=stream)
+                print(drug, split, sep="\t", file=stream)
                 split_stats[split] += 1
         print("Drug distribution over splits:")
         print(stats_string(len(drugs), split_stats))
@@ -161,12 +163,13 @@ def bqp_main(**kwargs):
         split_stats = dict((n, 0) for n in kwargs["names"] + ["not selected"])
         with open(os.path.join(kwargs["output"], "proteins.tsv"), "w") as stream:
             for protein, split in output_proteins.items():
-                print(protein, split, sep=kwargs["sep"], file=stream)
+                print(protein, split, sep="\t", file=stream)
                 split_stats[split] += 1
         print("Protein distribution over splits:")
         print(stats_string(len(proteins), split_stats))
 
-    logging.info("ILP splitting finished and results stored.")
+    logging.info("BQP splitting finished and results stored.")
+    logging.info(f"Total runtime: {time.time() - start:.5f}s")
 
 
 def stats_string(count, split_stats):

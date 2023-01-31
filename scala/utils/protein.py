@@ -5,7 +5,7 @@ import grakel.graph
 import matplotlib.pyplot as plt
 from grakel import Graph
 
-from scala.utils.wlk import run_wl_kernel
+from .wlk import run_wl_kernel
 
 
 Point = Tuple[float, float, float]

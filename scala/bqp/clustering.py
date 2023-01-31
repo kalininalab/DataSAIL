@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 from typing import Dict, Tuple, List, Optional, Union
@@ -6,8 +7,8 @@ import numpy as np
 from rdkit.Chem import MolFromSmiles
 from sklearn.cluster import AffinityPropagation, AgglomerativeClustering
 
-from scala.utils.protein import mol_to_grakel, pdb_to_grakel
-from scala.utils.wlk import run_wl_kernel
+from utils.protein import mol_to_grakel, pdb_to_grakel
+from utils.wlk import run_wl_kernel
 
 
 def cluster_interactions(
@@ -93,7 +94,7 @@ def cluster(
 
     # if there are too many clusters, reduce their number based on some clustering algorithms.
     num_old_cluster = len(cluster_names) + 1
-    while 50 < len(cluster_names) < num_old_cluster:
+    while 100 < len(cluster_names) < num_old_cluster:
         num_old_cluster = len(cluster_names)
         cluster_names, cluster_map, cluster_similarity, cluster_distance, cluster_weights = additional_clustering(
             cluster_names, cluster_map, cluster_similarity, cluster_distance, cluster_weights
@@ -186,7 +187,8 @@ def additional_clustering(
           - Symmetric matrix of pairwise similarities between the current clusters
           - Mapping from current clusters to their weights
     """
-    # setup the clustering algorithm for similarity or distance based clustering w/o specifying the number of clusters
+    logging.info(f"Cluster {len(cluster_names)} items based on {'similarities' if cluster_similarity is not None else 'distances'}")
+    # set up the clustering algorithm for similarity or distance based clustering w/o specifying the number of clusters
     if cluster_similarity is not None:
         ca = AffinityPropagation(affinity='precomputed', random_state=42)
         cluster_matrix = np.array(cluster_similarity, dtype=float)
@@ -226,11 +228,18 @@ def additional_clustering(
         new_cluster = new_cluster_map[name]
         if new_cluster not in new_cluster_weights:
             new_cluster_weights[new_cluster] = 0
-        new_cluster_weights[new_cluster] += cluster_weights[name]
+        new_cluster_weights[new_cluster] += cluster_weights[cluster_map[name]]
 
     if cluster_similarity is not None:
         return new_cluster_names, new_cluster_map, new_cluster_matrix, None, new_cluster_weights
     return new_cluster_names, new_cluster_map, None, new_cluster_matrix, new_cluster_weights
+
+
+def reverse_clustering(cluster_split, name_cluster):
+    output = {}
+    for n, c in name_cluster.items():
+        output[n] = cluster_split[c]
+    return output
 
 
 def run_wlk(molecules: Dict) -> Tuple[List[str], Dict[str, str], np.ndarray]:
