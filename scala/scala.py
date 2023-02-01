@@ -1,6 +1,6 @@
 import argparse
 
-from scala.tree.tree import scala
+from tree.tree import scala
 
 
 def parse_args():

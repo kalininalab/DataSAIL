@@ -21,9 +21,12 @@ def solve_ccd_bqp(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
+    logging.info("Define optimization problem")
 
     alpha = 0.1
     inter_count = np.sum(inter)
+    # inter_count = sum(x_e[i, j, b] for i in range(len(drug_clusters)) for j in range(len(prot_clusters))
+    # for b in range(len(splits)))
 
     x_d = {}
     for b in range(len(splits)):
@@ -49,7 +52,6 @@ def solve_ccd_bqp(
         for j in range(len(prot_clusters)):
             constraints.append(sum(x_e[i, j, b] for b in range(len(splits))) <= 1)
 
-    # all_inter = sum(x_e[i, j, b] for i in range(len(drug_clusters)) for j in range(len(prot_clusters)) for b in range(len(splits)))
     for b in range(len(splits)):
         var = sum(
             x_e[i, j, b] * inter[i, j] for i in range(len(drug_clusters)) for j in range(len(prot_clusters))
@@ -108,6 +110,8 @@ def solve_ccd_bqp(
             cvxpy.maximum((x_p[i, b] + x_p[j, b]) - 1, 0) * prot_distances[i][j]
             for i in range(len(prot_clusters)) for j in range(i + 1, len(prot_clusters)) for b in range(len(splits))
         )
+
+    logging.info("Start solving with SCIP")
 
     objective = cvxpy.Minimize(alpha * inter_loss + drug_loss + prot_loss)
     problem = cvxpy.Problem(objective, constraints)

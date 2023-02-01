@@ -1,9 +1,12 @@
 import os.path
 from typing import Tuple, Generator, Dict, List, Optional, Union, Any
 
+import sys
+sys.path.append("..")
+
 import numpy as np
 
-from scala.utils.utils import parse_fasta
+from utils.utils import parse_fasta
 
 ParseInfo = Tuple[
     Optional[List[str]],
@@ -32,22 +35,22 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
         for both, protein data and drug data, as well as a list of interactions between
     """
     # TODO: Semantic checks of arguments
-    inter = list(tuple(x) for x in read_csv(kwargs["inter"], kwargs["header"], kwargs["sep"])) if kwargs["inter"] else None
+    inter = list(tuple(x) for x in read_csv(kwargs["inter"], False, "\t")) if kwargs["inter"] else None
 
     # parse the proteins
-    if kwargs["input"] is not None:
-        if kwargs["input"].endswith(".fasta") or kwargs["input"].endswith(".fa"):
-            proteins = parse_fasta(kwargs["input"])
-        elif os.path.isfile(kwargs["input"]):
-            proteins = dict(read_csv(kwargs["input"], kwargs["header"], kwargs["sep"]))
-        elif os.path.isdir(kwargs["input"]):
-            proteins = dict(read_pdb_folder(kwargs["input"]))
+    if kwargs["protein_data"] is not None:
+        if kwargs["protein_data"].endswith(".fasta") or kwargs["protein_data"].endswith(".fa"):
+            proteins = parse_fasta(kwargs["protein_data"])
+        elif os.path.isfile(kwargs["protein_data"]):
+            proteins = dict(read_csv(kwargs["protein_data"], False, "\t"))
+        elif os.path.isdir(kwargs["protein_data"]):
+            proteins = dict(read_pdb_folder(kwargs["protein_data"]))
         else:
             raise ValueError()
 
         # parse the protein weights
         if kwargs["weight_file"] is not None:
-            protein_weights = dict((n, float(w)) for n, w in read_csv(kwargs["weight_file"], kwargs["header"], kwargs["sep"]))
+            protein_weights = dict((n, float(w)) for n, w in read_csv(kwargs["weight_file"], False, "\t"))
         elif inter is not None:
             protein_weights = dict(count_inter(inter, "prots"))
         else:
@@ -78,12 +81,12 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
             None, None, None, None, None, 0
 
     # parse molecules
-    if kwargs["drugs"] is not None:
-        drugs = dict(read_csv(kwargs["drugs"], kwargs["header"], kwargs["sep"]))
+    if kwargs["ligand_data"] is not None:
+        drugs = dict(read_csv(kwargs["ligand_data"], False, "\t"))
 
         # parse molecular weights
-        if kwargs["drug_weights"] is not None:
-            drug_weights = dict((x, float(v)) for x, v in read_csv(kwargs["drug_weights"], kwargs["header"], kwargs["sep"]))
+        if kwargs["ligand_weights"] is not None:
+            drug_weights = dict((x, float(v)) for x, v in read_csv(kwargs["ligand_weights"], False, "\t"))
         elif inter is not None:
             drug_weights = dict(count_inter(inter, "drugs"))
         else:
@@ -91,22 +94,22 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
 
         # parse molecular similarity
         drug_similarity, drug_distance = None, None
-        if kwargs["drug_sim"] is None and kwargs["drug_dist"] is None:
+        if kwargs["ligand_sim"] is None and kwargs["ligand_dist"] is None:
             drug_similarity = np.ones((len(drugs), len(drugs)))
             drug_names = list(drugs.keys())
             drug_threshold = 1
-        elif kwargs["drug_sim"] is not None and os.path.isfile(kwargs["drug_sim"]):
-            drug_names, drug_similarity = read_similarity_file(kwargs["drug_sim"])
+        elif kwargs["ligand_sim"] is not None and os.path.isfile(kwargs["ligand_sim"]):
+            drug_names, drug_similarity = read_similarity_file(kwargs["ligand_sim"])
             drug_threshold = kwargs.get("drug_min_sim", 1)
-        elif kwargs["drug_dist"] is not None and os.path.isfile(kwargs["drug_dist"]):
-            drug_names, drug_distance = read_similarity_file(kwargs["drug_dist"])
+        elif kwargs["ligand_dist"] is not None and os.path.isfile(kwargs["ligand_dist"]):
+            drug_names, drug_distance = read_similarity_file(kwargs["ligand_dist"])
             drug_threshold = kwargs.get("drug_max_dist", 1)
         else:
-            if kwargs["drug_sim"] is not None:
-                drug_similarity = kwargs["drug_sim"]
+            if kwargs["ligand_sim"] is not None:
+                drug_similarity = kwargs["ligand_sim"]
                 drug_threshold = kwargs.get("drug_min_sim", 1)
             else:
-                drug_distance = kwargs["drug_dist"]
+                drug_distance = kwargs["ligand_dist"]
                 drug_threshold = kwargs.get("drug_max_dist", 1)
             drug_names = list(drugs.keys())
     else:
@@ -147,7 +150,11 @@ def read_csv(filepath: str, header: bool = False, sep: str = "\t") -> Generator[
     """
     with open(filepath, "r") as inter:
         for line in inter.readlines()[(1 if header else 0):]:
-            yield line.strip().split(sep)[:2]
+            output = line.strip().split(sep)
+            if len(output) >= 2:
+                yield output[:2]
+            else:
+                yield output[0], output[0]
 
 
 def read_pdb_folder(folder_path: str) -> Generator[Tuple[str, str], None, None]:
@@ -197,7 +204,7 @@ def read_similarity_file(filepath: str, sep: str = "\t") -> Tuple[List[str], np.
     names = []
     similarities = []
     with open(filepath, "r") as data:
-        for line in data.readlines():
+        for line in data.readlines()[1:]:
             parts = line.strip().split(sep)
             names.append(parts[0])
             similarities.append([float(x) for x in parts[1:]])

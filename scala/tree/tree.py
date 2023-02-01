@@ -4,12 +4,15 @@ import subprocess
 import warnings
 import logging
 
+import sys
+sys.path.append("..")
+
 import pandas as pd
 from Bio import pairwise2
 
-from scala.utils.blossum62 import BLOSUM62
-from scala.utils.mmseqs import mmseqs_clustering, call_mmseqs_clustering
-from scala.utils.utils import random_string, seq_map_to_fasta, get_cov_seq_ident, parse_fasta
+from utils.blossum62 import BLOSUM62
+from utils.mmseqs import mmseqs_clustering, call_mmseqs_clustering
+from utils.utils import random_string, seq_map_to_fasta, get_cov_seq_ident, parse_fasta
 
 
 def scala(args):

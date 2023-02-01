@@ -14,6 +14,8 @@ def solve_icd_bqp(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
+    logging.info("Define optimization problem")
+
     x_d = {}
     all_inter = len(inter)  # estimate_surviving_interactions(len(inter), len(drugs), len(proteins), splits)
     print(all_inter)
@@ -32,7 +34,6 @@ def solve_icd_bqp(
                     x_e[i, j, b] = cvxpy.Variable(boolean=True)
 
     constraints = []
-    print("Constraint defining")
 
     for i in range(len(drugs)):
         constraints.append(sum(x_d[i, b] for b in range(len(splits))) == 1)
@@ -42,14 +43,7 @@ def solve_icd_bqp(
         for j, protein in enumerate(proteins):
             if (drug, protein) in inter:
                 constraints.append(sum(x_e[i, j, b] for b in range(len(splits))) <= 1)
-    print("D, P, and I constraints defined")
 
-    # all_inter = sum(
-    #     x_e[i, j, b] for b in range(len(splits)) for i, drug in enumerate(drugs) for j, protein in enumerate(proteins)
-    #     if (drug, protein) in inter
-    # )
-
-    print("Define size constraints")
     for b in range(len(splits)):
         var = sum(
             x_e[i, j, b] for i, drug in enumerate(drugs) for j, protein in enumerate(proteins) if
@@ -66,14 +60,13 @@ def solve_icd_bqp(
                     constraints.append(x_d[i, b] >= x_e[i, j, b])
                     constraints.append(x_p[j, b] >= x_e[i, j, b])
 
-    print("Define objective")
 
     inter_loss = sum(
         (1 - sum(x_e[i, j, b] for b in range(len(splits)))) for i, drug in enumerate(drugs)
         for j, protein in enumerate(proteins) if (drug, protein) in inter
     )
 
-    print("Start solving the problem")
+    logging.info("Start solving with SCIP")
 
     objective = cvxpy.Minimize(inter_loss)
     problem = cvxpy.Problem(objective, constraints)

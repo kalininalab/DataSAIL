@@ -17,7 +17,8 @@ def solve_ccs_bqp(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Dict[str, str]]:
-    print("Defining the optimization problem")
+    logging.info("Define optimization problem")
+
     alpha = 0.5
 
     x = {}
@@ -61,20 +62,20 @@ def solve_ccs_bqp(
             for i in range(len(clusters)) for j in range(len(clusters)) for b in range(len(splits))
         )
 
-    # solve
     logging.info("Start solving with SCIP")
+
     objective = cvxpy.Minimize(alpha * size_loss + cluster_loss)
     problem = cvxpy.Problem(objective, constraints)
     problem.solve(
         solver=cvxpy.SCIP,
         qcp=True,
         scip_params={
-            "limits/time": 10,
+            "limits/time": max_sec,
         },
     )
 
-    print(f"SCIP status: {problem.status}")
-    print(f"Solution's score: {problem.value}")
+    logging.info(f"SCIP status: {problem.status}")
+    logging.info(f"Solution's score: {problem.value}")
 
     if "optimal" not in problem.status:
         logging.warning(

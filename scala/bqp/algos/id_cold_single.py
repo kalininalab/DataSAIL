@@ -13,6 +13,8 @@ def solve_ics_bqp(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Dict[str, str]]:
+    logging.info("Define optimization problem")
+
     x = {}
     for i in range(len(molecules)):
         for b in range(len(splits)):
@@ -33,21 +35,20 @@ def solve_ics_bqp(
         for b in range(len(splits))
     )
 
-    print("Solving started")
+    logging.info("Start solving with SCIP")
+
     objective = cvxpy.Minimize(dist_loss)
     problem = cvxpy.Problem(objective, constraints)
     problem.solve(
         solver=cvxpy.SCIP,
         qcp=True,
         scip_params={
-            "limits/time": 10,
+            "limits/time": max_sec,
         },
     )
 
     logging.info(f"SCIP status: {problem.status}")
     logging.info(f"Solution's score: {problem.value}")
-    print(f"SCIP status: {problem.status}")
-    print(f"Solution's score: {problem.value}")
 
     if "optimal" not in problem.status:
         logging.warning(
