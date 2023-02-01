@@ -7,6 +7,7 @@ import numpy as np
 
 from .algos.cluster_cold_double import solve_ccd_bqp
 from .algos.cluster_cold_single import solve_ccs_bqp
+from .algos.cluster_cold_single_matrix import solve_ccs_bqp_matrix
 from .algos.id_cold_double import solve_icd_bqp
 from .algos.id_cold_single import solve_ics_bqp
 from .clustering import cluster, cluster_interactions, reverse_clustering
@@ -73,7 +74,7 @@ def bqp_main(**kwargs) -> None:
         if solution is not None:
             output_inter, output_drugs, output_proteins = solution
     if kwargs["technique"] == "CCD":
-        cluster_split = solve_ccs_bqp(
+        cluster_split = solve_ccs_bqp_matrix(
             clusters=drug_cluster_names,
             weights=[drug_cluster_weights[dc] for dc in drug_cluster_names],
             similarities=drug_cluster_similarity,
@@ -88,7 +89,7 @@ def bqp_main(**kwargs) -> None:
         if cluster_split is not None:
             output_drugs = reverse_clustering(cluster_split, drug_cluster_map)
     if kwargs["technique"] == "CCP":
-        cluster_split = solve_ccs_bqp(
+        cluster_split = solve_ccs_bqp_matrix(
             clusters=prot_cluster_names,
             weights=[prot_cluster_weights[pc] for pc in prot_cluster_names],
             similarities=prot_cluster_similarity,

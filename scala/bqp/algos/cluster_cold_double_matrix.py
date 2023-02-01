@@ -25,17 +25,19 @@ def solve_icd_bqp(
 
     alpha = 0.1
     inter_count = np.sum(inter)
-    min_lim = [split * inter_count * (1 - limit) for split in splits]
-    max_lim = [split * inter_count * (1 - limit) for split in splits]
+    t_d = np.full((len(drug_clusters), len(drug_clusters)), drug_threshold)
+    t_p = np.full((len(prot_clusters), len(prot_clusters)), prot_threshold)
+    min_lim = [int(split * inter_count * (1 - limit)) for split in splits]
+    max_lim = [int(split * inter_count * (1 + limit)) for split in splits]
 
-    x_d = cvxpy.Variable((len(drug_clusters), len(splits)), boolean=True)
-    x_p = cvxpy.Variable((len(prot_clusters), len(splits)), boolean=True)
-    x_e = cvxpy.Variable((len(drug_clusters), len(prot_clusters), len(splits)), boolean=True)
+    x_d = [cvxpy.Variable((len(drug_clusters), 1), boolean=True) for _ in range(len(splits))]
+    x_p = [cvxpy.Variable((len(prot_clusters), len(splits)), boolean=True) for _ in range(len(splits))]
+    x_e = [cvxpy.Variable((len(drug_clusters), len(prot_clusters)), boolean=True) for _ in range(len(splits))]
 
     constraints = [
-        cvxpy.sum(x_d, axis=1) == np.ones((len(drug_clusters))),
-        cvxpy.sum(x_p, axis=1) == np.ones((len(prot_clusters))),
-        cvxpy.sum(x_e, axis=2) <= np.ones((len(drug_clusters), len(prot_clusters))),
+        cvxpy.sum([x[:, 0] for x in x_d]) == np.ones((len(drug_clusters))),
+        cvxpy.sum([x[:, 0] for x in x_p]) == np.ones((len(prot_clusters))),
+        cvxpy.sum([x for x in x_e]) <= np.ones((len(drug_clusters), len(prot_clusters))),
         min_lim <= cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter, x_e), axis=0), axis=1),
         cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter, x_e), axis=0), axis=1) <= max_lim,
         None,
