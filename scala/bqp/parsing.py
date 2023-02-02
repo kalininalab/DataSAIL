@@ -1,12 +1,9 @@
 import os.path
 from typing import Tuple, Generator, Dict, List, Optional, Union, Any
 
-import sys
-sys.path.append("..")
-
 import numpy as np
 
-from utils.utils import parse_fasta
+from ..utils.utils import parse_fasta
 
 ParseInfo = Tuple[
     Optional[List[str]],
@@ -49,8 +46,8 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
             raise ValueError()
 
         # parse the protein weights
-        if kwargs["weight_file"] is not None:
-            protein_weights = dict((n, float(w)) for n, w in read_csv(kwargs["weight_file"], False, "\t"))
+        if kwargs["protein_weights"] is not None:
+            protein_weights = dict((n, float(w)) for n, w in read_csv(kwargs["protein_weights"], False, "\t"))
         elif inter is not None:
             protein_weights = dict(count_inter(inter, "prots"))
         else:
@@ -58,23 +55,23 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
 
         # parse the protein similarity measure
         protein_similarity, protein_distance = None, None
-        if kwargs["prot_sim"] is None and kwargs["prot_dist"] is None:
+        if kwargs["protein_sim"] is None and kwargs["protein_dist"] is None:
             protein_similarity = np.ones((len(proteins), len(proteins)))
             protein_names = list(proteins.keys())
             protein_threshold = 1
-        elif kwargs["prot_sim"] is not None and os.path.isfile(kwargs["prot_sim"]):
-            protein_names, protein_similarity = read_similarity_file(kwargs["prot_sim"])
-            protein_threshold = kwargs.get("prot_min_sim", 1)
-        elif kwargs["prot_dist"] is not None and os.path.isfile(kwargs["prot_dist"]):
-            protein_names, protein_distance = read_similarity_file(kwargs["prot_dist"])
-            protein_threshold = kwargs.get("prot_max_dist", 1)
+        elif kwargs["protein_sim"] is not None and os.path.isfile(kwargs["protein_sim"]):
+            protein_names, protein_similarity = read_similarity_file(kwargs["protein_sim"])
+            protein_threshold = kwargs.get("protein_max_sim", 1)
+        elif kwargs["protein_dist"] is not None and os.path.isfile(kwargs["protein_dist"]):
+            protein_names, protein_distance = read_similarity_file(kwargs["protein_dist"])
+            protein_threshold = kwargs.get("protein_max_dist", 1)
         else:
-            if kwargs["prot_sim"] is not None:
-                protein_similarity = kwargs["prot_sim"]
-                protein_threshold = kwargs.get("prot_min_sim", 1)
+            if kwargs["protein_sim"] is not None:
+                protein_similarity = kwargs["protein_sim"]
+                protein_threshold = kwargs.get("protein_max_sim", 1)
             else:
-                protein_distance = kwargs["prot_dist"]
-                protein_threshold = kwargs.get("prot_max_dist", 1)
+                protein_distance = kwargs["protein_dist"]
+                protein_threshold = kwargs.get("protein_max_dist", 1)
             protein_names = list(proteins.keys())
     else:
         proteins, protein_names, protein_weights, protein_similarity, protein_distance, protein_threshold = \
@@ -100,17 +97,17 @@ def read_data(**kwargs) -> Tuple[ParseInfo, ParseInfo, Optional[List[Tuple[str, 
             drug_threshold = 1
         elif kwargs["ligand_sim"] is not None and os.path.isfile(kwargs["ligand_sim"]):
             drug_names, drug_similarity = read_similarity_file(kwargs["ligand_sim"])
-            drug_threshold = kwargs.get("drug_min_sim", 1)
+            drug_threshold = kwargs.get("ligand_max_sim", 1)
         elif kwargs["ligand_dist"] is not None and os.path.isfile(kwargs["ligand_dist"]):
             drug_names, drug_distance = read_similarity_file(kwargs["ligand_dist"])
-            drug_threshold = kwargs.get("drug_max_dist", 1)
+            drug_threshold = kwargs.get("ligand_max_dist", 1)
         else:
             if kwargs["ligand_sim"] is not None:
                 drug_similarity = kwargs["ligand_sim"]
-                drug_threshold = kwargs.get("drug_min_sim", 1)
+                drug_threshold = kwargs.get("ligand_max_sim", 1)
             else:
                 drug_distance = kwargs["ligand_dist"]
-                drug_threshold = kwargs.get("drug_max_dist", 1)
+                drug_threshold = kwargs.get("ligand_max_dist", 1)
             drug_names = list(drugs.keys())
     else:
         drugs, drug_names, drug_weights, drug_similarity, drug_distance, drug_threshold = \

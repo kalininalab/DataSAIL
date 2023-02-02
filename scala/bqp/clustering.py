@@ -7,8 +7,8 @@ import numpy as np
 from rdkit.Chem import MolFromSmiles
 from sklearn.cluster import AffinityPropagation, AgglomerativeClustering
 
-from utils.protein import mol_to_grakel, pdb_to_grakel
-from utils.wlk import run_wl_kernel
+from ..utils.protein import mol_to_grakel, pdb_to_grakel
+from ..utils.wlk import run_wl_kernel
 
 
 def cluster_interactions(

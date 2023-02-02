@@ -2,7 +2,7 @@ import argparse
 import logging
 import os.path
 
-from bqp.run import bqp_main
+from .bqp.run import bqp_main
 
 verb_map = {
     "C": logging.CRITICAL,
