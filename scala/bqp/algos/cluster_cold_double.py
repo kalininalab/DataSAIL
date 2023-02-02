@@ -154,35 +154,34 @@ def solve_ccd_bqp(
 
 
 def main():
-    print(
-        solve_ccd_bqp(
-            ["D1", "D2", "D3"],
-            np.asarray([
-                [5, 5, 0],
-                [5, 5, 0],
-                [0, 0, 5],
-            ]),
-            None,
-            4,
-            ["P1", "P2", "P3"],
-            np.asarray([
-                [5, 5, 0],
-                [5, 5, 0],
-                [0, 0, 5],
-            ]),
-            None,
-            4,
-            [
-                [9, 9, 0],
-                [9, 9, 0],
-                [0, 0, 9],
-            ],
-            0.2,
-            [0.8, 0.2],
-            ["train", "test"],
-            0,
-            0,
-        )
+    logging.basicConfig(level=logging.INFO)
+    solve_ccd_bqp(
+        ["D1", "D2", "D3"],
+        np.asarray([
+            [5, 5, 0],
+            [5, 5, 0],
+            [0, 0, 5],
+        ]),
+        None,
+        4,
+        ["P1", "P2", "P3"],
+        np.asarray([
+            [5, 5, 0],
+            [5, 5, 0],
+            [0, 0, 5],
+        ]),
+        None,
+        4,
+        np.asarray([
+            [9, 9, 0],
+            [9, 9, 0],
+            [0, 0, 9],
+        ]),
+        0.2,
+        [0.8, 0.2],
+        ["train", "test"],
+        10,
+        0,
     )
 
 

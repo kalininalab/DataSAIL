@@ -67,16 +67,15 @@ def solve_ics_bqp(
 
 
 def main():
-    print(
-        solve_ics_bqp(
-            ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"],
-            [6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
-            0.2,
-            [0.7, 0.3],
-            ["train", "test"],
-            0,
-            0,
-        )
+    logging.basicConfig(level=logging.INFO)
+    solve_ics_bqp(
+        ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"],
+        [6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
+        0.2,
+        [0.7, 0.3],
+        ["train", "test"],
+        10,
+        0,
     )
 
 

@@ -1,11 +1,8 @@
 import logging
-import time
 from typing import List, Dict, Optional
 
 import cvxpy
 import numpy as np
-
-from scala.bqp.algos.id_cold_single import solve_ics_bqp
 
 
 def solve_ics_bqp_matrix(
@@ -17,6 +14,7 @@ def solve_ics_bqp_matrix(
         max_sec: int,
         max_sol: int,
 ) -> Optional[Dict[str, str]]:
+    logging.info("Define optimization problem")
 
     m = np.ones((len(molecules)))
     o = [split * sum(weights) for split in splits]
@@ -63,41 +61,17 @@ def solve_ics_bqp_matrix(
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
     solve_ics_bqp_matrix(
         ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"],
         [6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
         0.2,
         [0.7, 0.3],
         ["train", "test"],
-        0,
+        10,
         0,
     )
 
 
 if __name__ == '__main__':
-    count = 100
-    start = time.time()
-    for _ in range(count):
-        solve_ics_bqp_matrix(
-            ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"],
-            [6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
-            0.2,
-            [0.7, 0.3],
-            ["train", "test"],
-            0,
-            0,
-        )
-    mid = time.time()
-    for _ in range(count):
-        solve_ics_bqp(
-            ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"],
-            [6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
-            0.2,
-            [0.7, 0.3],
-            ["train", "test"],
-            0,
-            0,
-        )
-    end = time.time()
-    print(f"Matrix time: {(mid - start) / count:.5f}ms")
-    print(f"Single time: {(end - mid) / count:.5f}ms")
+    main()

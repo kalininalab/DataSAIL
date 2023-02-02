@@ -74,7 +74,7 @@ def bqp_main(**kwargs) -> None:
         if solution is not None:
             output_inter, output_drugs, output_proteins = solution
     if kwargs["technique"] == "CCD":
-        cluster_split = solve_ccs_bqp_matrix(
+        cluster_split = solve_ccs_bqp(
             clusters=drug_cluster_names,
             weights=[drug_cluster_weights[dc] for dc in drug_cluster_names],
             similarities=drug_cluster_similarity,
@@ -89,7 +89,7 @@ def bqp_main(**kwargs) -> None:
         if cluster_split is not None:
             output_drugs = reverse_clustering(cluster_split, drug_cluster_map)
     if kwargs["technique"] == "CCP":
-        cluster_split = solve_ccs_bqp_matrix(
+        cluster_split = solve_ccs_bqp(
             clusters=prot_cluster_names,
             weights=[prot_cluster_weights[pc] for pc in prot_cluster_names],
             similarities=prot_cluster_similarity,
@@ -131,6 +131,10 @@ def bqp_main(**kwargs) -> None:
         if cluster_split is not None:
             output_inter, output_drugs, output_proteins = cluster_split
 
+    if kwargs["technique"][0] == "C" and kwargs.get("stats", True):
+        if kwargs["technique"][-1] == "D":
+            whatever(drug_names, output_drugs, drug_distance, drug_similarity)
+
     logging.info("Store results")
 
     if inter is not None:
@@ -171,6 +175,37 @@ def bqp_main(**kwargs) -> None:
 
     logging.info("BQP splitting finished and results stored.")
     logging.info(f"Total runtime: {time.time() - start:.5f}s")
+
+
+def whatever(names: List[str], clusters: Dict[str, str], distances: np.ndarray, similarities: np.ndarray):
+    # TODO: optimize this for runtime
+    if distances is not None:
+        val = float("-inf")
+        for i in range(len(names)):
+            for j in range(i + 1, len(names)):
+                if clusters[names[i]] != clusters[names[j]]:
+                    val = max(val, distances[i, j])
+    else:
+        val = float("inf")
+        for i in range(len(names)):
+            for j in range(i + 1, len(names)):
+                if clusters[names[i]] == clusters[names[j]]:
+                    val = min(val, similarities[i, j])
+
+    metric_name = "distance   " if distances is not None else "similarity "
+    metric = distances.flatten() if distances is not None else similarities.flatten()
+    logging.info("Some clustering statistics:")
+    logging.info(f"\tMin {metric_name}: {np.min(metric):.5f}")
+    logging.info(f"\tMax {metric_name}: {np.max(metric):.5f}")
+    logging.info(f"\tAvg {metric_name}: {np.average(metric):.5f}")
+    logging.info(f"\tMean {metric_name[:-2]}: {np.mean(metric):.5f}")
+    logging.info(f"\tVar {metric_name}: {np.var(metric):.5f}")
+    if distances is not None:
+        logging.info(f"\tMaximal distance in same split: {val:.5f}")
+        logging.info(f"\t{(metric > val).sum() / len(metric) * 100:.2}% of distances are larger")
+    else:
+        logging.info(f"Minimal similarity in same split {val:.5f}")
+        logging.info(f"\t{(metric < val).sum() / len(metric) * 100:.2}% of similarities are smaller")
 
 
 def stats_string(count, split_stats):
