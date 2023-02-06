@@ -112,7 +112,7 @@ def solve_icd_bqp_matrix(
                         output[0].append((drug, protein, names[b]))
                 if sum(x_e[b][i, j].value for b in range(len(splits))) == 0:
                     output[0].append((drug, protein, "not selected"))
-    print(output)
+
     return output
 
 

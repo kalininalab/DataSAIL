@@ -89,7 +89,7 @@ def solve_ccs_bqp(
         for b in range(len(splits)):
             if x[i, b].value > 0.1:
                 output[clusters[i]] = names[b]
-    print(output)
+
     return output
 
 

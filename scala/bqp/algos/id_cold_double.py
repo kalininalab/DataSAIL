@@ -18,7 +18,7 @@ def solve_icd_bqp(
 
     x_d = {}
     all_inter = len(inter)  # estimate_surviving_interactions(len(inter), len(drugs), len(proteins), splits)
-    print(all_inter)
+
     for b in range(len(splits)):
         for i in range(len(drugs)):
             x_d[i, b] = cvxpy.Variable(boolean=True)
@@ -106,7 +106,7 @@ def solve_icd_bqp(
                         output[0].append((drug, protein, names[b]))
                 if sum(x_e[i, j, b].value for b in range(len(splits))) == 0:
                     output[0].append((drug, protein, "not selected"))
-    print(output)
+
     return output
 
 

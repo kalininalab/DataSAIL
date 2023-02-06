@@ -74,6 +74,7 @@ def bqp_main(**kwargs) -> None:
         if solution is not None:
             output_inter, output_drugs, output_proteins = solution
     if kwargs["technique"] == "CCD":
+        whatever(drug_names, drug_cluster_map, drug_distance, drug_similarity)
         cluster_split = solve_ccs_bqp(
             clusters=drug_cluster_names,
             weights=[drug_cluster_weights[dc] for dc in drug_cluster_names],
@@ -181,16 +182,22 @@ def whatever(names: List[str], clusters: Dict[str, str], distances: np.ndarray, 
     # TODO: optimize this for runtime
     if distances is not None:
         val = float("-inf")
+        val2 = float("inf")
         for i in range(len(names)):
             for j in range(i + 1, len(names)):
-                if clusters[names[i]] != clusters[names[j]]:
+                if clusters[names[i]] == clusters[names[j]]:
                     val = max(val, distances[i, j])
+                else:
+                    val2 = min(val2, distances[i, j])
     else:
         val = float("inf")
+        val2 = float("-inf")
         for i in range(len(names)):
             for j in range(i + 1, len(names)):
                 if clusters[names[i]] == clusters[names[j]]:
                     val = min(val, similarities[i, j])
+                else:
+                    val2 = max(val, similarities[i, j])
 
     metric_name = "distance   " if distances is not None else "similarity "
     metric = distances.flatten() if distances is not None else similarities.flatten()
@@ -198,14 +205,18 @@ def whatever(names: List[str], clusters: Dict[str, str], distances: np.ndarray, 
     logging.info(f"\tMin {metric_name}: {np.min(metric):.5f}")
     logging.info(f"\tMax {metric_name}: {np.max(metric):.5f}")
     logging.info(f"\tAvg {metric_name}: {np.average(metric):.5f}")
-    logging.info(f"\tMean {metric_name[:-2]}: {np.mean(metric):.5f}")
+    logging.info(f"\tMean {metric_name[:-1]}: {np.mean(metric):.5f}")
     logging.info(f"\tVar {metric_name}: {np.var(metric):.5f}")
     if distances is not None:
         logging.info(f"\tMaximal distance in same split: {val:.5f}")
         logging.info(f"\t{(metric > val).sum() / len(metric) * 100:.2}% of distances are larger")
+        logging.info(f"\tMinimal distance between two splits: {val:.5f}")
+        logging.info(f"\t{(metric < val2).sum() / len(metric) * 100:.2}% of distances are smaller")
     else:
         logging.info(f"Minimal similarity in same split {val:.5f}")
         logging.info(f"\t{(metric < val).sum() / len(metric) * 100:.2}% of similarities are smaller")
+        logging.info(f"Maximal similarity between two splits {val:.5f}")
+        logging.info(f"\t{(metric > val).sum() / len(metric) * 100:.2}% of similarities are larger")
 
 
 def stats_string(count, split_stats):

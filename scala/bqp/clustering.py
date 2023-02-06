@@ -190,16 +190,21 @@ def additional_clustering(
     logging.info(f"Cluster {len(cluster_names)} items based on {'similarities' if cluster_similarity is not None else 'distances'}")
     # set up the clustering algorithm for similarity or distance based clustering w/o specifying the number of clusters
     if cluster_similarity is not None:
-        ca = AffinityPropagation(affinity='precomputed', random_state=42)
         cluster_matrix = np.array(cluster_similarity, dtype=float)
+        ca = AffinityPropagation(affinity='precomputed', random_state=42)
     else:
+        cluster_matrix = np.array(cluster_distance, dtype=float)
         ca = AgglomerativeClustering(
             n_clusters=None,
             metric='precomputed',
             linkage='average',
-            distance_threshold=np.average(cluster_distance) * 0.9
+            distance_threshold=np.average(cluster_distance) * 0.9,
+            # connectivity=np.asarray(cluster_matrix < np.average(cluster_distance) * 0.9, dtype=int),
         )
-        cluster_matrix = np.array(cluster_distance, dtype=float)
+        logging.info(
+            f"Clustering based on distances. "
+            f"Distances above {np.average(cluster_distance) * 0.9} cannot end up in same cluster."
+        )
 
     # cluster the clusters into new, fewer, and bigger clusters
     labels = ca.fit_predict(cluster_matrix)
@@ -229,6 +234,8 @@ def additional_clustering(
         if new_cluster not in new_cluster_weights:
             new_cluster_weights[new_cluster] = 0
         new_cluster_weights[new_cluster] += cluster_weights[cluster_map[name]]
+
+    logging.info(f"Reduced number of clusters to {len(new_cluster_names)}.")
 
     if cluster_similarity is not None:
         return new_cluster_names, new_cluster_map, new_cluster_matrix, None, new_cluster_weights
