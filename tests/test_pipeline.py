@@ -16,7 +16,7 @@ from tests.utils import check_folder
     (False, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "ICD"),
     (False, False, None, None, "data/pipeline/drugs.tsv", True, None, None, False, "ICD"),
     (False, False, None, None, "data/pipeline/drugs.tsv", False, "data/pipeline/drug_sim.tsv", None, False, "ICD"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", True, "wlk", None, False, "ICD"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", True, "wlk", None, False, "ICD"),  # <-- 10/11
     (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "ICD"),
     (True, False, "wlk", None, "data/pipeline/drugs.tsv", False, "wlk", None, True, "ICD"),
     (False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "CCP"),
@@ -39,7 +39,7 @@ def test_pipeline(data):
         names=["train", "test"],
         limit=0.25,
         protein_data=None if pdb is None else ("data/pipeline/pdbs" if pdb else "data/pipeline/seqs.fasta"),
-        protein_weights="data/pipeline/prot_weights.tsv" if prot_weights else None,
+        protein_weights=None,  # "data/pipeline/prot_weights.tsv" if prot_weights else None,
         protein_sim=prot_sim,
         protein_dist=prot_dist,
         protein_max_sim=1,
@@ -52,4 +52,9 @@ def test_pipeline(data):
         ligand_max_dist=1,
     )
 
-    check_folder("data/pipeline/out", 0.25)
+    check_folder(
+        "data/pipeline/out",
+        0.25,
+        "data/pipeline/prot_weights.tsv" if prot_weights else None,
+        "data/pipeline/drug_weights.tsv" if drug_weights else None,
+    )

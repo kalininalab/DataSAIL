@@ -35,4 +35,4 @@ def run_identity_splitting(root_dir, out_folder, mode):
 def test_perf_bin_2(root_dir, mode):
     run_identity_splitting(root_dir, mode[1], mode[0])
 
-    check_folder(f"{root_dir}/{mode[1]}", 0.25)
+    check_folder(f"{root_dir}/{mode[1]}", 0.25, None, None)

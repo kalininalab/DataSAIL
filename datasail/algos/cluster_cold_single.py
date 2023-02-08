@@ -64,7 +64,7 @@ def solve_ccs_bqp(
 
     logging.info("Start solving with SCIP")
 
-    objective = cvxpy.Minimize(size_loss/len(clusters) + cluster_loss)
+    objective = cvxpy.Minimize(alpha * size_loss + cluster_loss)
     problem = cvxpy.Problem(objective, constraints)
     problem.solve(
         solver=cvxpy.SCIP,
