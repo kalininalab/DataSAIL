@@ -3,7 +3,7 @@ from typing import Tuple, Generator, Dict, List, Optional, Union, Any
 
 import numpy as np
 
-from ..utils.utils import parse_fasta
+from datasail.utils.utils import parse_fasta
 
 ParseInfo = Tuple[
     Optional[List[str]],

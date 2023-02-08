@@ -2,7 +2,7 @@ import argparse
 import logging
 import os.path
 
-from .bqp.run import bqp_main
+from datasail.run import bqp_main
 
 verb_map = {
     "C": logging.CRITICAL,
@@ -16,10 +16,10 @@ verb_map = {
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        prog="SALSA - Splitting Against Leaking Sequential & Structural informAtion",
-        description="SALSA is a tool proving you with sophisticated splits of any type of data to challenge your AI "
-                    "model. SALSA is able to compute several different splits of data preventing information from "
-                    "leaking from the training set into the validation or test sets.",
+        prog="DataSAIL - Data Splitting Against Information Leaking",
+        description="Data SAIL is a tool proving you with sophisticated splits of any type of data to challenge your "
+                    "AI model. DataSAIL is able to compute several different splits of data preventing information "
+                    "from leaking from the training set into the validation or test sets.",
     )
     parser.add_argument(
         "-i",
@@ -155,7 +155,7 @@ def parse_args():
         default=None,
         help="Ligand input to the program. This has to be a TSV file with every line as [lig_id >tab< SMILES]",
     )
-    prot.add_argument(
+    lig.add_argument(
         "--ligand-weights",
         type=str,
         dest="ligand_weights",
@@ -163,7 +163,7 @@ def parse_args():
         help="Custom weights of the ligand. The file has to have TSV format where every line is of the form "
              "[lig_id >tab< weight]. The lig_id has to match a ligand id from the ligand input argument.",
     )
-    prot.add_argument(
+    lig.add_argument(
         "--ligand-sim",
         type=str,
         dest="ligand_sim",
@@ -171,27 +171,119 @@ def parse_args():
         help="Provide the name of a method to determine similarity between ligands or to cluster them. This can "
              "either be >WLK< or a filepath to a file storing the pairwise similarities in TSV.",
     )
-    prot.add_argument(
+    lig.add_argument(
         "--ligand-dist",
         type=str,
         dest="ligand_dist",
         default=None,
-        help="Provide the name of a method to determine distance between ligands. This has to be a "
-             "filepath to a file storing the pairwise distances in TSV."
+        help="Provide the name of a method to determine distance between ligands. This has to be a filepath to a file "
+             "storing the pairwise distances in TSV."
     )
-    prot.add_argument(
+    lig.add_argument(
         "--ligand-max-sim",
         type=float,
-        dest="protein_max_sim",
+        dest="ligand_max_sim",
         default=1.0,
-        help="Maximum similarity of two proteins in two split."
+        help="Maximum similarity of two ligands in two split."
     )
-    prot.add_argument(
+    lig.add_argument(
         "--ligand-max-dist",
         type=float,
         dest="ligand_max_dist",
         default=1.0,
-        help="Maximal distance of two proteins in the same split."
+        help="Maximal distance of two ligands in the same split."
+    )
+    gene = parser.add_argument_group("Genomic Input Arguments")
+    gene.add_argument(
+        "-g",
+        "--genomes",
+        type=str,
+        dest="genome_data",
+        default=None,
+        help="Genomic input to the program. This has to be a FASTA file.",
+    )
+    gene.add_argument(
+        "--genome-weights",
+        type=str,
+        dest="genome_weights",
+        default=None,
+        help="Custom weights of the genomes. The file has to have TSV format where every line is of the form "
+             "[gene_id >tab< weight]. The gene_id has to match a genome id from the genome input argument.",
+    )
+    gene.add_argument(
+        "--genome-sim",
+        type=str,
+        dest="genome_sim",
+        default=None,
+        help="Provide the name of a method to determine similarity between genomes or to cluster them. This has to be "
+             "a filepath to a file storing the pairwise similarities in TSV.",
+    )
+    gene.add_argument(
+        "--genome-dist",
+        type=str,
+        dest="genome_dist",
+        default=None,
+        help="Provide the name of a method to determine distances between genomes. This can be >MASH< or a filepath to "
+             "a file storing the pairwise distances in TSV."
+    )
+    gene.add_argument(
+        "--genome-max-sim",
+        type=float,
+        dest="genome_max_sim",
+        default=1.0,
+        help="Maximum similarity of two genomes in two split."
+    )
+    gene.add_argument(
+        "--genome-max-dist",
+        type=float,
+        dest="genome_max_dist",
+        default=1.0,
+        help="Maximal distance of two genomes in the same split."
+    )
+    other = parser.add_argument_group("Ligand Input Arguments")
+    other.add_argument(
+        "--other",
+        type=str,
+        dest="other_data",
+        default=None,
+        help="Non-standard input to the program. This is input that is neither proteins, chemical molecules, or "
+             "genomic data. The provided argument has to be a TXT file with data IDs, one per line.",
+    )
+    other.add_argument(
+        "--other-weights",
+        type=str,
+        dest="other_weights",
+        default=None,
+        help="Custom weights of the non-standard data. The file has to have TSV format where every line is of the form "
+             "[id >tab< weight]. The id has to match an id from the --other input argument.",
+    )
+    other.add_argument(
+        "--other-sim",
+        type=str,
+        dest="other_sim",
+        default=None,
+        help="Provide a filepath to a file storing the pairwise similarities between the non-standard data in TSV.",
+    )
+    other.add_argument(
+        "--ligand-dist",
+        type=str,
+        dest="ligand_dist",
+        default=None,
+        help="Provide a filepath to a file storing the pairwise similarities between the non-standard data in TSV.",
+    )
+    other.add_argument(
+        "--other-max-sim",
+        type=float,
+        dest="other_max_sim",
+        default=1.0,
+        help="Maximum similarity of two data points in two split."
+    )
+    other.add_argument(
+        "--other-max-dist",
+        type=float,
+        dest="other_max_dist",
+        default=1.0,
+        help="Maximal distance of two data points in the same split."
     )
     return vars(parser.parse_args())
 
@@ -206,7 +298,7 @@ def validate_args(**kwargs):
     logging.info("Validating arguments")
 
     if not os.path.isdir(kwargs["output"]):
-        logging.warning("Output directory does not exist, SALSA creates it automatically")
+        logging.warning("Output directory does not exist, DataSAIL creates it automatically")
         os.makedirs(kwargs["output"], exist_ok=True)
 
     if len(kwargs["splits"]) < 2:
@@ -220,10 +312,10 @@ def validate_args(**kwargs):
     return kwargs
 
 
-def salsa(**kwargs):
+def sail(**kwargs):
     kwargs = validate_args(**kwargs)
     bqp_main(**kwargs)
 
 
 if __name__ == '__main__':
-    salsa(**parse_args())
+    sail(**parse_args())

@@ -1,6 +1,6 @@
 import numpy as np
 
-from scala.bqp.clustering import additional_clustering
+from datasail.clustering import additional_clustering
 
 
 def test_additional_clustering():

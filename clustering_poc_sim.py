@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.cluster import AffinityPropagation
 
-from scala.bqp.algos.cluster_cold_single import solve_ccs_bqp
+from datasail.algos.cluster_cold_single import solve_ccs_bqp
 
 file = "tests/data/pipeline/prot_sim.tsv"
 items = []

@@ -1,6 +1,6 @@
 import pytest
 
-from scala.salsa import salsa
+from datasail.sail import sail
 from tests.utils import check_folder
 
 
@@ -28,7 +28,7 @@ from tests.utils import check_folder
 def test_pipeline(data):
     pdb, prot_weights, prot_sim, prot_dist, drugs, drug_weights, drug_sim, drug_dist, inter, mode = data
 
-    salsa(
+    sail(
         inter="data/pipeline/inter.tsv" if inter else None,
         output="data/pipeline/out/",
         max_sec=10,

@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: 3.9
           miniforge-version: latest
-          activate-environment: scala
+          activate-environment: datasail
           
       - name: Update environment
         shell: bash -l {0}

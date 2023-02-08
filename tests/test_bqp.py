@@ -1,11 +1,11 @@
 import pytest
 
-from scala.salsa import salsa
+from datasail.sail import sail
 from tests.utils import check_folder
 
 
 def run_identity_splitting(root_dir, out_folder, mode):
-    salsa(
+    sail(
         inter=f"{root_dir}/inter.tsv",
         output=f"{root_dir}/{out_folder}/",
         max_sec=10,

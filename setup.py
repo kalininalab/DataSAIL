@@ -6,14 +6,14 @@ with open("README.md", "r") as desc_file:
 
 
 setup(
-    name="SCALA",
+    name="DataSAIL",
     version="0.0.1",
-    description="Sequence Clustering Against Leaking informAtion",
+    description="Data Splitting Against Information Leaking",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    license='LGPL-2.1',
-    author="Roman Joeres, Anne Tolkmitt, Alexander Gress",
-    maintainer="Roman Joeres, Anne Tolkmitt, Alexander Gress",
+    license='Apache Commons 2.0',
+    author="Roman Joeres",
+    maintainer="Roman Joeres",
 
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -43,6 +43,6 @@ setup(
     python_requires=">=3.8, <4",
     keywords="bioinformatics",
     entry_points={
-        "console_scripts": ["scala = scala.scala_main:main"],
+        "console_scripts": ["datasail = datasail.sail:sail"],
     },
 )
