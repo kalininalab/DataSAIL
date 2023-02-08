@@ -75,7 +75,7 @@ def bqp_main(**kwargs) -> None:
             output_inter, output_drugs, output_proteins = solution
     if kwargs["technique"] == "CCD":
         whatever(drug_names, drug_cluster_map, drug_distance, drug_similarity)
-        cluster_split = solve_ccs_bqp(
+        cluster_split = solve_ccs_bqp_matrix(
             clusters=drug_cluster_names,
             weights=[drug_cluster_weights[dc] for dc in drug_cluster_names],
             similarities=drug_cluster_similarity,
@@ -90,7 +90,7 @@ def bqp_main(**kwargs) -> None:
         if cluster_split is not None:
             output_drugs = reverse_clustering(cluster_split, drug_cluster_map)
     if kwargs["technique"] == "CCP":
-        cluster_split = solve_ccs_bqp(
+        cluster_split = solve_ccs_bqp_matrix(
             clusters=prot_cluster_names,
             weights=[prot_cluster_weights[pc] for pc in prot_cluster_names],
             similarities=prot_cluster_similarity,
