@@ -2,6 +2,7 @@ import logging
 from typing import List, Optional, Dict, Union
 
 import cvxpy
+import mosek
 import numpy as np
 
 
@@ -69,9 +70,9 @@ def solve_ccs_bqp(
     problem.solve(
         solver=cvxpy.SCIP,
         qcp=True,
-        scip_params={
-            "limits/time": max_sec,
-        },
+        # mosek_params={mosek.dparam.optimizer_max_time: 10},
+        scip_params={"limits/time": max_sec},
+        # verbose=True,
     )
 
     logging.info(f"SCIP status: {problem.status}")
@@ -95,6 +96,21 @@ def solve_ccs_bqp(
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
+    print("5 clusters - similarity - no weights")
+    size = 20
+    solve_ccs_bqp(
+        clusters=[str(i+1) for i in range(size)],
+        weights=[1] * size,
+        similarities=np.ones((size, size)),
+        distances=None,
+        threshold=1,
+        limit=0.25,
+        splits=[0.7, 0.3],
+        names=["train", "test"],
+        max_sec=10,
+        max_sol=0,
+    )
+    exit(0)
     print("5 clusters - distance")
     solve_ccs_bqp(
         clusters=["1", "2", "3", "4", "5"],
