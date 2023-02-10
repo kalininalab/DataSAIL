@@ -43,9 +43,9 @@ jobs:
           cd tests
           pytest -m "not todo and not group and not issue" --cov=../scala/ --cov-report=xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          version: "v0.1.15"
-          fail_ci_if_error: true
+          # version: "v0.1.15"
+          fail_ci_if_error: false
           files: coverage.xml
