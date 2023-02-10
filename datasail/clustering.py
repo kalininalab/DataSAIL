@@ -1,14 +1,8 @@
 import logging
-import os
-import shutil
 from typing import Dict, Tuple, List, Optional, Union
 
 import numpy as np
-from rdkit.Chem import MolFromSmiles
 from sklearn.cluster import AffinityPropagation, AgglomerativeClustering
-
-from datasail.utils.protein import mol_to_grakel, pdb_to_grakel
-from datasail.utils.wlk import run_wl_kernel
 
 
 def cluster_interactions(
@@ -29,7 +23,7 @@ def cluster_interactions(
         prot_cluster_names: List of custer names
 
     Returns:
-        A symmetric matrix counting interactions between the clusters of proteins and drugs
+
     """
     drug_mapping = dict((y, x) for x, y in enumerate(drug_cluster_names))
     prot_mapping = dict((y, x) for x, y in enumerate(prot_cluster_names))
@@ -37,7 +31,7 @@ def cluster_interactions(
     output = np.zeros((len(drug_cluster_names), len(prot_cluster_names)))
     for drug, protein in inter:
         output[drug_mapping[drug_cluster_map[drug]]][prot_mapping[prot_cluster_map[protein]]] += 1
-        output[prot_mapping[prot_cluster_map[protein]]][drug_mapping[drug_cluster_map[drug]]] += 1
+        # output[prot_mapping[prot_cluster_map[protein]]][drug_mapping[drug_cluster_map[drug]]] += 1
 
     return output
 
@@ -92,7 +86,7 @@ def cluster(
     if cluster_names is None:
         return cluster_names, cluster_map, cluster_similarity, cluster_distance, cluster_weights
 
-    # if there are too many clusters, reduce their number based on some clustering algorithms.
+    # if there are too many clusters, reduce their number based on some cluster algorithms.
     num_old_cluster = len(cluster_names) + 1
     while 100 < len(cluster_names) < num_old_cluster:
         num_old_cluster = len(cluster_names)
@@ -107,11 +101,11 @@ def similarity_clustering(mols: Optional, cluster_method: str, **kwargs) -> Tupl
     List[str], Dict[str, str], np.ndarray, Dict[str, float],
 ]:
     """
-    Compute the similarity based clustering based on a clustering method.
+    Compute the similarity based cluster based on a cluster method.
 
     Args:
         mols: mapping from molecule names to molecule description (fasta, PDB, SMILES, ...)
-        cluster_method: method to use for clustering
+        cluster_method: method to use for cluster
 
     Returns:
         A tuple consisting of
@@ -126,7 +120,7 @@ def similarity_clustering(mols: Optional, cluster_method: str, **kwargs) -> Tupl
     elif cluster_method.lower() == "mmseqs":  # run mmseqs2 on the protein sequences
         cluster_names, cluster_map, cluster_sim = run_mmseqs(**kwargs)
     else:
-        raise ValueError("Unknown clustering method.")
+        raise ValueError("Unknown cluster method.")
 
     # compute the weights for the clusters
     cluster_weights = {}
@@ -143,12 +137,12 @@ def distance_clustering(mols: Optional, cluster_method: str, **kwargs) -> Tuple[
     List[str], Dict[str, str], np.ndarray, Dict[str, float],
 ]:
     """
-    Compute the distance based clustering based on a clustering method or a file to extract pairwise distance
+    Compute the distance based cluster based on a cluster method or a file to extract pairwise distance
     from.
 
     Args:
         mols: mapping from molecule names to molecule description (fasta, PDB, SMILES, ...)
-        cluster_method: method to use for clustering
+        cluster_method: method to use for cluster
 
     Returns:
         A tuple consisting of
@@ -169,7 +163,7 @@ def additional_clustering(
         cluster_weights: Dict[str, float],
 ) -> Tuple[List[Union[str, int]], Dict[str, str], Optional[np.ndarray], Optional[np.ndarray], Dict[str, float]]:
     """
-    Perform additional clustering based on a distance or similarity matrix. This is done to reduce the number of
+    Perform additional cluster based on a distance or similarity matrix. This is done to reduce the number of
     clusters and to speed up the further splitting steps.
 
     Args:
@@ -188,7 +182,7 @@ def additional_clustering(
           - Mapping from current clusters to their weights
     """
     logging.info(f"Cluster {len(cluster_names)} items based on {'similarities' if cluster_similarity is not None else 'distances'}")
-    # set up the clustering algorithm for similarity or distance based clustering w/o specifying the number of clusters
+    # set up the cluster algorithm for similarity or distance based cluster w/o specifying the number of clusters
     if cluster_similarity is not None:
         cluster_matrix = np.array(cluster_similarity, dtype=float)
         ca = AffinityPropagation(affinity='precomputed', random_state=42)
@@ -249,85 +243,7 @@ def reverse_clustering(cluster_split, name_cluster):
     return output
 
 
-def run_wlk(molecules: Dict) -> Tuple[List[str], Dict[str, str], np.ndarray]:
-    """
-    Run Weisfeiler-Lehman kernel-based clustering on the input. As a result, every molecule will form its own cluster
-
-    Args:
-        molecules: A map from molecule identifies to either protein files or SMILES/SMARTS strings
-
-    Returns:
-        A tuple containing
-          - the names of the clusters (cluster representatives)
-          - the mapping from cluster members to the cluster names (cluster representatives)
-          - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
-    """
-    if os.path.isfile(list(molecules.values())[1]):  # read PDB files into grakel graph objects
-        cluster_names, graphs = list(zip(*((name, pdb_to_grakel(pdb_path)) for name, pdb_path in molecules.items())))
-    else:  # read molecules from SMILES to grakel graph objects
-        cluster_names, graphs = list(zip(*((name, mol_to_grakel(MolFromSmiles(mol))) for name, mol in molecules.items())))
-
-    # compute similarity metric and the mapping from element names to cluster names
-    cluster_sim = run_wl_kernel(graphs)
-    cluster_map = dict((name, name) for name, _ in molecules.items())
-
-    return cluster_names, cluster_map, cluster_sim
 
 
-def run_mmseqs(**kwargs) -> Tuple[List[str], Dict[str, str], np.ndarray]:
-    """
-    Run mmseqs in the commandline and read in the results into clusters.
-
-    Args:
-        **kwargs: General kwargs to the program
-
-    Returns:
-        A tuple containing
-          - the names of the clusters (cluster representatives)
-          - the mapping from cluster members to the cluster names (cluster representatives)
-          - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
-    """
-    cmd = f"cd mmseqs_results && " \
-          f"mmseqs " \
-          f"easy-linclust " \
-          f"../{kwargs['input']} " \
-          f"mmseqs_out " \
-          f"mmseqs_tmp " \
-          f"--similarity-type 2 " \
-          f"--cov-mode 0 " \
-          f"-c 1.0 " \
-          f"--min-seq-id 0.0"
-
-    if not os.path.exists("mmseqs_results"):
-        cmd = "mkdir mmseqs_results && " + cmd
-
-    print(cmd)
-    os.system(cmd)
-
-    cluster_map = get_mmseqs_map("mmseqs_results/mmseqs_out_cluster.tsv")
-    cluster_sim = np.ones((len(cluster_map), len(cluster_map)))
-    cluster_names = list(set(cluster_map.values()))
-    shutil.rmtree("mmseqs_results")
-
-    return cluster_names, cluster_map, cluster_sim
 
 
-def get_mmseqs_map(cluster_file: str) -> Dict[str, str]:
-    """
-    Read clusters from mmseqs output into map from cluster members to cluster representatives (cluster names).
-
-    Args:
-        cluster_file (str): Filepath of file containing the mapping information
-
-    Returns:
-        Map from cluster--members to cluster-representatives (cluster-names)
-    """
-    mapping = {}
-    with open(cluster_file, 'r') as f:
-        for line in f.readlines():
-            words = line.strip().replace('β', 'beta').split('\t')
-            if len(words) != 2:
-                continue
-            cluster_head, cluster_member = words
-            mapping[cluster_member] = cluster_member
-    return mapping

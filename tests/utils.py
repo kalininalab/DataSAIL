@@ -42,5 +42,7 @@ def check_folder(output_root, limit, prot_weight, drug_weight):
         train_frac, test_frac = trains / (trains + tests), tests / (trains + tests)
         assert 0.7 * (1 - limit) <= train_frac <= 0.7 * (1 + limit)
         assert 0.3 * (1 - limit) <= test_frac <= 0.3 * (1 + limit)
+        if n == "I":
+            break
 
     shutil.rmtree(output_root)

@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 
-from datasail.algos.cluster_cold_single import solve_ccs_bqp
+from datasail.solver.scalar.cluster_cold_single import solve_ccs_bqp
 
 file = "tests/data/amay/pairwise_distance.tsv"
 items = []

@@ -4,7 +4,7 @@ from datasail.sail import sail
 from tests.utils import check_folder
 
 
-def run_identity_splitting(root_dir, out_folder, mode):
+def run_identity_splitting(root_dir, out_folder, mode, vectorized):
     sail(
         inter=f"{root_dir}/inter.tsv",
         output=f"{root_dir}/{out_folder}/",
@@ -12,27 +12,31 @@ def run_identity_splitting(root_dir, out_folder, mode):
         max_sol=10,
         verbosity="I",
         technique=mode,
+        vectorized=vectorized,
         splits=[0.7, 0.3],
         names=["train", "test"],
         limit=0.05,
-        protein_data=f"{root_dir}/prot.tsv",
-        protein_weights=None,
-        protein_sim=None,
-        protein_dist=None,
-        protein_max_sim=1,
-        protein_max_dist=1,
-        ligand_data=f"{root_dir}/lig.tsv",
-        ligand_weights=None,
-        ligand_sim=None,
-        ligand_dist=None,
-        ligand_max_sim=1,
-        ligand_max_dist=1,
+        e_type="M",
+        e_data=f"{root_dir}/lig.tsv",
+        e_weights=None,
+        e_sim=None,
+        e_dist=None,
+        e_max_sim=1,
+        e_max_dist=1,
+        f_type="P",
+        f_data=f"{root_dir}/prot.tsv",
+        f_weights=None,
+        f_sim=None,
+        f_dist=None,
+        f_max_sim=1,
+        f_max_dist=1,
     )
 
 
 @pytest.mark.parametrize("root_dir", ["data/perf_7_3", "data/perf_70_30"])
-@pytest.mark.parametrize("mode", [("R", "random"), ("ICD", "id_cold_drug"), ("ICP", "id_cold_protein")])
-def test_perf_bin_2(root_dir, mode):
-    run_identity_splitting(root_dir, mode[1], mode[0])
+@pytest.mark.parametrize("mode", [("R", "random"), ("ICS", "id_cold_single"), ("ICD", "id_cold_double")])
+@pytest.mark.parametrize("vectorized", [True, False])
+def test_perf_bin_2(root_dir, mode, vectorized):
+    run_identity_splitting(root_dir, mode[1], mode[0], vectorized)
 
     check_folder(f"{root_dir}/{mode[1]}", 0.25, None, None)

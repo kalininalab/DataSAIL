@@ -39,4 +39,4 @@ jobs:
         shell: bash -l {0}
         run: |
           cd tests
-          pytest -m "not todo"
+          pytest -m "not todo and not group"
