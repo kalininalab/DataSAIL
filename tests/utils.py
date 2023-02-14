@@ -22,10 +22,14 @@ def check_folder(output_root, limit, prot_weight, drug_weight):
     split_data = []
     if os.path.exists(os.path.join(output_root, "inter.tsv")):
         split_data.append(("I", read_tsv(os.path.join(output_root, "inter.tsv"))))
-    if os.path.exists(os.path.join(output_root, "proteins.tsv")):
-        split_data.append(("P", read_tsv(os.path.join(output_root, "proteins.tsv"))))
-    if os.path.exists(os.path.join(output_root, "drugs.tsv")):
-        split_data.append(("D", read_tsv(os.path.join(output_root, "drugs.tsv"))))
+    if os.path.exists(os.path.join(output_root, "Protein_1.tsv")):
+        split_data.append(("P", read_tsv(os.path.join(output_root, "Protein_1.tsv"))))
+    if os.path.exists(os.path.join(output_root, "Protein_2.tsv")):
+        split_data.append(("P", read_tsv(os.path.join(output_root, "Protein_2.tsv"))))
+    if os.path.exists(os.path.join(output_root, "Molecule_1.tsv")):
+        split_data.append(("D", read_tsv(os.path.join(output_root, "Molecule_1.tsv"))))
+    if os.path.exists(os.path.join(output_root, "Molecule_2.tsv")):
+        split_data.append(("D", read_tsv(os.path.join(output_root, "Molecule_2.tsv"))))
 
     assert len(split_data) > 0
 

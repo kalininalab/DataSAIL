@@ -13,9 +13,9 @@ def estimate_number_target_interactions(inter, num_e_data, num_f_data, splits):
     # return estimate_number_target_interactions(inter)
 
 
-def estimate_surviving_interactions(num_inter: int, num_drugs: int, num_proteins: int, splits: List[float]) -> int:
-    sparsity = num_inter / (num_drugs * num_proteins)
-    dense_survivors = sum(s ** 2 for s in splits) * num_drugs * num_proteins
+def estimate_surviving_interactions(num_inter: int, num_e: int, num_f: int, splits: List[float]) -> int:
+    sparsity = num_inter / (num_e * num_f)
+    dense_survivors = sum(s ** 2 for s in splits) * num_e * num_f
     return int(dense_survivors * sparsity + 0.5)
 
 

@@ -32,8 +32,7 @@ def solve_icd_bqp(
 
     for s in range(len(splits)):
         var = sum(
-            x_i[i, j, s] for i, drug in enumerate(e_entities) for j, protein in enumerate(f_entities) if
-            (drug, protein) in inter
+            x_i[i, j, s] for i, e in enumerate(e_entities) for j, f in enumerate(f_entities) if (e, f) in inter
         )
         constraints += [
             splits[s] * all_inter * (1 - limit) <= var,
@@ -41,8 +40,8 @@ def solve_icd_bqp(
         ] + interaction_constraints(e_entities, f_entities, inter, x_e, x_f, x_i, s)
 
     inter_loss = sum(
-        (1 - sum(x_i[i, j, b] for b in range(len(splits)))) for i, drug in enumerate(e_entities)
-        for j, protein in enumerate(f_entities) if (drug, protein) in inter
+        (1 - sum(x_i[i, j, b] for b in range(len(splits)))) for i, e in enumerate(e_entities)
+        for j, f in enumerate(f_entities) if (e, f) in inter
     )
 
     solve(inter_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i))

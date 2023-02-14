@@ -3,49 +3,67 @@ from typing import Generator, Tuple, Dict
 
 import numpy as np
 
-from datasail.reader.utils import read_csv, count_inter, read_similarity_file, ParseInfo
+from datasail.reader.utils import read_csv, count_inter, read_similarity_file, DataSet
 
 
-def read_protein_data(data, weights, sim, dist, max_sim, max_dist, inter, index) -> ParseInfo:
+def read_protein_data(data, weights, sim, dist, max_sim, max_dist, inter, index) -> DataSet:
+    """
+    Parse protein data into a dataset.
+
+    Args:
+        data: Location where the actual protein data is stored
+        weights: weights of the proteins in the entity
+        sim: similarity metric between pairs of proteins
+        dist: distance metrix between pairs of proteins
+        max_sim: maximal similarity of pairs of proteins when splitting
+        max_dist: maximal distance of pairs of proteins when splitting
+        inter: interaction of the proteins and another entity
+        index: position of the proteins in the interactions, either 0 or 1
+
+    Returns:
+        molecules parsed into a dataset
+    """
+    dataset = DataSet(type="P")
     if data.endswith(".fasta") or data.endswith(".fa"):
-        proteins = parse_fasta(data)
+        dataset.data = parse_fasta(data)
     elif os.path.isfile(data):
-        proteins = dict(read_csv(data, False, "\t"))
+        dataset.data = dict(read_csv(data, False, "\t"))
+        dataset.location = data
     elif os.path.isdir(data):
-        proteins = dict(read_pdb_folder(data))
+        dataset.data = dict(read_pdb_folder(data))
+        dataset.location = data
     else:
         raise ValueError()
 
     # parse the protein weights
     if weights is not None:
-        protein_weights = dict((n, float(w)) for n, w in read_csv(weights, False, "\t"))
+        dataset.weights = dict((n, float(w)) for n, w in read_csv(weights, False, "\t"))
     elif inter is not None:
-        protein_weights = dict(count_inter(inter, index))
+        dataset.weights = dict(count_inter(inter, index))
     else:
-        protein_weights = dict((p, 1) for p in list(proteins.keys()))
+        dataset.weights = dict((p, 1) for p in list(dataset.data.keys()))
 
     # parse the protein similarity measure
-    protein_similarity, protein_distance = None, None
     if sim is None and dist is None:
-        protein_similarity = np.ones((len(proteins), len(proteins)))
-        protein_names = list(proteins.keys())
-        protein_threshold = 1
+        dataset.similarity = np.ones((len(dataset.data), len(dataset.data)))
+        dataset.names = list(dataset.data.keys())
+        dataset.threshold = 1
     elif sim is not None and os.path.isfile(sim):
-        protein_names, protein_similarity = read_similarity_file(sim)
-        protein_threshold = max_sim
+        dataset.names, dataset.similarity = read_similarity_file(sim)
+        dataset.threshold = max_sim
     elif dist is not None and os.path.isfile(dist):
-        protein_names, protein_distance = read_similarity_file(dist)
-        protein_threshold = max_dist
+        dataset.names, dataset.distance = read_similarity_file(dist)
+        dataset.threshold = max_dist
     else:
         if sim is not None:
-            protein_similarity = sim
-            protein_threshold = max_sim
+            dataset.similarity = sim
+            dataset.threshold = max_sim
         else:
-            protein_distance = dist
-            protein_threshold = max_dist
-        protein_names = list(proteins.keys())
+            dataset.distance = dist
+            dataset.threshold = max_dist
+        dataset.names = list(dataset.data.keys())
 
-    return protein_names, proteins, protein_weights, protein_similarity, protein_distance, protein_threshold
+    return dataset
 
 
 def read_pdb_folder(folder_path: str) -> Generator[Tuple[str, str], None, None]:

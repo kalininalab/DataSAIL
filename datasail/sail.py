@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os.path
+from typing import Dict
 
 from datasail.run import bqp_main
 
@@ -14,12 +15,19 @@ verb_map = {
 }
 
 
-def parse_args():
+def parse_args() -> Dict[str, object]:
+    """
+    Define the argument parser for DataSAIL.
+
+    Returns:
+        Parser arguments to the program in kwargs-format.
+    """
     parser = argparse.ArgumentParser(
         prog="DataSAIL - Data Splitting Against Information Leaking",
-        description="Data SAIL is a tool proving you with sophisticated splits of any type of data to challenge your "
-                    "AI model. DataSAIL is able to compute several different splits of data preventing information "
-                    "from leaking from the training set into the validation or test sets.",
+        description="DataSAIL is a tool computing with splits of any type of dataset to challenge your AI model. "
+                    "The splits computed by DataSAIL try to minimize the amount of leaked information between two "
+                    "splits based on what the user requested. Splits can be done based on sample ids but also based on "
+                    "clusters within the dataset.",
     )
     parser.add_argument(
         "-i",
@@ -27,7 +35,8 @@ def parse_args():
         type=str,
         default=None,
         dest="inter",
-        help="Path to TSV file of protein-ligand interactions."
+        help="Path to TSV file of interactions between two entities. The first entry in each line has to match an "
+             "entry from the e-entity, the second matches one of the f-entity."
     )
     parser.add_argument(
         "-o",
@@ -50,7 +59,8 @@ def parse_args():
         default=1000,
         dest="max_sol",
         type=int,
-        help="Maximal number of solutions to compute until end of search (in case no optimum was found)."
+        help="Maximal number of solutions to compute until end of search (in case no optimum was found). This argument "
+             "is ignored so far."
     )
     parser.add_argument(
         "-v",
@@ -69,9 +79,9 @@ def parse_args():
         choices=["R", "ICS", "ICD", "CCS", "CCD"],
         default="R",
         dest="technique",
-        help="Select the mode to split the data. R: random split, ICS: identity-based cold-single split, "
-             "ICD: identity-based cold-double split, CCS: similarity-based cold-protein split, "
-             "CCD: similarity-based cold-drug split"
+        help="Select the mode to split the data. Choices: R: Random split, ICS: identity-based cold-single split, "
+             "ICD: identity-based cold-double split, CCS: similarity-based cold-single split, "
+             "CCD: similarity-based cold-double split"
     )
     split.add_argument(
         "-s",
@@ -88,7 +98,7 @@ def parse_args():
         dest="names",
         nargs="+",
         type=str,
-        help="Names of the splits in order of the -s argument."
+        help="Names of the splits in order of the -s argument. If left empty, splits will be called Split1, Split2, ..."
     )
     split.add_argument(
         "--limit",
@@ -97,8 +107,8 @@ def parse_args():
         dest="limit",
         help="Multiplicative factor by how much the limits of the splits can be exceeded.",
     )
-    prot = parser.add_argument_group("First Input Arguments")
-    prot.add_argument(
+    e_ent = parser.add_argument_group("First Input Arguments")
+    e_ent.add_argument(
         "--e-type",
         type=str,
         dest="e_type",
@@ -106,98 +116,98 @@ def parse_args():
         default=None,
         help="Type of the first data batch to the program. Choices are: [P]rotein, [M]olecule, [G]enome, [O]ther",
     )
-    prot.add_argument(
+    e_ent.add_argument(
         "--e-data",
         type=str,
         dest="e_data",
         default=None,
         help="First input to the program. This can either be the filepath a directory containing only data files.",
     )
-    prot.add_argument(
+    e_ent.add_argument(
         "--e-weights",
         type=str,
         dest="e_weights",
         default=None,
         help="Custom weights of the first bunch of samples. The file has to have TSV format where every line is of the "
-             "form [id >tab< weight]. The prot_id has to match a protein id from the protein input argument.",
+             "form [e_id >tab< weight]. The e_id has to match an entity id from the first input argument.",
     )
-    prot.add_argument(
+    e_ent.add_argument(
         "--e-sim",
         type=str,
         dest="e_sim",
         default=None,
         help="Provide the name of a method to determine similarity between samples of the first input dataset. This "
-             "can either be >WLK<, >mmseqs<, or a filepath to a file storing the pairwise similarities in TSV.",
+             "can either be [WLK], [mmseqs], or a filepath to a file storing the pairwise similarities in TSV.",
     )
-    prot.add_argument(
+    e_ent.add_argument(
         "--e-dist",
         type=str,
         dest="e_dist",
         default=None,
         help="Provide the name of a method to determine distance between samples of the first input data. This can be "
-             ">MASH< or a filepath to a file storing the pairwise distances in TSV."
+             "[MASH] or a filepath to a file storing the pairwise distances in TSV."
     )
-    prot.add_argument(
+    e_ent.add_argument(
         "--e-max-sim",
         type=float,
         dest="e_max_sim",
         default=1.0,
         help="Maximum similarity of two samples from the first data in two split."
     )
-    prot.add_argument(
+    e_ent.add_argument(
         "--e-max-dist",
         type=float,
         dest="e_max_dist",
         default=1.0,
         help="Maximal distance of two samples from the second data in the same split."
     )
-    prot = parser.add_argument_group("Second Input Arguments")
-    prot.add_argument(
+    f_ent = parser.add_argument_group("Second Input Arguments")
+    f_ent.add_argument(
         "--f-type",
         type=str,
         dest="f_type",
         default=None,
-        help="Type of the second data batch to the program.",
+        help="Type of the second data batch to the program. Choices are: [P]rotein, [M]olecule, [G]enome, [O]ther",
     )
-    prot.add_argument(
+    f_ent.add_argument(
         "--f-data",
         type=str,
         dest="f_data",
         default=None,
         help="Second input to the program. This can either be the filepath a directory containing only data files.",
     )
-    prot.add_argument(
+    f_ent.add_argument(
         "--f-weights",
         type=str,
         dest="f_weights",
         default=None,
         help="Custom weights of the second bunch of samples. The file has to have TSV format where every line is of "
-             "the form [prot_id >tab< weight]. The prot_id has to match a protein id from the protein input argument.",
+             "the form [f_id >tab< weight]. The f_id has to match an entity id from the second input argument group.",
     )
-    prot.add_argument(
+    f_ent.add_argument(
         "--f-sim",
         type=str,
         dest="e_sim",
         default=None,
         help="Provide the name of a method to determine similarity between samples of the second input dataset. This "
-             "can either be >WLK<, >mmseqs<, or a filepath to a file storing the pairwise similarities in TSV.",
+             "can either be [WLK], [mmseqs], or a filepath to a file storing the pairwise similarities in TSV.",
     )
-    prot.add_argument(
+    f_ent.add_argument(
         "--f-dist",
         type=str,
         dest="f_dist",
         default=None,
         help="Provide the name of a method to determine distance between samples of the second input dataset. This can "
-             "be >MASH< or a filepath to a file storing the pairwise distances in TSV."
+             "be [MASH] or a filepath to a file storing the pairwise distances in TSV."
     )
-    prot.add_argument(
+    f_ent.add_argument(
         "--f-max-sim",
         type=float,
         dest="f_max_sim",
         default=1.0,
         help="Maximum similarity of two samples from the second dataset in two split."
     )
-    prot.add_argument(
+    f_ent.add_argument(
         "--f-max-dist",
         type=float,
         dest="f_max_dist",
@@ -207,12 +217,28 @@ def parse_args():
     return vars(parser.parse_args())
 
 
-def error(msg, code):
+def error(msg: str, code: int) -> None:
+    """
+    Print an error message with an individual error code to the commandline. Afterwards, the program is stopped.
+
+    Args:
+        msg: Error message
+        code: Code of the error to identify it
+    """
     logging.error(msg)
     exit(code)
 
 
-def validate_args(**kwargs):
+def validate_args(**kwargs) -> Dict[str, object]:
+    """
+    Validate the arguments given to the program.
+
+    Args:
+        **kwargs: Arguments in kwargs-format
+
+    Returns:
+        The kwargs in case something has been adjusted, e.g. splits have to transformed into sum=1-vector or naming
+    """
     logging.basicConfig(level=verb_map[kwargs["verbosity"]])
     logging.info("Validating arguments")
 
@@ -231,7 +257,13 @@ def validate_args(**kwargs):
     return kwargs
 
 
-def sail(**kwargs):
+def sail(**kwargs) -> None:
+    """
+    Invocation routine of DataSAIL. Here, the arguments are validated and the main routine is invoked.
+
+    Args:
+        **kwargs: Arguments to DataSAIL in kwargs-format.
+    """
     kwargs = validate_args(**kwargs)
     bqp_main(**kwargs)
 

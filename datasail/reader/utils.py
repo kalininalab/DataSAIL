@@ -1,27 +1,36 @@
+from dataclasses import dataclass
 from typing import Generator, Tuple, List, Optional, Dict, Union
 
 import numpy as np
 
-ParseInfo = Tuple[
-    Optional[List[str]],
-    Optional[Dict[str, str]],
-    Optional[Dict[str, float]],
-    Optional[Union[np.ndarray, str]],
-    Optional[Union[np.ndarray, str]],
-    float,
-]
+
+@dataclass
+class DataSet:
+    type: Optional[str] = None
+    names: Optional[List[str]] = None
+    cluster_names: Optional[List[str]] = None
+    data: Optional[Dict[str, str]] = None
+    cluster_map: Optional[Dict[str, str]] = None
+    location: Optional[str] = None
+    weights: Optional[Dict[str, float]] = None
+    cluster_weights: Optional[Dict[str, float]] = None
+    similarity: Optional[Union[np.ndarray, str]] = None
+    cluster_similarity: Optional[Union[np.ndarray, str]] = None
+    distance: Optional[Union[np.ndarray, str]] = None
+    cluster_distance: Optional[Union[np.ndarray, str]] = None
+    threshold: Optional[float] = None
 
 
 def count_inter(inter: List[Tuple[str, str]], mode: int) -> Generator[Tuple[str, int], None, None]:
     """
-    Count interactions per protein or drug in a set of interactions.
+    Count interactions per entity in a set of interactions.
 
     Args:
-        inter: List of pairwise interactions of proteins and drugs
-        mode: mode to read data for, either >protein> or >drug<
+        inter: List of pairwise interactions of entities
+        mode: position where to read the data from, first or second entity
 
     Yields:
-        Pairs of protein or drug names and the number of interactions they participate in
+        Pairs of entity name and the number of interactions they participate in
     """
     tmp = list(zip(*inter))
     keys = set(tmp[mode])

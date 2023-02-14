@@ -19,7 +19,7 @@ def run_wlk(molecules: Dict) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     Run Weisfeiler-Lehman kernel-based cluster on the input. As a result, every molecule will form its own cluster
 
     Args:
-        molecules: A map from molecule identifies to either protein files or SMILES/SMARTS strings
+        molecules: A map from entity identifies to either graph structured data
 
     Returns:
         A tuple containing
