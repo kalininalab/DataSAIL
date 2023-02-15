@@ -2,6 +2,7 @@ import logging
 from typing import List, Tuple, Union
 
 import cvxpy
+import mosek
 import numpy as np
 
 
@@ -133,11 +134,14 @@ def solve(loss, constraints, max_sec, num_vars):
 
     problem = cvxpy.Problem(cvxpy.Minimize(loss), constraints)
     problem.solve(
-        solver=cvxpy.SCIP,
+        solver=cvxpy.MOSEK,
         qcp=True,
-        scip_params={
-            "limits/time": max_sec,
-        },
+        # scip_params={
+        #     "limits/time": max_sec,
+        # },
+        mosek_params={
+            mosek.dparam.optimizer_max_time: max_sec
+        }
     )
 
     logging.info(f"SCIP status: {problem.status}")

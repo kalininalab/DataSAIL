@@ -3,7 +3,9 @@ import os
 import time
 from typing import Dict, List, Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.manifold import TSNE
 
 from datasail.cluster.clustering import cluster
 from datasail.reader.read import read_data
@@ -84,9 +86,28 @@ def bqp_main(**kwargs) -> None:
                     split_stats[split] += 1
             print(name + " distribution over splits:")
             print(stats_string(len(dataset.names), split_stats))
+            t_sne(dataset, entities, kwargs["names"])
 
     logging.info("BQP splitting finished and results stored.")
     logging.info(f"Total runtime: {time.time() - start:.5f}s")
+
+
+def t_sne(dataset, name_split_map, split_names):
+    similarity = dataset.similarity
+    if similarity is None:
+        similarity = 1 - dataset.distance
+    embeds = TSNE(
+        n_components=2, learning_rate="auto", init="random", perplexity=min(len(similarity) - 1, 50), random_state=42
+    ).fit_transform(similarity)
+    split_masks = np.zeros((len(split_names), len(dataset.names)))
+    for i, name in enumerate(dataset.names):
+        split_masks[split_names.index(name_split_map[name]), i] = 1
+    for i, n in enumerate(split_names):
+        plt.scatter(embeds[split_masks[i, :] == 1, 0], embeds[split_masks[i, :] == 1, 1], s=10, label=n)
+    # plt.xticks([])
+    # plt.yticks([])
+    plt.legend()
+    plt.savefig("tSNE.png")
 
 
 def whatever(

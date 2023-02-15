@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional, Dict, Union
 
 import numpy as np
@@ -37,7 +38,7 @@ def solve_ccs_bqp(
     Returns:
         Mapping from clusters to splits optimizing the objective function
     """
-    alpha = 0.5
+    alpha = 0.01
 
     x_e = init_variables(len(splits), len(e_clusters))
 
@@ -58,5 +59,7 @@ def solve_ccs_bqp(
     e_loss = cluster_sim_dist_objective(e_similarities, e_distances, len(e_clusters), x_e, len(splits))
 
     solve(alpha * size_loss + e_loss, constraints, max_sec, len(x_e))
+    logging.info(f"{alpha} * {size_loss.value} + {e_loss.value}")
+    logging.info(f"alpha * size_loss + e_loss")
 
     return dict((e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_clusters) if x_e[i, s].value > 0.1)

@@ -30,8 +30,8 @@ def cluster(dataset: DataSet) -> DataSet:
 
     # if the similarity/distance is already given, store it
     elif dataset.similarity is not None or dataset.distance is not None:
-        dataset.cluster_names = list(dataset.data.keys())
-        dataset.cluster_map = dict([(d, d) for d, _ in dataset.data.items()])
+        dataset.cluster_names = dataset.names
+        dataset.cluster_map = dict([(d, d) for d in dataset.names])
         dataset.cluster_similarity = dataset.similarity
         dataset.cluster_distance = dataset.distance
         dataset.cluster_weights = dataset.weights
