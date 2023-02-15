@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 import time
 from typing import Dict, List, Optional
@@ -9,6 +10,7 @@ from sklearn.manifold import TSNE
 
 from datasail.cluster.clustering import cluster
 from datasail.reader.read import read_data
+from .reader.utils import DataSet
 from .solver.solve import run_solver
 
 
@@ -92,20 +94,38 @@ def bqp_main(**kwargs) -> None:
     logging.info(f"Total runtime: {time.time() - start:.5f}s")
 
 
-def t_sne(dataset, name_split_map, split_names):
+def t_sne(dataset: DataSet, name_split_map: Dict[str, str], split_names: List[str]):
+    """
+    Plot a tSNE embedding of the clusters and how they are assigned to clusters.
+
+    Args:
+        dataset: DataSet to take data from
+        name_split_map: Mapping from names to splits
+        split_names: names of the splits
+    """
+    # compute a similarity matrix
+    # TODO: Do this for cluster-based similarities when pairwise-similarity/distance is not known
     similarity = dataset.similarity
     if similarity is None:
         similarity = 1 - dataset.distance
+
+    # compute t-SNE embeddings
     embeds = TSNE(
-        n_components=2, learning_rate="auto", init="random", perplexity=min(len(similarity) - 1, 50), random_state=42
+        n_components=2,
+        learning_rate="auto",
+        init="random",
+        perplexity=max(min(math.sqrt(len(similarity)), 50), 5),
+        random_state=42,
     ).fit_transform(similarity)
+
+    # plot everything
     split_masks = np.zeros((len(split_names), len(dataset.names)))
     for i, name in enumerate(dataset.names):
         split_masks[split_names.index(name_split_map[name]), i] = 1
     for i, n in enumerate(split_names):
         plt.scatter(embeds[split_masks[i, :] == 1, 0], embeds[split_masks[i, :] == 1, 1], s=10, label=n)
-    # plt.xticks([])
-    # plt.yticks([])
+    plt.xticks([])
+    plt.yticks([])
     plt.legend()
     plt.savefig("tSNE.png")
 
