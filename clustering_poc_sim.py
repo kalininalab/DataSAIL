@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.cluster import AffinityPropagation
 
-from datasail.algos.cluster_cold_single import solve_ccs_bqp
+from datasail.solver.scalar.cluster_cold_single import solve_ccs_bqp
 
 file = "tests/data/pipeline/prot_sim.tsv"
 items = []
@@ -41,7 +41,7 @@ split = solve_ccs_bqp(
     similarities=cluster_sims,
     distances=None,
     threshold=np.average(cluster_sims),
-    limit=0.1,
+    epsilon=0.1,
     splits=[0.7, 0.3],
     names=["train", "test"],
     max_sec=1000,

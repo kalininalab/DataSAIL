@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 
-from datasail.algos.cluster_cold_single import solve_ccs_bqp
+from datasail.solver.scalar.cluster_cold_single import solve_ccs_bqp
 
 file = "tests/data/amay/pairwise_distance.tsv"
 items = []
@@ -38,7 +38,7 @@ split = solve_ccs_bqp(
     similarities=cluster_sims,
     distances=None,
     threshold=1.0,
-    limit=0.1,
+    epsilon=0.1,
     splits=[0.8, 0.2],
     names=["train", "test"],
     max_sec=1000,
