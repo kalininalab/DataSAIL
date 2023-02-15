@@ -5,12 +5,12 @@ from typing import Dict, Tuple, List
 import numpy as np
 
 
-def run_mmseqs(**kwargs) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_mmseqs(filepath: str) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run mmseqs in the commandline and read in the results into clusters.
 
     Args:
-        **kwargs: General kwargs to the program
+        filepath: Filepath to the FASTA file storing the sequences to cluster
 
     Returns:
         A tuple containing
@@ -18,11 +18,10 @@ def run_mmseqs(**kwargs) -> Tuple[List[str], Dict[str, str], np.ndarray]:
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    # TODO: test this command as the kwargs['input'] does not exist anymore
     cmd = f"cd mmseqs_results && " \
           f"mmseqs " \
           f"easy-linclust " \
-          f"{os.path.join('..', kwargs['input'])} " \
+          f"{os.path.join('..', filepath)} " \
           f"mmseqs_out " \
           f"mmseqs_tmp " \
           f"--similarity-type 2 " \

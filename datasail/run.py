@@ -26,8 +26,8 @@ def bqp_main(**kwargs) -> None:
 
     # if required, cluster the input otherwise define the cluster-maps to be None
     if "C" == kwargs["technique"][0]:
-        e_dataset = cluster(e_dataset, **kwargs)
-        f_dataset = cluster(f_dataset, **kwargs)
+        e_dataset = cluster(e_dataset)
+        f_dataset = cluster(f_dataset)
 
     logging.info("Split data")
     # split the data into dictionaries mapping interactions, e-entities, and f-entities into the splits
@@ -37,7 +37,7 @@ def bqp_main(**kwargs) -> None:
         e_dataset=e_dataset,
         f_dataset=f_dataset,
         inter=inter,
-        limit=kwargs["limit"],
+        epsilon=kwargs["epsilon"],
         splits=kwargs["splits"],
         names=kwargs["names"],
         max_sec=kwargs["max_sec"],
@@ -96,12 +96,12 @@ def whatever(
     Compute and print some statistics.
 
     Args:
-        names: names of the clusters to investigate
-        clusters: mapping from entity name to cluster name
-        distances: distance matrix between entities
-        similarities: similarity matrix between entities
+        names: Names of the clusters to investigate
+        clusters: Mapping from entity name to cluster name
+        distances: Distance matrix between entities
+        similarities: Similarity matrix between entities
     """
-    # TODO: optimize this for runtime
+    # TODO: Optimize this for runtime
     if distances is not None:
         val = float("-inf")
         val2 = float("inf")
@@ -146,8 +146,8 @@ def stats_string(count: int, split_stats: Dict[str, float]):
     Compute and print some statistics about the final splits.
 
     Args:
-        count: number of totally split entities
-        split_stats: mapping from split names to the number of elements in the split
+        count: Number of totally split entities
+        split_stats: Mapping from split names to the number of elements in the split
     """
     output = ""
     for k, v in split_stats.items():

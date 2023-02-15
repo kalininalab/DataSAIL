@@ -13,20 +13,38 @@ def solve_ccs_bqp(
         e_similarities: Optional[np.ndarray],
         e_distances: Optional[np.ndarray],
         e_threshold: float,
-        limit: float,
+        epsilon: float,
         splits: List[float],
         names: List[str],
         max_sec: int,
         max_sol: int,
 ) -> Optional[Dict[str, str]]:
+    """
+    Solve cluster-based cold splitting using disciplined quasi-convex programming and binary quadratic programming.
+
+    Args:
+        e_clusters: List of cluster names to split
+        e_weights: Weights of the clusters in the order of their names in e_clusters
+        e_similarities: Pairwise similarity matrix of clusters in the order of their names
+        e_distances: Pairwise distance matrix of clusters in the order of their names
+        e_threshold: Threshold to not undergo when optimizing
+        epsilon: Additive bound for exceeding the requested split size
+        splits: List of split sizes
+        names: List of names of the splits in the order of the splits argument
+        max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
+        max_sol: Maximal number of solution to consider
+
+    Returns:
+        Mapping from clusters to splits optimizing the objective function
+    """
 
     ones = np.ones((1, len(e_clusters)))
 
     x_e = [cvxpy.Variable((len(e_clusters), 1), boolean=True) for _ in range(len(splits))]
 
     e_t = np.full((len(e_clusters), len(e_clusters)), e_threshold)
-    min_lim = [int(split * sum(e_weights) * (1 - limit)) for split in splits]
-    max_lim = [int(split * sum(e_weights) * (1 + limit)) for split in splits]
+    min_lim = [int(split * sum(e_weights) * (1 - epsilon)) for split in splits]
+    max_lim = [int(split * sum(e_weights) * (1 + epsilon)) for split in splits]
 
     constraints = [
         cvxpy.sum([a[:, 0] for a in x_e]) == np.ones((len(e_clusters))),

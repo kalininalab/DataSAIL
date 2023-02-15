@@ -1,4 +1,3 @@
-import logging
 from typing import Optional, Tuple, List, Set, Dict
 
 import cvxpy
@@ -12,18 +11,34 @@ def solve_icd_bqp(
         e_entities: List[object],
         f_entities: List[object],
         inter: Set[Tuple[str, str]],
-        limit: float,
+        epsilon: float,
         splits: List[float],
         names: List[str],
         max_sec: int,
         max_sol: int,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[object, str], Dict[object, str]]]:
-    logging.info("Define optimization problem")
+    """
+    Solve identity-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
+    programming.
 
+    Args:
+        e_entities: List of entity names to split in e-dataset
+        f_entities: List of entity names to split in f-dataset
+        inter: List of interactions
+        epsilon: Additive bound for exceeding the requested split size
+        splits: List of split sizes
+        names: List of names of the splits in the order of the splits argument
+        max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
+        max_sol: Maximal number of solution to consider
+
+    Returns:
+        A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
+        dataset
+    """
     inter_count = len(inter)
     inter_ones = inter_mask(e_entities, f_entities, inter)
-    min_lim = [int(split * inter_count * (1 - limit)) for split in splits]
-    max_lim = [int(split * inter_count * (1 + limit)) for split in splits]
+    min_lim = [int(split * inter_count * (1 - epsilon)) for split in splits]
+    max_lim = [int(split * inter_count * (1 + epsilon)) for split in splits]
 
     x_e = [cvxpy.Variable((len(e_entities), 1), boolean=True) for _ in range(len(splits))]
     x_f = [cvxpy.Variable((len(f_entities), 1), boolean=True) for _ in range(len(splits))]
@@ -43,7 +58,7 @@ def solve_icd_bqp(
             cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter_ones, x_i[s]), axis=0), axis=0) <= max_lim[s],
         ]
 
-        interaction_constraints(e_entities, f_entities, x_e, x_f, x_i, s)
+        interaction_constraints(len(e_entities), len(f_entities), x_e, x_f, x_i, s)
 
     inter_loss = cvxpy.sum(cvxpy.sum(inter_ones - cvxpy.sum([x for x in x_i]), axis=0), axis=0)
 

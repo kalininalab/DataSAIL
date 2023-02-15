@@ -1,7 +1,4 @@
-import os.path
-from typing import Tuple, Generator, Dict, List, Optional, Union, Any
-
-import numpy as np
+from typing import Tuple, List, Optional
 
 from datasail.reader.read_genomes import read_genome_data
 from datasail.reader.read_molecules import read_molecule_data
@@ -36,7 +33,16 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
     return e_dataset, f_dataset, inter
 
 
-def read_data_type(data_type):
+def read_data_type(data_type: chr):
+    """
+    Convert single-letter representation of the type of data to handle to the full name.
+
+    Args:
+        data_type: Single letter representation of the type of data
+
+    Returns:
+        full name of the type of data
+    """
     if data_type == "P":
         return read_protein_data
     if data_type == "M":
@@ -48,5 +54,11 @@ def read_data_type(data_type):
     return read_none_data
 
 
-def read_none_data(*args, **kwargs):
-    return None, None, None, None, None, None
+def read_none_data(*_) -> DataSet:
+    """
+    Dummy method to account for unknown data type
+
+    Returns:
+        An empty dataset according to a type of input data that cannot be read
+    """
+    return DataSet()

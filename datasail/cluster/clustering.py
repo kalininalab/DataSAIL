@@ -10,54 +10,23 @@ from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 
 
-def cluster_interactions(
-        inter: List[Tuple[str, str]],
-        e_cluster_map: Dict[str, Union[str, int]],
-        e_cluster_names: List[Union[str, int]],
-        f_cluster_map: Dict[str, Union[str, int]],
-        f_cluster_names: List[Union[str, int]],
-) -> np.ndarray:
-    """
-    Based on cluster information, count interactions in an interaction matrix between the individual clusters.
-
-    Args:
-        inter: List of pairs representing interactions
-        e_cluster_map: Mapping from entity names to their cluster names
-        e_cluster_names: List of custer names
-        f_cluster_map: Mapping from entity names to their cluster names
-        f_cluster_names: List of custer names
-
-    Returns:
-        Numpy array of matrix of interactions between two clusters
-    """
-    e_mapping = dict((y, x) for x, y in enumerate(e_cluster_names))
-    f_mapping = dict((y, x) for x, y in enumerate(f_cluster_names))
-
-    output = np.zeros((len(e_cluster_names), len(f_cluster_names)))
-    for e, f in inter:
-        output[e_mapping[e_cluster_map[e]]][f_mapping[f_cluster_map[f]]] += 1
-
-    return output
-
-
-def cluster(dataset: DataSet, **kwargs) -> DataSet:
+def cluster(dataset: DataSet) -> DataSet:
     """
     Cluster molecules based on a similarity or distance metric.
 
     Args:
-        dataset:
-        **kwargs: arguments given to the program in general
+        dataset: Dataset to cluster
 
     Returns:
         A dataset with modified properties according to clustering the data
     """
     if isinstance(dataset.similarity, str):  # compute the similarity
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity, dataset.cluster_weights = \
-            similarity_clustering(dataset.data, dataset.similarity, **kwargs)
+            similarity_clustering(dataset)
 
-    if isinstance(dataset.distance, str):  # compute the distance
+    elif isinstance(dataset.distance, str):  # compute the distance
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_distance, dataset.cluster_weights = \
-            distance_clustering(dataset, **kwargs)
+            distance_clustering(dataset)
 
     # if the similarity/distance is already given, store it
     elif dataset.similarity is not None or dataset.distance is not None:
@@ -79,15 +48,14 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     return dataset
 
 
-def similarity_clustering(mols: Optional, cluster_method: str, **kwargs) -> Tuple[
+def similarity_clustering(dataset: DataSet) -> Tuple[
     List[str], Dict[str, str], np.ndarray, Dict[str, float],
 ]:
     """
     Compute the similarity based cluster based on a cluster method.
 
     Args:
-        mols: mapping from molecule names to molecule description (fasta, PDB, SMILES, ...)
-        cluster_method: method to use for cluster
+        dataset: Mapping from molecule names to molecule description (fasta, PDB, SMILES, ...)
 
     Returns:
         A tuple consisting of
@@ -97,10 +65,10 @@ def similarity_clustering(mols: Optional, cluster_method: str, **kwargs) -> Tupl
           - Symmetric matrix of pairwise similarities between the current clusters
           - Mapping from current clusters to their weights
     """
-    if cluster_method.lower() == "wlk":  # run Weisfeiler-Lehman kernel (only for graph data)
-        cluster_names, cluster_map, cluster_sim = run_wlk(mols)
-    elif cluster_method.lower() == "mmseqs":  # run mmseqs2 on the protein sequences
-        cluster_names, cluster_map, cluster_sim = run_mmseqs(**kwargs)
+    if dataset.similarity.lower() == "wlk":  # run Weisfeiler-Lehman kernel (only for graph data)
+        cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
+    elif dataset.similarity.lower() == "mmseqs":  # run mmseqs2 on the protein sequences
+        cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset.location)
     else:
         raise ValueError("Unknown cluster method.")
 
@@ -115,7 +83,7 @@ def similarity_clustering(mols: Optional, cluster_method: str, **kwargs) -> Tupl
     return cluster_names, cluster_map, cluster_sim, cluster_weights
 
 
-def distance_clustering(dataset: DataSet, **kwargs) -> Tuple[
+def distance_clustering(dataset: DataSet) -> Tuple[
     List[str], Dict[str, str], np.ndarray, Dict[str, float],
 ]:
     """
@@ -134,8 +102,19 @@ def distance_clustering(dataset: DataSet, **kwargs) -> Tuple[
           - Mapping from current clusters to their weights
     """
     if dataset.distance.lower() == "mash":
-        run_mash()
-    return [], {}, np.array(1), {}
+        cluster_names, cluster_map, cluster_dist = run_mash(dataset.location)
+    else:
+        raise ValueError("Unknown cluster method.")
+
+    # compute the weights for the clusters
+    cluster_weights = {}
+    for key, value in cluster_map.items():
+        if value not in cluster_weights:
+            cluster_weights[key] = 0
+        cluster_weights[key] += 1
+
+    # cluster_map maps members to their cluster names
+    return cluster_names, cluster_map, cluster_dist, cluster_weights
 
 
 def additional_clustering(dataset: DataSet) -> DataSet:
@@ -211,14 +190,48 @@ def additional_clustering(dataset: DataSet) -> DataSet:
     return dataset
 
 
-def reverse_clustering(cluster_split, name_cluster):
+def cluster_interactions(
+        inter: List[Tuple[str, str]],
+        e_cluster_map: Dict[str, Union[str, int]],
+        e_cluster_names: List[Union[str, int]],
+        f_cluster_map: Dict[str, Union[str, int]],
+        f_cluster_names: List[Union[str, int]],
+) -> np.ndarray:
+    """
+    Based on cluster information, count interactions in an interaction matrix between the individual clusters.
+
+    Args:
+        inter: List of pairs representing interactions
+        e_cluster_map: Mapping from entity names to their cluster names
+        e_cluster_names: List of custer names
+        f_cluster_map: Mapping from entity names to their cluster names
+        f_cluster_names: List of custer names
+
+    Returns:
+        Numpy array of matrix of interactions between two clusters
+    """
+    e_mapping = dict((y, x) for x, y in enumerate(e_cluster_names))
+    f_mapping = dict((y, x) for x, y in enumerate(f_cluster_names))
+
+    output = np.zeros((len(e_cluster_names), len(f_cluster_names)))
+    for e, f in inter:
+        output[e_mapping[e_cluster_map[e]]][f_mapping[f_cluster_map[f]]] += 1
+
+    return output
+
+
+def reverse_clustering(cluster_split: Dict[str, str], name_cluster: Dict[str, str]) -> Dict[str, str]:
+    """
+    Reverse clustering to uncover which entity is assigned to which split.
+
+    Args:
+        cluster_split: Assignment of clusters to splits
+        name_cluster: Assignment of names to clusters
+
+    Returns:
+        Assignment of names to splits
+    """
     output = {}
     for n, c in name_cluster.items():
         output[n] = cluster_split[c]
     return output
-
-
-
-
-
-

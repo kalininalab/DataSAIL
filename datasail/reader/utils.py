@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from typing import Generator, Tuple, List, Optional, Dict, Union
 
@@ -27,7 +28,7 @@ def count_inter(inter: List[Tuple[str, str]], mode: int) -> Generator[Tuple[str,
 
     Args:
         inter: List of pairwise interactions of entities
-        mode: position where to read the data from, first or second entity
+        mode: Position where to read the data from, first or second entity
 
     Yields:
         Pairs of entity name and the number of interactions they participate in
@@ -44,7 +45,7 @@ def read_similarity_file(filepath: str, sep: str = "\t") -> Tuple[List[str], np.
 
     Args:
         filepath: Path to the file storing the matrix in CSV format
-        sep: separator used to separate the values of the matrix
+        sep: Separator used to separate the values of the matrix
 
     Returns:
         A list of names of the entities and their pairwise interactions in and numpy array
@@ -65,8 +66,8 @@ def read_csv(filepath: str, header: bool = False, sep: str = "\t") -> Generator[
 
     Args:
         filepath: Path to the CSV file to read 2-tuples from
-        header: bool flag indicating whether the file has a header-line
-        sep: separator character used to separate the values
+        header: Bool flag indicating whether the file has a header-line
+        sep: Separator character used to separate the values
 
     Yields:
         Pairs of strings from the file
@@ -78,3 +79,50 @@ def read_csv(filepath: str, header: bool = False, sep: str = "\t") -> Generator[
                 yield output[:2]
             else:
                 yield output[0], output[0]
+
+
+def read_data(weights, sim, dist, max_sim, max_dist, inter, index, dataset: DataSet) -> DataSet:
+    """
+    Compute the weight and distances or similarities of every entity.
+
+    Args:
+        weights: Weight file for the data
+        sim: Similarity file or metric
+        dist: Distance file or metric
+        max_sim: Maximal similarity between entities in two splits
+        max_dist: Maximal similarity between entities in one split
+        inter: Interaction, alternative way to compute weights
+        index: Index of the entities in the interaction file
+        dataset: A dataset object storing information on the read
+
+    Returns:
+        A dataset storing all information on that datatype
+    """
+    # parse the protein weights
+    if weights is not None:
+        dataset.weights = dict((n, float(w)) for n, w in read_csv(weights, False, "\t"))
+    elif inter is not None:
+        dataset.weights = dict(count_inter(inter, index))
+    else:
+        dataset.weights = dict((p, 1) for p in list(dataset.data.keys()))
+
+    # parse the protein similarity measure
+    if sim is None and dist is None:
+        dataset.similarity = np.ones((len(dataset.data), len(dataset.data)))
+        dataset.names = list(dataset.data.keys())
+        dataset.threshold = 1
+    elif sim is not None and os.path.isfile(sim):
+        dataset.names, dataset.similarity = read_similarity_file(sim)
+        dataset.threshold = max_sim
+    elif dist is not None and os.path.isfile(dist):
+        dataset.names, dataset.distance = read_similarity_file(dist)
+        dataset.threshold = max_dist
+    else:
+        if sim is not None:
+            dataset.similarity = sim
+            dataset.threshold = max_sim
+        else:
+            dataset.distance = dist
+            dataset.threshold = max_dist
+        dataset.names = list(dataset.data.keys())
+    return dataset

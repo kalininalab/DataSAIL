@@ -15,7 +15,7 @@ def run_identity_splitting(root_dir, out_folder, mode, vectorized):
         vectorized=vectorized,
         splits=[0.7, 0.3],
         names=["train", "test"],
-        limit=0.05,
+        epsilon=0.05,
         e_type="M",
         e_data=f"{root_dir}/lig.tsv",
         e_weights=None,

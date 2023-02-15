@@ -1,4 +1,3 @@
-import logging
 from typing import List, Tuple, Optional, Dict, Union
 
 import cvxpy
@@ -19,14 +18,36 @@ def solve_ccd_bqp(
         f_distances: Optional[np.ndarray],
         f_threshold: float,
         inter: np.ndarray,
-        limit: float,
+        epsilon: float,
         splits: List[float],
         names: List[str],
         max_sec: int,
         max_sol: int,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
-    logging.info("Define optimization problem")
+    """
+    Solve cluster-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
+    programming.
 
+    Args:
+        e_clusters: List of cluster names to split from the e-dataset
+        e_similarities: Pairwise similarity matrix of clusters in the order of their names
+        e_distances: Pairwise distance matrix of clusters in the order of their names
+        e_threshold: Threshold to not undergo when optimizing
+        f_clusters: List of cluster names to split from the f-dataset
+        f_similarities: Pairwise similarity matrix of clusters in the order of their names
+        f_distances: Pairwise distance matrix of clusters in the order of their names
+        f_threshold: Threshold to not undergo when optimizing
+        inter: Matrix storing the amount of interactions between the entities in the e-clusters and f-clusters
+        epsilon: Additive bound for exceeding the requested split size
+        splits: List of split sizes
+        names: List of names of the splits in the order of the splits argument
+        max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
+        max_sol: Maximal number of solution to consider
+
+    Returns:
+        A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
+        dataset
+    """
     alpha = 0.1
     inter_count = np.sum(inter)
     e_ones = np.ones((1, len(e_clusters)))
@@ -34,8 +55,8 @@ def solve_ccd_bqp(
     inter_ones = np.ones_like(inter)
     e_t = np.full((len(e_clusters), len(e_clusters)), e_threshold)
     f_t = np.full((len(f_clusters), len(f_clusters)), f_threshold)
-    min_lim = [int(split * inter_count * (1 - limit)) for split in splits]
-    max_lim = [int(split * inter_count * (1 + limit)) for split in splits]
+    min_lim = [int(split * inter_count * (1 - epsilon)) for split in splits]
+    max_lim = [int(split * inter_count * (1 + epsilon)) for split in splits]
 
     x_e = [cvxpy.Variable((len(e_clusters), 1), boolean=True) for _ in range(len(splits))]
     x_f = [cvxpy.Variable((len(f_clusters), 1), boolean=True) for _ in range(len(splits))]
@@ -51,7 +72,7 @@ def solve_ccd_bqp(
         constraints += [
             min_lim[s] <= cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter, x_i[s]), axis=0), axis=0),
             cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter, x_i[s]), axis=0), axis=0) <= max_lim[s],
-        ] + interaction_constraints(e_clusters, f_clusters, x_e, x_f, x_i, s) + [
+        ] + interaction_constraints(len(e_clusters), len(f_clusters), x_e, x_f, x_i, s) + [
             cluster_sim_dist_constraint(e_similarities, e_distances, e_t, e_ones, x_e, s),
             cluster_sim_dist_constraint(f_similarities, f_distances, f_t, f_ones, x_f, s),
         ]

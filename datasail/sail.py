@@ -101,10 +101,10 @@ def parse_args() -> Dict[str, object]:
         help="Names of the splits in order of the -s argument. If left empty, splits will be called Split1, Split2, ..."
     )
     split.add_argument(
-        "--limit",
+        "--epsilon",
         default=0.05,
         type=float,
-        dest="limit",
+        dest="epsilon",
         help="Multiplicative factor by how much the limits of the splits can be exceeded.",
     )
     e_ent = parser.add_argument_group("First Input Arguments")

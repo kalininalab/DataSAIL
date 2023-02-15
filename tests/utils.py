@@ -10,7 +10,7 @@ def read_tsv(filepath):
     return mols
 
 
-def check_folder(output_root, limit, prot_weight, drug_weight):
+def check_folder(output_root, epsilon, prot_weight, drug_weight):
     prot_map, drug_map = None, None
     if prot_weight is not None:
         with open(prot_weight, "r") as in_data:
@@ -44,8 +44,8 @@ def check_folder(output_root, limit, prot_weight, drug_weight):
         else:
             trains, tests = splits[-1].count("train"), splits[-1].count("test")
         train_frac, test_frac = trains / (trains + tests), tests / (trains + tests)
-        assert 0.7 * (1 - limit) <= train_frac <= 0.7 * (1 + limit)
-        assert 0.3 * (1 - limit) <= test_frac <= 0.3 * (1 + limit)
+        assert 0.7 * (1 - epsilon) <= train_frac <= 0.7 * (1 + epsilon)
+        assert 0.3 * (1 - epsilon) <= test_frac <= 0.3 * (1 + epsilon)
         if n == "I":
             break
 

@@ -38,7 +38,7 @@ def test_pipeline(data):
         vectorized=False,
         splits=[0.67, 0.33] if mode in ["IC", "CC"] else [0.7, 0.3],
         names=["train", "test"],
-        limit=0.25,
+        epsilon=0.25,
         e_type=None if drugs is None else "M",
         e_data=drugs,
         e_weights="data/pipeline/drug_weights.tsv" if drug_weights else None,

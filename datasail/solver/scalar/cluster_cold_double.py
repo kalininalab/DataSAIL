@@ -1,10 +1,9 @@
-import logging
 from typing import List, Optional, Tuple, Dict, Union
 
 import numpy as np
 
-from datasail.solver.scalar.utils import init_variables, init_inter_variables_cluster, \
-    interaction_constraints, cluster_sim_dist_constraint, cluster_sim_dist_objective
+from datasail.solver.scalar.utils import init_variables, init_inter_variables_cluster, cluster_sim_dist_constraint, \
+    cluster_sim_dist_objective
 from datasail.solver.utils import solve, estimate_number_target_interactions
 
 
@@ -18,14 +17,36 @@ def solve_ccd_bqp(
         f_distances: Optional[np.ndarray],
         f_threshold: float,
         inter: np.ndarray,
-        limit: float,
+        epsilon: float,
         splits: List[float],
         names: List[str],
         max_sec: int,
         max_sol: int,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
-    logging.info("Define optimization problem")
+    """
+    Solve cluster-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
+    programming.
 
+    Args:
+        e_clusters: List of cluster names to split from the e-dataset
+        e_similarities: Pairwise similarity matrix of clusters in the order of their names
+        e_distances: Pairwise distance matrix of clusters in the order of their names
+        e_threshold: Threshold to not undergo when optimizing
+        f_clusters: List of cluster names to split from the f-dataset
+        f_similarities: Pairwise similarity matrix of clusters in the order of their names
+        f_distances: Pairwise distance matrix of clusters in the order of their names
+        f_threshold: Threshold to not undergo when optimizing
+        inter: Matrix storing the amount of interactions between the entities in the e-clusters and f-clusters
+        epsilon: Additive bound for exceeding the requested split size
+        splits: List of split sizes
+        names: List of names of the splits in the order of the splits argument
+        max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
+        max_sol: Maximal number of solution to consider
+
+    Returns:
+        A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
+        dataset
+    """
     alpha = 0.1
     inter_count = estimate_number_target_interactions(inter, len(e_clusters), len(f_clusters), splits)
 
@@ -48,12 +69,16 @@ def solve_ccd_bqp(
             x_i[i, j, s] * inter[i, j] for i in range(len(e_clusters)) for j in range(len(f_clusters))
         )
         constraints += [
-            splits[s] * inter_count * (1 - limit) <= var,
-            var <= splits[s] * inter_count * (1 + limit),
+            splits[s] * inter_count * (1 - epsilon) <= var,
+            var <= splits[s] * inter_count * (1 + epsilon),
         ]
-        constraints += interaction_constraints(
-            e_clusters, f_clusters, inter, x_e, x_f, x_i, s
-        )
+        for i in range(len(e_clusters)):
+            for j in range(len(f_clusters)):
+                constraints.append(x_i[i, j, s] >= (x_e[i, s] + x_f[j, s] - 1.5))
+                constraints.append(x_i[i, j, s] <= (x_e[i, s] + x_f[j, s]) * 0.5)
+                constraints.append(x_e[i, s] >= x_i[i, j, s])
+                constraints.append(x_f[j, s] >= x_i[i, j, s])
+
         constraints += cluster_sim_dist_constraint(
             e_similarities, e_distances, e_threshold, len(e_clusters), x_e, s
         )

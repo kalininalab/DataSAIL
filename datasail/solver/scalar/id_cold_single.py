@@ -8,23 +8,36 @@ from datasail.solver.utils import solve
 def solve_ics_bqp(
         e_entities: List[str],
         e_weights: List[float],
-        limit: float,
+        epsilon: float,
         splits: List[float],
         names: List[str],
         max_sec: int,
         max_sol: int,
 ) -> Optional[Dict[str, str]]:
-    logging.info("Define optimization problem")
+    """
+    Solve identity-based cold splitting using disciplined quasi-convex programming and binary quadratic programming.
 
+    Args:
+        e_entities: List of entity names to split
+        e_weights: Weights of the entities in order of their names in e_entities
+        epsilon: Additive bound for exceeding the requested split size
+        splits: List of split sizes
+        names: List of names of the splits in the order of the splits argument
+        max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
+        max_sol: Maximal number of solution to consider
+
+    Returns:
+        Mapping from entities to splits optimizing the objective function
+    """
     x_e = init_variables(len(splits), len(e_entities))
 
-    constraints = sum_constraint(e_entities, x_e, splits)
+    constraints = sum_constraint(x_e, len(e_entities), len(splits))
 
     for b in range(len(splits)):
         var = sum(x_e[i, b] * e_weights[i] for i in range(len(e_entities)))
         constraints += [
-            int(splits[b] * sum(e_weights) * (1 - limit)) <= var,
-            var <= int(splits[b] * sum(e_weights) * (1 + limit))
+            int(splits[b] * sum(e_weights) * (1 - epsilon)) <= var,
+            var <= int(splits[b] * sum(e_weights) * (1 + epsilon))
         ]
 
     dist_loss = sum(

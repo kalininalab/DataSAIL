@@ -1,10 +1,13 @@
 import os
 from typing import Dict, Tuple, List, Union
+import math
 
 import grakel
 import numpy as np
 from grakel import Graph, WeisfeilerLehman, VertexHistogram
 from rdkit.Chem import MolFromSmiles
+
+from datasail.reader.utils import DataSet
 
 Point = Tuple[float, float, float]
 
@@ -14,12 +17,12 @@ node_encoding = {
 }
 
 
-def run_wlk(molecules: Dict) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_wlk(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run Weisfeiler-Lehman kernel-based cluster on the input. As a result, every molecule will form its own cluster
 
     Args:
-        molecules: A map from entity identifies to either graph structured data
+        dataset: The dataset to compute pairwise, elementwise similarities for
 
     Returns:
         A tuple containing
@@ -27,24 +30,29 @@ def run_wlk(molecules: Dict) -> Tuple[List[str], Dict[str, str], np.ndarray]:
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    if os.path.isfile(list(molecules.values())[1]):  # read PDB files into grakel graph objects
-        cluster_names, graphs = list(zip(*((name, pdb_to_grakel(pdb_path)) for name, pdb_path in molecules.items())))
+    if os.path.isfile(list(dataset.data.values())[1]):  # read PDB files into grakel graph objects
+        cluster_names, graphs = list(zip(*((name, pdb_to_grakel(pdb_path)) for name, pdb_path in dataset.data.items())))
     else:  # read molecules from SMILES to grakel graph objects
         cluster_names, graphs = list(
-            zip(*((name, mol_to_grakel(MolFromSmiles(mol))) for name, mol in molecules.items())))
+            zip(*((name, mol_to_grakel(MolFromSmiles(mol))) for name, mol in dataset.data.items())))
 
     # compute similarity metric and the mapping from element names to cluster names
     cluster_sim = run_wl_kernel(graphs)
-    cluster_map = dict((name, name) for name, _ in molecules.items())
+    cluster_map = dict((name, name) for name, _ in dataset.data.items())
 
     return cluster_names, cluster_map, cluster_sim
 
 
-def to_grakel(edges: Dict[int, List[int]], node_labels: Dict[int, List]):
-    return Graph(edges, node_labels=node_labels)
-
-
 def run_wl_kernel(graph_list: List[Graph]) -> np.ndarray:
+    """
+    Run the Weisfeiler-Lehman algorithm on the list of input graphs.
+
+    Args:
+        graph_list: List of grakel-graphs to run pairwise similarity search on
+
+    Returns:
+        Symmetric 2D-numpy array storing pairwise similarities of the input graphs
+    """
     gk = WeisfeilerLehman(n_iter=4, base_graph_kernel=VertexHistogram, normalize=True)
     gk.fit_transform(graph_list)
     result = gk.transform(graph_list)
@@ -57,7 +65,7 @@ def mol_to_grakel(mol) -> grakel.graph.Graph:
     Convert an RDKit molecule into a grakel graph to apply Weisfeiler-Lehman kernels later.
 
     Args:
-        mol: rdkit Molecule
+        mol: RDKit Molecule
 
     Returns:
         grakel graph object
@@ -80,27 +88,15 @@ def mol_to_grakel(mol) -> grakel.graph.Graph:
     return grakel.Graph(edges, node_labels=nodes)
 
 
-def dist(p1: Point, p2: Point) -> float:
-    """
-
-    Args:
-        p1:
-        p2:
-
-    Returns:
-
-    """
-    return sum([(p1[0] - p2[0]) ** 2, (p1[1] - p2[1]) ** 2, (p1[2] - p2[2]) ** 2]) ** (1 / 2)
-
-
 class PDBStructure:
     """Structure class"""
 
     def __init__(self, filename: str) -> None:
         """
+        Read the $C_\alpha$ atoms from a PDB file.
 
         Args:
-            filename:
+            filename: PDB filename to read from
         """
         self.residues = {}
         with open(filename, "r") as in_file:
@@ -109,41 +105,41 @@ class PDBStructure:
                     res = Residue(line)
                     self.residues[res.num] = res
 
-    def __len__(self) -> int:
-        """
-
-        Returns:
-
-        """
-        return len(self.residues)
-
-    def __get_coords(self) -> List[Tuple[int, Point]]:
-        """
-
-        Returns:
-
-        """
-        coords = [(res.num, (res.x, res.y, res.z)) for res in self.residues.values()]
-        return coords
-
     def get_edges(self, threshold: float = 7) -> List[Tuple[int, int]]:
         """
+        Get edges for the graph representation of this PDB structure based on the distance of the C-alpha atoms
 
         Args:
-            threshold:
+            threshold: Distance threshold to accept an edge
 
         Returns:
-
+            A list of edges given by their residue number
         """
-        coords = self.__get_coords()
+        coords = [(res.num, (res.x, res.y, res.z)) for res in self.residues.values()]
         return [(coords[i][0], coords[j][0]) for i in range(len(coords)) for j in range(len(coords)) if
-                dist(coords[i][1], coords[j][1]) < threshold]
+                math.dist(coords[i][1], coords[j][1]) < threshold]
 
-    def get_nodes(self):
+    def get_nodes(self) -> Dict[int, int]:
+        """
+        Get the nodes as a map from their residue id to a numerical encoding of the represented amino acid.
+
+        Returns:
+            Dict mapping residue ids to a numerical encodings of the represented amino acids
+        """
         return dict([(res.num, (node_encoding[res.name.lower()])) for i, res in enumerate(self.residues.values())])
 
 
 def pdb_to_grakel(pdb: Union[str, PDBStructure], threshold: float = 7) -> grakel.graph.Graph:
+    """
+    Convert a PDB file into a grakel graph to compute WLKs over them.
+
+    Args:
+        pdb: Either PDB structure or filepath to PDB file
+        threshold: Distance threshold to apply when computing the graphs
+
+    Returns:
+        A grakel graph based on the PDB structure
+    """
     if isinstance(pdb, str):
         pdb = PDBStructure(pdb)
 
@@ -162,9 +158,10 @@ class Residue:
 
     def __init__(self, line: str) -> None:
         """
+        Read in the important information for a residue based on the line of the C-alpha atom.
 
         Args:
-            line:
+            line: Line to read from.
         """
         self.name = line[17:20].strip()
         self.num = int(line[22:26].strip())
