@@ -137,7 +137,8 @@ def parse_args() -> Dict[str, object]:
         dest="e_sim",
         default=None,
         help="Provide the name of a method to determine similarity between samples of the first input dataset. This "
-             "can either be [WLK], [mmseqs], or a filepath to a file storing the pairwise similarities in TSV.",
+             "can either be [WLK], [mmseqs], [FoldSeek], [CDHIT], or a filepath to a file storing the pairwise "
+             "similarities in TSV.",
     )
     e_ent.add_argument(
         "--e-dist",
@@ -190,7 +191,8 @@ def parse_args() -> Dict[str, object]:
         dest="e_sim",
         default=None,
         help="Provide the name of a method to determine similarity between samples of the second input dataset. This "
-             "can either be [WLK], [mmseqs], or a filepath to a file storing the pairwise similarities in TSV.",
+             "can either be [WLK], [mmseqs], [FoldSeek], [CDHIT], or a filepath to a file storing the pairwise "
+             "similarities in TSV.",
     )
     f_ent.add_argument(
         "--f-dist",

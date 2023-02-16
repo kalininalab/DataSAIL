@@ -4,6 +4,8 @@ from typing import Dict, Tuple, List, Optional, Union
 import numpy as np
 from sklearn.cluster import AffinityPropagation, AgglomerativeClustering
 
+from datasail.cluster.cdhit import run_cdhit
+from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
 from datasail.cluster.wlk import run_wlk
@@ -68,7 +70,11 @@ def similarity_clustering(dataset: DataSet) -> Tuple[
     if dataset.similarity.lower() == "wlk":  # run Weisfeiler-Lehman kernel (only for graph data)
         cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
     elif dataset.similarity.lower() == "mmseqs":  # run mmseqs2 on the protein sequences
-        cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset.location)
+        cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset)
+    elif dataset.similarity.lower() == "foldseek":  # run foldseek on the protein sequences
+        cluster_names, cluster_map, cluster_sim = run_foldseek(dataset)
+    elif dataset.similarity.lower() == "cdhit":  # run cdhit on the protein sequences
+        cluster_names, cluster_map, cluster_sim = run_cdhit(dataset)
     else:
         raise ValueError("Unknown cluster method.")
 
@@ -102,7 +108,7 @@ def distance_clustering(dataset: DataSet) -> Tuple[
           - Mapping from current clusters to their weights
     """
     if dataset.distance.lower() == "mash":
-        cluster_names, cluster_map, cluster_dist = run_mash(dataset.location)
+        cluster_names, cluster_map, cluster_dist = run_mash(dataset)
     else:
         raise ValueError("Unknown cluster method.")
 

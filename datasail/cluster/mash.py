@@ -3,10 +3,12 @@ from typing import Tuple, List, Dict, Optional
 
 import numpy as np
 
+from datasail.reader.utils import DataSet
 
-def run_mash(data_folder) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray]]:
+
+def run_mash(dataset: DataSet) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray]]:
     cmd = f"cd mash_results && " \
-          f"mash sketch -s 10000 -o ./cluster {os.path.join('..', data_folder)} && " \
+          f"mash sketch -s 10000 -o ./cluster {os.path.join('..', dataset.location)} && " \
           f"mash dist -t cluster.msh cluster.msh > cluster.tsv"
 
     if not os.path.exists("mash_results"):
@@ -15,7 +17,7 @@ def run_mash(data_folder) -> Tuple[List[str], Dict[str, str], Optional[np.ndarra
     print(cmd)
     os.system(cmd)
 
-    names = os.listdir(data_folder)
+    names = os.listdir(dataset.location)
     cluster_map = dict((n, n) for n in names)
     cluster_dist = read_mash_tsv("mash_results/cluster.tsv", len(names))
     cluster_names = names

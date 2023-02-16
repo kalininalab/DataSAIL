@@ -4,13 +4,15 @@ from typing import Dict, Tuple, List
 
 import numpy as np
 
+from datasail.reader.utils import DataSet
 
-def run_mmseqs(filepath: str) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+
+def run_mmseqs(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run mmseqs in the commandline and read in the results into clusters.
 
     Args:
-        filepath: Filepath to the FASTA file storing the sequences to cluster
+        dataset: DataSet holding all information on the dta to be clustered
 
     Returns:
         A tuple containing
@@ -21,7 +23,7 @@ def run_mmseqs(filepath: str) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     cmd = f"cd mmseqs_results && " \
           f"mmseqs " \
           f"easy-linclust " \
-          f"{os.path.join('..', filepath)} " \
+          f"{os.path.join('..', dataset.location)} " \
           f"mmseqs_out " \
           f"mmseqs_tmp " \
           f"--similarity-type 2 " \

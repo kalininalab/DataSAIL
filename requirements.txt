@@ -1,9 +1,0 @@
-cvxpy
-numpy
-pandas
-grakel
-networkx
-rdkit
-matplotlib
-pytest
-setuptools

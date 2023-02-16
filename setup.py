@@ -29,12 +29,6 @@ setup(
     setup_requires=['setuptools_scm'],
     include_package_data=True,
     install_requires=[
-        "biopython>=1.78",
-        "matplotlib>=3.3.2",
-        "numpy>=1.22.3",
-        "psutil>=5.8.0",
-        "pandas>=1.3.3",
-        "autopep8>=1.5.7",
     ],
 
     package_data={
