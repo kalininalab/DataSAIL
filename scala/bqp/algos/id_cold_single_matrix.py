@@ -17,6 +17,7 @@ def solve_ics_bqp_matrix(
     logging.info("Define optimization problem")
 
     m = np.ones((len(molecules)))
+    s = np.ones((len(splits)))
     o = [split * sum(weights) for split in splits]
     w = np.stack([weights] * len(splits))
     min_lim = [int(split * sum(weights) * (1 - limit)) for split in splits]
@@ -24,14 +25,15 @@ def solve_ics_bqp_matrix(
 
     x = cvxpy.Variable((len(molecules), len(splits)), boolean=True)
     constraints = [
-        cvxpy.sum(x, axis=1) == m,
-        min_lim <= cvxpy.sum(cvxpy.multiply(w.T, x), axis=0),
-        cvxpy.sum(cvxpy.multiply(w.T, x), axis=0) <= max_lim,
+        x @ s == m,
+        min_lim <= m.T @ cvxpy.multiply(w.T, x),
+        m.T @ cvxpy.multiply(w.T, x) <= max_lim,
     ]
 
     logging.info("Start solving with SCIP")
 
-    objective = cvxpy.Minimize(cvxpy.sum_squares(cvxpy.sum(cvxpy.multiply(w.T, x), axis=0) - o))
+    # objective = cvxpy.Minimize(cvxpy.sum_squares(cvxpy.sum(cvxpy.multiply(w.T, x), axis=0) - o))
+    objective = cvxpy.Minimize(cvxpy.sum_squares(m.T @ cvxpy.multiply(w.T, x) - o))
     problem = cvxpy.Problem(objective, constraints)
     problem.solve(
         solver=cvxpy.SCIP,
