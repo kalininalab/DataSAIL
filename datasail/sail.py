@@ -48,7 +48,7 @@ def parse_args() -> Dict[str, object]:
     )
     parser.add_argument(
         "--to-sec",
-        default=10,
+        default=100,
         dest="max_sec",
         type=int,
         help="Maximal time to spend optimizing the objective in seconds. This does not include preparatory work such "
