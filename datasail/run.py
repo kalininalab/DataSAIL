@@ -88,7 +88,9 @@ def bqp_main(**kwargs) -> None:
                     split_stats[split] += 1
             print(name + " distribution over splits:")
             print(stats_string(len(dataset.names), split_stats))
-            t_sne(dataset, entities, kwargs["names"])
+
+            # TODO:Include this cleverly
+            # t_sne(dataset, entities, kwargs["names"])
 
     logging.info("BQP splitting finished and results stored.")
     logging.info(f"Total runtime: {time.time() - start:.5f}s")

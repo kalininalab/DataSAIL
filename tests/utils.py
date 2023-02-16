@@ -34,9 +34,9 @@ def check_folder(output_root, epsilon, prot_weight, drug_weight):
     assert len(split_data) > 0
 
     for n, data in split_data:
-        with open("../tests/data/pipeline/prot_sim.tsv", "r") as d:
-            listing = [line.strip().split("\t")[0] for line in d.readlines()[1:]]
-        print("\n".join(str(x) for x in sorted(data, key=lambda x: listing.index(x[0]))))
+        # with open("../tests/data/pipeline/prot_sim.tsv", "r") as d:
+        #     listing = [line.strip().split("\t")[0] for line in d.readlines()[1:]]
+        # print("\n".join(str(x) for x in sorted(data, key=lambda x: listing.index(x[0]))))
         splits = list(zip(*data))
         if n == "P" and prot_map is not None:
             trains = sum(prot_map[p] for p, s in data if s == "train")
