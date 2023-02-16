@@ -2,7 +2,6 @@ import logging
 from typing import List, Tuple, Union
 
 import cvxpy
-import mosek
 import numpy as np
 
 
