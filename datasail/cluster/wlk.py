@@ -30,6 +30,9 @@ def run_wlk(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
+    if dataset.type != "M":
+        raise ValueError("ECFP with Tanimoto-scores can only be applied to molecular data.")
+
     if os.path.isfile(list(dataset.data.values())[1]):  # read PDB files into grakel graph objects
         cluster_names, graphs = list(zip(*((name, pdb_to_grakel(pdb_path)) for name, pdb_path in dataset.data.items())))
     else:  # read molecules from SMILES to grakel graph objects
@@ -38,7 +41,7 @@ def run_wlk(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
 
     # compute similarity metric and the mapping from element names to cluster names
     cluster_sim = run_wl_kernel(graphs)
-    cluster_map = dict((name, name) for name, _ in dataset.data.items())
+    cluster_map = dict((name, name) for name in dataset.names)
 
     return cluster_names, cluster_map, cluster_sim
 
