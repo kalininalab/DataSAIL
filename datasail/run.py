@@ -89,7 +89,7 @@ def bqp_main(**kwargs) -> None:
             print(name + " distribution over splits:")
             print(stats_string(len(dataset.names), split_stats))
 
-            # TODO:Include this cleverly
+            # TODO: Include tSNE cleverly
             # t_sne(dataset, entities, kwargs["names"])
 
     logging.info("BQP splitting finished and results stored.")
