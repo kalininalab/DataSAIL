@@ -1,3 +1,5 @@
+import os.path
+
 import pytest
 
 from datasail.sail import sail
@@ -34,7 +36,7 @@ def test_pipeline(data):
         max_sec=10,
         max_sol=10,
         verbosity="I",
-        technique=mode,
+        techniques=[mode],
         vectorized=False,
         splits=[0.67, 0.33] if mode in ["IC", "CC"] else [0.7, 0.3],
         names=["train", "test"],
@@ -56,13 +58,16 @@ def test_pipeline(data):
     )
 
     check_folder(
-        "data/pipeline/out",
+        "data/pipeline/out/" + mode,
         0.25,
         "data/pipeline/prot_weights.tsv" if prot_weights else None,
         "data/pipeline/drug_weights.tsv" if drug_weights else None,
+        "Molecule_drugs_splits.tsv",
+        f"Protein_{'pdbs' if pdb else 'seqs'}_splits.tsv",
     )
 
 
+@pytest.mark.todo
 def test_pipeline_tsne():
     pdb, prot_weights, prot_sim, prot_dist, drugs, drug_weights, drug_sim, drug_dist, inter, mode = (
         False, False, "../tests/data/pipeline/prot_sim.tsv", None, None, False, None,
@@ -75,7 +80,7 @@ def test_pipeline_tsne():
         max_sec=100,
         max_sol=10,
         verbosity="I",
-        technique=mode,
+        techniques=[mode],
         vectorized=False,
         splits=[0.67, 0.33] if mode in ["IC", "CC"] else [0.7, 0.3],
         names=["train", "test"],
@@ -101,7 +106,47 @@ def test_pipeline_tsne():
         0.25,
         "../tests/data/pipeline/prot_weights.tsv" if prot_weights else None,
         "../tests/data/pipeline/drug_weights.tsv" if drug_weights else None,
+        "Molecule_drugs_splits.tsv",
+        None if pdb is None else f"Protein_{'pdbs' if pdb else 'seqs'}_splits.tsv",
     )
+
+
+@pytest.mark.todo
+def test_report():
+    sail(
+        inter="../tests/data/pipeline/inter.tsv",
+        output="../tests/data/pipeline/out/",
+        max_sec=10,
+        max_sol=10,
+        verbosity="I",
+        techniques=["R", "ICSe", "ICSf", "ICD", "CCSe", "CCSf", "CCD"],
+        vectorized=False,
+        splits=[0.7, 0.3],
+        names=["train", "test"],
+        epsilon=0.25,
+        e_type="M",
+        e_data="data/pipeline/drugs.tsv",
+        e_weights=None,
+        e_sim="data/pipeline/drug_sim.tsv",
+        e_dist=None,  # "data/pipeline/drug_dist.tsv",
+        e_max_sim=1,
+        e_max_dist=1,
+        f_type="P",
+        f_data="../tests/data/pipeline/pdbs",  # "../tests/data/pipeline/seqs.fasta"),
+        f_weights=None,  # "../tests/data/pipeline/prot_weights.tsv"
+        f_sim="data/pipeline/prot_sim.tsv",
+        f_dist=None,  # "data/pipeline/drug_dist.tsv",
+        f_max_sim=1,
+        f_max_dist=1,
+    )
+
+    assert os.path.isdir("../tests/data/pipeline/out/R")
+    assert os.path.isdir("../tests/data/pipeline/out/ICSe")
+    assert os.path.isdir("../tests/data/pipeline/out/ICSf")
+    assert os.path.isdir("../tests/data/pipeline/out/ICD")
+    assert os.path.isdir("../tests/data/pipeline/out/CCSe")
+    assert os.path.isdir("../tests/data/pipeline/out/CCSf")
+    assert os.path.isdir("../tests/data/pipeline/out/CCD")
 
 
 @pytest.mark.issue

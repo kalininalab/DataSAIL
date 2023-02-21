@@ -24,8 +24,9 @@ def read_molecule_data(data, weights, sim, dist, max_sim, max_dist, inter, index
     if data.lower().endswith(".tsv"):
         dataset.data = dict(read_csv(data, False, "\t"))
     elif os.path.isdir(data):
-        dataset.location = data
+        pass
     else:
         raise ValueError()
+    dataset.location = data
 
     return read_data(weights, sim, dist, max_sim, max_dist, inter, index, dataset)

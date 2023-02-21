@@ -11,7 +11,7 @@ def run_identity_splitting(root_dir, out_folder, mode, vectorized):
         max_sec=10,
         max_sol=10,
         verbosity="I",
-        technique=mode,
+        techniques=[mode],
         vectorized=vectorized,
         splits=[0.7, 0.3],
         names=["train", "test"],
@@ -39,4 +39,4 @@ def run_identity_splitting(root_dir, out_folder, mode, vectorized):
 def test_perf_bin_2(root_dir, mode, vectorized):
     run_identity_splitting(root_dir, mode[1], mode[0], vectorized)
 
-    check_folder(f"{root_dir}/{mode[1]}", 0.25, None, None)
+    check_folder(f"{root_dir}/{mode[1]}/{mode[0]}", 0.25, None, None, "Molecule_drug_splits.tsv", "Protein_prot_splits.tsv")

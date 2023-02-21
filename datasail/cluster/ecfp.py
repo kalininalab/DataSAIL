@@ -16,10 +16,9 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
 
     Returns:
         A tuple containing
-              - the names of the clusters (cluster representatives)
-              - the mapping from cluster members to the cluster names (cluster representatives)
-              - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
-
+          - the names of the clusters (cluster representatives)
+          - the mapping from cluster members to the cluster names (cluster representatives)
+          - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
     if dataset.type != "M":
         raise ValueError("ECFP with Tanimoto-scores can only be applied to molecular data.")

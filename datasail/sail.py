@@ -74,10 +74,11 @@ def parse_args() -> Dict[str, object]:
     split = parser.add_argument_group("Splitting Arguments")
     split.add_argument(
         "-t",
-        "--technique",
+        "--techniques",
         type=str,
+        required=True,
         choices=["R", "ICS", "ICD", "CCS", "CCD"],
-        default="R",
+        nargs="+",
         dest="technique",
         help="Select the mode to split the data. Choices: R: Random split, ICS: identity-based cold-single split, "
              "ICD: identity-based cold-double split, CCS: similarity-based cold-single split, "

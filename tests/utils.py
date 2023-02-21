@@ -10,7 +10,7 @@ def read_tsv(filepath):
     return mols
 
 
-def check_folder(output_root, epsilon, prot_weight, drug_weight):
+def check_folder(output_root, epsilon, prot_weight, drug_weight, e_filename, f_filename):
     prot_map, drug_map = None, None
     if prot_weight is not None:
         with open(prot_weight, "r") as in_data:
@@ -22,14 +22,10 @@ def check_folder(output_root, epsilon, prot_weight, drug_weight):
     split_data = []
     if os.path.exists(os.path.join(output_root, "inter.tsv")):
         split_data.append(("I", read_tsv(os.path.join(output_root, "inter.tsv"))))
-    if os.path.exists(os.path.join(output_root, "Protein_1.tsv")):
-        split_data.append(("P", read_tsv(os.path.join(output_root, "Protein_1.tsv"))))
-    if os.path.exists(os.path.join(output_root, "Protein_2.tsv")):
-        split_data.append(("P", read_tsv(os.path.join(output_root, "Protein_2.tsv"))))
-    if os.path.exists(os.path.join(output_root, "Molecule_1.tsv")):
-        split_data.append(("D", read_tsv(os.path.join(output_root, "Molecule_1.tsv"))))
-    if os.path.exists(os.path.join(output_root, "Molecule_2.tsv")):
-        split_data.append(("D", read_tsv(os.path.join(output_root, "Molecule_2.tsv"))))
+    if os.path.exists(os.path.join(output_root, e_filename)):
+        split_data.append(("P", read_tsv(os.path.join(output_root, e_filename))))
+    if os.path.exists(os.path.join(output_root, f_filename)):
+        split_data.append(("D", read_tsv(os.path.join(output_root, f_filename))))
 
     assert len(split_data) > 0
 

@@ -26,12 +26,11 @@ def read_protein_data(data, weights, sim, dist, max_sim, max_dist, inter, index)
         dataset.data = parse_fasta(data)
     elif os.path.isfile(data):
         dataset.data = dict(read_csv(data, False, "\t"))
-        dataset.location = data
     elif os.path.isdir(data):
         dataset.data = dict(read_pdb_folder(data))
-        dataset.location = data
     else:
         raise ValueError()
+    dataset.location = data
 
     return read_data(weights, sim, dist, max_sim, max_dist, inter, index, dataset)
 
