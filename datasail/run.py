@@ -43,17 +43,19 @@ def bqp_main(**kwargs) -> None:
 
     logging.info("Store results")
 
-    for _ in kwargs["techniques"]:
-        # infer interaction assignment from entity assignment if necessary and possible
-        if inter is not None:
-            if inter_split_map is None and e_name_split_map is not None and f_name_split_map is None:
-                inter_split_map = [(e, f, e_name_split_map[e]) for e, f in inter]
-            elif inter_split_map is None and e_name_split_map is None and f_name_split_map is not None:
-                inter_split_map = [(e, f, f_name_split_map[f]) for e, f in inter]
-            elif inter_split_map is None and e_name_split_map is not None and f_name_split_map is not None:
-                inter_split_map = [
-                    (e, f, e_name_split_map[e]) for e, f in inter if e_name_split_map[e] == f_name_split_map[f]
-                ]
+    # infer interaction assignment from entity assignment if necessary and possible
+    if inter is not None:
+        for technique in kwargs["techniques"]:
+            t = technique[:3]
+            if inter_split_map.get(technique, None) is None:
+                if e_name_split_map.get(t, None) is not None and f_name_split_map.get(t, None) is None:
+                    inter_split_map[technique] = [(e, f, e_name_split_map[t][e]) for e, f in inter]
+                elif e_name_split_map.get(t, None) is None and f_name_split_map.get(t, None) is not None:
+                    inter_split_map[technique] = [(e, f, f_name_split_map[t][f]) for e, f in inter]
+                elif e_name_split_map.get(t, None) is not None and f_name_split_map.get(t, None) is not None:
+                    inter_split_map[technique] = [
+                        (e, f, e_name_split_map[t][e]) for e, f in inter if e_name_split_map[t][e] == f_name_split_map[t][f]
+                    ]
 
     report(
         kwargs["techniques"],
@@ -65,7 +67,7 @@ def bqp_main(**kwargs) -> None:
         f_cluster_split_map,
         inter_split_map,
         kwargs["output"],
-        kwargs["splits"],
+        kwargs["names"],
     )
 
     logging.info("BQP splitting finished and results stored.")

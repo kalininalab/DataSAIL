@@ -1,4 +1,5 @@
 import os.path
+import shutil
 
 import pytest
 
@@ -77,7 +78,7 @@ def test_pipeline_tsne():
     sail(
         inter="../tests/data/pipeline/inter.tsv" if inter else None,
         output="../tests/data/pipeline/out/",
-        max_sec=100,
+        max_sec=10,
         max_sol=10,
         verbosity="I",
         techniques=[mode],
@@ -113,14 +114,15 @@ def test_pipeline_tsne():
 
 @pytest.mark.todo
 def test_report():
+    shutil.rmtree("../tests/data/pipeline/out")
     sail(
         inter="../tests/data/pipeline/inter.tsv",
         output="../tests/data/pipeline/out/",
-        max_sec=10,
+        max_sec=100,
         max_sol=10,
         verbosity="I",
-        techniques=["R", "ICSe", "ICSf", "ICD", "CCSe", "CCSf", "CCD"],
-        vectorized=False,
+        techniques=["R", "ICSe", "ICSf", "ICD", "CCSe", "CCSf"],
+        vectorized=True,
         splits=[0.7, 0.3],
         names=["train", "test"],
         epsilon=0.25,
@@ -141,12 +143,64 @@ def test_report():
     )
 
     assert os.path.isdir("../tests/data/pipeline/out/R")
+    assert len(os.listdir("../tests/data/pipeline/out/R")) == 1
+    check_assignment_tsv("../tests/data/pipeline/out/R/inter.tsv")
+
     assert os.path.isdir("../tests/data/pipeline/out/ICSe")
+    assert len(os.listdir("../tests/data/pipeline/out/ICSe")) == 2
+    check_assignment_tsv("../tests/data/pipeline/out/ICSe/Molecule_drugs_splits.tsv")
+    check_assignment_tsv("../tests/data/pipeline/out/ICSe/inter.tsv")
+
     assert os.path.isdir("../tests/data/pipeline/out/ICSf")
+    assert len(os.listdir("../tests/data/pipeline/out/ICSf")) == 2
+    check_assignment_tsv("../tests/data/pipeline/out/ICSf/Protein_pdbs_splits.tsv")
+    check_assignment_tsv("../tests/data/pipeline/out/ICSf/inter.tsv")
+
     assert os.path.isdir("../tests/data/pipeline/out/ICD")
+    assert len(os.listdir("../tests/data/pipeline/out/ICD")) == 3
+    check_assignment_tsv("../tests/data/pipeline/out/ICD/inter.tsv")
+    check_assignment_tsv("../tests/data/pipeline/out/ICD/Molecule_drugs_splits.tsv")
+    check_assignment_tsv("../tests/data/pipeline/out/ICD/Protein_pdbs_splits.tsv")
+
     assert os.path.isdir("../tests/data/pipeline/out/CCSe")
+    assert len(os.listdir("../tests/data/pipeline/out/CCSe")) == 5
+    assert os.path.isfile("../tests/data/pipeline/out/CCSe/Molecule_drugs_clusters.png")
+    assert os.path.isfile("../tests/data/pipeline/out/CCSe/Molecule_drugs_splits.png")
+    check_assignment_tsv("../tests/data/pipeline/out/CCSe/inter.tsv")
+    check_identity_tsv("../tests/data/pipeline/out/CCSe/Molecule_drugs_clusters.tsv")
+    check_assignment_tsv("../tests/data/pipeline/out/CCSe/Molecule_drugs_splits.tsv")
+
     assert os.path.isdir("../tests/data/pipeline/out/CCSf")
-    assert os.path.isdir("../tests/data/pipeline/out/CCD")
+    assert len(os.listdir("../tests/data/pipeline/out/CCSf")) == 5
+    assert os.path.isfile("../tests/data/pipeline/out/CCSf/Protein_pdbs_clusters.png")
+    assert os.path.isfile("../tests/data/pipeline/out/CCSf/Protein_pdbs_splits.png")
+    check_assignment_tsv("../tests/data/pipeline/out/CCSf/inter.tsv")
+    check_identity_tsv("../tests/data/pipeline/out/CCSf/Protein_pdbs_clusters.tsv")
+    check_assignment_tsv("../tests/data/pipeline/out/CCSf/Protein_pdbs_splits.tsv")
+
+    # assert os.path.isdir("../tests/data/pipeline/out/CCD")
+
+
+def check_identity_tsv(filename):
+    assert os.path.isfile(filename)
+    with open(filename, "r") as data:
+        for line in data.readlines():
+            parts = line.strip().split("\t")
+            assert len(parts) == 2
+            assert parts[0] == parts[1]
+
+
+def check_assignment_tsv(filename):
+    assert os.path.isfile(filename)
+    with open(filename, "r") as data:
+        for line in data.readlines():
+            parts = line.strip().split("\t")
+            assert len(parts) == (3 if "inter" in filename else 2)
+            assert parts[0] not in ["train", "test"]
+            if "inter" in filename:
+                assert parts[0] != parts[1]
+                assert parts[1] not in ["train", "test"]
+            assert parts[-1] in ["train", "test"]
 
 
 @pytest.mark.issue

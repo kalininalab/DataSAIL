@@ -28,7 +28,7 @@ def interaction_constraints(
         for j in range(len_f_data):
             constraints.append(x_i[s][i, j] >= (x_e[s][:, 0][i] + x_f[s][:, 0][j] - 1.5))
             constraints.append(x_i[s][i, j] <= (x_e[s][:, 0][i] + x_f[s][:, 0][j]) * 0.5)
-            constraints.append(x_f[s][:, 0][i] >= x_i[s][i, j])
+            constraints.append(x_e[s][:, 0][i] >= x_i[s][i, j])
             constraints.append(x_f[s][:, 0][j] >= x_i[s][i, j])
     return constraints
 

@@ -20,7 +20,7 @@ DictMap = Dict[str, Dict[str, str]]
 
 
 def run_solver(
-        techniques: Set[str],
+        techniques: List[str],
         e_dataset: DataSet,
         f_dataset: DataSet,
         inter: Optional[Union[np.ndarray, List[Tuple[str, str]]]],
@@ -55,6 +55,7 @@ def run_solver(
     logging.info("Define optimization problem")
 
     for technique in techniques:
+        logging.info(technique)
         technique, mode = technique[:3], technique[-1]
         if technique == "R":
             solution = sample_categorical(
@@ -85,7 +86,7 @@ def run_solver(
                     output_f_entities["ICS"] = solution
                 else:
                     output_e_entities["ICS"] = solution
-        if technique == "ICD":
+        elif technique == "ICD":
             if vectorized:
                 fun = solve_icd_bqp_vector
             else:
@@ -102,7 +103,7 @@ def run_solver(
             )
             if solution is not None:
                 output_inter["ICD"], output_e_entities["ICD"], output_f_entities["ICD"] = solution
-        if technique == "CCS":
+        elif technique == "CCS":
             fun = solve_ccs_bqp_vector if vectorized else solve_ccs_bqp_scalar
             dataset = f_dataset if mode == "f" else e_dataset
 
@@ -125,7 +126,7 @@ def run_solver(
                 else:
                     output_e_clusters["CCS"] = cluster_split
                     output_e_entities["CCS"] = reverse_clustering(cluster_split, e_dataset.cluster_map)
-        if technique == "CCD":
+        elif technique == "CCD":
             cluster_inter = cluster_interactions(
                 inter,
                 e_dataset.cluster_map,

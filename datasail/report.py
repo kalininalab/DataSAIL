@@ -26,21 +26,27 @@ def report(
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    for technique in techniques:
-        save_dir = os.path.join(output_dir, technique)
+    for t in techniques:
+        technique, mode = t[:3], t[-1]
+        if mode.isupper():
+            mode = None
+
+        save_dir = os.path.join(output_dir, t)
         os.makedirs(save_dir, exist_ok=True)
 
-        save_inter_assignment(save_dir, inter_split_map.get(technique, None))
+        save_inter_assignment(save_dir, inter_split_map[t])
 
-        if e_dataset.type is not None:
+        if e_dataset.type is not None and mode != "f":
             save_assignment(save_dir, e_dataset, e_name_split_map.get(technique, None))
-            save_clusters(save_dir, e_dataset)
-            save_t_sne(save_dir, e_dataset, e_name_split_map, e_cluster_split_map, split_names)
+            if technique[0] == "C":
+                save_clusters(save_dir, e_dataset)
+                save_t_sne(save_dir, e_dataset, e_name_split_map.get(technique, None), e_cluster_split_map.get(technique, None), split_names)
 
-        if f_dataset.type is not None:
+        if f_dataset.type is not None and mode != "e":
             save_assignment(save_dir, f_dataset, f_name_split_map.get(technique, None))
-            save_clusters(save_dir, f_dataset)
-            save_t_sne(save_dir, f_dataset, f_name_split_map, f_cluster_split_map, split_names)
+            if technique[0] == "C":
+                save_clusters(save_dir, f_dataset)
+                save_t_sne(save_dir, f_dataset, f_name_split_map.get(technique, None), f_cluster_split_map.get(technique, None), split_names)
 
 
 def save_inter_assignment(save_dir: str, inter_split_map: Optional[List[Tuple[str, str, str]]]):
@@ -72,7 +78,7 @@ def save_clusters(save_dir, dataset):
 
 
 def save_t_sne(save_dir, dataset, name_split_map, cluster_split_map, split_names):
-    if all(x is None for x in [
+    if any(x is not None for x in [
         dataset.similarity, dataset.distance, dataset.cluster_similarity, dataset.cluster_distance
     ]):
         if dataset.similarity is not None or dataset.distance is not None:
@@ -118,6 +124,7 @@ def t_sne(names, distances, name_split_map: Dict[str, str], split_names: List[st
     plt.yticks([])
     plt.legend()
     plt.savefig(output_file_name)
+    plt.clf()
 
 
 def whatever(
