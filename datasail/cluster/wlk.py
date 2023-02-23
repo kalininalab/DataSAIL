@@ -1,12 +1,15 @@
 import os
+import pickle
 from typing import Dict, Tuple, List, Union
 import math
 
 import grakel
 import numpy as np
 from grakel import Graph, WeisfeilerLehman, VertexHistogram
+from matplotlib import pyplot as plt
 from rdkit.Chem import MolFromSmiles
 
+from datasail.cluster.foldseek import run_foldseek
 from datasail.reader.utils import DataSet
 
 Point = Tuple[float, float, float]
@@ -129,7 +132,7 @@ class PDBStructure:
         Returns:
             Dict mapping residue ids to a numerical encodings of the represented amino acids
         """
-        return dict([(res.num, (node_encoding[res.name.lower()])) for i, res in enumerate(self.residues.values())])
+        return dict([(res.num, (node_encoding.get(res.name.lower(), 20))) for i, res in enumerate(self.residues.values())])
 
 
 def pdb_to_grakel(pdb: Union[str, PDBStructure], threshold: float = 7) -> grakel.graph.Graph:
@@ -143,6 +146,7 @@ def pdb_to_grakel(pdb: Union[str, PDBStructure], threshold: float = 7) -> grakel
     Returns:
         A grakel graph based on the PDB structure
     """
+    pdb_str = pdb
     if isinstance(pdb, str):
         pdb = PDBStructure(pdb)
 
@@ -152,6 +156,10 @@ def pdb_to_grakel(pdb: Union[str, PDBStructure], threshold: float = 7) -> grakel
         if start not in edges:
             edges[start] = []
         edges[start].append(end)
+
+    if len(edges) < 10 or len(pdb.get_nodes()) < 10:
+        print(len(edges), "|", len(pdb.get_nodes()))
+        print("\t", pdb_str)
 
     return Graph(edges, node_labels=pdb.get_nodes())
 
@@ -171,3 +179,27 @@ class Residue:
         self.x = float(line[30:38].strip())
         self.y = float(line[38:46].strip())
         self.z = float(line[46:54].strip())
+
+
+if __name__ == '__main__':
+    # path = "/scratch/SCRATCH_SAS/Olga/TMalign/PDBs/"
+    # path = "../../tests/data/pipeline/pdbs/"
+    path = "/scratch/SCRATCH_SAS/Olga/TMalign/SCOPe_40/"
+
+    # wlk_matrix = run_wl_kernel([pdb_to_grakel(path + name) for name in os.listdir(path)])
+    # pickle.dump(wlk_matrix, open("wlk_matrix.pkl", "wb"))
+    # np.savetxt('wlk_matrix.tsv', wlk_matrix, delimiter="\t")
+    wlk_matrix = pickle.load(open("wlk_matrix.pkl", "rb"))
+
+    _, _, fs_matrix = run_foldseek(DataSet(names=os.listdir(path), location=path))
+    pickle.dump(wlk_matrix, open("fs_matrix.pkl", "wb"))
+    np.savetxt('fs_matrix.tsv', fs_matrix, delimiter="\t")
+
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    ax1.matshow(wlk_matrix)
+    ax1.set_xlabel("WL Kernel")
+    ax2.matshow(fs_matrix)
+    ax2.set_xlabel("FoldSeek")
+    plt.savefig("matrices.png")
+
+    print(np.corrcoef(wlk_matrix.flatten(), fs_matrix.flatten()))

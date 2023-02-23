@@ -25,9 +25,13 @@ def run_foldseek(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarra
     with open("fs/aln.m8", "r") as data:
         for line in data.readlines():
             q1, q2, sim = line.strip().split("\t")[:3]
+            if "_" in q1 and "." in q1 and q1.rindex("_") > q1.index("."):
+                q1 = "_".join(q1.split("_")[:-1])
+            if "_" in q2 and "." in q2 and q2.rindex("_") > q2.index("."):
+                q2 = "_".join(q2.split("_")[:-1])
             cluster_sim[namap[q1], namap[q2]] = sim
             cluster_sim[namap[q2], namap[q1]] = sim
 
-    shutil.rmtree("fs")
+    # shutil.rmtree("fs")
 
     return dataset.names, dict((n, n) for n in dataset.names), cluster_sim
