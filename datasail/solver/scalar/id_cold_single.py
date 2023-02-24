@@ -13,6 +13,7 @@ def solve_ics_bqp(
         names: List[str],
         max_sec: int,
         max_sol: int,
+        solver: str,
 ) -> Optional[Dict[str, str]]:
     """
     Solve identity-based cold splitting using disciplined quasi-convex programming and binary quadratic programming.
@@ -25,6 +26,7 @@ def solve_ics_bqp(
         names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
         max_sol: Maximal number of solution to consider
+        solver: Solving algorithm to use to solve the formulated program
 
     Returns:
         Mapping from entities to splits optimizing the objective function
@@ -45,7 +47,7 @@ def solve_ics_bqp(
         for b in range(len(splits))
     )
 
-    solve(dist_loss, constraints, max_sec, len(x_e))
+    solve(dist_loss, constraints, max_sec, len(x_e), solver)
 
     return dict(
         (e, names[b]) for b in range(len(splits)) for i, e in enumerate(e_entities) if x_e[i, b].value > 0.1

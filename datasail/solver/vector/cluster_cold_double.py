@@ -23,6 +23,7 @@ def solve_ccd_bqp(
         names: List[str],
         max_sec: int,
         max_sol: int,
+        solver: str,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
     """
     Solve cluster-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
@@ -43,6 +44,7 @@ def solve_ccd_bqp(
         names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
         max_sol: Maximal number of solution to consider
+        solver: Solving algorithm to use to solve the formulated program
 
     Returns:
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
@@ -84,7 +86,7 @@ def solve_ccd_bqp(
     e_loss = cluster_sim_dist_objective(e_similarities, e_distances, e_ones, x_e, splits)
     f_loss = cluster_sim_dist_objective(f_similarities, f_distances, f_ones, x_f, splits)
 
-    solve(alpha * inter_loss + e_loss + f_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i))
+    solve(alpha * inter_loss + e_loss + f_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver)
 
     # report the found solution
     output = ([], dict(

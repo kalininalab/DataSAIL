@@ -114,7 +114,7 @@ def test_pipeline_tsne():
 
 @pytest.mark.todo
 def test_report():
-    shutil.rmtree("../tests/data/pipeline/out")
+    shutil.rmtree("../tests/data/pipeline/out", ignore_errors=True)
     sail(
         inter="../tests/data/pipeline/inter.tsv",
         output="../tests/data/pipeline/out/",
@@ -140,6 +140,7 @@ def test_report():
         f_dist=None,  # "data/pipeline/drug_dist.tsv",
         f_max_sim=1,
         f_max_dist=1,
+        solver="MOSEK",
     )
 
     assert os.path.isdir("../tests/data/pipeline/out/R")

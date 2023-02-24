@@ -41,12 +41,20 @@ def report(
             if technique[0] == "C":
                 save_clusters(save_dir, e_dataset)
                 save_t_sne(save_dir, e_dataset, e_name_split_map.get(technique, None), e_cluster_split_map.get(technique, None), split_names)
+            split_counts = dict((n, 0) for n in split_names)
+            for name in e_dataset.names:
+                split_counts[e_name_split_map[technique][name]] += e_dataset.weights[name]
+            print(stats_string(sum(e_dataset.weights.values()), split_counts))
 
         if f_dataset.type is not None and mode != "e":
             save_assignment(save_dir, f_dataset, f_name_split_map.get(technique, None))
             if technique[0] == "C":
                 save_clusters(save_dir, f_dataset)
                 save_t_sne(save_dir, f_dataset, f_name_split_map.get(technique, None), f_cluster_split_map.get(technique, None), split_names)
+            split_counts = dict((n, 0) for n in split_names)
+            for name in f_dataset.names:
+                split_counts[f_name_split_map[technique][name]] += f_dataset.weights[name]
+            print(stats_string(sum(f_dataset.weights.values()), split_counts))
 
 
 def save_inter_assignment(save_dir: str, inter_split_map: Optional[List[Tuple[str, str, str]]]):

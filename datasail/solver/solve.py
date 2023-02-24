@@ -30,6 +30,7 @@ def run_solver(
         names: List[str],
         max_sec: int,
         max_sol: int,
+        solver: str,
 ) -> Tuple[Dict[str, List[Tuple[str, str, str]]], DictMap, DictMap, DictMap, DictMap]:
     """
     Run a solver based on the selected technique.
@@ -45,6 +46,7 @@ def run_solver(
         names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
         max_sol: Maximal number of solution to consider
+        solver: Solving algorithm to use to solve the formulated program
 
     Returns:
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
@@ -79,6 +81,7 @@ def run_solver(
                 names=names,
                 max_sec=max_sec,
                 max_sol=max_sol,
+                solver=solver,
             )
 
             if solution is not None:
@@ -100,6 +103,7 @@ def run_solver(
                 names=names,
                 max_sec=max_sec,
                 max_sol=max_sol,
+                solver=solver,
             )
             if solution is not None:
                 output_inter["ICD"], output_e_entities["ICD"], output_f_entities["ICD"] = solution
@@ -118,6 +122,7 @@ def run_solver(
                 names=names,
                 max_sec=max_sec,
                 max_sol=max_sol,
+                solver=solver,
             )
             if cluster_split is not None:
                 if mode == "f":
@@ -150,6 +155,7 @@ def run_solver(
                 names=names,
                 max_sec=max_sec,
                 max_sol=max_sol,
+                solver=solver,
             )
 
             if cluster_split is not None:

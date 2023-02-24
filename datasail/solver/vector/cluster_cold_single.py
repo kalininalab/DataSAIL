@@ -18,6 +18,7 @@ def solve_ccs_bqp(
         names: List[str],
         max_sec: int,
         max_sol: int,
+        solver: str,
 ) -> Optional[Dict[str, str]]:
     """
     Solve cluster-based cold splitting using disciplined quasi-convex programming and binary quadratic programming.
@@ -33,6 +34,7 @@ def solve_ccs_bqp(
         names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
         max_sol: Maximal number of solution to consider
+        solver: Solving algorithm to use to solve the formulated program
 
     Returns:
         Mapping from clusters to splits optimizing the objective function
@@ -64,7 +66,7 @@ def solve_ccs_bqp(
     e_loss = cluster_sim_dist_objective(e_similarities, e_distances, ones, x_e, splits)
 
     alpha = 0.04
-    problem = solve(alpha * size_loss + e_loss, constraints, max_sec, len(x_e))
+    problem = solve(alpha * size_loss + e_loss, constraints, max_sec, len(x_e), solver)
 
     return dict(
         (e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_clusters) if x_e[s][i, 0].value > 0.1

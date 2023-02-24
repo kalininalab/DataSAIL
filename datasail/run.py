@@ -15,7 +15,6 @@ def bqp_main(**kwargs) -> None:
         **kwargs: Parsed commandline arguments to DataSAIL.
     """
     start = time.time()
-    logging.info("Starting BQP solving")
     logging.info("Read data")
 
     # read e-entities and f-entities in
@@ -39,6 +38,7 @@ def bqp_main(**kwargs) -> None:
         names=kwargs["names"],
         max_sec=kwargs["max_sec"],
         max_sol=kwargs["max_sol"],
+        solver=kwargs["solver"],
     )
 
     logging.info("Store results")

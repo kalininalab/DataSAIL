@@ -15,6 +15,7 @@ def solve_icd_bqp(
         names: List[str],
         max_sec: int,
         max_sol: int,
+        solver: str,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
     """
     Solve identity-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
@@ -29,6 +30,7 @@ def solve_icd_bqp(
         names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
         max_sol: Maximal number of solution to consider
+        solver: Solving algorithm to use to solve the formulated program
 
     Returns:
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
@@ -73,7 +75,7 @@ def solve_icd_bqp(
         for j, f in enumerate(f_entities) if (e, f) in inter
     )
 
-    solve(inter_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i))
+    solve(inter_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver)
 
     # report the found solution
     output = ([], dict(

@@ -30,6 +30,14 @@ def parse_args() -> Dict[str, object]:
                     "clusters within the dataset.",
     )
     parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        required=True,
+        dest="output",
+        help="Output directory to store the splits in.",
+    )
+    parser.add_argument(
         "-i",
         "--inter",
         type=str,
@@ -37,14 +45,6 @@ def parse_args() -> Dict[str, object]:
         dest="inter",
         help="Path to TSV file of interactions between two entities. The first entry in each line has to match an "
              "entry from the e-entity, the second matches one of the f-entity."
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        required=True,
-        dest="output",
-        help="Output directory to store the splits in.",
     )
     parser.add_argument(
         "--to-sec",
@@ -77,9 +77,9 @@ def parse_args() -> Dict[str, object]:
         "--techniques",
         type=str,
         required=True,
-        choices=["R", "ICS", "ICD", "CCS", "CCD"],
+        choices=["R", "ICS", "ICD", "CCS", "CCD", "ICSe", "ICSf", "CCSe", "CCSf"],
         nargs="+",
-        dest="technique",
+        dest="techniques",
         help="Select the mode to split the data. Choices: R: Random split, ICS: identity-based cold-single split, "
              "ICD: identity-based cold-double split, CCS: similarity-based cold-single split, "
              "CCD: similarity-based cold-double split"
@@ -107,6 +107,22 @@ def parse_args() -> Dict[str, object]:
         type=float,
         dest="epsilon",
         help="Multiplicative factor by how much the limits of the splits can be exceeded.",
+    )
+    split.add_argument(
+        "--solver",
+        default="MOSEK",
+        type=str,
+        choices=["MOSEK", "SCIP"],
+        dest="solver",
+        help="Solver to use to solve the BDQCP. Choices are SCIP (free of charge) and MOSEK (licensed and only "
+             "applicable if a valid mosek license is stored)."
+    )
+    split.add_argument(
+        "--scalar",
+        default=False,
+        action='store_true',
+        dest="vectorized",
+        help="Flag indicating to run the program in scalar for instead of vectorized formulation [default]."
     )
     e_ent = parser.add_argument_group("First Input Arguments")
     e_ent.add_argument(
@@ -189,7 +205,7 @@ def parse_args() -> Dict[str, object]:
     f_ent.add_argument(
         "--f-sim",
         type=str,
-        dest="e_sim",
+        dest="f_sim",
         default=None,
         help="Provide the name of a method to determine similarity between samples of the second input dataset. This "
              "can either be [WLK], [mmseqs], [FoldSeek], [CDHIT], [ECFP], or a filepath to a file storing the pairwise "
@@ -256,6 +272,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
     elif len(kwargs["names"]) != len(kwargs["names"]):
         error("Different number of splits and names. You have to give the same number of splits and names for them.", 2)
     kwargs["splits"] = [x/sum(kwargs["splits"]) for x in kwargs["splits"]]
+    kwargs["vectorized"] = not kwargs["vectorized"]
 
     return kwargs
 
