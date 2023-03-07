@@ -8,25 +8,24 @@ from tests.utils import check_folder
 
 
 @pytest.mark.parametrize("data", [
-    (True, False, None, None, None, False, None, None, False, "ICS"),
-    (True, False, "wlk", None, None, False, None, None, False, "ICS"),
-    (False, False, None, None, None, False, None, None, False, "ICS"),
+    (True, False, None, None, None, False, None, None, False, "ICSf"),
+    (True, False, "wlk", None, None, False, None, None, False, "ICSf"),
+    (False, False, None, None, None, False, None, None, False, "ICSf"),
     # (False, False, "mmseqs", None, None, False, None, None, False, "ICP"),
-    (False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "ICS"),
-    (False, False, None, "data/pipeline/prot_dist.tsv", None, False, None, None, False, "ICS"),
-    (False, True, None, None, None, False, None, None, False, "ICS"),
-    (None, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "ICS"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "ICS"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", True, None, None, False, "ICS"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, "data/pipeline/drug_sim.tsv", None, False, "ICS"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", True, "wlk", None, False, "ICS"),  # <-- 10/11
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "ICS"),
-    (True, False, "wlk", None, "data/pipeline/drugs.tsv", False, "wlk", None, True, "ICS"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "CCS"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "CCS"),
+    (False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "ICSf"),
+    (False, False, None, "data/pipeline/prot_dist.tsv", None, False, None, None, False, "ICSf"),
+    (False, True, None, None, None, False, None, None, False, "ICSf"),
+    (None, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "ICSe"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "ICSe"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", True, None, None, False, "ICSe"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, "data/pipeline/drug_sim.tsv", None, False, "ICSe"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", True, "wlk", None, False, "ICSe"),  # <-- 10/11
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "ICSe"),
+    (True, False, "wlk", None, "data/pipeline/drugs.tsv", False, "wlk", None, True, "ICSf"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "CCSe"),
     (False, False, "data/pipeline/prot_sim.tsv", None, "data/pipeline/drugs.tsv", False, None,
-     "data/pipeline/drug_dist.tsv", False, "CCS"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "CCS"),
+     "data/pipeline/drug_dist.tsv", False, "CCSf"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "CCSe"),
 ])
 def test_pipeline(data):
     pdb, prot_weights, prot_sim, prot_dist, drugs, drug_weights, drug_sim, drug_dist, inter, mode = data
@@ -56,15 +55,16 @@ def test_pipeline(data):
         f_dist=prot_dist,
         f_max_sim=1,
         f_max_dist=1,
+        solver="SCIP",
     )
 
     check_folder(
-        "data/pipeline/out/" + mode,
-        0.25,
-        "data/pipeline/prot_weights.tsv" if prot_weights else None,
-        "data/pipeline/drug_weights.tsv" if drug_weights else None,
-        "Molecule_drugs_splits.tsv",
-        f"Protein_{'pdbs' if pdb else 'seqs'}_splits.tsv",
+        output_root="data/pipeline/out/" + mode,
+        epsilon=0.25,
+        e_weight="data/pipeline/drug_weights.tsv" if drug_weights else None,
+        f_weight="data/pipeline/prot_weights.tsv" if prot_weights else None,
+        e_filename="Molecule_drugs_splits.tsv" if mode[-1] == "e" else None,
+        f_filename=f"Protein_{'pdbs' if pdb else 'seqs'}_splits.tsv" if mode[-1] == "f" else None,
     )
 
 
