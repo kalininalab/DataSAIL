@@ -5,6 +5,7 @@ import numpy as np
 from sklearn.cluster import AffinityPropagation, AgglomerativeClustering
 
 from datasail.cluster.cdhit import run_cdhit
+from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
@@ -67,14 +68,16 @@ def similarity_clustering(dataset: DataSet) -> Tuple[
           - Symmetric matrix of pairwise similarities between the current clusters
           - Mapping from current clusters to their weights
     """
-    if dataset.similarity.lower() == "wlk":  # run Weisfeiler-Lehman kernel (only for graph data)
+    if dataset.similarity.lower() == "wlk":
         cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
-    elif dataset.similarity.lower() == "mmseqs":  # run mmseqs2 on the protein sequences
+    elif dataset.similarity.lower() == "mmseqs":
         cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset)
-    elif dataset.similarity.lower() == "foldseek":  # run foldseek on the protein sequences
+    elif dataset.similarity.lower() == "foldseek":
         cluster_names, cluster_map, cluster_sim = run_foldseek(dataset)
-    elif dataset.similarity.lower() == "cdhit":  # run cdhit on the protein sequences
+    elif dataset.similarity.lower() == "cdhit":
         cluster_names, cluster_map, cluster_sim = run_cdhit(dataset)
+    elif dataset.similarity.lower() == "ecfp":
+        cluster_names, cluster_map, cluster_sim = run_ecfp(dataset)
     else:
         raise ValueError("Unknown cluster method.")
 

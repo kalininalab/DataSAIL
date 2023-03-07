@@ -39,7 +39,7 @@ def count_inter(inter: List[Tuple[str, str]], mode: int) -> Generator[Tuple[str,
         yield key, tmp[mode].count(key)
 
 
-def read_similarity_file(filepath: str, sep: str = "\t") -> Tuple[List[str], np.ndarray]:
+def read_clustering_file(filepath: str, sep: str = "\t") -> Tuple[List[str], np.ndarray]:
     """
     Read a similarity or distance matrix from a file.
 
@@ -51,13 +51,13 @@ def read_similarity_file(filepath: str, sep: str = "\t") -> Tuple[List[str], np.
         A list of names of the entities and their pairwise interactions in and numpy array
     """
     names = []
-    similarities = []
+    measures = []
     with open(filepath, "r") as data:
         for line in data.readlines()[1:]:
             parts = line.strip().split(sep)
             names.append(parts[0])
-            similarities.append([float(x) for x in parts[1:]])
-    return names, np.array(similarities)
+            measures.append([float(x) for x in parts[1:]])
+    return names, np.array(measures)
 
 
 def read_csv(filepath: str, header: bool = False, sep: str = "\t") -> Generator[Tuple[str, str], None, None]:
@@ -112,10 +112,10 @@ def read_data(weights, sim, dist, max_sim, max_dist, inter, index, dataset: Data
         dataset.names = list(dataset.data.keys())
         dataset.threshold = 1
     elif sim is not None and os.path.isfile(sim):
-        dataset.names, dataset.similarity = read_similarity_file(sim)
+        dataset.names, dataset.similarity = read_clustering_file(sim)
         dataset.threshold = max_sim
     elif dist is not None and os.path.isfile(dist):
-        dataset.names, dataset.distance = read_similarity_file(dist)
+        dataset.names, dataset.distance = read_clustering_file(dist)
         dataset.threshold = max_dist
     else:
         if sim is not None:

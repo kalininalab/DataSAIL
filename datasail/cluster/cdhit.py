@@ -10,7 +10,7 @@ from datasail.reader.utils import DataSet
 def run_cdhit(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     cmd = f"mkdir cdhit && " \
           f"cd cdhit && " \
-          f"cdhit -i {os.path.join('..', dataset.location)} -o clusters"
+          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters"
 
     print(cmd)
     os.system(cmd)
