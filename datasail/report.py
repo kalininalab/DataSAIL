@@ -34,9 +34,10 @@ def report(
         save_dir = os.path.join(output_dir, t)
         os.makedirs(save_dir, exist_ok=True)
 
-        save_inter_assignment(save_dir, inter_split_map[t])
+        if t in inter_split_map:
+            save_inter_assignment(save_dir, inter_split_map[t])
 
-        if e_dataset.type is not None and mode != "f":
+        if e_dataset.type is not None and mode is not None and mode != "f":
             save_assignment(save_dir, e_dataset, e_name_split_map.get(technique, None))
             if technique[0] == "C":
                 save_clusters(save_dir, e_dataset)
@@ -46,7 +47,7 @@ def report(
                 split_counts[e_name_split_map[technique][name]] += e_dataset.weights[name]
             print(stats_string(sum(e_dataset.weights.values()), split_counts))
 
-        if f_dataset.type is not None and mode != "e":
+        if f_dataset.type is not None and mode is not None and mode != "e":
             save_assignment(save_dir, f_dataset, f_name_split_map.get(technique, None))
             if technique[0] == "C":
                 save_clusters(save_dir, f_dataset)

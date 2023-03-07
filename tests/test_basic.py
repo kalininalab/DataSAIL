@@ -20,6 +20,7 @@ def test_ics_scalar():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
+        solver="SCIP",
     ) is not None
 
 
@@ -39,6 +40,7 @@ def test_icd_scalar():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
+        solver="SCIP",
     ) is not None
 
 
@@ -76,6 +78,7 @@ def test_ccd_scalar():
         ["train", "test"],
         10,
         0,
+        solver="SCIP",
     ) is not None
 
 
@@ -88,6 +91,7 @@ def test_ics_vector():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
+        solver="SCIP",
     )
 
 
@@ -107,6 +111,7 @@ def test_icd_vector():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
+        solver="SCIP",
     )
 
 
@@ -144,6 +149,7 @@ def test_ccd_vector():
         ["train", "test"],
         10,
         0,
+        solver="SCIP",
     ) is not None
 
 
@@ -161,6 +167,7 @@ def test_ccs_sim_scalar_nw(size):
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
+        solver="SCIP",
     ) is not None
 
 
@@ -182,6 +189,7 @@ def test_ccs_sim_scalar():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
+        solver="SCIP",
     ) is not None
 
 
@@ -203,6 +211,7 @@ def test_ccs_dist_scalar():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
+        solver="SCIP",
     ) is not None
 
 
@@ -224,6 +233,7 @@ def test_ccs_sim_vector():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
+        solver="SCIP",
     ) is not None
 
 
@@ -245,4 +255,5 @@ def test_ccs_dist_vector():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
+        solver="SCIP",
     ) is not None
