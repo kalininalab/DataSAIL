@@ -14,10 +14,10 @@ def check_folder(output_root, epsilon, e_weight, f_weight, e_filename, f_filenam
     e_map, f_map = None, None
     if e_weight is not None:
         with open(e_weight, "r") as in_data:
-            e_map = dict((k, float(v)) for k, v in [tuple(line.strip().split("\t")[:2]) for line in in_data.readlines()])
+            e_map = dict((k, float(v)) for k, v in [tuple(line.strip().split("\t")[:2]) for line in in_data.readlines()[1:]])
     if f_weight is not None:
         with open(f_weight, "r") as in_data:
-            f_map = dict((k, float(v)) for k, v in [tuple(line.strip().split("\t")[:2]) for line in in_data.readlines()])
+            f_map = dict((k, float(v)) for k, v in [tuple(line.strip().split("\t")[:2]) for line in in_data.readlines()[1:]])
 
     split_data = []
     if os.path.isfile(os.path.join(output_root, "inter.tsv")):
