@@ -18,7 +18,7 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
         Two datasets storing the information on the input entities and a list of interactions between
     """
     # TODO: Semantic checks of arguments
-    inter = list(tuple(x) for x in read_csv(kwargs["inter"], False, "\t")) if kwargs["inter"] else None
+    inter = list(tuple(x) for x in read_csv(kwargs["inter"])) if kwargs["inter"] else None
     e_dataset = read_data_type(kwargs["e_type"])(
         kwargs["e_data"], kwargs["e_weights"], kwargs["e_sim"],
         kwargs["e_dist"], kwargs["e_max_sim"], kwargs["e_max_dist"], inter, 0

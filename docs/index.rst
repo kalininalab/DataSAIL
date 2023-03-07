@@ -94,3 +94,8 @@ Data Input
     Either a numpy array as a pickle file or a similarity/distance matrix in TSV format. In case of the TSV file, the
     matrix has to be labeled with identifiers in both, a header row and the first column. If it is a pickle file, the
     order has to be given as additional argument.
+
+To now split the data, DataSAIL needs to get the data in one of the formats described above. In case of interaction
+data, both interacting entities need to be stored in either of these formats. In case of interaction data, you
+additionally have to provide the interactions between both entities as TSV file with a header and one interaction per
+row given by the two interacting IDs. Further columns will be ignored.

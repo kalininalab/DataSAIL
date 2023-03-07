@@ -60,21 +60,19 @@ def read_clustering_file(filepath: str, sep: str = "\t") -> Tuple[List[str], np.
     return names, np.array(measures)
 
 
-def read_csv(filepath: str, header: bool = False, sep: str = "\t") -> Generator[Tuple[str, str], None, None]:
+def read_csv(filepath: str) -> Generator[Tuple[str, str], None, None]:
     """
     Read in a CSV file as pairs of data.
 
     Args:
         filepath: Path to the CSV file to read 2-tuples from
-        header: Bool flag indicating whether the file has a header-line
-        sep: Separator character used to separate the values
 
     Yields:
         Pairs of strings from the file
     """
     with open(filepath, "r") as inter:
-        for line in inter.readlines()[(1 if header else 0):]:
-            output = line.strip().split(sep)
+        for line in inter.readlines()[1:]:
+            output = line.strip().split("\t")
             if len(output) >= 2:
                 yield output[:2]
             else:
@@ -100,7 +98,7 @@ def read_data(weights, sim, dist, max_sim, max_dist, inter, index, dataset: Data
     """
     # parse the protein weights
     if weights is not None:
-        dataset.weights = dict((n, float(w)) for n, w in read_csv(weights, False, "\t"))
+        dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
     elif inter is not None:
         dataset.weights = dict(count_inter(inter, index))
     else:

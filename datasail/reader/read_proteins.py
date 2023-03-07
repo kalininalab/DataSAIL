@@ -25,7 +25,7 @@ def read_protein_data(data, weights, sim, dist, max_sim, max_dist, inter, index)
     if data.endswith(".fasta") or data.endswith(".fa"):
         dataset.data = parse_fasta(data)
     elif os.path.isfile(data):
-        dataset.data = dict(read_csv(data, False, "\t"))
+        dataset.data = dict(read_csv(data))
     elif os.path.isdir(data):
         dataset.data = dict(read_pdb_folder(data))
     else:
