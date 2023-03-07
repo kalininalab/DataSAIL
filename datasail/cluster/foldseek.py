@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 from typing import Tuple, List, Dict
@@ -8,6 +9,10 @@ from datasail.reader.utils import DataSet
 
 
 def run_foldseek(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+    if os.path.exists("fs"):
+        logging.warning(f"temporary folder {os.path.abspath('fs')} for FoldSeek results already exists and will be deleted before running FoldSeek.")
+        shutil.rmtree("fs")
+
     cmd = f"mkdir fs && " \
           f"cd fs && " \
           f"foldseek createdb {os.path.join('..', dataset.location)} fsdb && " \

@@ -1,5 +1,6 @@
 import os
 import pickle
+import shutil
 from typing import Dict, Tuple, List, Union
 import math
 
@@ -20,7 +21,7 @@ node_encoding = {
 }
 
 
-def run_wlk(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_wlk(dataset: DataSet, n_iter=4) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run Weisfeiler-Lehman kernel-based cluster on the input. As a result, every molecule will form its own cluster
 
@@ -37,19 +38,18 @@ def run_wlk(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
         raise ValueError("ECFP with Tanimoto-scores can only be applied to molecular data.")
 
     if os.path.isfile(list(dataset.data.values())[1]):  # read PDB files into grakel graph objects
-        cluster_names, graphs = list(zip(*((name, pdb_to_grakel(pdb_path)) for name, pdb_path in dataset.data.items())))
+        graphs = [pdb_to_grakel(dataset.data[name]) for name in dataset.names]
     else:  # read molecules from SMILES to grakel graph objects
-        cluster_names, graphs = list(
-            zip(*((name, mol_to_grakel(MolFromSmiles(mol))) for name, mol in dataset.data.items())))
+        graphs = [mol_to_grakel(MolFromSmiles(dataset.data[name])) for name in dataset.names]
 
     # compute similarity metric and the mapping from element names to cluster names
-    cluster_sim = run_wl_kernel(graphs)
+    cluster_sim = run_wl_kernel(graphs, n_iter)
     cluster_map = dict((name, name) for name in dataset.names)
 
-    return cluster_names, cluster_map, cluster_sim
+    return dataset.names, cluster_map, cluster_sim
 
 
-def run_wl_kernel(graph_list: List[Graph]) -> np.ndarray:
+def run_wl_kernel(graph_list: List[Graph], n_iter=4) -> np.ndarray:
     """
     Run the Weisfeiler-Lehman algorithm on the list of input graphs.
 
@@ -59,7 +59,7 @@ def run_wl_kernel(graph_list: List[Graph]) -> np.ndarray:
     Returns:
         Symmetric 2D-numpy array storing pairwise similarities of the input graphs
     """
-    gk = WeisfeilerLehman(n_iter=4, base_graph_kernel=VertexHistogram, normalize=True)
+    gk = WeisfeilerLehman(n_iter=n_iter, base_graph_kernel=VertexHistogram, normalize=True)
     gk.fit_transform(graph_list)
     result = gk.transform(graph_list)
 
@@ -132,7 +132,8 @@ class PDBStructure:
         Returns:
             Dict mapping residue ids to a numerical encodings of the represented amino acids
         """
-        return dict([(res.num, (node_encoding.get(res.name.lower(), 20))) for i, res in enumerate(self.residues.values())])
+        return dict(
+            [(res.num, (node_encoding.get(res.name.lower(), 20))) for i, res in enumerate(self.residues.values())])
 
 
 def pdb_to_grakel(pdb: Union[str, PDBStructure], threshold: float = 7) -> grakel.graph.Graph:
@@ -182,24 +183,89 @@ class Residue:
 
 
 if __name__ == '__main__':
-    # path = "/scratch/SCRATCH_SAS/Olga/TMalign/PDBs/"
-    # path = "../../tests/data/pipeline/pdbs/"
-    path = "/scratch/SCRATCH_SAS/Olga/TMalign/SCOPe_40/"
+    # path = "/scratch/SCRATCH_SAS/Olga/TMalign/SCOPe_40/"
+    # path, ending = "/scratch/SCRATCH_SAS/roman/SCOPe_40_subs/", "three"
+    # path, ending = "/scratch/SCRATCH_SAS/roman/SCOPe_40_a/", "a"
+    # path, ending = "/scratch/SCRATCH_SAS/roman/SCOPe_40_b/", "b"
+    # path, ending = "/scratch/SCRATCH_SAS/roman/SCOPe_40_c/", "c"
+    # path, ending = "/scratch/SCRATCH_SAS/roman/SCOPe_40_b55/", "b55"
+    path, ending = "/scratch/SCRATCH_SAS/roman/SCOPe_40_four/", "four"
 
-    # wlk_matrix = run_wl_kernel([pdb_to_grakel(path + name) for name in os.listdir(path)])
-    # pickle.dump(wlk_matrix, open("wlk_matrix.pkl", "wb"))
-    # np.savetxt('wlk_matrix.tsv', wlk_matrix, delimiter="\t")
-    wlk_matrix = pickle.load(open("wlk_matrix.pkl", "rb"))
 
-    _, _, fs_matrix = run_foldseek(DataSet(names=os.listdir(path), location=path))
-    pickle.dump(wlk_matrix, open("fs_matrix.pkl", "wb"))
-    np.savetxt('fs_matrix.tsv', fs_matrix, delimiter="\t")
+    def trash_top():
+        names = sorted(os.listdir(path))
+        data = dict((name, path + name) for name in names)
+        ds = DataSet(type="M", names=names, location=path, data=data)
+        _, _, wlk_matrix = run_wlk(ds, n_iter=2)
+        pickle.dump(wlk_matrix, open(f"wlk_matrix_{ending}_2.pkl", "wb"))
+        plt.matshow(wlk_matrix)
+        plt.xlabel("WL Kernel")
+        plt.savefig(f"wlk_matrix_{ending}_2.png")
 
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    ax1.matshow(wlk_matrix)
-    ax1.set_xlabel("WL Kernel")
-    ax2.matshow(fs_matrix)
-    ax2.set_xlabel("FoldSeek")
-    plt.savefig("matrices.png")
 
-    print(np.corrcoef(wlk_matrix.flatten(), fs_matrix.flatten()))
+    def multi_analyse():
+        fig, axs = plt.subplots(7, 3)
+        for j, (path, ending) in enumerate([
+            ("/scratch/SCRATCH_SAS/roman/SCOPe_40_a/", "a"),
+            ("/scratch/SCRATCH_SAS/roman/SCOPe_40_b/", "b"),
+            ("/scratch/SCRATCH_SAS/roman/SCOPe_40_c/", "c"),
+        ]):
+            names = sorted(os.listdir(path))
+            data = dict((name, path + name) for name in names)
+            ds = DataSet(type="M", names=names, location=path, data=data)
+            _, _, fs_matrix = run_foldseek(ds)
+            flat_fs = fs_matrix.flatten()
+            flat_fs = flat_fs[flat_fs != 1]
+            for i in range(2, 9):
+                _, _, wlk_matrix = run_wlk(ds, n_iter=i)
+                axs[i - 2, j].matshow(wlk_matrix)
+                axs[i - 2, j].set_title(f"n_iter = {i}")
+                flat_wlk = wlk_matrix.flatten()
+                flat_wlk = flat_wlk[flat_wlk != 1]
+                print(f"Correlation {i}-{ending}:", np.corrcoef(flat_wlk, flat_fs)[0, 1])
+        fig.set_size_inches(15, 21)
+        fig.tight_layout()
+        plt.savefig("comp.png")
+        plt.show()
+
+
+    def copy():
+        with open("/home/rjo21/Downloads/a.121.1.1_b.32.2.1_c.37.1.1_b.55.1.1.txt", "r") as data:
+            for line in data:
+                filename = line.strip()
+                shutil.copy("/scratch/SCRATCH_SAS/Olga/TMalign/SCOPe_40/" + filename.replace("pdb", "ent"),
+                            "/scratch/SCRATCH_SAS/roman/SCOPe_40_four/")
+
+
+    def trash():
+        names = sorted(os.listdir(path))
+        data = dict((name, path + name) for name in names)
+        ds = DataSet(type="M", names=names, location=path, data=data)
+
+        # wlk_matrix = pickle.load(open("wlk_matrix_full.pkl", "rb"))
+        _, _, wlk_matrix = run_wlk(ds, n_iter=2)
+        # print(wlk_matrix.shape)
+        pickle.dump(wlk_matrix, open(f"wlk_matrix_{ending}.pkl", "wb"))
+
+        _, _, fs_matrix = run_foldseek(ds)
+        # print(fs_matrix.shape)
+        pickle.dump(fs_matrix, open(f"fs_matrix_{ending}.pkl", "wb"))
+
+        fig, (ax1, ax2) = plt.subplots(1, 2)
+        ax1.matshow(wlk_matrix)
+        ax1.set_xlabel("WL Kernel")
+        ax2.matshow(fs_matrix)
+        ax2.set_xlabel("FoldSeek")
+        plt.title("four")
+        plt.savefig(f"matrices_{ending}.png")
+
+        print("Avg. WLK   :", (np.sum(wlk_matrix) - len(wlk_matrix)) / len(wlk_matrix) ** 2)
+        print("Avg. FS    :", (np.sum(fs_matrix) - len(fs_matrix)) / len(fs_matrix) ** 2)
+        flat_wlk = wlk_matrix.flatten()
+        flat_fs = fs_matrix.flatten()
+        flat_wlk = flat_wlk[flat_wlk != 1]
+        flat_fs = flat_fs[flat_fs != 1]
+        print("Correlation:", np.corrcoef(flat_wlk, flat_fs)[0, 1])
+
+    copy()
+    trash()
