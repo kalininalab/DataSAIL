@@ -1,6 +1,7 @@
 # DataSAIL: Data Splitting Against Information Leaking 
 
 ![testing](https://github.com/kalininalab/glyles/actions/workflows/test.yaml/badge.svg)
+![docs-image](https://readthedocs.org/projects/glyles/badge/?version=latest)
 [![codecov](https://codecov.io/gh/kalininalab/DataSAIL/branch/main/graph/badge.svg)](https://codecov.io/gh/kalininalab/DataSAIL)
 
 DataSAIL is a tool that splits data while minimizing the information leakage. This tool formulates the splitting of a 
