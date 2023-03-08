@@ -7,6 +7,7 @@ from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
+from datasail.cluster.wlk import run_wlk
 from datasail.reader.read_proteins import parse_fasta, read_pdb_folder
 from datasail.reader.utils import DataSet, read_csv
 
@@ -83,19 +84,19 @@ def test_additional_clustering():
 @pytest.fixture
 def protein_fasta_data():
     data = parse_fasta("data/pipeline/seqs.fasta")
-    return DataSet(type="M", data=data, names=list(sorted(data.keys())))
+    return DataSet(type="M", data=data, names=list(sorted(data.keys())), location="data/pipeline/seqs.fasta")
 
 
 @pytest.fixture
 def protein_pdb_data():
     data = dict((k, v) for k, v in read_pdb_folder("data/pipeline/pdbs"))
-    return DataSet(type="M", data=data, names=list(sorted(data.keys())))
+    return DataSet(type="M", data=data, names=list(sorted(data.keys())), location="data/pipeline/pdbs/")
 
 
 @pytest.fixture
 def molecule_data():
     data = dict((k, v) for k, v in read_csv("data/pipeline/drugs.tsv"))
-    return DataSet(type="M", data=data, names=list(sorted(data.keys())))
+    return DataSet(type="M", data=data, names=list(sorted(data.keys())), location="data/pipeline/drugs.tsv")
 
 
 @pytest.fixture
@@ -131,11 +132,11 @@ def test_mmseqs2_protein(protein_fasta_data):
 
 
 def test_wlkernel_protein(protein_pdb_data):
-    check_clustering(*run_mmseqs(protein_pdb_data), protein_pdb_data)
+    check_clustering(*run_wlk(protein_pdb_data), protein_pdb_data)
 
 
 def test_wlkernel_molecule(molecule_data):
-    check_clustering(*run_mmseqs(molecule_data), molecule_data)
+    check_clustering(*run_wlk(molecule_data), molecule_data)
 
 
 def check_clustering(names, mapping, matrix, dataset):

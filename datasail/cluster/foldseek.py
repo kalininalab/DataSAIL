@@ -15,8 +15,8 @@ def run_foldseek(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarra
 
     cmd = f"mkdir fs && " \
           f"cd fs && " \
-          f"foldseek createdb {os.path.join('..', dataset.location)} fsdb && " \
-          f"foldseek easy-search {os.path.join('..', dataset.location)} fsdb aln.m8 tmp --format-output 'query,target,fident'"
+          f"foldseek createdb {os.path.join('..', dataset.location)} fsdb >/dev/null 2>&1 && " \
+          f"foldseek easy-search {os.path.join('..', dataset.location)} fsdb aln.m8 tmp --format-output 'query,target,fident' >/dev/null 2>&1"
 
     # alternative foldseek call:
     # foldseek easy-search pdbs pdbs ali.m8 tmp (does exactly the same as above)
@@ -25,7 +25,6 @@ def run_foldseek(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarra
     os.system(cmd)
 
     namap = dict((n, i) for i, n in enumerate(dataset.names))
-
     cluster_sim = np.zeros((len(dataset.names), len(dataset.names)))
     with open("fs/aln.m8", "r") as data:
         for line in data.readlines():
@@ -34,6 +33,8 @@ def run_foldseek(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarra
                 q1 = "_".join(q1.split("_")[:-1])
             if "_" in q2 and "." in q2 and q2.rindex("_") > q2.index("."):
                 q2 = "_".join(q2.split("_")[:-1])
+            q1 = q1.replace(".pdb", "")
+            q2 = q2.replace(".pdb", "")
             cluster_sim[namap[q1], namap[q2]] = sim
             cluster_sim[namap[q2], namap[q1]] = sim
 

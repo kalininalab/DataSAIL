@@ -16,8 +16,8 @@ def run_cdhit(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     os.system(cmd)
 
     cluster_map = get_cdhit_map("cdhit/clusters.clstr")
-    cluster_sim = np.ones((len(cluster_map), len(cluster_map)))
     cluster_names = list(set(cluster_map.values()))
+    cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
     shutil.rmtree("cdhit")
 
     return cluster_names, cluster_map, cluster_sim
@@ -32,6 +32,7 @@ def get_cdhit_map(cluster_file: str) -> Dict[str, str]:
             line = line.strip()
             if line[0] == ">":
                 if rep != "":
+                    mapping[rep] = rep
                     for name in members:
                         mapping[name] = rep
                 rep = ""
@@ -40,6 +41,7 @@ def get_cdhit_map(cluster_file: str) -> Dict[str, str]:
                 rep = line.split(">")[1].split("...")[0]
             else:
                 members.append(line.split(">")[1].split("...")[0])
+    mapping[rep] = rep
     for name in members:
         mapping[name] = rep
     return mapping

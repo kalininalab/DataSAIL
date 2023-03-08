@@ -29,7 +29,7 @@ def run_mmseqs(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]
           f"--similarity-type 2 " \
           f"--cov-mode 0 " \
           f"-c 1.0 " \
-          f"--min-seq-id 0.0"
+          f"--min-seq-id 0.0 >/dev/null 2>&1"
 
     if not os.path.exists("mmseqs_results"):
         cmd = "mkdir mmseqs_results && " + cmd
