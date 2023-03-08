@@ -112,12 +112,11 @@ def test_pipeline_tsne():
     )
 
 
-@pytest.mark.todo
 def test_report():
-    shutil.rmtree("../tests/data/pipeline/out", ignore_errors=True)
+    shutil.rmtree("data/perf_7_3/out", ignore_errors=True)
     sail(
-        inter="../tests/data/pipeline/inter.tsv",
-        output="../tests/data/pipeline/out/",
+        inter="data/perf_7_3/inter.tsv",
+        output="data/perf_7_3/out/",
         max_sec=100,
         max_sol=10,
         verbosity="I",
@@ -127,59 +126,59 @@ def test_report():
         names=["train", "test"],
         epsilon=0.25,
         e_type="M",
-        e_data="data/pipeline/drugs.tsv",
+        e_data="data/perf_7_3/lig.tsv",
         e_weights=None,
-        e_sim="data/pipeline/drug_sim.tsv",
-        e_dist=None,  # "data/pipeline/drug_dist.tsv",
+        e_sim="data/perf_7_3/lig_sim.tsv",
+        e_dist=None,
         e_max_sim=1,
         e_max_dist=1,
         f_type="P",
-        f_data="../tests/data/pipeline/pdbs",  # "../tests/data/pipeline/seqs.fasta"),
-        f_weights=None,  # "../tests/data/pipeline/prot_weights.tsv"
-        f_sim="data/pipeline/prot_sim.tsv",
-        f_dist=None,  # "data/pipeline/drug_dist.tsv",
+        f_data="data/perf_7_3/prot.fasta",
+        f_weights=None,
+        f_sim="data/perf_7_3/prot_sim.tsv",
+        f_dist=None,
         f_max_sim=1,
         f_max_dist=1,
-        solver="MOSEK",
+        solver="SCIP",
     )
 
-    assert os.path.isdir("../tests/data/pipeline/out/R")
-    assert len(os.listdir("../tests/data/pipeline/out/R")) == 1
-    check_assignment_tsv("../tests/data/pipeline/out/R/inter.tsv")
+    assert os.path.isdir("data/perf_7_3/out/R")
+    assert len(os.listdir("data/perf_7_3/out/R")) == 1
+    check_assignment_tsv("data/perf_7_3/out/R/inter.tsv")
 
-    assert os.path.isdir("../tests/data/pipeline/out/ICSe")
-    assert len(os.listdir("../tests/data/pipeline/out/ICSe")) == 2
-    check_assignment_tsv("../tests/data/pipeline/out/ICSe/Molecule_drugs_splits.tsv")
-    check_assignment_tsv("../tests/data/pipeline/out/ICSe/inter.tsv")
+    assert os.path.isdir("data/perf_7_3/out/ICSe")
+    assert len(os.listdir("data/perf_7_3/out/ICSe")) == 2
+    check_assignment_tsv("data/perf_7_3/out/ICSe/Molecule_lig_splits.tsv")
+    check_assignment_tsv("data/perf_7_3/out/ICSe/inter.tsv")
 
-    assert os.path.isdir("../tests/data/pipeline/out/ICSf")
-    assert len(os.listdir("../tests/data/pipeline/out/ICSf")) == 2
-    check_assignment_tsv("../tests/data/pipeline/out/ICSf/Protein_pdbs_splits.tsv")
-    check_assignment_tsv("../tests/data/pipeline/out/ICSf/inter.tsv")
+    assert os.path.isdir("data/perf_7_3/out/ICSf")
+    assert len(os.listdir("data/perf_7_3/out/ICSf")) == 2
+    check_assignment_tsv("data/perf_7_3/out/ICSf/Protein_prot_splits.tsv")
+    check_assignment_tsv("data/perf_7_3/out/ICSf/inter.tsv")
 
-    assert os.path.isdir("../tests/data/pipeline/out/ICD")
-    assert len(os.listdir("../tests/data/pipeline/out/ICD")) == 3
-    check_assignment_tsv("../tests/data/pipeline/out/ICD/inter.tsv")
-    check_assignment_tsv("../tests/data/pipeline/out/ICD/Molecule_drugs_splits.tsv")
-    check_assignment_tsv("../tests/data/pipeline/out/ICD/Protein_pdbs_splits.tsv")
+    assert os.path.isdir("data/perf_7_3/out/ICD")
+    assert len(os.listdir("data/perf_7_3/out/ICD")) == 3
+    check_assignment_tsv("data/perf_7_3/out/ICD/inter.tsv")
+    check_assignment_tsv("data/perf_7_3/out/ICD/Molecule_lig_splits.tsv")
+    check_assignment_tsv("data/perf_7_3/out/ICD/Protein_prot_splits.tsv")
 
-    assert os.path.isdir("../tests/data/pipeline/out/CCSe")
-    assert len(os.listdir("../tests/data/pipeline/out/CCSe")) == 5
-    assert os.path.isfile("../tests/data/pipeline/out/CCSe/Molecule_drugs_clusters.png")
-    assert os.path.isfile("../tests/data/pipeline/out/CCSe/Molecule_drugs_splits.png")
-    check_assignment_tsv("../tests/data/pipeline/out/CCSe/inter.tsv")
-    check_identity_tsv("../tests/data/pipeline/out/CCSe/Molecule_drugs_clusters.tsv")
-    check_assignment_tsv("../tests/data/pipeline/out/CCSe/Molecule_drugs_splits.tsv")
+    assert os.path.isdir("data/perf_7_3/out/CCSe")
+    assert len(os.listdir("data/perf_7_3/out/CCSe")) == 5
+    assert os.path.isfile("data/perf_7_3/out/CCSe/Molecule_lig_clusters.png")
+    assert os.path.isfile("data/perf_7_3/out/CCSe/Molecule_lig_splits.png")
+    check_assignment_tsv("data/perf_7_3/out/CCSe/inter.tsv")
+    check_identity_tsv("data/perf_7_3/out/CCSe/Molecule_lig_clusters.tsv")
+    check_assignment_tsv("data/perf_7_3/out/CCSe/Molecule_lig_splits.tsv")
 
-    assert os.path.isdir("../tests/data/pipeline/out/CCSf")
-    assert len(os.listdir("../tests/data/pipeline/out/CCSf")) == 5
-    assert os.path.isfile("../tests/data/pipeline/out/CCSf/Protein_pdbs_clusters.png")
-    assert os.path.isfile("../tests/data/pipeline/out/CCSf/Protein_pdbs_splits.png")
-    check_assignment_tsv("../tests/data/pipeline/out/CCSf/inter.tsv")
-    check_identity_tsv("../tests/data/pipeline/out/CCSf/Protein_pdbs_clusters.tsv")
-    check_assignment_tsv("../tests/data/pipeline/out/CCSf/Protein_pdbs_splits.tsv")
+    assert os.path.isdir("data/perf_7_3/out/CCSf")
+    assert len(os.listdir("data/perf_7_3/out/CCSf")) == 5
+    assert os.path.isfile("data/perf_7_3/out/CCSf/Protein_prot_clusters.png")
+    assert os.path.isfile("data/perf_7_3/out/CCSf/Protein_prot_splits.png")
+    check_assignment_tsv("data/perf_7_3/out/CCSf/inter.tsv")
+    check_identity_tsv("data/perf_7_3/out/CCSf/Protein_prot_clusters.tsv")
+    check_assignment_tsv("data/perf_7_3/out/CCSf/Protein_prot_splits.tsv")
 
-    # assert os.path.isdir("../tests/data/pipeline/out/CCD")
+    # assert os.path.isdir("data/perf_7_3/out/CCD")
 
 
 def check_identity_tsv(filename):
