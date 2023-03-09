@@ -159,6 +159,8 @@ def run_solver(
             )
 
             if cluster_split is not None:
-                output_inter["CCD"], output_e_entities["CCD"], output_f_entities["CCD"] = cluster_split
+                output_inter["CCD"], output_e_clusters["CCD"], output_f_clusters["CCD"] = cluster_split
+                output_e_entities["CCD"] = reverse_clustering(cluster_split[1], e_dataset.cluster_map)
+                output_f_entities["CCD"] = reverse_clustering(cluster_split[2], f_dataset.cluster_map)
 
     return output_inter, output_e_entities, output_f_entities, output_e_clusters, output_f_clusters

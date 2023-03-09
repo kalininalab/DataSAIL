@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Generator, Tuple, List, Optional, Dict, Union
 
 import numpy as np
@@ -20,6 +20,12 @@ class DataSet:
     distance: Optional[Union[np.ndarray, str]] = None
     cluster_distance: Optional[Union[np.ndarray, str]] = None
     threshold: Optional[float] = None
+
+    def __hash__(self):
+        hash_val = 0
+        for field in fields(DataSet):
+            hash_val ^= hash(getattr(self, field.name))
+        return hash_val
 
 
 def count_inter(inter: List[Tuple[str, str]], mode: int) -> Generator[Tuple[str, int], None, None]:

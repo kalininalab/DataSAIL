@@ -68,50 +68,6 @@ def test_pipeline(data):
     )
 
 
-@pytest.mark.todo
-def test_pipeline_tsne():
-    pdb, prot_weights, prot_sim, prot_dist, drugs, drug_weights, drug_sim, drug_dist, inter, mode = (
-        False, False, "../tests/data/pipeline/prot_sim.tsv", None, None, False, None,
-        None, False, "CCS"
-    )
-
-    sail(
-        inter="../tests/data/pipeline/inter.tsv" if inter else None,
-        output="../tests/data/pipeline/out/",
-        max_sec=10,
-        max_sol=10,
-        verbosity="I",
-        techniques=[mode],
-        vectorized=False,
-        splits=[0.67, 0.33] if mode in ["IC", "CC"] else [0.7, 0.3],
-        names=["train", "test"],
-        epsilon=0.25,
-        e_type=None if drugs is None else "M",
-        e_data=drugs,
-        e_weights="../tests/data/pipeline/drug_weights.tsv" if drug_weights else None,
-        e_sim=drug_sim,
-        e_dist=drug_dist,
-        e_max_sim=1,
-        e_max_dist=1,
-        f_type=None if pdb is None else "P",
-        f_data=None if pdb is None else ("../tests/data/pipeline/pdbs" if pdb else "../tests/data/pipeline/seqs.fasta"),
-        f_weights="../tests/data/pipeline/prot_weights.tsv" if prot_weights else None,
-        f_sim=prot_sim,
-        f_dist=prot_dist,
-        f_max_sim=1,
-        f_max_dist=1,
-    )
-
-    check_folder(
-        "../tests/data/pipeline/out",
-        0.25,
-        "../tests/data/pipeline/prot_weights.tsv" if prot_weights else None,
-        "../tests/data/pipeline/drug_weights.tsv" if drug_weights else None,
-        "Molecule_drugs_splits.tsv",
-        None if pdb is None else f"Protein_{'pdbs' if pdb else 'seqs'}_splits.tsv",
-    )
-
-
 def test_report():
     shutil.rmtree("data/perf_7_3/out", ignore_errors=True)
     sail(
@@ -120,7 +76,7 @@ def test_report():
         max_sec=100,
         max_sol=10,
         verbosity="I",
-        techniques=["R", "ICSe", "ICSf", "ICD", "CCSe", "CCSf"],
+        techniques=["R", "ICSe", "ICSf", "ICD", "CCSe", "CCSf", "CCD"],
         vectorized=True,
         splits=[0.7, 0.3],
         names=["train", "test"],
@@ -178,7 +134,47 @@ def test_report():
     check_identity_tsv("data/perf_7_3/out/CCSf/Protein_prot_clusters.tsv")
     check_assignment_tsv("data/perf_7_3/out/CCSf/Protein_prot_splits.tsv")
 
-    # assert os.path.isdir("data/perf_7_3/out/CCD")
+    assert os.path.isdir("data/perf_7_3/out/CCD")
+    assert len(os.listdir("data/perf_7_3/out/CCD")) == 9
+    assert os.path.isfile("data/perf_7_3/out/CCD/Molecule_lig_clusters.png")
+    assert os.path.isfile("data/perf_7_3/out/CCD/Molecule_lig_splits.png")
+    assert os.path.isfile("data/perf_7_3/out/CCD/Protein_prot_clusters.png")
+    assert os.path.isfile("data/perf_7_3/out/CCD/Protein_prot_splits.png")
+    check_assignment_tsv("data/perf_7_3/out/CCD/inter.tsv")
+    check_identity_tsv("data/perf_7_3/out/CCD/Molecule_lig_clusters.tsv")
+    check_assignment_tsv("data/perf_7_3/out/CCD/Molecule_lig_splits.tsv")
+    check_identity_tsv("data/perf_7_3/out/CCD/Protein_prot_clusters.tsv")
+    check_assignment_tsv("data/perf_7_3/out/CCD/Protein_prot_splits.tsv")
+
+
+def test_genomes():
+    sail(
+        inter=None,
+        output="data/genomes/out/",
+        max_sec=100,
+        max_sol=10,
+        verbosity="I",
+        techniques=["ICSe", "CCSe"],
+        vectorized=True,
+        splits=[0.7, 0.3],
+        names=["train", "test"],
+        epsilon=0.25,
+        e_type="M",
+        e_data="data/perf_7_3/lig.tsv",
+        e_weights=None,
+        e_sim="data/perf_7_3/lig_sim.tsv",
+        e_dist=None,
+        e_max_sim=1,
+        e_max_dist=1,
+        f_type="P",
+        f_data="data/perf_7_3/prot.fasta",
+        f_weights=None,
+        f_sim="data/perf_7_3/prot_sim.tsv",
+        f_dist=None,
+        f_max_sim=1,
+        f_max_dist=1,
+        solver="SCIP",
+    )
 
 
 def check_identity_tsv(filename):
@@ -196,11 +192,11 @@ def check_assignment_tsv(filename):
         for line in data.readlines():
             parts = line.strip().split("\t")
             assert len(parts) == (3 if "inter" in filename else 2)
-            assert parts[0] not in ["train", "test"]
+            assert parts[0] not in ["train", "test", "not_selected"]
             if "inter" in filename:
                 assert parts[0] != parts[1]
-                assert parts[1] not in ["train", "test"]
-            assert parts[-1] in ["train", "test"]
+                assert parts[1] not in ["train", "test", "not_selected"]
+            assert parts[-1] in ["train", "test", "not selected"]
 
 
 @pytest.mark.issue

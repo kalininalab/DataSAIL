@@ -124,6 +124,19 @@ def parse_args() -> Dict[str, object]:
         dest="vectorized",
         help="Flag indicating to run the program in scalar for instead of vectorized formulation [default]."
     )
+    split.add_argument(
+        "--cache",
+        default=False,
+        action='store_true',
+        dest="cache",
+        help="Store clustering matrices in cache."
+    )
+    split.add_argument(
+        "--cache-dir",
+        default=None,
+        dest="cache_dir",
+        help="Destination of the cache folder. Default is the OS-default cache dir."
+    )
     e_ent = parser.add_argument_group("First Input Arguments")
     e_ent.add_argument(
         "--e-type",

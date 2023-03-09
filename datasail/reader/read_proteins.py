@@ -22,12 +22,12 @@ def read_protein_data(data, weights, sim, dist, max_sim, max_dist, inter, index)
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type="P")
-    if data.endswith(".fasta") or data.endswith(".fa"):
+    if data.endswith(".fasta") or data.endswith(".fa") or data.endswith(".fna"):
         dataset.data = parse_fasta(data)
     elif os.path.isfile(data):
         dataset.data = dict(read_csv(data))
     elif os.path.isdir(data):
-        dataset.data = dict(read_pdb_folder(data))
+        dataset.data = dict(read_folder(data, ".pdb"))
     else:
         raise ValueError()
     dataset.location = data
@@ -35,19 +35,20 @@ def read_protein_data(data, weights, sim, dist, max_sim, max_dist, inter, index)
     return read_data(weights, sim, dist, max_sim, max_dist, inter, index, dataset)
 
 
-def read_pdb_folder(folder_path: str) -> Generator[Tuple[str, str], None, None]:
+def read_folder(folder_path: str, file_extension: str) -> Generator[Tuple[str, str], None, None]:
     """
     Read in all PDB file from a folder and ignore non-PDB files.
 
     Args:
         folder_path: Path to the folder storing the PDB files
+        file_extension: File extension to parse
 
     Yields:
         Pairs of the PDB files name and the path to the file
     """
     for filename in os.listdir(folder_path):
-        if filename.endswith(".pdb"):
-            yield filename[:-4], os.path.join(folder_path, filename)
+        if filename.endswith(file_extension):
+            yield filename.split(".")[0], os.path.join(folder_path, filename)
 
 
 def parse_fasta(path=None, left_split=None, right_split=' ', check_duplicates=False) -> Dict[str, str]:
