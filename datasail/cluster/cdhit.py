@@ -11,7 +11,7 @@ def run_cdhit(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     cmd = f"mkdir cdhit && " \
           f"cd cdhit && " \
           f"{combine_files(dataset)} && " \
-          f"cd-hit -i data.fasta -o clusters"
+          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters"
 
     print(cmd)
     os.system(cmd)
