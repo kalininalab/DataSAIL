@@ -22,8 +22,8 @@ def bqp_main(**kwargs) -> None:
 
     # if required, cluster the input otherwise define the cluster-maps to be None
     if any("C" == technique[0] for technique in kwargs["techniques"]):
-        e_dataset = cluster(e_dataset)
-        f_dataset = cluster(f_dataset)
+        e_dataset = cluster(e_dataset, **kwargs)
+        f_dataset = cluster(f_dataset, **kwargs)
 
     logging.info("Split data")
     # split the data into dictionaries mapping interactions, e-entities, and f-entities into the splits

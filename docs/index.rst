@@ -19,7 +19,7 @@ table despite there is no clustering algorithm for this. Therefore, the only way
 of entities of "other" input type is to provide them as a matrix in a file.
 
 .. list-table:: Input molecule types and their available clustering algorithms
-    :widths: 25 15 15 15 15 15
+    :widths: 25 15 15 15 15 15 15
     :header-rows: 1
 
     * - Clust. Algo
@@ -28,48 +28,56 @@ of entities of "other" input type is to provide them as a matrix in a file.
       - Molecule
       - Genomic
       - Other
+      - Inter-clust
     * - CD-HIT
       - Sim
       - FASTA
       - \-
       - \-
       - \-
+      - No
     * - ECFP + Tanimoto
       - Dist
       - \-
       - SMILES
       - \-
       - \-
+      - Yes
     * - FoldSeek
       - Sim
       - PDB
       - \-
       - \-
       - \-
+      - No
     * - File input
       - Both
       - file
       - file
       - file
       - file
+      - Yes
     * - MASH
       - Dist
       - \-
       - \-
       - FASTA
       - \-
+      - Yes
     * - MMseqs2
       - Sim
       - FASTA
       - \-
       - \-
       - \-
+      - No
     * - WLKernel
       - Sim
       - PDB
       - SMILES
       - \-
       - \-
+      - Yes
 
 Input format
 ------------

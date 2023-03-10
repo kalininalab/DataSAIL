@@ -28,6 +28,7 @@ def parse_args() -> Dict[str, object]:
                     "The splits computed by DataSAIL try to minimize the amount of leaked information between two "
                     "splits based on what the user requested. Splits can be done based on sample ids but also based on "
                     "clusters within the dataset.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "-o",

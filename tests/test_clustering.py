@@ -16,28 +16,28 @@ def test_additional_clustering():
     names = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
     base_map = dict((n, n) for n in names)
     similarity = np.asarray([
-        [5, 5, 5, 5, 5, 5, 0, 0, 0, 0],
-        [5, 5, 5, 5, 5, 5, 0, 0, 0, 0],
-        [5, 5, 5, 5, 5, 5, 0, 0, 0, 0],
-        [5, 5, 5, 5, 5, 5, 0, 0, 0, 0],
-        [5, 5, 5, 5, 5, 5, 0, 0, 0, 0],
-        [5, 5, 5, 5, 5, 5, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 5, 5, 5, 5],
-        [0, 0, 0, 0, 0, 0, 5, 5, 5, 5],
-        [0, 0, 0, 0, 0, 0, 5, 5, 5, 5],
-        [0, 0, 0, 0, 0, 0, 5, 5, 5, 5],
+        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
     ])
     distance = np.asarray([
-        [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-        [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-        [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-        [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-        [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-        [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-        [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
-        [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
-        [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
-        [4, 4, 4, 4, 4, 4, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+        [0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
     ])
     weights = dict((n, (6 if n in names[:6] else 4)) for n in names)
 
@@ -63,7 +63,7 @@ def test_additional_clustering():
         s_dataset.cluster_map[x] for x in names[6:]
     ))) == 0
     assert np.min(s_dataset.cluster_similarity) == 0
-    assert np.max(s_dataset.cluster_similarity) == 5
+    assert np.max(s_dataset.cluster_similarity) == 1
     assert s_dataset.cluster_distance is None
     assert [s_dataset.cluster_weights[i] for i in s_dataset.cluster_names] == [18, 12, 6, 12, 4]
 
@@ -77,7 +77,7 @@ def test_additional_clustering():
     ))) == 0
     assert d_dataset.cluster_similarity is None
     assert np.min(d_dataset.cluster_distance) == 0
-    assert np.max(d_dataset.cluster_distance) == 4
+    assert np.max(d_dataset.cluster_distance) == 1
     assert [d_dataset.cluster_weights[i] for i in d_dataset.cluster_names] == [16, 36]
 
 

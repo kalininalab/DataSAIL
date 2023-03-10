@@ -23,7 +23,7 @@ class DataSet:
 
     def __hash__(self):
         hash_val = 0
-        for field in fields(DataSet):
+        for field in filter(lambda f: "cluster" not in f, fields(DataSet)):
             hash_val ^= hash(getattr(self, field.name))
         return hash_val
 

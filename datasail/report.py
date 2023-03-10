@@ -37,7 +37,9 @@ def report(
         if t in inter_split_map:
             save_inter_assignment(save_dir, inter_split_map[t])
 
-        if e_dataset.type is not None and ((mode is not None and mode != "f") or technique[-1] == "D"):
+        if e_dataset.type is not None \
+                and ((mode is not None and mode != "f") or technique[-1] == "D") \
+                and technique in e_name_split_map:
             save_assignment(save_dir, e_dataset, e_name_split_map.get(technique, None))
             if technique[0] == "C":
                 save_clusters(save_dir, e_dataset)
@@ -47,7 +49,9 @@ def report(
                 split_counts[e_name_split_map[technique][name]] += e_dataset.weights[name]
             print(stats_string(sum(e_dataset.weights.values()), split_counts))
 
-        if f_dataset.type is not None and ((mode is not None and mode != "e") or technique[-1] == "D"):
+        if f_dataset.type is not None \
+                and ((mode is not None and mode != "e") or technique[-1] == "D") \
+                and technique in f_name_split_map:
             save_assignment(save_dir, f_dataset, f_name_split_map.get(technique, None))
             if technique[0] == "C":
                 save_clusters(save_dir, f_dataset)
@@ -90,14 +94,14 @@ def save_t_sne(save_dir, dataset, name_split_map, cluster_split_map, split_names
     if any(x is not None for x in [
         dataset.similarity, dataset.distance, dataset.cluster_similarity, dataset.cluster_distance
     ]):
-        if dataset.similarity is not None or dataset.distance is not None:
-            distance = dataset.distance if dataset.distance is not None else dataset.similarity
+        if (isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray)) and name_split_map is not None:
+            distance = dataset.distance if dataset.distance is not None else 1 - dataset.similarity
             t_sne(dataset.names, distance, name_split_map, split_names, os.path.join(
                 save_dir, f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_splits.png"
             ))
 
-        if dataset.cluster_similarity is not None or dataset.cluster_distance is not None:
-            distance = dataset.cluster_distance if dataset.cluster_distance is not None else dataset.cluster_similarity
+        if (isinstance(dataset.cluster_similarity, np.ndarray) or isinstance(dataset.cluster_distance, np.ndarray)) and cluster_split_map is not None:
+            distance = dataset.cluster_distance if dataset.cluster_distance is not None else 1 - dataset.cluster_similarity
             t_sne(dataset.cluster_names, distance, cluster_split_map, split_names, os.path.join(
                 save_dir, f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_clusters.png"
             ))

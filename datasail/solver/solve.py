@@ -2,6 +2,7 @@ import logging
 from typing import Tuple, Optional, List, Dict, Union, Set
 
 import numpy as np
+from cvxpy import SolverError
 
 from datasail.cluster.clustering import reverse_clustering, cluster_interactions
 from datasail.reader.utils import DataSet
@@ -57,110 +58,113 @@ def run_solver(
     logging.info("Define optimization problem")
 
     for technique in techniques:
-        logging.info(technique)
-        technique, mode = technique[:3], technique[-1]
-        if technique == "R":
-            solution = sample_categorical(
-                inter=inter,
-                splits=splits,
-                names=names,
-            )
-            output_inter["R"] = solution
-        elif technique == "ICS":
-            if vectorized:
-                fun = solve_ics_bqp_vector
-            else:
-                fun = solve_ics_bqp_scalar
-            dataset = f_dataset if mode == "f" else e_dataset
-
-            solution = fun(
-                e_entities=dataset.names,
-                e_weights=[dataset.weights[x] for x in dataset.names],
-                epsilon=epsilon,
-                splits=splits,
-                names=names,
-                max_sec=max_sec,
-                max_sol=max_sol,
-                solver=solver,
-            )
-
-            if solution is not None:
-                if mode == "f":
-                    output_f_entities["ICS"] = solution
+        try:
+            logging.info(technique)
+            technique, mode = technique[:3], technique[-1]
+            if technique == "R":
+                solution = sample_categorical(
+                    inter=inter,
+                    splits=splits,
+                    names=names,
+                )
+                output_inter["R"] = solution
+            elif technique == "ICS":
+                if vectorized:
+                    fun = solve_ics_bqp_vector
                 else:
-                    output_e_entities["ICS"] = solution
-        elif technique == "ICD":
-            if vectorized:
-                fun = solve_icd_bqp_vector
-            else:
-                fun = solve_icd_bqp_scalar
-            solution = fun(
-                e_entities=e_dataset.names,
-                f_entities=f_dataset.names,
-                inter=set(inter),
-                epsilon=epsilon,
-                splits=splits,
-                names=names,
-                max_sec=max_sec,
-                max_sol=max_sol,
-                solver=solver,
-            )
-            if solution is not None:
-                output_inter["ICD"], output_e_entities["ICD"], output_f_entities["ICD"] = solution
-        elif technique == "CCS":
-            fun = solve_ccs_bqp_vector if vectorized else solve_ccs_bqp_scalar
-            dataset = f_dataset if mode == "f" else e_dataset
+                    fun = solve_ics_bqp_scalar
+                dataset = f_dataset if mode == "f" else e_dataset
 
-            cluster_split = fun(
-                e_clusters=dataset.cluster_names,
-                e_weights=[dataset.cluster_weights[c] for c in dataset.cluster_names],
-                e_similarities=dataset.cluster_similarity,
-                e_distances=dataset.cluster_distance,
-                e_threshold=dataset.threshold,
-                epsilon=epsilon,
-                splits=splits,
-                names=names,
-                max_sec=max_sec,
-                max_sol=max_sol,
-                solver=solver,
-            )
-            if cluster_split is not None:
-                if mode == "f":
-                    output_f_clusters["CCS"] = cluster_split
-                    output_f_entities["CCS"] = reverse_clustering(cluster_split, f_dataset.cluster_map)
+                solution = fun(
+                    e_entities=dataset.names,
+                    e_weights=[dataset.weights[x] for x in dataset.names],
+                    epsilon=epsilon,
+                    splits=splits,
+                    names=names,
+                    max_sec=max_sec,
+                    max_sol=max_sol,
+                    solver=solver,
+                )
+
+                if solution is not None:
+                    if mode == "f":
+                        output_f_entities["ICS"] = solution
+                    else:
+                        output_e_entities["ICS"] = solution
+            elif technique == "ICD":
+                if vectorized:
+                    fun = solve_icd_bqp_vector
                 else:
-                    output_e_clusters["CCS"] = cluster_split
-                    output_e_entities["CCS"] = reverse_clustering(cluster_split, e_dataset.cluster_map)
-        elif technique == "CCD":
-            cluster_inter = cluster_interactions(
-                inter,
-                e_dataset.cluster_map,
-                e_dataset.cluster_names,
-                f_dataset.cluster_map,
-                f_dataset.cluster_names,
-            )
-            fun = solve_ccd_bqp_vector if vectorized else solve_ccd_bqp_scalar
-            cluster_split = fun(
-                e_clusters=e_dataset.cluster_names,
-                e_similarities=e_dataset.cluster_similarity,
-                e_distances=e_dataset.cluster_distance,
-                e_threshold=e_dataset.threshold,
-                f_clusters=f_dataset.cluster_names,
-                f_similarities=f_dataset.cluster_similarity,
-                f_distances=f_dataset.cluster_distance,
-                f_threshold=f_dataset.threshold,
-                inter=cluster_inter,
-                epsilon=epsilon,
-                splits=splits,
-                names=names,
-                max_sec=max_sec,
-                max_sol=max_sol,
-                solver=solver,
-            )
+                    fun = solve_icd_bqp_scalar
+                solution = fun(
+                    e_entities=e_dataset.names,
+                    f_entities=f_dataset.names,
+                    inter=set(inter),
+                    epsilon=epsilon,
+                    splits=splits,
+                    names=names,
+                    max_sec=max_sec,
+                    max_sol=max_sol,
+                    solver=solver,
+                )
+                if solution is not None:
+                    output_inter["ICD"], output_e_entities["ICD"], output_f_entities["ICD"] = solution
+            elif technique == "CCS":
+                fun = solve_ccs_bqp_vector if vectorized else solve_ccs_bqp_scalar
+                dataset = f_dataset if mode == "f" else e_dataset
 
-            if cluster_split is not None:
-                output_inter["CCD"], output_e_clusters["CCD"], output_f_clusters["CCD"] = cluster_split
-                output_e_entities["CCD"] = reverse_clustering(cluster_split[1], e_dataset.cluster_map)
-                output_f_entities["CCD"] = reverse_clustering(cluster_split[2], f_dataset.cluster_map)
+                cluster_split = fun(
+                    e_clusters=dataset.cluster_names,
+                    e_weights=[dataset.cluster_weights[c] for c in dataset.cluster_names],
+                    e_similarities=dataset.cluster_similarity,
+                    e_distances=dataset.cluster_distance,
+                    e_threshold=dataset.threshold,
+                    epsilon=epsilon,
+                    splits=splits,
+                    names=names,
+                    max_sec=max_sec,
+                    max_sol=max_sol,
+                    solver=solver,
+                )
+                if cluster_split is not None:
+                    if mode == "f":
+                        output_f_clusters["CCS"] = cluster_split
+                        output_f_entities["CCS"] = reverse_clustering(cluster_split, f_dataset.cluster_map)
+                    else:
+                        output_e_clusters["CCS"] = cluster_split
+                        output_e_entities["CCS"] = reverse_clustering(cluster_split, e_dataset.cluster_map)
+            elif technique == "CCD":
+                cluster_inter = cluster_interactions(
+                    inter,
+                    e_dataset.cluster_map,
+                    e_dataset.cluster_names,
+                    f_dataset.cluster_map,
+                    f_dataset.cluster_names,
+                )
+                fun = solve_ccd_bqp_vector if vectorized else solve_ccd_bqp_scalar
+                cluster_split = fun(
+                    e_clusters=e_dataset.cluster_names,
+                    e_similarities=e_dataset.cluster_similarity,
+                    e_distances=e_dataset.cluster_distance,
+                    e_threshold=e_dataset.threshold,
+                    f_clusters=f_dataset.cluster_names,
+                    f_similarities=f_dataset.cluster_similarity,
+                    f_distances=f_dataset.cluster_distance,
+                    f_threshold=f_dataset.threshold,
+                    inter=cluster_inter,
+                    epsilon=epsilon,
+                    splits=splits,
+                    names=names,
+                    max_sec=max_sec,
+                    max_sol=max_sol,
+                    solver=solver,
+                )
+
+                if cluster_split is not None:
+                    output_inter["CCD"], output_e_clusters["CCD"], output_f_clusters["CCD"] = cluster_split
+                    output_e_entities["CCD"] = reverse_clustering(cluster_split[1], e_dataset.cluster_map)
+                    output_f_entities["CCD"] = reverse_clustering(cluster_split[2], f_dataset.cluster_map)
+        except SolverError:
+            logging.error(f"Splitting failed for {technique}, try to increase the timelimit or the epsilon value.")
 
     return output_inter, output_e_entities, output_f_entities, output_e_clusters, output_f_clusters

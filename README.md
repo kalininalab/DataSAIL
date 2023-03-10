@@ -13,7 +13,7 @@ optimization task. To solve this DataSAIL relies on [SCIP](https://scipopt.org/)
 solvers for this type of problems.
 
 Apart from the here presented short overview, you can find a more detailed explanation of the tool on 
-[ReadTheDocs](https://datasail.readthedocs.io/en/stable/index.html). 
+[ReadTheDocs](https://datasail.readthedocs.io/en/latest/index.html). 
 
 ## Installation
 

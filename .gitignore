@@ -8,5 +8,6 @@ tests/data/split_icp/
 tests/data/split_r/
 tests/data/pipeline/out/
 kinodata/
+Mattes/
 issue_*
 main.py

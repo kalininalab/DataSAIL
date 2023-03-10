@@ -96,6 +96,8 @@ def test_report():
         f_max_sim=1,
         f_max_dist=1,
         solver="SCIP",
+        cache=False,
+        cache_dir=None,
     )
 
     assert os.path.isdir("data/perf_7_3/out/R")
@@ -174,6 +176,8 @@ def test_genomes():
         f_max_sim=1,
         f_max_dist=1,
         solver="SCIP",
+        cache=False,
+        cache_dir=None,
     )
 
 

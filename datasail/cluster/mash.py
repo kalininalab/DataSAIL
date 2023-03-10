@@ -1,4 +1,5 @@
 import os
+import shutil
 from typing import Tuple, List, Dict, Optional
 
 import numpy as np
@@ -7,12 +8,13 @@ from datasail.reader.utils import DataSet
 
 
 def run_mash(dataset: DataSet) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray]]:
-    cmd = f"cd mash_results && " \
+    cmd = f"mkdir mash_results && " \
+          f"cd mash_results && " \
           f"mash sketch -s 10000 -o ./cluster {os.path.join('..', dataset.location, '*.fna')} && " \
           f"mash dist -t cluster.msh cluster.msh > cluster.tsv"
 
-    if not os.path.exists("mash_results"):
-        cmd = "mkdir mash_results && " + cmd
+    if os.path.exists("mash_results"):
+        cmd = "rm -rf mash_results && " + cmd
 
     print(cmd)
     os.system(cmd)
@@ -21,6 +23,8 @@ def run_mash(dataset: DataSet) -> Tuple[List[str], Dict[str, str], Optional[np.n
     cluster_map = dict((n, n) for n in names)
     cluster_dist = read_mash_tsv("mash_results/cluster.tsv", len(names))
     cluster_names = names
+
+    shutil.rmtree("mash_results")
 
     return cluster_names, cluster_map, cluster_dist
 

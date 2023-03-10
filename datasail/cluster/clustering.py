@@ -1,9 +1,10 @@
 import logging
-from typing import Dict, Tuple, List, Optional, Union
+from typing import Dict, Tuple, List, Union
 
 import numpy as np
 from sklearn.cluster import AffinityPropagation, AgglomerativeClustering
 
+from datasail.cluster.caching import load_from_cache, store_to_cache
 from datasail.cluster.cdhit import run_cdhit
 from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
@@ -13,7 +14,7 @@ from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 
 
-def cluster(dataset: DataSet) -> DataSet:
+def cluster(dataset: DataSet, **kwargs) -> DataSet:
     """
     Cluster molecules based on a similarity or distance metric.
 
@@ -23,6 +24,10 @@ def cluster(dataset: DataSet) -> DataSet:
     Returns:
         A dataset with modified properties according to clustering the data
     """
+    cache = load_from_cache(dataset, **kwargs)
+    if cache is not None:
+        return cache
+
     if isinstance(dataset.similarity, str):  # compute the similarity
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity, dataset.cluster_weights = \
             similarity_clustering(dataset)
@@ -47,6 +52,8 @@ def cluster(dataset: DataSet) -> DataSet:
     while 100 < len(dataset.cluster_names) < num_old_cluster:
         num_old_cluster = len(dataset.cluster_names)
         dataset = additional_clustering(dataset)
+
+    store_to_cache(dataset, **kwargs)
 
     return dataset
 
@@ -85,8 +92,8 @@ def similarity_clustering(dataset: DataSet) -> Tuple[
     cluster_weights = {}
     for key, value in cluster_map.items():
         if value not in cluster_weights:
-            cluster_weights[key] = 0
-        cluster_weights[key] += 1
+            cluster_weights[value] = 0
+        cluster_weights[value] += 1
 
     # cluster_map maps members to their cluster names
     return cluster_names, cluster_map, cluster_sim, cluster_weights
@@ -191,10 +198,12 @@ def additional_clustering(dataset: DataSet) -> DataSet:
     dataset.cluster_names = new_cluster_names
     dataset.cluster_map = new_cluster_map
     dataset.cluster_weights = new_cluster_weights
-    if dataset.cluster_similarity is None:
-        dataset.cluster_distance = new_cluster_matrix
+
+    # store the matrix at the correct field and set the main diagonal to either 1 or 0 depending on dist or sim
+    if dataset.cluster_similarity is not None:
+        dataset.cluster_similarity = np.maximum(new_cluster_matrix, np.eye(len(new_cluster_matrix)))
     else:
-        dataset.cluster_similarity = new_cluster_matrix
+        dataset.cluster_distance = np.minimum(new_cluster_matrix, 1 - np.eye(len(new_cluster_matrix)))
 
     return dataset
 

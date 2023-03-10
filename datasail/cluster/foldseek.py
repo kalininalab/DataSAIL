@@ -9,19 +9,26 @@ from datasail.reader.utils import DataSet
 
 
 def run_foldseek(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
-    if os.path.exists("fs"):
-        logging.warning(f"temporary folder {os.path.abspath('fs')} for FoldSeek results already exists and will be deleted before running FoldSeek.")
-        shutil.rmtree("fs")
+    """
+    Run FoldSeek to cluster the proteins based on their structure.
 
+    Args:
+        dataset: DataSet holding all information on the dta to be clustered
+
+    Returns:
+        A tuple containing
+          - the names of the clusters (cluster representatives)
+          - the mapping from cluster members to the cluster names (cluster representatives)
+          - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
+    """
     cmd = f"mkdir fs && " \
           f"cd fs && " \
-          f"foldseek createdb {os.path.join('..', dataset.location)} fsdb >/dev/null 2>&1 && " \
-          f"foldseek easy-search {os.path.join('..', dataset.location)} fsdb aln.m8 tmp --format-output 'query,target,fident' >/dev/null 2>&1"
+          f"foldseek easy-search {os.path.join('..', dataset.location)} {os.path.join('..', dataset.location)} " \
+          f"aln.m8 tmp --format-output 'query,target,fident' >/dev/null 2>&1"
 
-    # alternative foldseek call:
-    # foldseek easy-search pdbs pdbs ali.m8 tmp (does exactly the same as above)
+    if os.path.exists("fs"):
+        cmd = "rm -rf fs && " + cmd
 
-    print(cmd)
     os.system(cmd)
 
     namap = dict((n, i) for i, n in enumerate(dataset.names))
@@ -38,6 +45,6 @@ def run_foldseek(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarra
             cluster_sim[namap[q1], namap[q2]] = sim
             cluster_sim[namap[q2], namap[q1]] = sim
 
-    # shutil.rmtree("fs")
+    shutil.rmtree("fs")
 
     return dataset.names, dict((n, n) for n in dataset.names), cluster_sim

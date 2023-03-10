@@ -20,7 +20,8 @@ def run_mmseqs(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    cmd = f"cd mmseqs_results && " \
+    cmd = f"mkdir mmseqs_results && " \
+          f"cd mmseqs_results && " \
           f"mmseqs " \
           f"easy-linclust " \
           f"{os.path.join('..', dataset.location)} " \
@@ -31,10 +32,9 @@ def run_mmseqs(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]
           f"-c 1.0 " \
           f"--min-seq-id 0.0 >/dev/null 2>&1"
 
-    if not os.path.exists("mmseqs_results"):
-        cmd = "mkdir mmseqs_results && " + cmd
+    if os.path.exists("mmseqs_results"):
+        cmd = "rm -rf mmseqs_results && " + cmd
 
-    print(cmd)
     os.system(cmd)
 
     cluster_map = get_mmseqs_map("mmseqs_results/mmseqs_out_cluster.tsv")
