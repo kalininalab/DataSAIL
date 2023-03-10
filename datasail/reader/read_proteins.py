@@ -48,7 +48,7 @@ def read_folder(folder_path: str, file_extension: str) -> Generator[Tuple[str, s
     """
     for filename in os.listdir(folder_path):
         if filename.endswith(file_extension):
-            yield filename.split(".")[0], os.path.join(folder_path, filename)
+            yield ".".join(filename.split(".")[:-1]), os.path.join(folder_path, filename)
 
 
 def parse_fasta(path=None, left_split=None, right_split=' ', check_duplicates=False) -> Dict[str, str]:

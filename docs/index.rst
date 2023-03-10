@@ -32,7 +32,7 @@ of entities of "other" input type is to provide them as a matrix in a file.
       - Sim
       - FASTA
       - \-
-      - FASTA
+      - \-
       - \-
     * - ECFP + Tanimoto
       - Dist

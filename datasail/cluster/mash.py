@@ -8,7 +8,7 @@ from datasail.reader.utils import DataSet
 
 def run_mash(dataset: DataSet) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray]]:
     cmd = f"cd mash_results && " \
-          f"mash sketch -s 10000 -o ./cluster {os.path.join('..', dataset.location)} && " \
+          f"mash sketch -s 10000 -o ./cluster {os.path.join('..', dataset.location, '*.fna')} && " \
           f"mash dist -t cluster.msh cluster.msh > cluster.tsv"
 
     if not os.path.exists("mash_results"):
@@ -17,7 +17,7 @@ def run_mash(dataset: DataSet) -> Tuple[List[str], Dict[str, str], Optional[np.n
     print(cmd)
     os.system(cmd)
 
-    names = os.listdir(dataset.location)
+    names = dataset.names
     cluster_map = dict((n, n) for n in names)
     cluster_dist = read_mash_tsv("mash_results/cluster.tsv", len(names))
     cluster_names = names
@@ -38,7 +38,7 @@ def read_mash_tsv(filename: str, num_entities: int) -> np.ndarray:
     """
     output = np.zeros((num_entities, num_entities))
     with open(filename, "r") as data:
-        for i, line in data.readlines()[1:]:
-            for j, val in line.strip().split("\t")[1:]:
+        for i, line in enumerate(data.readlines()[1:]):
+            for j, val in enumerate(line.strip().split("\t")[1:]):
                 output[i, j] = float(val)
     return output

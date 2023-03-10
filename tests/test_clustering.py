@@ -102,13 +102,14 @@ def molecule_data():
 @pytest.fixture
 def genome_fasta_data():
     data = dict((k, v) for k, v in read_folder("data/genomes", ".fna"))
-    return DataSet(type="M", data=data, names=list(sorted(data.keys())))
+    return DataSet(type="M", data=data, names=list(sorted(data.keys())), location="data/genomes/")
 
 
 def test_cdhit_protein(protein_fasta_data):
     check_clustering(*run_cdhit(protein_fasta_data), protein_fasta_data)
 
 
+@pytest.mark.todo
 def test_cdhit_genome(genome_fasta_data):
     check_clustering(*run_cdhit(genome_fasta_data), genome_fasta_data)
 

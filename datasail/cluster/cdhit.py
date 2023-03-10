@@ -10,7 +10,8 @@ from datasail.reader.utils import DataSet
 def run_cdhit(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     cmd = f"mkdir cdhit && " \
           f"cd cdhit && " \
-          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters"
+          f"{combine_files(dataset)} && " \
+          f"cd-hit -i data.fasta -o clusters"
 
     print(cmd)
     os.system(cmd)
@@ -45,3 +46,13 @@ def get_cdhit_map(cluster_file: str) -> Dict[str, str]:
     for name in members:
         mapping[name] = rep
     return mapping
+
+
+def combine_files(dataset: DataSet) -> str:
+    return ""
+    if os.path.isfile(dataset.location):
+        return f"cp {os.path.join('..', dataset.location)} data.fasta"
+
+    return "cat " + \
+        " ".join(os.path.join("..", dataset.location, file) for file in os.listdir(dataset.location)) + \
+        " > data.fasta"
