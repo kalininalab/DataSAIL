@@ -14,6 +14,14 @@ verb_map = {
     "D": logging.DEBUG,
 }
 
+SIM_ALGOS = [
+    "WLK", "mmseqs", "FoldSeek", "CDHIT",
+]
+
+DIST_ALGOS = [
+    "MASH", "ECFP",
+]
+
 
 def parse_args() -> Dict[str, object]:
     """
@@ -64,13 +72,18 @@ def parse_args() -> Dict[str, object]:
              "is ignored so far."
     )
     parser.add_argument(
-        "-v",
         "--verbosity",
         default="W",
         type=str,
         choices=["C", "F", "E", "W", "I", "D"],
         dest='verbosity',
         help="Verbosity level of the program. Choices are: [C]ritical, [F]atal, [E]rror, [W]arning, [I]nfo, [D]ebug",
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action='version',
+        version="%(prog) 0.0.1"
     )
     split = parser.add_argument_group("Splitting Arguments")
     split.add_argument(
@@ -168,16 +181,24 @@ def parse_args() -> Dict[str, object]:
         dest="e_sim",
         default=None,
         help="Provide the name of a method to determine similarity between samples of the first input dataset. This "
-             "can either be [WLK], [mmseqs], [FoldSeek], [CDHIT], [ECFP], or a filepath to a file storing the pairwise "
-             "similarities in TSV.",
+             f"can either be {', '.join('[' + x + ']' for x in SIM_ALGOS)}, or a filepath to a file storing the "
+             f"pairwise similarities in TSV.",
     )
     e_ent.add_argument(
         "--e-dist",
         type=str,
         dest="e_dist",
         default=None,
-        help="Provide the name of a method to determine distance between samples of the first input data. This can be "
-             "[MASH] or a filepath to a file storing the pairwise distances in TSV."
+        help="Provide the name of a method to determine distance between samples of the first input dataset. This can "
+             f"be {', '.join('[' + x + ']' for x in SIM_ALGOS)}, or a filepath to a file storing the pairwise "
+             "distances in TSV."
+    )
+    e_ent.add_argument(
+        "--e-args",
+        type=str,
+        dest="e_args",
+        default="",
+        help="Additional arguments for the clustering algorithm used in --e-dist or --e-sim."
     )
     e_ent.add_argument(
         "--e-max-sim",
@@ -234,6 +255,13 @@ def parse_args() -> Dict[str, object]:
              "be [MASH] or a filepath to a file storing the pairwise distances in TSV."
     )
     f_ent.add_argument(
+        "--f-args",
+        type=str,
+        dest="f_args",
+        default="",
+        help="Additional arguments for the clustering algorithm used in --f-dist or --f-sim."
+    )
+    f_ent.add_argument(
         "--f-max-sim",
         type=float,
         dest="f_max_sim",
@@ -250,16 +278,16 @@ def parse_args() -> Dict[str, object]:
     return vars(parser.parse_args())
 
 
-def error(msg: str, code: int) -> None:
+def error(msg: str, error_code: int) -> None:
     """
     Print an error message with an individual error code to the commandline. Afterwards, the program is stopped.
 
     Args:
         msg: Error message
-        code: Code of the error to identify it
+        error_code: Code of the error to identify it
     """
     logging.error(msg)
-    exit(code)
+    exit(error_code)
 
 
 def validate_args(**kwargs) -> Dict[str, object]:
@@ -275,20 +303,101 @@ def validate_args(**kwargs) -> Dict[str, object]:
     logging.basicConfig(level=verb_map[kwargs["verbosity"]])
     logging.info("Validating arguments")
 
+    # create output directory
     if not os.path.isdir(kwargs["output"]):
         logging.warning("Output directory does not exist, DataSAIL creates it automatically")
         os.makedirs(kwargs["output"], exist_ok=True)
 
+    # check splits to be more than 1 and their fractions sum up to 1 and check the names
     if len(kwargs["splits"]) < 2:
-        error("Less then two splits required. This is no useful input, please check the input again.", 1)
+        error("Less then two splits required. This is no useful input, please check the input again.", error_code=1)
     if kwargs["names"] is None:
         kwargs["names"] = [f"Split{x:03s}" for x in range(len(kwargs["splits"]))]
     elif len(kwargs["names"]) != len(kwargs["names"]):
-        error("Different number of splits and names. You have to give the same number of splits and names for them.", 2)
-    kwargs["splits"] = [x/sum(kwargs["splits"]) for x in kwargs["splits"]]
+        error("Different number of splits and names. You have to give the same number of splits and names for them.",
+              error_code=2)
+    kwargs["splits"] = [x / sum(kwargs["splits"]) for x in kwargs["splits"]]
+
+    # convert vectorized from the input question to the flag used in the code
     kwargs["vectorized"] = not kwargs["vectorized"]
 
+    # check search termination criteria
+    if kwargs["max_time"] < 1:
+        error("The maximal search time must be a positive integer.", error_code=3)
+    if kwargs["max_sol"] < 1:
+        error("The maximal number of solutions to look at has to be a positive integer.", error_code=4)
+
+    # check the interaction file
+    if kwargs["inter"] is not None and not os.path.isfile(kwargs["inter"]):
+        error("The interaction filepath is not valid.", error_code=5)
+
+    # check the epsilon value
+    if 1 < kwargs["epsilon"] < 0:
+        error("The epsilon value has to be a real value between 0 and 1.", error_code=6)
+
+    # check the input regarding the caching
+    if kwargs["cache"] and not os.path.isdir(kwargs["cache_dir"]):
+        logging.warning("Cache directory does not exist, DataSAIL creates it automatically")
+        os.makedirs(kwargs["cache"], exist_ok=True)
+
+    # syntactically parse the input data for the E-dataset
+    if kwargs["e_data"] is not None and os.path.exists(kwargs["e_data"]):
+        error("The filepath to the E-data is invalid.", error_code=7)
+    if kwargs["e_weights"] is not None and os.path.exists(kwargs["e_weights"]):
+        error("The filepath to the weights of the E-data is invalid.", error_code=8)
+    if kwargs["e_sim"] is not None and kwargs["e_sim"] not in SIM_ALGOS and os.path.isfile(kwargs["e_sim"]):
+        error(
+            f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", error_code=9
+        )
+    if kwargs["e_dist"] is not None and kwargs["e_dist"] not in DIST_ALGOS and os.path.isfile(kwargs["e_dist"]):
+        error(
+            f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", error_code=10
+        )
+    if kwargs["e_sim"] == "CDHIT":
+        validate_cdhit_args(kwargs["e_args"])
+    if kwargs["e_dist"] == "MASH":
+        validate_mash_args(kwargs["e_args"])
+    if 1 < kwargs["e_max_sim"] < 0:
+        error("The maximal similarity value for the E-data has to be a real value in [0,1].", error_code=11)
+    if 1 < kwargs["e_max_dist"] < 0:
+        error("The maximal distance value for the E-data has to be a real value in [0,1].", error_code=12)
+
+    # syntactically parse the input data for the F-dataset
+    if kwargs["f_data"] is not None and os.path.exists(kwargs["f_data"]):
+        error("The filepath to the F-data is invalid.", error_code=13)
+    if kwargs["f_weights"] is not None and os.path.exists(kwargs["f_weights"]):
+        error("The filepath to the weights of the F-data is invalid.", error_code=14)
+    if kwargs["f_sim"] is not None and kwargs["f_sim"] not in SIM_ALGOS and os.path.isfile(kwargs["f_sim"]):
+        error(
+            f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", error_code=15
+        )
+    if kwargs["f_dist"] is not None and kwargs["f_dist"] not in DIST_ALGOS and os.path.isfile(kwargs["f_dist"]):
+        error(
+            f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", error_code=16
+        )
+    if kwargs["f_sim"] == "CDHIT":
+        validate_cdhit_args(kwargs["f_args"])
+    if kwargs["f_dist"] == "MASH":
+        validate_mash_args(kwargs["f_args"])
+    if 1 < kwargs["f_max_sim"] < 0:
+        error("The maximal similarity value for the F-data has to be a real value in [0,1].", error_code=17)
+    if 1 < kwargs["f_max_dist"] < 0:
+        error("The maximal distance value for the F-data has to be a real value in [0,1].", error_code=18)
+
     return kwargs
+
+
+def validate_cdhit_args(cdhit_args):
+    cdhit_parser = argparse.ArgumentParser()
+    cdhit_parser.add_argument("-c", type=float, default=0.9)
+    cdhit_parser.parse_args(cdhit_args)
+
+
+def validate_mash_args(mash_args):
+    mash_parser = argparse.ArgumentParser()
+    mash_parser.add_argument("-k", type=int, default=21)
+    mash_parser.add_argument("-s", type=int, default=10000)
+    mash_parser.parse_args(mash_args)
 
 
 def sail(**kwargs) -> None:
