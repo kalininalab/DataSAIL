@@ -15,11 +15,11 @@ verb_map = {
 }
 
 SIM_ALGOS = [
-    "WLK", "mmseqs", "FoldSeek", "CDHIT",
+    "wlk", "mmseqs", "foldseek", "cdhit",
 ]
 
 DIST_ALGOS = [
-    "MASH", "ECFP",
+    "mash", "ecfp",
 ]
 
 
@@ -322,7 +322,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
     kwargs["vectorized"] = not kwargs["vectorized"]
 
     # check search termination criteria
-    if kwargs["max_time"] < 1:
+    if kwargs["max_sec"] < 1:
         error("The maximal search time must be a positive integer.", error_code=3)
     if kwargs["max_sol"] < 1:
         error("The maximal number of solutions to look at has to be a positive integer.", error_code=4)
@@ -341,15 +341,15 @@ def validate_args(**kwargs) -> Dict[str, object]:
         os.makedirs(kwargs["cache"], exist_ok=True)
 
     # syntactically parse the input data for the E-dataset
-    if kwargs["e_data"] is not None and os.path.exists(kwargs["e_data"]):
+    if kwargs["e_data"] is not None and not os.path.exists(kwargs["e_data"]):
         error("The filepath to the E-data is invalid.", error_code=7)
-    if kwargs["e_weights"] is not None and os.path.exists(kwargs["e_weights"]):
+    if kwargs["e_weights"] is not None and not os.path.isfile(kwargs["e_weights"]):
         error("The filepath to the weights of the E-data is invalid.", error_code=8)
-    if kwargs["e_sim"] is not None and kwargs["e_sim"] not in SIM_ALGOS and os.path.isfile(kwargs["e_sim"]):
+    if kwargs["e_sim"] is not None and kwargs["e_sim"].lower() not in SIM_ALGOS and not os.path.isfile(kwargs["e_sim"]):
         error(
             f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", error_code=9
         )
-    if kwargs["e_dist"] is not None and kwargs["e_dist"] not in DIST_ALGOS and os.path.isfile(kwargs["e_dist"]):
+    if kwargs["e_dist"] is not None and kwargs["e_dist"].lower() not in DIST_ALGOS and not os.path.isfile(kwargs["e_dist"]):
         error(
             f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", error_code=10
         )
@@ -363,15 +363,15 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The maximal distance value for the E-data has to be a real value in [0,1].", error_code=12)
 
     # syntactically parse the input data for the F-dataset
-    if kwargs["f_data"] is not None and os.path.exists(kwargs["f_data"]):
+    if kwargs["f_data"] is not None and not os.path.exists(kwargs["f_data"]):
         error("The filepath to the F-data is invalid.", error_code=13)
-    if kwargs["f_weights"] is not None and os.path.exists(kwargs["f_weights"]):
+    if kwargs["f_weights"] is not None and not os.path.isfile(kwargs["f_weights"]):
         error("The filepath to the weights of the F-data is invalid.", error_code=14)
-    if kwargs["f_sim"] is not None and kwargs["f_sim"] not in SIM_ALGOS and os.path.isfile(kwargs["f_sim"]):
+    if kwargs["f_sim"] is not None and kwargs["f_sim"].lower() not in SIM_ALGOS and not os.path.isfile(kwargs["f_sim"]):
         error(
             f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", error_code=15
         )
-    if kwargs["f_dist"] is not None and kwargs["f_dist"] not in DIST_ALGOS and os.path.isfile(kwargs["f_dist"]):
+    if kwargs["f_dist"] is not None and kwargs["f_dist"].lower() not in DIST_ALGOS and not os.path.isfile(kwargs["f_dist"]):
         error(
             f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", error_code=16
         )

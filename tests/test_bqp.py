@@ -30,6 +30,8 @@ def run_identity_splitting(root_dir, out_folder, mode, vectorized):
         f_dist=None,
         f_max_sim=1,
         f_max_dist=1,
+        cache=False,
+        cache_dir=None,
         solver="SCIP",
     )
 

@@ -55,6 +55,8 @@ def test_pipeline(data):
         f_dist=prot_dist,
         f_max_sim=1,
         f_max_dist=1,
+        cache=False,
+        cache_dir=None,
         solver="SCIP",
     )
 
