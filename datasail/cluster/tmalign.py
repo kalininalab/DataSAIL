@@ -21,30 +21,43 @@ def run_tmalign(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
     cmd = f"mkdir tmalign && " \
-          f"cd tmalign && " \
-          f"TMalign "
+          f"cd tmalign"
 
-    if os.path.exists("mmseqs_results"):
-        cmd = "rm -rf mmseqs_results && " + cmd
+    if os.path.exists("tmalign"):
+        cmd = "rm -rf tmalign && " + cmd
 
+    for i, name1 in enumerate(dataset.names):
+        for name2 in dataset.names[i + 1:]:
+            cmd += f" && TMalign {dataset.data[name1]} {dataset.data[name2]} > out_{name1}_{name2}.txt"
+
+    # print(cmd)
     os.system(cmd)
 
-    cluster_names, cluster_map, cluster_sim = [], dict(), np.ndarray((1, 1))
-    shutil.rmtree("mmseqs_results")
+    cluster_names, cluster_map, cluster_sim = dataset.names, dict((n, n) for n in dataset.names), read_tmalign_folder(dataset, "tmalign")
+    shutil.rmtree("tmalign")
 
     return cluster_names, cluster_map, cluster_sim
 
 
-def read_tmalign_file(tmalign_file: str) -> Dict[str, str]:
+def read_tmalign_folder(dataset: DataSet, tmalign_folder: str) -> np.ndarray:
     """
     Read clusters from TM-align output into map from cluster members to cluster representatives (cluster names).
 
     Args:
-        tmalign_file (str): Filepath of file containing the mapping information
+        dataset: Dataset with the data to cluster
+        tmalign_folder (str): Folderpath of file containing the mapping information
 
     Returns:
-        Map from cluster--members to cluster-representatives (cluster-names)
+        Map from cluster-members to cluster-representatives (cluster-names)
     """
-    mapping = {}
-    # TODO: Read output
-    return mapping
+    sims = np.ones((len(dataset.names), len(dataset.names)))
+    for i, name1 in enumerate(dataset.names):
+        for j, name2 in enumerate(dataset.names[i + 1:]):
+            sims[i, i + j + 1] = read_tmalign_file(os.path.join(tmalign_folder, f"out_{name1}_{name2}.txt"))
+            sims[i, i + j + 1] = sims[i + j + 1, i]
+    return sims
+
+
+def read_tmalign_file(filepath) -> float:
+    with open(filepath, "r") as data:
+        return sum(map(lambda x: float(x.split(" ")[1]), data.readlines()[17:19])) / 2
