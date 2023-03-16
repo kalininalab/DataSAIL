@@ -390,7 +390,17 @@ def validate_args(**kwargs) -> Dict[str, object]:
 def validate_cdhit_args(cdhit_args):
     cdhit_parser = argparse.ArgumentParser()
     cdhit_parser.add_argument("-c", type=float, default=0.9)
-    cdhit_parser.parse_args(cdhit_args)
+    cdhit.parser.add_argument("-n", type=int, default=5, choices=[2, 3, 4, 5])
+    parsed = cdhit_parser.parse_args(cdhit_args)
+    if not ((parsed["n"] == 2 and 0.4 <= parsed["c"] <= 0.5) or \
+            (parser["n"] == 3 and 0.5 <= parsed["c"] <= 0.6) or \
+            (parsed["n"] == 4 and 0.6 <= parsed["c"] <= 0.7) or \
+            (parsed["n"] == 5 and 0.7 <= parsed["c"] <= 1.0)):
+        error("There are restrictions on the values for n and c in CD-HIT:\n"
+                "n == 5 <=> c in [0.7, 1.0]\n"
+                "n == 4 <=> c in [0.6, 0.7]\n"
+                "n == 3 <=> c in [0.5, 0.6]\n"
+                "n == 2 <=> c in [0.4, 0.5]", error_code=19)
 
 
 def validate_mash_args(mash_args):

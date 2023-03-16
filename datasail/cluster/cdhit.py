@@ -23,7 +23,7 @@ def run_cdhit(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     cmd = f"mkdir cdhit && " \
           f"cd cdhit && " \
-          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 -c 0.7 >/dev/null 2>&1"
+          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 {dataset.args}"  # >/dev/null 2>&1"
 
     if os.path.exists("cdhit"):
         cmd = "rm -rf cdhit && " + cmd

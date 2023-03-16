@@ -23,10 +23,12 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
         kwargs["e_data"], kwargs["e_weights"], kwargs["e_sim"],
         kwargs["e_dist"], kwargs["e_max_sim"], kwargs["e_max_dist"], inter, 0
     )
+    e_dataset.args = kwargs["e_args"]
     f_dataset = read_data_type(kwargs["f_type"])(
         kwargs["f_data"], kwargs["f_weights"], kwargs["f_sim"],
         kwargs["f_dist"], kwargs["f_max_sim"], kwargs["f_max_dist"], inter, 1
     )
+    f_dataset.args = kwargs["f_args"]
     return e_dataset, f_dataset, inter
 
 
