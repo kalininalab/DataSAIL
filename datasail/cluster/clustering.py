@@ -86,7 +86,7 @@ def similarity_clustering(dataset: DataSet) -> Tuple[
     elif dataset.similarity.lower() == "ecfp":
         cluster_names, cluster_map, cluster_sim = run_ecfp(dataset)
     else:
-        raise ValueError("Unknown cluster method.")
+        raise ValueError(f"Unknown cluster method: {dataset.similarity}")
 
     # compute the weights for the clusters
     cluster_weights = {}
@@ -120,7 +120,7 @@ def distance_clustering(dataset: DataSet) -> Tuple[
     if dataset.distance.lower() == "mash":
         cluster_names, cluster_map, cluster_dist = run_mash(dataset)
     else:
-        raise ValueError("Unknown cluster method.")
+        raise ValueError(f"Unknown cluster method: {dataset.distance}")
 
     # compute the weights for the clusters
     cluster_weights = {}

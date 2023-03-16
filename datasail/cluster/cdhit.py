@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 from typing import Tuple, List, Dict
@@ -27,7 +28,8 @@ def run_cdhit(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     if os.path.exists("cdhit"):
         cmd = "rm -rf cdhit && " + cmd
 
-    print(cmd)
+    logging.info("Start CD-HIT clustering")
+
     os.system(cmd)
 
     cluster_map = get_cdhit_map("cdhit/clusters.clstr")

@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 from typing import Dict, Tuple, List
@@ -34,6 +35,8 @@ def run_mmseqs(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]
 
     if os.path.exists("mmseqs_results"):
         cmd = "rm -rf mmseqs_results && " + cmd
+
+    logging.info("Start MMseqs2 clustering")
 
     os.system(cmd)
 

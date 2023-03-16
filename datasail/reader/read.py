@@ -27,9 +27,6 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
         kwargs["f_data"], kwargs["f_weights"], kwargs["f_sim"],
         kwargs["f_dist"], kwargs["f_max_sim"], kwargs["f_max_dist"], inter, 1
     )
-    # if kwargs["e_type"] is None:
-    #     e_dataset = f_dataset
-    #     f_dataset = DataSet()
     return e_dataset, f_dataset, inter
 
 

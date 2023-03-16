@@ -1,3 +1,5 @@
+import logging
+import pickle
 from typing import Tuple, List, Dict
 
 import numpy as np
@@ -23,6 +25,8 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     if dataset.type != "M":
         raise ValueError("ECFP with Tanimoto-scores can only be applied to molecular data.")
 
+    logging.info("Start ECFP clustering")
+
     fps = []
     for name in dataset.names:
         mol = Chem.MolFromSmiles(dataset.data[name])
@@ -31,12 +35,18 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
             fps.append(None)
         fps.append(AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=1024))
 
+    logging.info("Compute Tanimoto Coefficients")
+
     count = len(dataset.names)
     sim_matrix = np.zeros((count, count))
     for i in range(count):
+        if i % 100 == 0:
+            print(f"\r{i + 1} / {count}", end="")
         sim_matrix[i, i] = 1
         sim_matrix[i, :i] = DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])
         sim_matrix[:i, i] = sim_matrix[i, :i]
+
+    pickle.dump(sim_matrix, open("/scratch/SCRATCH_SAS/roman/DataSAIL_cache/kino_lig_matrix.pkl", "wb"))
 
     cluster_map = dict((name, name) for name in dataset.names)
     return dataset.names, cluster_map, sim_matrix

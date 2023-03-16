@@ -151,6 +151,7 @@ def test_report():
     check_assignment_tsv("data/perf_7_3/out/CCD/Protein_prot_splits.tsv")
 
 
+@pytest.mark.todo
 def test_genomes():
     sail(
         inter=None,
@@ -181,6 +182,8 @@ def test_genomes():
         cache=False,
         cache_dir=None,
     )
+
+    shutil.rmtree("data/genomes/out")
 
 
 def check_identity_tsv(filename):

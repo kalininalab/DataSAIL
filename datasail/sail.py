@@ -15,11 +15,11 @@ verb_map = {
 }
 
 SIM_ALGOS = [
-    "wlk", "mmseqs", "foldseek", "cdhit",
+    "wlk", "mmseqs", "foldseek", "cdhit", "ecfp",
 ]
 
 DIST_ALGOS = [
-    "mash", "ecfp",
+    "mash",
 ]
 
 
@@ -72,7 +72,7 @@ def parse_args() -> Dict[str, object]:
              "is ignored so far."
     )
     parser.add_argument(
-        "--verbosity",
+        "--verbose",
         default="W",
         type=str,
         choices=["C", "F", "E", "W", "I", "D"],
@@ -83,7 +83,7 @@ def parse_args() -> Dict[str, object]:
         "-v",
         "--version",
         action='version',
-        version="%(prog) 0.0.1"
+        version="%(prog)s 0.0.1"
     )
     split = parser.add_argument_group("Splitting Arguments")
     split.add_argument(
@@ -338,7 +338,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
     # check the input regarding the caching
     if kwargs["cache"] and not os.path.isdir(kwargs["cache_dir"]):
         logging.warning("Cache directory does not exist, DataSAIL creates it automatically")
-        os.makedirs(kwargs["cache"], exist_ok=True)
+        os.makedirs(kwargs["cache_dir"], exist_ok=True)
 
     # syntactically parse the input data for the E-dataset
     if kwargs["e_data"] is not None and not os.path.exists(kwargs["e_data"]):

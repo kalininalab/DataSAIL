@@ -21,8 +21,12 @@ def bqp_main(**kwargs) -> None:
     e_dataset, f_dataset, inter = read_data(**kwargs)
 
     # if required, cluster the input otherwise define the cluster-maps to be None
-    if any("C" == technique[0] for technique in kwargs["techniques"]):
+    clusters = list(filter(lambda x: x[0] == "C", kwargs["techniques"]))
+    cluster_e = len(clusters) != 0 and any(c[-1] in {"D", "e"} for c in clusters)
+    cluster_f = len(clusters) != 0 and any(c[-1] in {"D", "f"} for c in clusters)
+    if cluster_e:
         e_dataset = cluster(e_dataset, **kwargs)
+    if cluster_f:
         f_dataset = cluster(f_dataset, **kwargs)
 
     logging.info("Split data")

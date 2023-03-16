@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 from typing import Tuple, List, Dict, Optional
@@ -16,7 +17,8 @@ def run_mash(dataset: DataSet) -> Tuple[List[str], Dict[str, str], Optional[np.n
     if os.path.exists("mash_results"):
         cmd = "rm -rf mash_results && " + cmd
 
-    print(cmd)
+    logging.info("Start MASH clustering")
+
     os.system(cmd)
 
     names = dataset.names

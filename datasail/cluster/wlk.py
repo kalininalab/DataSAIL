@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Dict, Tuple, List, Union
 import math
@@ -33,6 +34,8 @@ def run_wlk(dataset: DataSet, n_iter=4) -> Tuple[List[str], Dict[str, str], np.n
     """
     if dataset.type != "M":
         raise ValueError("ECFP with Tanimoto-scores can only be applied to molecular data.")
+
+    logging.info("Start WLK clustering")
 
     if os.path.isfile(list(dataset.data.values())[1]):  # read PDB files into grakel graph objects
         graphs = [pdb_to_grakel(dataset.data[name]) for name in dataset.names]

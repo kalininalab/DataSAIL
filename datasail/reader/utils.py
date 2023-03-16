@@ -23,8 +23,19 @@ class DataSet:
 
     def __hash__(self):
         hash_val = 0
-        for field in filter(lambda f: "cluster" not in f, fields(DataSet)):
-            hash_val ^= hash(getattr(self, field.name))
+        for field in filter(lambda f: "cluster" not in f.name, fields(DataSet)):
+            obj = getattr(self, field.name)
+            if obj is None:
+                hv = 0
+            elif isinstance(obj, dict):
+                hv = hash(tuple(obj.items()))
+            elif isinstance(obj, list):
+                hv = hash(tuple(obj))
+            elif isinstance(obj, np.ndarray):
+                hv = hash(str(obj.data))
+            else:
+                hv = hash(obj)
+            hash_val ^= hv
         return hash_val
 
 

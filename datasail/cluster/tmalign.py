@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 from typing import Dict, Tuple, List
@@ -26,9 +27,15 @@ def run_tmalign(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray
     if os.path.exists("tmalign"):
         cmd = "rm -rf tmalign && " + cmd
 
+    count, total = 0, len(dataset.names) * (len(dataset.names) - 1) / 2
     for i, name1 in enumerate(dataset.names):
         for name2 in dataset.names[i + 1:]:
+            count += 1
             cmd += f" && TMalign {dataset.data[name1]} {dataset.data[name2]} > out_{name1}_{name2}.txt"
+            if count % 100 == 0:
+                cmd += f" && echo {count} / {total}"
+
+    logging.info("Start TMalign clustering")
 
     # print(cmd)
     os.system(cmd)
