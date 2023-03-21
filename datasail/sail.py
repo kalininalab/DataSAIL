@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os.path
-from typing import Dict
+from typing import Dict, List, Tuple
 
 from datasail.run import bqp_main
 
@@ -304,7 +304,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
     logging.info("Validating arguments")
 
     # create output directory
-    if not os.path.isdir(kwargs["output"]):
+    if kwargs["output"] is not None and not os.path.isdir(kwargs["output"]):
         logging.warning("Output directory does not exist, DataSAIL creates it automatically")
         os.makedirs(kwargs["output"], exist_ok=True)
 
@@ -349,7 +349,8 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error(
             f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", error_code=9
         )
-    if kwargs["e_dist"] is not None and kwargs["e_dist"].lower() not in DIST_ALGOS and not os.path.isfile(kwargs["e_dist"]):
+    if kwargs["e_dist"] is not None and kwargs["e_dist"].lower() not in DIST_ALGOS and not os.path.isfile(
+            kwargs["e_dist"]):
         error(
             f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", error_code=10
         )
@@ -371,7 +372,8 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error(
             f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", error_code=15
         )
-    if kwargs["f_dist"] is not None and kwargs["f_dist"].lower() not in DIST_ALGOS and not os.path.isfile(kwargs["f_dist"]):
+    if kwargs["f_dist"] is not None and kwargs["f_dist"].lower() not in DIST_ALGOS and not os.path.isfile(
+            kwargs["f_dist"]):
         error(
             f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", error_code=16
         )
@@ -390,17 +392,17 @@ def validate_args(**kwargs) -> Dict[str, object]:
 def validate_cdhit_args(cdhit_args):
     cdhit_parser = argparse.ArgumentParser()
     cdhit_parser.add_argument("-c", type=float, default=0.9)
-    cdhit.parser.add_argument("-n", type=int, default=5, choices=[2, 3, 4, 5])
+    cdhit_parser.add_argument("-n", type=int, default=5, choices=[2, 3, 4, 5])
     parsed = cdhit_parser.parse_args(cdhit_args)
-    if not ((parsed["n"] == 2 and 0.4 <= parsed["c"] <= 0.5) or \
-            (parser["n"] == 3 and 0.5 <= parsed["c"] <= 0.6) or \
-            (parsed["n"] == 4 and 0.6 <= parsed["c"] <= 0.7) or \
+    if not ((parsed["n"] == 2 and 0.4 <= parsed["c"] <= 0.5) or
+            (parsed["n"] == 3 and 0.5 <= parsed["c"] <= 0.6) or
+            (parsed["n"] == 4 and 0.6 <= parsed["c"] <= 0.7) or
             (parsed["n"] == 5 and 0.7 <= parsed["c"] <= 1.0)):
         error("There are restrictions on the values for n and c in CD-HIT:\n"
-                "n == 5 <=> c in [0.7, 1.0]\n"
-                "n == 4 <=> c in [0.6, 0.7]\n"
-                "n == 3 <=> c in [0.5, 0.6]\n"
-                "n == 2 <=> c in [0.4, 0.5]", error_code=19)
+              "n == 5 <=> c in [0.7, 1.0]\n"
+              "n == 4 <=> c in [0.6, 0.7]\n"
+              "n == 3 <=> c in [0.5, 0.6]\n"
+              "n == 2 <=> c in [0.4, 0.5]", error_code=19)
 
 
 def validate_mash_args(mash_args):
@@ -410,12 +412,53 @@ def validate_mash_args(mash_args):
     mash_parser.parse_args(mash_args)
 
 
+def datasail(
+        techniques: List[str],
+        inter=None,
+        max_sec: int = 100,
+        max_sol: int = 1000,
+        verbose: str = "W",
+        splits: List = [0.7, 0.2, 0.1],
+        names: List[str] = ["train", "val", "test"],
+        epsilon: float = 0.05,
+        solver: str = "MOSEK",
+        vectorized: bool = True,
+        cache: bool = False,
+        cache_dir: str = None,
+        e_type=None,
+        e_data=None,
+        e_weights=None,
+        e_sim=None,
+        e_dist=None,
+        e_args=None,
+        e_max_sim: float = 1.0,
+        e_max_dist: float = 1.0,
+        f_type=None,
+        f_data=None,
+        f_weights=None,
+        f_sim=None,
+        f_dist=None,
+        f_args=None,
+        f_max_sim: float = 1.0,
+        f_max_dist: float = 1.0,
+) -> Tuple[Dict, Dict, Dict]:
+    kwargs = validate_args(
+        output=None, techniques=techniques, inter=inter, max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
+        splits=splits, names=names, epsilon=epsilon, solver=solver, vectorized=not vectorized, cache=cache,
+        cache_dir=cache_dir, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=e_dist,
+        e_args=e_args, e_max_sim=e_max_sim, e_max_dist=e_max_dist, f_type=f_type, f_data=f_data, f_weights=f_weights,
+        f_sim=f_sim, f_dist=f_dist, f_args=f_args, f_max_sim=f_max_sim, f_max_dist=f_max_dist
+    )
+    return bqp_main(**kwargs)
+
+
 def sail(**kwargs) -> None:
     """
     Invocation routine of DataSAIL. Here, the arguments are validated and the main routine is invoked.
 
     Args:
         **kwargs: Arguments to DataSAIL in kwargs-format.
+
     """
     kwargs = validate_args(**kwargs)
     bqp_main(**kwargs)

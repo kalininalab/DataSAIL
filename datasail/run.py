@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import Dict, Tuple
 
 from datasail.cluster.clustering import cluster
 from datasail.reader.read import read_data
@@ -7,7 +8,7 @@ from datasail.report import report
 from datasail.solver.solve import run_solver
 
 
-def bqp_main(**kwargs) -> None:
+def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     """
     Main routine of DataSAIL. Here the parsed input is aggregated into structures and then split and saved.
 
@@ -61,18 +62,21 @@ def bqp_main(**kwargs) -> None:
                         (e, f, e_name_split_map[t][e]) for e, f in inter if e_name_split_map[t][e] == f_name_split_map[t][f]
                     ]
 
-    report(
-        kwargs["techniques"],
-        e_dataset,
-        f_dataset,
-        e_name_split_map,
-        f_name_split_map,
-        e_cluster_split_map,
-        f_cluster_split_map,
-        inter_split_map,
-        kwargs["output"],
-        kwargs["names"],
-    )
-
     logging.info("BQP splitting finished and results stored.")
     logging.info(f"Total runtime: {time.time() - start:.5f}s")
+
+    if kwargs["output"] is not None:
+        report(
+            kwargs["techniques"],
+            e_dataset,
+            f_dataset,
+            e_name_split_map,
+            f_name_split_map,
+            e_cluster_split_map,
+            f_cluster_split_map,
+            inter_split_map,
+            kwargs["output"],
+            kwargs["names"],
+        )
+    else:
+        return e_name_split_map, f_name_split_map, inter_split_map
