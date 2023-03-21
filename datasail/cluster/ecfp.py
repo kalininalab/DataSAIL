@@ -45,7 +45,7 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
 
     logging.info("Compute Tanimoto Coefficients")
 
-    count = len(dataset.names)
+    count = len(cluster_names)
     sim_matrix = np.zeros((count, count))
     for i in range(count):
         if i % 100 == 0:
