@@ -39,7 +39,7 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     fps = []
     cluster_names = list(set(Chem.MolToSmiles(s) for s in list(scaffolds.values())))
     for scaffold in cluster_names:
-        fps.append(AllChem.GetMorganFingerprintAsBitVect(scaffold, 2, nBits=1024))
+        fps.append(AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(scaffold), 2, nBits=1024))
 
     logging.info(f"Reduced {len(dataset.names)} molecules to {len(cluster_names)}")
 
