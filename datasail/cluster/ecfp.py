@@ -37,7 +37,7 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
         scaffolds[name] = MakeScaffoldGeneric(scaffold)
 
     fps = []
-    cluster_names = list(set(scaffolds.values()))
+    cluster_names = list(set(Chem.MolToSmiles(s) for s in list(scaffolds.values())))
     for scaffold in cluster_names:
         fps.append(AllChem.GetMorganFingerprintAsBitVect(scaffold, 2, nBits=1024))
 

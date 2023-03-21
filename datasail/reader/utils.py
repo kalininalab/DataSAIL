@@ -8,7 +8,7 @@ import numpy as np
 @dataclass
 class DataSet:
     type: Optional[str] = None
-    args: Optional[str] = None
+    args: str = ""
     names: Optional[List[str]] = None
     cluster_names: Optional[List[str]] = None
     data: Optional[Dict[str, str]] = None
