@@ -54,7 +54,7 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
         sim_matrix[i, :i] = DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])
         sim_matrix[:i, i] = sim_matrix[i, :i]
 
-    pickle.dump(sim_matrix, open("/scratch/SCRATCH_SAS/roman/DataSAIL_cache/kino_lig_matrix.pkl", "wb"))
+    # pickle.dump(sim_matrix, open("/scratch/SCRATCH_SAS/roman/DataSAIL_cache/kino_lig_matrix.pkl", "wb"))
 
     cluster_map = dict((name, Chem.MolToSmiles(scaffolds[name])) for name in dataset.names)
     return cluster_names, cluster_map, sim_matrix

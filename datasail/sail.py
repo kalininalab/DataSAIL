@@ -430,7 +430,7 @@ def datasail(
         e_weights=None,
         e_sim=None,
         e_dist=None,
-        e_args=None,
+        e_args="",
         e_max_sim: float = 1.0,
         e_max_dist: float = 1.0,
         f_type=None,
@@ -438,7 +438,7 @@ def datasail(
         f_weights=None,
         f_sim=None,
         f_dist=None,
-        f_args=None,
+        f_args="",
         f_max_sim: float = 1.0,
         f_max_dist: float = 1.0,
 ) -> Tuple[Dict, Dict, Dict]:
