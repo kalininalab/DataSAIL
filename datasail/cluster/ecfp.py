@@ -5,6 +5,7 @@ from typing import Tuple, List, Dict
 import numpy as np
 from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
+from rdkit.Chem.Scaffolds.MurckoScaffold import MakeScaffoldGeneric
 
 from datasail.reader.utils import DataSet
 
@@ -25,15 +26,22 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     if dataset.type != "M":
         raise ValueError("ECFP with Tanimoto-scores can only be applied to molecular data.")
 
+    scaffolds = {}
     logging.info("Start ECFP clustering")
 
-    fps = []
     for name in dataset.names:
-        mol = Chem.MolFromSmiles(dataset.data[name])
-        if mol is None:
+        scaffold = Chem.MolFromSmiles(dataset.data[name])
+        if scaffold is None:
             # TODO: Report this issue
-            fps.append(None)
-        fps.append(AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=1024))
+            pass
+        scaffolds[name] = MakeScaffoldGeneric(scaffold)
+
+    fps = []
+    cluster_names = list(set(scaffolds.values()))
+    for scaffold in cluster_names:
+        fps.append(AllChem.GetMorganFingerprintAsBitVect(scaffold, 2, nBits=1024))
+
+    logging.info(f"Reduced {len(dataset.names)} molecules to {len(cluster_names)}")
 
     logging.info("Compute Tanimoto Coefficients")
 
@@ -48,5 +56,5 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
 
     pickle.dump(sim_matrix, open("/scratch/SCRATCH_SAS/roman/DataSAIL_cache/kino_lig_matrix.pkl", "wb"))
 
-    cluster_map = dict((name, name) for name in dataset.names)
-    return dataset.names, cluster_map, sim_matrix
+    cluster_map = dict((name, Chem.MolToSmiles(scaffolds[name])) for name in dataset.names)
+    return cluster_names, cluster_map, sim_matrix
