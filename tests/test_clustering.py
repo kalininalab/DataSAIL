@@ -7,6 +7,7 @@ from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
+from datasail.cluster.tmalign import run_tmalign
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.read_proteins import parse_fasta, read_folder
 from datasail.reader.utils import DataSet, read_csv
@@ -128,6 +129,10 @@ def test_mash_genomic(genome_fasta_data):
 
 def test_mmseqs2_protein(protein_fasta_data):
     check_clustering(*run_mmseqs(protein_fasta_data), protein_fasta_data)
+
+
+def test_tmalign_protein(protein_pdb_data):
+    check_clustering(*run_tmalign(protein_pdb_data), protein_pdb_data)
 
 
 def test_wlkernel_protein(protein_pdb_data):
