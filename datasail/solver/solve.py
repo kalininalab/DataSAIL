@@ -70,7 +70,7 @@ def run_solver(
                     names=names,
                 )
                 output_inter[technique] = solution
-            elif technique == "ICS" or (technique == "CCS" and dataset.similarity.lower() in ["cdhit", "mmseqs"]):
+            elif technique == "ICS" or (technique == "CCS" and isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]):
                 if vectorized:
                     fun = solve_ics_bqp_vector
                 else:
