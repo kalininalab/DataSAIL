@@ -61,6 +61,8 @@ def run_solver(
         try:
             logging.info(technique)
             technique, mode = technique[:3], technique[-1]
+            dataset = f_dataset if mode == "f" else e_dataset
+
             if technique == "R":
                 solution = sample_categorical(
                     inter=inter,
@@ -68,12 +70,11 @@ def run_solver(
                     names=names,
                 )
                 output_inter["R"] = solution
-            elif technique == "ICS":
+            elif technique == "ICS" or (technique == "CCS" and dataset.similarity.lower() in ["cdhit", "mmseqs"]):
                 if vectorized:
                     fun = solve_ics_bqp_vector
                 else:
                     fun = solve_ics_bqp_scalar
-                dataset = f_dataset if mode == "f" else e_dataset
 
                 solution = fun(
                     e_entities=dataset.names,
@@ -111,7 +112,6 @@ def run_solver(
                     output_inter["ICD"], output_e_entities["ICD"], output_f_entities["ICD"] = solution
             elif technique == "CCS":
                 fun = solve_ccs_bqp_vector if vectorized else solve_ccs_bqp_scalar
-                dataset = f_dataset if mode == "f" else e_dataset
 
                 cluster_split = fun(
                     e_clusters=dataset.cluster_names,
