@@ -69,7 +69,7 @@ def run_solver(
                     splits=splits,
                     names=names,
                 )
-                output_inter["R"] = solution
+                output_inter[technique] = solution
             elif technique == "ICS" or (technique == "CCS" and dataset.similarity.lower() in ["cdhit", "mmseqs"]):
                 if vectorized:
                     fun = solve_ics_bqp_vector
@@ -89,9 +89,9 @@ def run_solver(
 
                 if solution is not None:
                     if mode == "f":
-                        output_f_entities["ICS"] = solution
+                        output_f_entities[technique] = solution
                     else:
-                        output_e_entities["ICS"] = solution
+                        output_e_entities[technique] = solution
             elif technique == "ICD":
                 if vectorized:
                     fun = solve_icd_bqp_vector
@@ -109,7 +109,7 @@ def run_solver(
                     solver=solver,
                 )
                 if solution is not None:
-                    output_inter["ICD"], output_e_entities["ICD"], output_f_entities["ICD"] = solution
+                    output_inter[technique], output_e_entities[technique], output_f_entities[technique] = solution
             elif technique == "CCS":
                 fun = solve_ccs_bqp_vector if vectorized else solve_ccs_bqp_scalar
 
@@ -128,11 +128,11 @@ def run_solver(
                 )
                 if cluster_split is not None:
                     if mode == "f":
-                        output_f_clusters["CCS"] = cluster_split
-                        output_f_entities["CCS"] = reverse_clustering(cluster_split, f_dataset.cluster_map)
+                        output_f_clusters[technique] = cluster_split
+                        output_f_entities[technique] = reverse_clustering(cluster_split, f_dataset.cluster_map)
                     else:
-                        output_e_clusters["CCS"] = cluster_split
-                        output_e_entities["CCS"] = reverse_clustering(cluster_split, e_dataset.cluster_map)
+                        output_e_clusters[technique] = cluster_split
+                        output_e_entities[technique] = reverse_clustering(cluster_split, e_dataset.cluster_map)
             elif technique == "CCD":
                 cluster_inter = cluster_interactions(
                     inter,
@@ -161,9 +161,9 @@ def run_solver(
                 )
 
                 if cluster_split is not None:
-                    output_inter["CCD"], output_e_clusters["CCD"], output_f_clusters["CCD"] = cluster_split
-                    output_e_entities["CCD"] = reverse_clustering(cluster_split[1], e_dataset.cluster_map)
-                    output_f_entities["CCD"] = reverse_clustering(cluster_split[2], f_dataset.cluster_map)
+                    output_inter[technique], output_e_clusters[technique], output_f_clusters[technique] = cluster_split
+                    output_e_entities[technique] = reverse_clustering(cluster_split[1], e_dataset.cluster_map)
+                    output_f_entities[technique] = reverse_clustering(cluster_split[2], f_dataset.cluster_map)
         except SolverError:
             logging.error(f"Splitting failed for {technique}, try to increase the timelimit or the epsilon value.")
 

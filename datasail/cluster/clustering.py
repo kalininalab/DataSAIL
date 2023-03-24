@@ -48,10 +48,11 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         return dataset
 
     # if there are too many clusters, reduce their number based on some cluster algorithms.
-    num_old_cluster = len(dataset.cluster_names) + 1
-    while 100 < len(dataset.cluster_names) < num_old_cluster:
-        num_old_cluster = len(dataset.cluster_names)
-        dataset = additional_clustering(dataset)
+    if dataset.similarity not in ["mmseqs", "cdhit"]:
+        num_old_cluster = len(dataset.cluster_names) + 1
+        while 100 < len(dataset.cluster_names) < num_old_cluster:
+            num_old_cluster = len(dataset.cluster_names)
+            dataset = additional_clustering(dataset)
 
     store_to_cache(dataset, **kwargs)
 

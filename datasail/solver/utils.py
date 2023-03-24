@@ -147,7 +147,7 @@ def solve(loss, constraints: List, max_sec: int, num_vars: int, solver: str):
         # verbose=True,
     )
 
-    logging.info(f"{kwargs['solver']} status: {problem.status}")
+    logging.info(f"{solver} status: {problem.status}")
     logging.info(f"Solution's score: {problem.value}")
 
     if "optimal" not in problem.status:
