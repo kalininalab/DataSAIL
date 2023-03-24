@@ -77,7 +77,7 @@ def run_solver(
 
                 solution = fun(
                     e_entities=dataset.names,
-                    e_weights=[dataset.weights[x] for x in dataset.names],
+                    e_weights=[dataset.weights.get(x, 0) for x in dataset.names],
                     epsilon=epsilon,
                     splits=splits,
                     names=names,
@@ -115,7 +115,7 @@ def run_solver(
 
                 cluster_split = fun(
                     e_clusters=dataset.cluster_names,
-                    e_weights=[dataset.cluster_weights[c] for c in dataset.cluster_names],
+                    e_weights=[dataset.cluster_weights.get(c, 0) for c in dataset.cluster_names],
                     e_similarities=dataset.cluster_similarity,
                     e_distances=dataset.cluster_distance,
                     e_threshold=dataset.threshold,

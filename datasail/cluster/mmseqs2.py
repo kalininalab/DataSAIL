@@ -24,14 +24,14 @@ def run_mmseqs(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]
     cmd = f"mkdir mmseqs_results && " \
           f"cd mmseqs_results && " \
           f"mmseqs " \
-          f"easy-linclust " \
+          f"easy-cluster " \
           f"{os.path.join('..', dataset.location)} " \
           f"mmseqs_out " \
           f"mmseqs_tmp " \
           f"--similarity-type 2 " \
           f"--cov-mode 0 " \
-          f"-c 1.0 " \
-          f"--min-seq-id 0.0 >/dev/null 2>&1"
+          f"-c 0.0 -e 100 " \
+          f"--min-seq-id 0.0"  #  >/dev/null 2>&1"
 
     if os.path.exists("mmseqs_results"):
         cmd = "rm -rf mmseqs_results && " + cmd
@@ -41,9 +41,11 @@ def run_mmseqs(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]
     os.system(cmd)
 
     cluster_map = get_mmseqs_map("mmseqs_results/mmseqs_out_cluster.tsv")
-    cluster_sim = np.ones((len(cluster_map), len(cluster_map)))
     cluster_names = list(set(cluster_map.values()))
-    shutil.rmtree("mmseqs_results")
+    cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
+    logging.info(f"MMseqs2 clustered {len(cluster_map)} sequences into {len(cluster_names)} clusters")
+    # shutil.rmtree("mmseqs_results")
+    # exit(0)
 
     return cluster_names, cluster_map, cluster_sim
 
@@ -65,5 +67,5 @@ def get_mmseqs_map(cluster_file: str) -> Dict[str, str]:
             if len(words) != 2:
                 continue
             cluster_head, cluster_member = words
-            mapping[cluster_member] = cluster_member
+            mapping[cluster_member] = cluster_head
     return mapping

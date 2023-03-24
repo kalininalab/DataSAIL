@@ -32,8 +32,8 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     for name in dataset.names:
         scaffold = Chem.MolFromSmiles(dataset.data[name])
         if scaffold is None:
-            # TODO: Report this issue
-            pass
+            logging.warning(f"RDKit cannot parse {dataset.data[name]}")
+            continue
         scaffolds[name] = MakeScaffoldGeneric(scaffold)
 
     fps = []
