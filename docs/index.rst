@@ -37,7 +37,7 @@ of entities of "other" input type is to provide them as a matrix in a file.
       - \-
       - No
     * - ECFP + Tanimoto
-      - Dist
+      - Sim
       - \-
       - SMILES
       - \-
