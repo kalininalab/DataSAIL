@@ -5,6 +5,8 @@ from typing import Dict, Tuple, List
 
 import numpy as np
 
+from datasail.cluster.utils import cluster_param_binary_search
+from datasail.parsers import parse_mmseqs_args
 from datasail.reader.utils import DataSet
 
 
@@ -21,6 +23,21 @@ def run_mmseqs(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
+    args = parse_mmseqs_args(dataset.args)
+    vals = (args["seq_id"],)
+    logging.info("Starting MMseqs clustering")
+    return cluster_param_binary_search(
+        dataset,
+        vals,
+        (0,),
+        (1,),
+        mmseqs_trial,
+        lambda x: f"--min-seq-id {x[0]}",
+        lambda x, y: ((x[0] + y[0]) / 2,),
+    )
+
+
+def mmseqs_trial(dataset, add_args):
     cmd = f"mkdir mmseqs_results && " \
           f"cd mmseqs_results && " \
           f"mmseqs " \
@@ -30,13 +47,14 @@ def run_mmseqs(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]
           f"mmseqs_tmp " \
           f"--similarity-type 2 " \
           f"--cov-mode 0 " \
-          f"-c 0.0 -e 100 " \
-          f"--min-seq-id 0.0"  #  >/dev/null 2>&1"
+          f"-c 0.8 " \
+          f"{add_args}"
+
+    if logging.root.level == logging.DEBUG:
+        cmd += " >/dev/null 2>&1"
 
     if os.path.exists("mmseqs_results"):
         cmd = "rm -rf mmseqs_results && " + cmd
-
-    logging.info("Start MMseqs2 clustering")
 
     os.system(cmd)
 

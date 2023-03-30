@@ -25,6 +25,7 @@ def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     clusters = list(filter(lambda x: x[0] == "C", kwargs["techniques"]))
     cluster_e = len(clusters) != 0 and any(c[-1] in {"D", "e"} for c in clusters)
     cluster_f = len(clusters) != 0 and any(c[-1] in {"D", "f"} for c in clusters)
+    print(cluster_e)
     if cluster_e:
         e_dataset = cluster(e_dataset, **kwargs)
     if cluster_f:

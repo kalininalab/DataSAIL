@@ -136,7 +136,8 @@ def solve(loss, constraints: List, max_sec: int, num_vars: int, solver: str):
     problem = cvxpy.Problem(cvxpy.Minimize(loss), constraints)
     if solver == "MOSEK":
         solve_algo = cvxpy.MOSEK
-        kwargs = {"mosek_params": {mosek.dparam.optimizer_max_time: max_sec}}
+        # kwargs = {"mosek_params": {mosek.dparam.optimizer_max_time: max_sec}}
+        kwargs = {"mosek_params": {"MSK_DPAR_OPTIMIZER_MAX_TIME": max_sec}}
     else:
         solve_algo = cvxpy.SCIP
         kwargs = {"scip_params": {"limits/time": max_sec}}
