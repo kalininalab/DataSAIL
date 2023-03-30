@@ -3,7 +3,7 @@ from typing import Optional, Tuple, List, Set, Dict
 import cvxpy
 
 from datasail.solver.scalar.utils import init_variables, sum_constraint
-from datasail.solver.utils import solve, estimate_number_target_interactions
+from datasail.solver.utils import solve, estimate_number_target_interactions, estimate_surviving_interactions
 
 
 def solve_icd_bqp(
@@ -36,7 +36,8 @@ def solve_icd_bqp(
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
         dataset
     """
-    all_inter = estimate_number_target_interactions(inter, len(e_entities), len(f_entities), splits)
+    inter_count = len(inter)
+    background = estimate_surviving_interactions(inter_count, len(e_entities), len(f_entities), splits)
 
     x_e = init_variables(len(splits), len(e_entities))
     x_f = init_variables(len(splits), len(f_entities))
@@ -59,8 +60,8 @@ def solve_icd_bqp(
             x_i[i, j, s] for i, e in enumerate(e_entities) for j, f in enumerate(f_entities) if (e, f) in inter
         )
         constraints += [
-            (splits[s] - epsilon) * all_inter <= var,
-            var <= (splits[s] + epsilon) * all_inter,
+            (splits[s] - epsilon) * inter_count <= var,
+            var <= (splits[s] + epsilon) * inter_count,
         ]
         for i, e1 in enumerate(e_entities):
             for j, e2 in enumerate(f_entities):
@@ -73,9 +74,11 @@ def solve_icd_bqp(
     inter_loss = sum(
         (1 - sum(x_i[i, j, b] for b in range(len(splits)))) for i, e in enumerate(e_entities)
         for j, f in enumerate(f_entities) if (e, f) in inter
-    )
+    ) / background
 
     solve(inter_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver)
+
+    print(inter_loss.value)
 
     # report the found solution
     output = ([], dict(

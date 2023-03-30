@@ -42,10 +42,11 @@ def solve_ics_bqp(
             var <= int((splits[b] + epsilon) * sum(e_weights))
         ]
 
+    normalization = 1 / (len(splits) * sum(e_weights) * epsilon)
     dist_loss = sum(
         (sum(x_e[i, b] * e_weights[i] for i in range(len(e_entities))) - splits[b] * sum(e_weights)) ** 2
         for b in range(len(splits))
-    )
+    )# * normalization
 
     solve(dist_loss, constraints, max_sec, len(x_e), solver)
 

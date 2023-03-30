@@ -1,14 +1,14 @@
 import numpy as np
 import pytest
 
-from datasail.dqcp_solver.scalar.id_cold_single import solve_ics_bqp as solve_ics_bqp_scalar
-from datasail.dqcp_solver.vector.id_cold_single import solve_ics_bqp as solve_ics_bqp_vector
-from datasail.dqcp_solver.scalar.id_cold_double import solve_icd_bqp as solve_icd_bqp_scalar
-from datasail.dqcp_solver.vector.id_cold_double import solve_icd_bqp as solve_icd_bqp_vector
-from datasail.dqcp_solver.scalar.cluster_cold_single import solve_ccs_bqp as solve_ccs_bqp_scalar
-from datasail.dqcp_solver.vector.cluster_cold_single import solve_ccs_bqp as solve_ccs_bqp_vector
-from datasail.dqcp_solver.scalar.cluster_cold_double import solve_ccd_bqp as solve_ccd_bqp_scalar
-from datasail.dqcp_solver.vector.cluster_cold_double import solve_ccd_bqp as solve_ccd_bqp_vector
+from datasail.solver.scalar.id_cold_single import solve_ics_bqp as solve_ics_bqp_scalar
+from datasail.solver.vector.id_cold_single import solve_ics_bqp as solve_ics_bqp_vector
+from datasail.solver.scalar.id_cold_double import solve_icd_bqp as solve_icd_bqp_scalar
+from datasail.solver.vector.id_cold_double import solve_icd_bqp as solve_icd_bqp_vector
+from datasail.solver.scalar.cluster_cold_single import solve_ccs_bqp as solve_ccs_bqp_scalar
+from datasail.solver.vector.cluster_cold_single import solve_ccs_bqp as solve_ccs_bqp_vector
+from datasail.solver.scalar.cluster_cold_double import solve_ccd_bqp as solve_ccd_bqp_scalar
+from datasail.solver.vector.cluster_cold_double import solve_ccd_bqp as solve_ccd_bqp_vector
 
 
 def test_ics_scalar():

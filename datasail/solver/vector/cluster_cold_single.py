@@ -3,6 +3,8 @@ from typing import List, Union, Optional, Dict
 import cvxpy
 import numpy as np
 
+# from datasail.solver.QCQP.qcqp.qcqp import QCQP
+# from datasail.solver.QCQP.qcqp.settings import SDR, COORD_DESCENT
 from datasail.solver.utils import solve
 from datasail.solver.vector.utils import cluster_sim_dist_constraint, cluster_sim_dist_objective
 
@@ -39,7 +41,7 @@ def solve_ccs_bqp(
     Returns:
         Mapping from clusters to splits optimizing the objective function
     """
-
+    print()
     ones = np.ones((1, len(e_clusters)))
 
     x_e = [cvxpy.Variable((len(e_clusters), 1), boolean=True) for _ in range(len(splits))]
@@ -68,7 +70,16 @@ def solve_ccs_bqp(
 
     alpha = 0.5
     problem = solve(alpha * size_loss + e_loss, constraints, max_sec, len(x_e), solver)
-    print()
+    # quadratic_term = x_e[0][0, 0] ** 2 - x_e[0][0, 0] ** 2
+    # problem = cvxpy.Problem(cvxpy.Minimize(size_loss + e_loss), constraints)
+    # qcqp = QCQP(problem)
+    # qcqp.suggest(SDR)
+    # print("SDR lower bound: %.3f" % qcqp.sdr_bound)
+
+    # Attempt to improve the starting point given by the suggest method
+    # f_cd, v_cd = qcqp.improve(COORD_DESCENT)
+    # print("Coordinate descent: objective %.3f, violation %.3f" % (f_cd, v_cd))
+    # print('\n'.join([str(x_e[s].value) for s in range(len(splits))]))
     print(e_loss.value)
     print(size_loss.value)
 

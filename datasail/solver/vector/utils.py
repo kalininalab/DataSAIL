@@ -106,4 +106,4 @@ def cluster_sim_dist_objective(
 
     leak_matrix = cvxpy.multiply(leak_matrix, weight_matrix)
     leakage = cvxpy.sum(leak_matrix) / cvxpy.sum(cvxpy.multiply(hit_matrix, weight_matrix))
-    return leak_matrix  # leakage  # cvxpy.geo_mean(cvxpy.reshape(leak_matrix, (len(weights) ** 2, 1)))
+    return cvxpy.sum(leak_matrix)  # leakage

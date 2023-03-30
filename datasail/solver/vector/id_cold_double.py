@@ -3,7 +3,7 @@ from typing import Optional, Tuple, List, Set, Dict
 import cvxpy
 import numpy as np
 
-from datasail.solver.utils import solve, inter_mask
+from datasail.solver.utils import solve, inter_mask, estimate_surviving_interactions
 from datasail.solver.vector.utils import interaction_constraints
 
 
@@ -38,6 +38,7 @@ def solve_icd_bqp(
         dataset
     """
     inter_count = len(inter)
+    background = estimate_surviving_interactions(inter_count, len(e_entities), len(f_entities), splits)
     inter_ones = inter_mask(e_entities, f_entities, inter)
     min_lim = [int((split - epsilon) * inter_count) for split in splits]
     max_lim = [int((split + epsilon) * inter_count) for split in splits]
@@ -62,9 +63,11 @@ def solve_icd_bqp(
 
         interaction_constraints(len(e_entities), len(f_entities), x_e, x_f, x_i, s)
 
-    inter_loss = cvxpy.sum(cvxpy.sum(inter_ones - cvxpy.sum([x for x in x_i]), axis=0), axis=0)
+    inter_loss = cvxpy.sum(cvxpy.sum(inter_ones - cvxpy.sum([x for x in x_i]), axis=0), axis=0) / background
 
     problem = solve(inter_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver)
+
+    print(inter_loss.value)
 
     # report the found solution
     output = ([], dict(
