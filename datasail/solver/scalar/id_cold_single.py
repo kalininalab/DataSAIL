@@ -38,8 +38,8 @@ def solve_ics_bqp(
     for b in range(len(splits)):
         var = sum(x_e[i, b] * e_weights[i] for i in range(len(e_entities)))
         constraints += [
-            int(splits[b] * sum(e_weights) * (1 - epsilon)) <= var,
-            var <= int(splits[b] * sum(e_weights) * (1 + epsilon))
+            int((splits[b] - epsilon) * sum(e_weights)) <= var,
+            var <= int((splits[b] + epsilon) * sum(e_weights))
         ]
 
     dist_loss = sum(

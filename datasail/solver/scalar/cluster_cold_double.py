@@ -71,8 +71,8 @@ def solve_ccd_bqp(
             x_i[i, j, s] * inter[i, j] for i in range(len(e_clusters)) for j in range(len(f_clusters))
         )
         constraints += [
-            splits[s] * inter_count * (1 - epsilon) <= var,
-            var <= splits[s] * inter_count * (1 + epsilon),
+            (splits[s] - epsilon) * inter_count <= var,
+            var <= (splits[s] + epsilon) * inter_count,
         ]
         for i in range(len(e_clusters)):
             for j in range(len(f_clusters)):

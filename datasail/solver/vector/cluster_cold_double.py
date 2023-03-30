@@ -57,8 +57,8 @@ def solve_ccd_bqp(
     inter_ones = np.ones_like(inter)
     e_t = np.full((len(e_clusters), len(e_clusters)), e_threshold)
     f_t = np.full((len(f_clusters), len(f_clusters)), f_threshold)
-    min_lim = [int(split * inter_count * (1 - epsilon)) for split in splits]
-    max_lim = [int(split * inter_count * (1 + epsilon)) for split in splits]
+    min_lim = [int((split - epsilon) * inter_count) for split in splits]
+    max_lim = [int((split + epsilon) * inter_count) for split in splits]
 
     x_e = [cvxpy.Variable((len(e_clusters), 1), boolean=True) for _ in range(len(splits))]
     x_f = [cvxpy.Variable((len(f_clusters), 1), boolean=True) for _ in range(len(splits))]
@@ -83,8 +83,8 @@ def solve_ccd_bqp(
         [cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter_ones - x_i[s], inter), axis=0), axis=0) for s in range(len(splits))]
     )
 
-    e_loss = cluster_sim_dist_objective(e_similarities, e_distances, e_ones, x_e, splits)
-    f_loss = cluster_sim_dist_objective(f_similarities, f_distances, f_ones, x_f, splits)
+    e_loss = cluster_sim_dist_objective(e_similarities, e_distances, e_ones, None, x_e, splits)
+    f_loss = cluster_sim_dist_objective(f_similarities, f_distances, f_ones, None, x_f, splits)
 
     solve(alpha * inter_loss + e_loss + f_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver)
 

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import cvxpy
 import numpy as np
@@ -65,6 +65,7 @@ def cluster_sim_dist_objective(
         similarities: Optional[np.ndarray],
         distances: Optional[np.ndarray],
         ones: np.ndarray,
+        weights: Union[np.ndarray, List[float]],
         x: List[Variable],
         splits: List[float]
 ) -> Expression:
@@ -75,16 +76,34 @@ def cluster_sim_dist_objective(
         similarities: Similarity matrix of the dataset
         distances: Distance matrix of the dataset
         ones: Vector to help in the computations
+        weights: weights of the entities
         x: Dictionary of indices and variables for the e-dataset
         splits: Splits as list of their relative size
 
     Returns:
         An objective function to minimize
     """
+    # n = len(distances) if distances is not None else len(similarities)
+    # normalization = 1 / (2 * cvxpy.sum([cvxpy.sum(x[s]) * n - cvxpy.sum(x[s]) ** 2 for s in range(len(splits))]))
+    # if distances is not None:
+    #     return cvxpy.sum([cvxpy.sum(cvxpy.multiply(
+    #         cvxpy.maximum((x[s] @ ones) + cvxpy.transpose(x[s] @ ones) - (ones.T @ ones), 0), distances
+    #     )) for s in range(len(splits))]) * normalization
+    # return cvxpy.sum([cvxpy.sum(cvxpy.multiply(
+    #     ((x[s] @ ones) - cvxpy.transpose(x[s] @ ones)) ** 2, similarities
+    # )) for s in range(len(splits))]) * normalization
+    if isinstance(weights, List):
+        weights = np.array(weights)
+
+    weight_matrix = weights.T @ weights
+
     if distances is not None:
-        return cvxpy.sum([cvxpy.sum(cvxpy.multiply(
-            cvxpy.maximum((x[s] @ ones) + cvxpy.transpose(x[s] @ ones) - (ones.T @ ones), 0), distances)
-        ) for s in range(len(splits))])
-    return cvxpy.sum([cvxpy.sum(cvxpy.multiply(
-        ((x[s] @ ones) - cvxpy.transpose(x[s] @ ones)) ** 2, similarities
-    )) for s in range(len(splits))])
+        hit_matrix = cvxpy.sum([cvxpy.maximum((x[s] @ ones) + cvxpy.transpose(x[s] @ ones) - (ones.T @ ones), 0) for s in range(len(splits))])
+        leak_matrix = cvxpy.multiply(hit_matrix, distances)
+    else:
+        hit_matrix = cvxpy.sum([((x[s] @ ones) - cvxpy.transpose(x[s] @ ones)) for s in range(len(splits))])
+        leak_matrix = cvxpy.multiply(hit_matrix, similarities)
+
+    leak_matrix = cvxpy.multiply(leak_matrix, weight_matrix)
+    leakage = cvxpy.sum(leak_matrix) / cvxpy.sum(cvxpy.multiply(hit_matrix, weight_matrix))
+    return leak_matrix  # leakage  # cvxpy.geo_mean(cvxpy.reshape(leak_matrix, (len(weights) ** 2, 1)))

@@ -32,11 +32,12 @@ def solve_ics_bqp(
     Returns:
         Mapping from entities to splits optimizing the objective function
     """
+    print()
     m = np.ones((len(e_entities)))
     o = [split * sum(e_weights) for split in splits]
     w = np.stack([e_weights] * len(splits))
-    min_lim = [int(split * sum(e_weights) * (1 - epsilon)) for split in splits]
-    max_lim = [int(split * sum(e_weights) * (1 + epsilon)) for split in splits]
+    min_lim = [int((split - epsilon) * sum(e_weights)) for split in splits]
+    max_lim = [int((split + epsilon) * sum(e_weights)) for split in splits]
 
     x_e = cvxpy.Variable((len(e_entities), len(splits)), boolean=True)
     constraints = [
@@ -44,9 +45,9 @@ def solve_ics_bqp(
         min_lim <= cvxpy.sum(cvxpy.multiply(w.T, x_e), axis=0),
         cvxpy.sum(cvxpy.multiply(w.T, x_e), axis=0) <= max_lim,
     ]
-
-    loss = cvxpy.sum_squares(cvxpy.sum(cvxpy.multiply(w.T, x_e), axis=0) - o)
-    solve(loss, constraints, max_sec, 1, solver)
+    normalization = 1 / (len(splits) * sum(e_weights) * epsilon)
+    loss = cvxpy.sum(cvxpy.abs(cvxpy.sum(cvxpy.multiply(w.T, x_e), axis=0) - o)) * normalization
+    problem = solve(loss, constraints, max_sec, 1, solver)
 
     return dict(
         (e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[i, s].value > 0.1

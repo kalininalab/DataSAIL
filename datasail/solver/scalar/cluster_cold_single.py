@@ -50,8 +50,8 @@ def solve_ccs_bqp(
         var = sum(x_e[i, s] * e_weights[i] for i in range(len(e_clusters)))
 
         constraints += [
-            int(splits[s] * sum(e_weights) * (1 - epsilon)) <= var,
-            var <= int(splits[s] * sum(e_weights) * (1 + epsilon))
+            int((splits[s] - epsilon) * sum(e_weights)) <= var,
+            var <= int((splits[s] + epsilon) * sum(e_weights))
         ] + cluster_sim_dist_constraint(e_similarities, e_distances, e_threshold, len(e_clusters), x_e, s)
 
     size_loss = sum(

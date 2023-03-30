@@ -59,8 +59,8 @@ def solve_icd_bqp(
             x_i[i, j, s] for i, e in enumerate(e_entities) for j, f in enumerate(f_entities) if (e, f) in inter
         )
         constraints += [
-            splits[s] * all_inter * (1 - epsilon) <= var,
-            var <= splits[s] * all_inter * (1 + epsilon),
+            (splits[s] - epsilon) * all_inter <= var,
+            var <= (splits[s] + epsilon) * all_inter,
         ]
         for i, e1 in enumerate(e_entities):
             for j, e2 in enumerate(f_entities):

@@ -39,8 +39,8 @@ def solve_icd_bqp(
     """
     inter_count = len(inter)
     inter_ones = inter_mask(e_entities, f_entities, inter)
-    min_lim = [int(split * inter_count * (1 - epsilon)) for split in splits]
-    max_lim = [int(split * inter_count * (1 + epsilon)) for split in splits]
+    min_lim = [int((split - epsilon) * inter_count) for split in splits]
+    max_lim = [int((split + epsilon) * inter_count) for split in splits]
 
     x_e = [cvxpy.Variable((len(e_entities), 1), boolean=True) for _ in range(len(splits))]
     x_f = [cvxpy.Variable((len(f_entities), 1), boolean=True) for _ in range(len(splits))]
@@ -64,7 +64,7 @@ def solve_icd_bqp(
 
     inter_loss = cvxpy.sum(cvxpy.sum(inter_ones - cvxpy.sum([x for x in x_i]), axis=0), axis=0)
 
-    solve(inter_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver)
+    problem = solve(inter_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver)
 
     # report the found solution
     output = ([], dict(

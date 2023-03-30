@@ -1,14 +1,14 @@
 import numpy as np
 import pytest
 
-from datasail.solver.scalar.id_cold_single import solve_ics_bqp as solve_ics_bqp_scalar
-from datasail.solver.vector.id_cold_single import solve_ics_bqp as solve_ics_bqp_vector
-from datasail.solver.scalar.id_cold_double import solve_icd_bqp as solve_icd_bqp_scalar
-from datasail.solver.vector.id_cold_double import solve_icd_bqp as solve_icd_bqp_vector
-from datasail.solver.scalar.cluster_cold_single import solve_ccs_bqp as solve_ccs_bqp_scalar
-from datasail.solver.vector.cluster_cold_single import solve_ccs_bqp as solve_ccs_bqp_vector
-from datasail.solver.scalar.cluster_cold_double import solve_ccd_bqp as solve_ccd_bqp_scalar
-from datasail.solver.vector.cluster_cold_double import solve_ccd_bqp as solve_ccd_bqp_vector
+from datasail.dqcp_solver.scalar.id_cold_single import solve_ics_bqp as solve_ics_bqp_scalar
+from datasail.dqcp_solver.vector.id_cold_single import solve_ics_bqp as solve_ics_bqp_vector
+from datasail.dqcp_solver.scalar.id_cold_double import solve_icd_bqp as solve_icd_bqp_scalar
+from datasail.dqcp_solver.vector.id_cold_double import solve_icd_bqp as solve_icd_bqp_vector
+from datasail.dqcp_solver.scalar.cluster_cold_single import solve_ccs_bqp as solve_ccs_bqp_scalar
+from datasail.dqcp_solver.vector.cluster_cold_single import solve_ccs_bqp as solve_ccs_bqp_vector
+from datasail.dqcp_solver.scalar.cluster_cold_double import solve_ccd_bqp as solve_ccd_bqp_scalar
+from datasail.dqcp_solver.vector.cluster_cold_double import solve_ccd_bqp as solve_ccd_bqp_vector
 
 
 def test_ics_scalar():
@@ -86,12 +86,12 @@ def test_ics_vector():
     assert solve_ics_bqp_vector(
         e_entities=["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"],
         e_weights=[6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
-        epsilon=0.2,
+        epsilon=0.05,
         splits=[0.7, 0.3],
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
-        solver="SCIP",
+        solver="MOSEK",
     )
 
 
@@ -220,17 +220,39 @@ def test_ccs_sim_vector():
         e_clusters=["1", "2", "3", "4", "5"],
         e_weights=[3, 3, 3, 2, 2],
         e_similarities=np.asarray([
-            [5, 5, 5, 0, 0],
-            [5, 5, 5, 0, 0],
-            [5, 5, 5, 0, 0],
-            [0, 0, 0, 5, 5],
-            [0, 0, 0, 5, 5],
+            [1.0, 1.0, 1.0, 0.2, 0.2],
+            [1.0, 1.0, 1.0, 0.2, 0.2],
+            [1.0, 1.0, 1.0, 0.2, 0.2],
+            [0.2, 0.2, 0.2, 1.0, 1.0],
+            [0.2, 0.2, 0.2, 1.0, 1.0],
         ]),
         e_distances=None,
         e_threshold=1,
         epsilon=0.2,
         splits=[0.7, 0.3],
         names=["train", "test"],
+        max_sec=10,
+        max_sol=0,
+        solver="SCIP",
+    ) is not None
+
+
+def test_ccs_sim_vector_3c():
+    assert solve_ccs_bqp_vector(
+        e_clusters=["1", "2", "3", "4", "5"],
+        e_weights=[3, 3, 5, 2, 2],
+        e_similarities=np.asarray([
+            [1.0, 1.0, 0.2, 0.2, 0.2],
+            [1.0, 1.0, 0.2, 0.2, 0.2],
+            [0.2, 0.2, 1.0, 0.2, 0.2],
+            [0.2, 0.2, 0.2, 1.0, 1.0],
+            [0.2, 0.2, 0.2, 1.0, 1.0],
+        ]),
+        e_distances=None,
+        e_threshold=1,
+        epsilon=0.2,
+        splits=[0.4, 0.33, 0.27],
+        names=["train", "val", "test"],
         max_sec=10,
         max_sol=0,
         solver="SCIP",
