@@ -144,10 +144,12 @@ def run_solver(
                 fun = solve_ccd_bqp_vector if vectorized else solve_ccd_bqp_scalar
                 cluster_split = fun(
                     e_clusters=e_dataset.cluster_names,
+                    e_weights=[e_dataset.cluster_weights.get(c, 0) for c in e_dataset.cluster_names],
                     e_similarities=e_dataset.cluster_similarity,
                     e_distances=e_dataset.cluster_distance,
                     e_threshold=e_dataset.threshold,
                     f_clusters=f_dataset.cluster_names,
+                    f_weights=[f_dataset.cluster_weights.get(c, 0) for c in f_dataset.cluster_names],
                     f_similarities=f_dataset.cluster_similarity,
                     f_distances=f_dataset.cluster_distance,
                     f_threshold=f_dataset.threshold,

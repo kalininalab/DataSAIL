@@ -41,12 +41,13 @@ def cdhit_trial(dataset, add_args):
           f"cd cdhit && " \
           f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 {add_args}"
 
-    if logging.root.level == logging.DEBUG:
+    if logging.root.level != logging.DEBUG:
         cmd += " >/dev/null 2>&1"
 
     if os.path.exists("cdhit"):
         cmd = "rm -rf cdhit && " + cmd
 
+    logging.info(cmd)
     os.system(cmd)
 
     cluster_map = get_cdhit_map("cdhit/clusters.clstr")

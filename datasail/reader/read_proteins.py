@@ -24,10 +24,13 @@ def read_protein_data(data, weights, sim, dist, max_sim, max_dist, inter, index)
     dataset = DataSet(type="P")
     if data.endswith(".fasta") or data.endswith(".fa") or data.endswith(".fna"):
         dataset.data = parse_fasta(data)
+        dataset.format = "FASTA"
     elif os.path.isfile(data):
         dataset.data = dict(read_csv(data))
+        dataset.format = "FASTA"
     elif os.path.isdir(data):
         dataset.data = dict(read_folder(data, ".pdb"))
+        dataset.format = "PDB"
     else:
         raise ValueError()
     dataset.location = data

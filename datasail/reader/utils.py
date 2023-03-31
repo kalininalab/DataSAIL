@@ -8,6 +8,7 @@ import numpy as np
 @dataclass
 class DataSet:
     type: Optional[str] = None
+    format: Optional[str] = None
     args: str = ""
     names: Optional[List[str]] = None
     cluster_names: Optional[List[str]] = None
@@ -124,7 +125,7 @@ def read_data(weights, sim, dist, max_sim, max_dist, inter, index, dataset: Data
 
     # parse the protein similarity measure
     if sim is None and dist is None:
-        dataset.similarity = np.ones((len(dataset.data), len(dataset.data)))
+        dataset.similarity, dataset.distance = get_default(dataset.type, dataset.format)
         dataset.names = list(dataset.data.keys())
         dataset.threshold = 1
     elif sim is not None and os.path.isfile(sim):
@@ -142,3 +143,20 @@ def read_data(weights, sim, dist, max_sim, max_dist, inter, index, dataset: Data
             dataset.threshold = max_dist
         dataset.names = list(dataset.data.keys())
     return dataset
+
+
+def get_default(data_type: str, data_format: str) -> Tuple[
+    Optional[Union[np.ndarray, str]], Optional[Union[np.ndarray, str]]
+]:
+    if data_type == "P":
+        if data_format == "PDB":
+            return "foldseek", None
+        elif data_format == "FASTA":
+            return "cdhit", None
+    elif data_type == "M":
+        if data_format == "SMILES":
+            return "ecfp", None
+    elif data_type == "G":
+        if data_format == "FASTA":
+            return None, "mash"
+    return None, None

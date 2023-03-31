@@ -14,11 +14,15 @@ def run_mash(dataset: DataSet) -> Tuple[List[str], Dict[str, str], Optional[np.n
           f"mash sketch -s 10000 -o ./cluster {os.path.join('..', dataset.location, '*.fna')} && " \
           f"mash dist -t cluster.msh cluster.msh > cluster.tsv"
 
+    if logging.root.level != logging.DEBUG:
+        cmd += " >/dev/null 2>&1"
+
     if os.path.exists("mash_results"):
         cmd = "rm -rf mash_results && " + cmd
 
     logging.info("Start MASH clustering")
 
+    logging.info(cmd)
     os.system(cmd)
 
     names = dataset.names

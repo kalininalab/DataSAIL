@@ -124,6 +124,7 @@ def test_ccs_vector():
 def test_ccd_vector():
     assert solve_ccd_bqp_vector(
         ["D1", "D2", "D3"],
+        [1, 1, 1],
         np.asarray([
             [5, 5, 0],
             [5, 5, 0],
@@ -132,6 +133,7 @@ def test_ccd_vector():
         None,
         4,
         ["P1", "P2", "P3"],
+        [1, 1, 1],
         np.asarray([
             [5, 5, 0],
             [5, 5, 0],

@@ -50,12 +50,13 @@ def mmseqs_trial(dataset, add_args):
           f"-c 0.8 " \
           f"{add_args}"
 
-    if logging.root.level == logging.DEBUG:
+    if logging.root.level != logging.DEBUG:
         cmd += " >/dev/null 2>&1"
 
     if os.path.exists("mmseqs_results"):
         cmd = "rm -rf mmseqs_results && " + cmd
 
+    logging.info(cmd)
     os.system(cmd)
 
     cluster_map = get_mmseqs_map("mmseqs_results/mmseqs_out_cluster.tsv")

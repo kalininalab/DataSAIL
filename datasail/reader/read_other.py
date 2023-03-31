@@ -24,6 +24,7 @@ def read_other_data(data, weights, sim, dist, max_sim, max_dist, inter, index) -
     dataset = DataSet(type="O")
     if os.path.exists(data):
         dataset.location = data
+        dataset.format = "Other"
     else:
         raise ValueError()
 

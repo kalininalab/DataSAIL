@@ -23,6 +23,7 @@ def read_molecule_data(data, weights, sim, dist, max_sim, max_dist, inter, index
     dataset = DataSet(type="M")
     if data.lower().endswith(".tsv"):
         dataset.data = dict(read_csv(data))
+        dataset.format = "SMILES"
     elif os.path.isdir(data):
         pass
     else:

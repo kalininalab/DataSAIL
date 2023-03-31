@@ -121,7 +121,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
         )
     if kwargs["f_sim"] is not None and kwargs["f_sim"] == "CDHIT":
         validate_cdhit_args(kwargs["f_args"])
-    if kwargs["f_sim"] is not None and kwargs["e_sim"].lower() == "mmseqs":
+    if kwargs["f_sim"] is not None and kwargs["f_sim"].lower() == "mmseqs":
         validate_mmseqs_args(kwargs["e_args"])
     if kwargs["f_dist"] is not None and kwargs["f_dist"] == "MASH":
         validate_mash_args(kwargs["f_args"])

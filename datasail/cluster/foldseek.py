@@ -26,11 +26,15 @@ def run_foldseek(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarra
           f"foldseek easy-search {os.path.join('..', dataset.location)} {os.path.join('..', dataset.location)} " \
           f"aln.m8 tmp --format-output 'query,target,fident'"  #  >/dev/null 2>&1"
 
+    if logging.root.level != logging.DEBUG:
+        cmd += " >/dev/null 2>&1"
+
     if os.path.exists("fs"):
         cmd = "rm -rf fs && " + cmd
 
     logging.info("Start FoldSeek clustering")
 
+    logging.info(cmd)
     os.system(cmd)
 
     namap = dict((n, i) for i, n in enumerate(dataset.names))

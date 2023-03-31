@@ -143,7 +143,7 @@ def solve(loss, constraints: List, max_sec: int, num_vars: int, solver: str):
         kwargs = {"scip_params": {"limits/time": max_sec}}
     problem.solve(
         solver=solve_algo,
-        # qcp=True,
+        qcp=True,
         **kwargs,
         # verbose=True,
     )

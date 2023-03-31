@@ -23,6 +23,7 @@ def read_genome_data(data, weights, sim, dist, max_sim, max_dist, inter, index) 
     dataset = DataSet(type="G")
     if os.path.exists(data):
         dataset.location = data
+        dataset.format = "FASTA"
     else:
         raise ValueError()
 

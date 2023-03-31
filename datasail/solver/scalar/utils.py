@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Sized, List, Optional, Set
+from typing import Dict, Tuple, Sized, List, Optional, Set, Union
 
 import cvxpy
 import numpy as np
@@ -100,6 +100,7 @@ def cluster_sim_dist_objective(
         similarities: Optional[np.ndarray],
         distances: Optional[np.ndarray],
         num_clusters: int,
+        weights: Union[np.ndarray, List[float]],
         x: DataVars,
         num_splits: int
 ) -> Expression:
@@ -110,6 +111,7 @@ def cluster_sim_dist_objective(
         similarities: Similarity matrix of the dataset
         distances: Distance matrix of the dataset
         num_clusters: Number of clusters
+        weights: weights of the entities
         x: Dictionary of indices and variables for the e-dataset
         num_splits: Number of splits
 
@@ -118,11 +120,11 @@ def cluster_sim_dist_objective(
     """
     if similarities is not None:
         return sum(
-            (x[i, s] - x[j, s]) ** 2 * similarities[i][j]
+            (x[i, s] - x[j, s]) ** 2 * similarities[i][j] * weights[i] * weights[j]
             for i in range(num_clusters) for j in range(i + 1, num_clusters) for s in range(num_splits)
         )
     else:
         return sum(
-            cvxpy.maximum((x[i, s] + x[j, s]) - 1, 0) * distances[i][j]
+            cvxpy.maximum((x[i, s] + x[j, s]) - 1, 0) * distances[i][j] * weights[i] * weights[j]
             for i in range(num_clusters) for j in range(i + 1, num_clusters) for s in range(num_splits)
         )

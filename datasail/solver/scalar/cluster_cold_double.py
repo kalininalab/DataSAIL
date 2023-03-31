@@ -9,10 +9,12 @@ from datasail.solver.utils import solve, estimate_number_target_interactions
 
 def solve_ccd_bqp(
         e_clusters: List[Union[str, int]],
+        e_weights: List[float],
         e_similarities: Optional[np.ndarray],
         e_distances: Optional[np.ndarray],
         e_threshold: float,
         f_clusters: List[Union[str, int]],
+        f_weights: List[float],
         f_similarities: Optional[np.ndarray],
         f_distances: Optional[np.ndarray],
         f_threshold: float,
@@ -88,10 +90,11 @@ def solve_ccd_bqp(
             f_similarities, f_distances, f_threshold, len(f_clusters), x_f, s
         )
 
+    normalization = 2 / np.sum(inter)
     inter_loss = sum(
         (1 - x_i[i, j, b]) * inter[i, j]
         for i in range(len(e_clusters)) for j in range(len(f_clusters)) for b in range(len(splits))
-    )
+    ) * normalization
 
     e_loss = cluster_sim_dist_objective(e_similarities, e_distances, len(e_clusters), x_e, len(splits))
     f_loss = cluster_sim_dist_objective(f_similarities, f_distances, len(f_clusters), x_f, len(splits))

@@ -10,10 +10,12 @@ from datasail.solver.vector.utils import interaction_constraints, cluster_sim_di
 
 def solve_ccd_bqp(
         e_clusters: List[Union[str, int]],
+        e_weights: List[float],
         e_similarities: Optional[np.ndarray],
         e_distances: Optional[np.ndarray],
         e_threshold: float,
         f_clusters: List[Union[str, int]],
+        f_weights: List[float],
         f_similarities: Optional[np.ndarray],
         f_distances: Optional[np.ndarray],
         f_threshold: float,
@@ -83,8 +85,8 @@ def solve_ccd_bqp(
         [cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter_ones - x_i[s], inter), axis=0), axis=0) for s in range(len(splits))]
     )
 
-    e_loss = cluster_sim_dist_objective(e_similarities, e_distances, e_ones, None, x_e, splits)
-    f_loss = cluster_sim_dist_objective(f_similarities, f_distances, f_ones, None, x_f, splits)
+    e_loss = cluster_sim_dist_objective(e_similarities, e_distances, e_ones, e_weights, x_e, splits)
+    f_loss = cluster_sim_dist_objective(f_similarities, f_distances, f_ones, f_weights, x_f, splits)
 
     solve(alpha * inter_loss + e_loss + f_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver)
 

@@ -17,14 +17,14 @@ def cluster_param_binary_search(
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(init_args))
     num_clusters = len(cluster_names)
-    logging.info(f"First round of clustering found {num_clusters} clusters.")
+    logging.info(f"First round of clustering found {num_clusters} clusters for {len(dataset.names)} samples.")
     if num_clusters <= 10:
         min_args = init_args
         min_clusters = num_clusters
         min_cluster_names, min_cluster_map, min_cluster_sim = cluster_names, cluster_map, cluster_sim
         max_cluster_names, max_cluster_map, max_cluster_sim = dataset.names, dict((n, n) for n in dataset.names), np.zeros((len(dataset.names), len(dataset.names)))
         max_clusters = len(max_cluster_names)
-        logging.info(f"Second round of clustering found {max_clusters} clusters.")
+        logging.info(f"Second round of clustering found {max_clusters} clusters for {len(dataset.names)} samples.")
     elif 10 < num_clusters <= 100:
         return cluster_names, cluster_map, cluster_sim
     else:
@@ -33,7 +33,7 @@ def cluster_param_binary_search(
         max_cluster_names, max_cluster_map, max_cluster_sim = cluster_names, cluster_map, cluster_sim
         min_cluster_names, min_cluster_map, min_cluster_sim = trial(dataset, args2str(min_args))
         min_clusters = len(min_cluster_names)
-        logging.info(f"First round of clustering found {min_clusters} clusters.")
+        logging.info(f"First round of clustering found {min_clusters} clusters for {len(dataset.names)} samples.")
     if 10 < min_clusters <= 100:
         return min_cluster_names, min_cluster_map, min_cluster_sim
     if 10 < max_clusters <= 100:
@@ -51,7 +51,8 @@ def cluster_param_binary_search(
         args = gen_args(min_args, max_args)
         cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(args))
         num_clusters = len(cluster_names)
-        logging.info(f"Next round of clustering ({iteration_count + 2}.) found {num_clusters} clusters.")
+        logging.info(f"Next round of clustering ({iteration_count + 2}.) "
+                     f"found {num_clusters} clusters for {len(dataset.names)} samples.")
         if num_clusters <= 10:
             min_args = args
         elif 10 < num_clusters <= 100 or iteration_count >= 8:
