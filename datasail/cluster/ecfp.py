@@ -2,9 +2,7 @@ import logging
 import pickle
 from typing import Tuple, List, Dict
 
-import matplotlib
 import numpy as np
-import seaborn as sns
 from matplotlib import pyplot as plt
 from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
@@ -63,12 +61,12 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
         sim_matrix[:i, i] = sim_matrix[i, :i]
 
     cluster_map = dict((name, Chem.MolToSmiles(scaffolds[name])) for name in dataset.names)
-    fig, ax = plt.subplots()
 
-    heatmap(sim_matrix, ax=ax, cmap="YlGn")
-    fig.tight_layout()
-    plt.savefig("heatmap_mibig.png")
-    plt.clf()
+    # fig, ax = plt.subplots()
+    # heatmap(sim_matrix, ax=ax, cmap="YlGn")
+    # fig.tight_layout()
+    # plt.savefig("heatmap_mibig.png")
+    # plt.clf()
 
     return cluster_names, cluster_map, sim_matrix
 
