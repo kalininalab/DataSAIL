@@ -1,4 +1,5 @@
 import logging
+import sys
 from typing import List, Tuple, Union
 
 import cvxpy
@@ -116,7 +117,7 @@ def inter_mask_sparse(e_entities, f_entities, inter):
     return output
 
 
-def solve(loss, constraints: List, max_sec: int, num_vars: int, solver: str):
+def solve(loss, constraints: List, max_sec: int, num_vars: int, solver: str, log_file: str):
     """
     Minimize the loss function based on the constraints with the timelimit specified by max_sec.
 
@@ -126,6 +127,7 @@ def solve(loss, constraints: List, max_sec: int, num_vars: int, solver: str):
         max_sec: Maximal number of seconds to optimize the initial solution
         num_vars: Number of variables for statistics
         solver: Solving algorithm to use to solve the formulated program
+        log_file: File to store the detailed log from the solver to
 
     Returns:
 
@@ -136,17 +138,17 @@ def solve(loss, constraints: List, max_sec: int, num_vars: int, solver: str):
     problem = cvxpy.Problem(cvxpy.Minimize(loss), constraints)
     if solver == "MOSEK":
         solve_algo = cvxpy.MOSEK
-        # kwargs = {"mosek_params": {mosek.dparam.optimizer_max_time: max_sec}}
         kwargs = {"mosek_params": {"MSK_DPAR_OPTIMIZER_MAX_TIME": max_sec}}
     else:
         solve_algo = cvxpy.SCIP
         kwargs = {"scip_params": {"limits/time": max_sec}}
-    problem.solve(
-        solver=solve_algo,
-        qcp=True,
-        **kwargs,
-        # verbose=True,
-    )
+    with open(log_file, "w") as sys.stdout:
+        problem.solve(
+            solver=solve_algo,
+            qcp=True,
+            verbose=True,
+            **kwargs,
+        )
 
     logging.info(f"{solver} status: {problem.status}")
     logging.info(f"Solution's score: {problem.value}")

@@ -16,6 +16,7 @@ def solve_icd_bqp(
         max_sec: int,
         max_sol: int,
         solver: str,
+        log_file: str,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
     """
     Solve identity-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
@@ -76,9 +77,7 @@ def solve_icd_bqp(
         for j, f in enumerate(f_entities) if (e, f) in inter
     ) / background
 
-    solve(inter_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver)
-
-    print(inter_loss.value)
+    solve(inter_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver, log_file)
 
     # report the found solution
     output = ([], dict(

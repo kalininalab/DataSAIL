@@ -26,6 +26,7 @@ def solve_ccd_bqp(
         max_sec: int,
         max_sol: int,
         solver: str,
+        log_file: str,
 ) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
     """
     Solve cluster-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
@@ -33,10 +34,12 @@ def solve_ccd_bqp(
 
     Args:
         e_clusters: List of cluster names to split from the e-dataset
+        e_weights: List of weights of the clusters in order of the e_cluster argument
         e_similarities: Pairwise similarity matrix of clusters in the order of their names
         e_distances: Pairwise distance matrix of clusters in the order of their names
         e_threshold: Threshold to not undergo when optimizing
         f_clusters: List of cluster names to split from the f-dataset
+        f_weights: List of weights of the clusters in order of the f_cluster argument
         f_similarities: Pairwise similarity matrix of clusters in the order of their names
         f_distances: Pairwise distance matrix of clusters in the order of their names
         f_threshold: Threshold to not undergo when optimizing
@@ -47,6 +50,7 @@ def solve_ccd_bqp(
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
         max_sol: Maximal number of solution to consider
         solver: Solving algorithm to use to solve the formulated program
+        log_file: File to store the detailed log from the solver to
 
     Returns:
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
@@ -88,7 +92,7 @@ def solve_ccd_bqp(
     e_loss = cluster_sim_dist_objective(e_similarities, e_distances, e_ones, e_weights, x_e, splits)
     f_loss = cluster_sim_dist_objective(f_similarities, f_distances, f_ones, f_weights, x_f, splits)
 
-    solve(alpha * inter_loss + e_loss + f_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver)
+    solve(alpha * inter_loss + e_loss + f_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver, log_file)
 
     # report the found solution
     output = ([], dict(

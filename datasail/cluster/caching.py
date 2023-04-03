@@ -36,4 +36,5 @@ def store_to_cache(dataset: DataSet, **kwargs) -> None:
         name = f"{hex(hash(dataset))[2:34]}.pkl"
         cache_dir = kwargs.get("cache_dir", user_cache_dir("DataSAIL"))
         os.makedirs(cache_dir, exist_ok=True)
+        print(os.path.join(cache_dir, name))
         pickle.dump(dataset, open(os.path.join(cache_dir, name), "wb"))

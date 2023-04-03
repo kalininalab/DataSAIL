@@ -29,6 +29,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     """
     cache = load_from_cache(dataset, **kwargs)
     if cache is not None:
+        logging.info("Loaded clustering from cache")
         return cache
 
     if isinstance(dataset.similarity, str):  # compute the similarity

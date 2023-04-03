@@ -57,20 +57,21 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
         sim_matrix[i, i] = 1
         sim_matrix[i, :i] = DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])
         sim_matrix[:i, i] = sim_matrix[i, :i]
+    print()
 
     cluster_map = dict((name, Chem.MolToSmiles(scaffolds[name])) for name in dataset.names)
 
-    cluster_indices = dict((n, i) for i, n in enumerate(cluster_names))
-    element_sim_matrix = np.ones((len(dataset.names), len(dataset.names)))
-    smiles_scaff_map = dict((k, Chem.MolToSmiles(v)) for k, v in scaffolds.items())
-    for i in range(len(dataset.names)):
-        for j in range(i + 1, len(dataset.names)):
-            element_sim_matrix[i, j] = sim_matrix[
-                cluster_indices[smiles_scaff_map[dataset.names[i]]],
-                cluster_indices[smiles_scaff_map[dataset.names[j]]]
-            ]
-            element_sim_matrix[j, i] = element_sim_matrix[i, j]
-    dataset.similarity = element_sim_matrix
+    # cluster_indices = dict((n, i) for i, n in enumerate(cluster_names))
+    # element_sim_matrix = np.ones((len(dataset.names), len(dataset.names)))
+    # smiles_scaff_map = dict((k, Chem.MolToSmiles(v)) for k, v in scaffolds.items())
+    # for i in range(len(dataset.names)):
+    #     for j in range(i + 1, len(dataset.names)):
+    #         element_sim_matrix[i, j] = sim_matrix[
+    #             cluster_indices[smiles_scaff_map[dataset.names[i]]],
+    #             cluster_indices[smiles_scaff_map[dataset.names[j]]]
+    #         ]
+    #         element_sim_matrix[j, i] = element_sim_matrix[i, j]
+    # dataset.similarity = element_sim_matrix
 
     return cluster_names, cluster_map, sim_matrix
 

@@ -47,6 +47,7 @@ def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
         max_sec=kwargs["max_sec"],
         max_sol=kwargs["max_sol"],
         solver=kwargs["solver"],
+        log_dir=kwargs["logdir"],
     )
 
     logging.info("Store results")

@@ -49,7 +49,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
 
     kwargs["logdir"] = os.path.abspath(os.path.join(kwargs["output"], "logs"))
 
-    os.makedirs(kwargs["logdir"])
+    os.makedirs(kwargs["logdir"], exist_ok=True)
 
     formatter = logging.Formatter('%(asctime)s %(message)s')
 

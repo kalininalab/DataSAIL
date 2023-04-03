@@ -44,6 +44,7 @@ def report(
             if technique[0] == "C":
                 save_clusters(save_dir, e_dataset)
                 save_t_sne(save_dir, e_dataset, e_name_split_map.get(technique, None), e_cluster_split_map.get(technique, None), split_names)
+                save_cluster_hist(save_dir, e_dataset)
             split_counts = dict((n, 0) for n in split_names)
             for name in e_dataset.names:
                 split_counts[e_name_split_map[technique][name]] += e_dataset.weights.get(name, 0)
@@ -56,6 +57,7 @@ def report(
             if technique[0] == "C":
                 save_clusters(save_dir, f_dataset)
                 save_t_sne(save_dir, f_dataset, f_name_split_map.get(technique, None), f_cluster_split_map.get(technique, None), split_names)
+                save_cluster_hist(save_dir, f_dataset)
             split_counts = dict((n, 0) for n in split_names)
             for name in f_dataset.names:
                 split_counts[f_name_split_map[technique][name]] += f_dataset.weights.get(name, 0)
@@ -137,6 +139,17 @@ def t_sne(names, distances, name_split_map: Dict[str, str], split_names: List[st
     plt.yticks([])
     plt.legend()
     plt.savefig(output_file_name)
+    plt.clf()
+
+
+def save_cluster_hist(save_dir, dataset):
+    clusters = set(dataset.cluster_map.values())
+    clusters = dict((c, i) for i, c in enumerate(clusters))
+    counts = [0] * len(clusters)
+    for n, c in dataset.cluster_map.items():
+        counts[clusters[c]] += 1
+    plt.hist(clusters)
+    plt.savefig(os.path.join(save_dir, f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_cluster_hist.png"))
     plt.clf()
 
 

@@ -21,6 +21,7 @@ def solve_ccs_bqp(
         max_sec: int,
         max_sol: int,
         solver: str,
+        log_file: str,
 ) -> Optional[Dict[str, str]]:
     """
     Solve cluster-based cold splitting using disciplined quasi-convex programming and binary quadratic programming.
@@ -69,19 +70,7 @@ def solve_ccs_bqp(
     e_loss = cluster_sim_dist_objective(e_similarities, e_distances, ones, e_weights, x_e, splits)
 
     alpha = 0.5
-    problem = solve(alpha * size_loss + e_loss, constraints, max_sec, len(x_e), solver)
-    # quadratic_term = x_e[0][0, 0] ** 2 - x_e[0][0, 0] ** 2
-    # problem = cvxpy.Problem(cvxpy.Minimize(size_loss + e_loss), constraints)
-    # qcqp = QCQP(problem)
-    # qcqp.suggest(SDR)
-    # print("SDR lower bound: %.3f" % qcqp.sdr_bound)
-
-    # Attempt to improve the starting point given by the suggest method
-    # f_cd, v_cd = qcqp.improve(COORD_DESCENT)
-    # print("Coordinate descent: objective %.3f, violation %.3f" % (f_cd, v_cd))
-    # print('\n'.join([str(x_e[s].value) for s in range(len(splits))]))
-    print(e_loss.value)
-    print(size_loss.value)
+    problem = solve(alpha * size_loss + e_loss, constraints, max_sec, len(x_e), solver, log_file)
 
     return dict(
         (e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_clusters) if x_e[s][i, 0].value > 0.1

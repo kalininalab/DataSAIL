@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Tuple, Optional, List, Dict, Union, Set
 
 import numpy as np
@@ -32,6 +33,7 @@ def run_solver(
         max_sec: int,
         max_sol: int,
         solver: str,
+        log_dir: str,
 ) -> Tuple[Dict[str, List[Tuple[str, str, str]]], DictMap, DictMap, DictMap, DictMap]:
     """
     Run a solver based on the selected technique.
@@ -48,6 +50,7 @@ def run_solver(
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
         max_sol: Maximal number of solution to consider
         solver: Solving algorithm to use to solve the formulated program
+        log_dir: path to folder to store log files in
 
     Returns:
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
@@ -62,6 +65,7 @@ def run_solver(
             logging.info(technique)
             technique, mode = technique[:3], technique[-1]
             dataset = f_dataset if mode == "f" else e_dataset
+            log_file = os.path.join(log_dir, f"{dataset.get_name()}_{technique}{mode}.log")
 
             if technique == "R":
                 solution = sample_categorical(
@@ -85,6 +89,7 @@ def run_solver(
                     max_sec=max_sec,
                     max_sol=max_sol,
                     solver=solver,
+                    log_file=log_file,
                 )
 
                 if solution is not None:
@@ -107,6 +112,7 @@ def run_solver(
                     max_sec=max_sec,
                     max_sol=max_sol,
                     solver=solver,
+                    log_file=log_file,
                 )
                 if solution is not None:
                     output_inter[technique], output_e_entities[technique], output_f_entities[technique] = solution
@@ -125,6 +131,7 @@ def run_solver(
                     max_sec=max_sec,
                     max_sol=max_sol,
                     solver=solver,
+                    log_file=log_file,
                 )
                 if cluster_split is not None:
                     if mode == "f":
@@ -160,6 +167,7 @@ def run_solver(
                     max_sec=max_sec,
                     max_sol=max_sol,
                     solver=solver,
+                    log_file=log_file,
                 )
 
                 if cluster_split is not None:
