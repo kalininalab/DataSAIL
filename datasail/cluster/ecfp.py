@@ -1,9 +1,7 @@
 import logging
-import pickle
 from typing import Tuple, List, Dict
 
 import numpy as np
-from matplotlib import pyplot as plt
 from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
 from rdkit.Chem.Scaffolds.MurckoScaffold import MakeScaffoldGeneric
@@ -62,41 +60,18 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
 
     cluster_map = dict((name, Chem.MolToSmiles(scaffolds[name])) for name in dataset.names)
 
-    # fig, ax = plt.subplots()
-    # heatmap(sim_matrix, ax=ax, cmap="YlGn")
-    # fig.tight_layout()
-    # plt.savefig("heatmap_mibig.png")
-    # plt.clf()
+    cluster_indices = dict((n, i) for i, n in enumerate(cluster_names))
+    element_sim_matrix = np.ones((len(dataset.names), len(dataset.names)))
+    smiles_scaff_map = dict((k, Chem.MolToSmiles(v)) for k, v in scaffolds.items())
+    for i in range(len(dataset.names)):
+        for j in range(i + 1, len(dataset.names)):
+            element_sim_matrix[i, j] = sim_matrix[
+                cluster_indices[smiles_scaff_map[dataset.names[i]]],
+                cluster_indices[smiles_scaff_map[dataset.names[j]]]
+            ]
+            element_sim_matrix[j, i] = element_sim_matrix[i, j]
+    dataset.similarity = element_sim_matrix
 
     return cluster_names, cluster_map, sim_matrix
 
 
-def heatmap(data, ax=None, cbar_kw=None, **kwargs):
-    """
-    Create a heatmap from a numpy array and two lists of labels.
-
-    Parameters
-    ----------
-    data
-        A 2D numpy array of shape (M, N).
-    ax
-        A `matplotlib.axes.Axes` instance to which the heatmap is plotted.  If
-        not provided, use current axes or create a new one.  Optional.
-    cbar_kw
-        A dictionary with arguments to `matplotlib.Figure.colorbar`.  Optional.
-    **kwargs
-        All other arguments are forwarded to `imshow`.
-    """
-
-    if ax is None:
-        ax = plt.gca()
-
-    if cbar_kw is None:
-        cbar_kw = {}
-
-    # Plot the heatmap
-    im = ax.imshow(data, **kwargs)
-
-    # Create colorbar
-    cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
-    return im, cbar

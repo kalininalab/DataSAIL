@@ -10,12 +10,13 @@ from datasail.parsers import parse_cdhit_args
 from datasail.reader.utils import DataSet
 
 
-def run_cdhit(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_cdhit(dataset: DataSet, log_dir: str) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run the CD-HIT tool for protein input.
 
     Args:
         dataset: DataSet holding all information on the dta to be clustered
+        log_dir: Absolute path to the directory to store all the logs in
 
     Returns:
         A tuple containing
@@ -32,17 +33,16 @@ def run_cdhit(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
         (1, 5),
         cdhit_trial,
         lambda x: f"-c {x[0]} -n {x[1]}",
-        lambda x, y: ((x[0] + y[0]) / 2, c2n((x[0] + y[0]) / 2))
+        lambda x, y: ((x[0] + y[0]) / 2, c2n((x[0] + y[0]) / 2)),
+        log_dir,
     )
 
 
-def cdhit_trial(dataset, add_args):
+def cdhit_trial(dataset, add_args, log_name):
     cmd = f"mkdir cdhit && " \
           f"cd cdhit && " \
-          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 {add_args}"
-
-    if logging.root.level != logging.DEBUG:
-        cmd += " >/dev/null 2>&1"
+          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 {add_args} " \
+          f">{log_name}"
 
     if os.path.exists("cdhit"):
         cmd = "rm -rf cdhit && " + cmd

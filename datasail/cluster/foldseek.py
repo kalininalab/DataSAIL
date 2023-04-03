@@ -8,12 +8,13 @@ import numpy as np
 from datasail.reader.utils import DataSet
 
 
-def run_foldseek(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_foldseek(dataset: DataSet, log_dir: str) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run FoldSeek to cluster the proteins based on their structure.
 
     Args:
         dataset: DataSet holding all information on the dta to be clustered
+        log_dir: Absolute path to the directory to store all the logs in
 
     Returns:
         A tuple containing
@@ -21,13 +22,12 @@ def run_foldseek(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarra
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
+    log_name = os.path.join(log_dir, f"{dataset.get_name()}_foldseek.log")
     cmd = f"mkdir fs && " \
           f"cd fs && " \
           f"foldseek easy-search {os.path.join('..', dataset.location)} {os.path.join('..', dataset.location)} " \
-          f"aln.m8 tmp --format-output 'query,target,fident'"  #  >/dev/null 2>&1"
-
-    if logging.root.level != logging.DEBUG:
-        cmd += " >/dev/null 2>&1"
+          f"aln.m8 tmp --format-output 'query,target,fident' " \
+          f">{log_name}"
 
     if os.path.exists("fs"):
         cmd = "rm -rf fs && " + cmd

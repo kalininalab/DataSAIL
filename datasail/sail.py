@@ -40,13 +40,33 @@ def validate_args(**kwargs) -> Dict[str, object]:
     Returns:
         The kwargs in case something has been adjusted, e.g. splits have to transformed into sum=1-vector or naming
     """
-    logging.basicConfig(level=verb_map[kwargs["verbosity"]])
-    logging.info("Validating arguments")
 
     # create output directory
+    output_created = False
     if kwargs["output"] is not None and not os.path.isdir(kwargs["output"]):
-        logging.warning("Output directory does not exist, DataSAIL creates it automatically")
+        output_created = True
         os.makedirs(kwargs["output"], exist_ok=True)
+
+    kwargs["logdir"] = os.path.abspath(os.path.join(kwargs["output"], "logs"))
+
+    os.makedirs(kwargs["logdir"])
+
+    formatter = logging.Formatter('%(asctime)s %(message)s')
+
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(level=verb_map[kwargs["verbosity"]])
+    stdout_handler.setFormatter(formatter)
+
+    file_handler = logging.FileHandler(os.path.join(kwargs["output"], "logs", "general.log"))
+    file_handler.setLevel(level=verb_map[kwargs["verbosity"]])
+    file_handler.setFormatter(formatter)
+
+    logging.basicConfig(level=verb_map[kwargs["verbosity"]], handlers=[stdout_handler, file_handler])
+
+    if output_created:
+        logging.warning("Output directory does not exist, DataSAIL creates it automatically")
+
+    logging.info("Validating arguments")
 
     # check splits to be more than 1 and their fractions sum up to 1 and check the names
     if len(kwargs["splits"]) < 2:

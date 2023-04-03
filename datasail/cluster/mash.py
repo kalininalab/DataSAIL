@@ -8,11 +8,13 @@ import numpy as np
 from datasail.reader.utils import DataSet
 
 
-def run_mash(dataset: DataSet) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray]]:
+def run_mash(dataset: DataSet, log_dir: str) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray]]:
+    log_name = os.path.join(log_dir, f"{dataset.get_name()}_mash.log")
     cmd = f"mkdir mash_results && " \
           f"cd mash_results && " \
           f"mash sketch -s 10000 -o ./cluster {os.path.join('..', dataset.location, '*.fna')} && " \
-          f"mash dist -t cluster.msh cluster.msh > cluster.tsv"
+          f"mash dist -t cluster.msh cluster.msh > cluster.tsv " \
+          f">{log_name}"
 
     if logging.root.level != logging.DEBUG:
         cmd += " >/dev/null 2>&1"

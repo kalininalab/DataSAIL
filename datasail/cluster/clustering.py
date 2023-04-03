@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Dict, Tuple, List, Union
 
 import numpy as np
@@ -10,8 +11,10 @@ from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
+from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
+from datasail.report import whatever
 
 
 def cluster(dataset: DataSet, **kwargs) -> DataSet:
@@ -30,7 +33,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
 
     if isinstance(dataset.similarity, str):  # compute the similarity
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity, dataset.cluster_weights = \
-            similarity_clustering(dataset)
+            similarity_clustering(dataset, kwargs["logdir"])
 
     elif isinstance(dataset.distance, str):  # compute the distance
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_distance, dataset.cluster_weights = \
@@ -48,17 +51,23 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         return dataset
 
     # if there are too many clusters, reduce their number based on some cluster algorithms.
-    num_old_cluster = len(dataset.cluster_names) + 1
-    while 100 < len(dataset.cluster_names) < num_old_cluster:
-        num_old_cluster = len(dataset.cluster_names)
-        dataset = additional_clustering(dataset)
+    if isinstance(dataset.similarity, np.ndarray):
+        num_old_cluster = len(dataset.cluster_names) + 1
+        while 100 < len(dataset.cluster_names) < num_old_cluster:
+            num_old_cluster = len(dataset.cluster_names)
+            dataset = additional_clustering(dataset)
+
+        whatever(dataset.names, dataset.cluster_map, dataset.distance, dataset.similarity)
+        metric = dataset.similarity if dataset.similarity is not None else dataset.distance
+        form = "similarity" if dataset.similarity is not None else "distance"
+        heatmap(metric, os.path.join(kwargs["output"], dataset.get_name() + f"_{form}.png"))
 
     store_to_cache(dataset, **kwargs)
 
     return dataset
 
 
-def similarity_clustering(dataset: DataSet) -> Tuple[
+def similarity_clustering(dataset: DataSet, log_dir: str) -> Tuple[
     List[str], Dict[str, str], np.ndarray, Dict[str, float],
 ]:
     """
@@ -66,6 +75,7 @@ def similarity_clustering(dataset: DataSet) -> Tuple[
 
     Args:
         dataset: Mapping from molecule names to molecule description (fasta, PDB, SMILES, ...)
+        log_dir: Absolute path to the directory to store all the logs in
 
     Returns:
         A tuple consisting of
@@ -78,11 +88,11 @@ def similarity_clustering(dataset: DataSet) -> Tuple[
     if dataset.similarity.lower() == "wlk":
         cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
     elif dataset.similarity.lower() == "mmseqs":
-        cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset)
+        cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset, log_dir)
     elif dataset.similarity.lower() == "foldseek":
-        cluster_names, cluster_map, cluster_sim = run_foldseek(dataset)
+        cluster_names, cluster_map, cluster_sim = run_foldseek(dataset, log_dir)
     elif dataset.similarity.lower() == "cdhit":
-        cluster_names, cluster_map, cluster_sim = run_cdhit(dataset)
+        cluster_names, cluster_map, cluster_sim = run_cdhit(dataset, log_dir)
     elif dataset.similarity.lower() == "ecfp":
         cluster_names, cluster_map, cluster_sim = run_ecfp(dataset)
     else:

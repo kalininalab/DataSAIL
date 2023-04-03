@@ -10,12 +10,13 @@ from datasail.parsers import parse_mmseqs_args
 from datasail.reader.utils import DataSet
 
 
-def run_mmseqs(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_mmseqs(dataset: DataSet, log_dir: str) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run mmseqs in the commandline and read in the results into clusters.
 
     Args:
         dataset: DataSet holding all information on the dta to be clustered
+        log_dir: Absolute path to the directory to store all the logs in
 
     Returns:
         A tuple containing
@@ -34,6 +35,7 @@ def run_mmseqs(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]
         mmseqs_trial,
         lambda x: f"--min-seq-id {x[0]}",
         lambda x, y: ((x[0] + y[0]) / 2,),
+        log_dir,
     )
 
 
@@ -63,8 +65,8 @@ def mmseqs_trial(dataset, add_args):
     cluster_names = list(set(cluster_map.values()))
     cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
     logging.info(f"MMseqs2 clustered {len(cluster_map)} sequences into {len(cluster_names)} clusters")
-    # shutil.rmtree("mmseqs_results")
-    # exit(0)
+
+    shutil.rmtree("mmseqs_results")
 
     return cluster_names, cluster_map, cluster_sim
 

@@ -40,6 +40,9 @@ class DataSet:
             hash_val ^= hv
         return hash_val
 
+    def get_name(self):
+        return ".".join(self.location.split(os.path.sep)[-1].split(".")[:-1])
+
 
 def count_inter(inter: List[Tuple[str, str]], mode: int) -> Generator[Tuple[str, int], None, None]:
     """
