@@ -1,3 +1,4 @@
+import logging
 from typing import List, Union, Optional, Dict
 
 import cvxpy
@@ -42,7 +43,7 @@ def solve_ccs_bqp(
     Returns:
         Mapping from clusters to splits optimizing the objective function
     """
-    print()
+    logging.info(f"Clustering {len(e_clusters)} clusters into {len(splits)} splits.")
     ones = np.ones((1, len(e_clusters)))
 
     x_e = [cvxpy.Variable((len(e_clusters), 1), boolean=True) for _ in range(len(splits))]

@@ -52,17 +52,19 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         return dataset
 
     # if there are too many clusters, reduce their number based on some cluster algorithms.
-    if isinstance(dataset.similarity, np.ndarray):
+    if any(isinstance(m, np.ndarray) for m in
+           [dataset.similarity, dataset.cluster_similarity, dataset.cluster_distance]):
         num_old_cluster = len(dataset.cluster_names) + 1
         while 100 < len(dataset.cluster_names) < num_old_cluster:
             num_old_cluster = len(dataset.cluster_names)
             dataset = additional_clustering(dataset)
 
-        whatever(dataset.names, dataset.cluster_map, dataset.distance, dataset.similarity)
-        metric = dataset.similarity if dataset.similarity is not None else dataset.distance
-        form = "similarity" if dataset.similarity is not None else "distance"
-        if kwargs["output"] is not None:
-            heatmap(metric, os.path.join(kwargs["output"], dataset.get_name() + f"_{form}.png"))
+        if isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
+            whatever(dataset.names, dataset.cluster_map, dataset.distance, dataset.similarity)
+            metric = dataset.similarity if dataset.similarity is not None else dataset.distance
+            form = "similarity" if dataset.similarity is not None else "distance"
+            if kwargs["output"] is not None:
+                heatmap(metric, os.path.join(kwargs["output"], dataset.get_name() + f"_{form}.png"))
 
     store_to_cache(dataset, **kwargs)
 
