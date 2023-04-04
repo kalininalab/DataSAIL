@@ -25,7 +25,8 @@ def run_foldseek(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], D
     cmd = f"mkdir fs && " \
           f"cd fs && " \
           f"foldseek easy-search {os.path.join('..', dataset.location)} {os.path.join('..', dataset.location)} " \
-          f"aln.m8 tmp --format-output 'query,target,fident' "
+          f"aln.m8 tmp --alignment-type 1 --tmscore-threshold 0.0 --format-output 'query,target,fident' " \
+          f"--exhaustive-search 1 -e inf"
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"

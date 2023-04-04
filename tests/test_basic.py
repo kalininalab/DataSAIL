@@ -96,7 +96,7 @@ def test_ics_vector():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
-        solver="MOSEK",
+        solver="SCIP",
         log_file="./solver.log",
     )
 
