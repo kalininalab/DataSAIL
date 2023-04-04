@@ -65,7 +65,7 @@ def run_solver(
             logging.info(technique)
             technique, mode = technique[:3], technique[-1]
             dataset = f_dataset if mode == "f" else e_dataset
-            log_file = os.path.join(log_dir, f"{dataset.get_name()}_{technique}{mode}.log")
+            log_file = None if log_dir is None else os.path.join(log_dir, f"{dataset.get_name()}_{technique}{mode}.log")
 
             if technique == "R":
                 solution = sample_categorical(

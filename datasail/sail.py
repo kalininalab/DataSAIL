@@ -47,21 +47,27 @@ def validate_args(**kwargs) -> Dict[str, object]:
         output_created = True
         os.makedirs(kwargs["output"], exist_ok=True)
 
-    kwargs["logdir"] = os.path.abspath(os.path.join(kwargs["output"], "logs"))
-
-    os.makedirs(kwargs["logdir"], exist_ok=True)
+    if kwargs["output"] is not None:
+        kwargs["logdir"] = os.path.abspath(os.path.join(kwargs["output"], "logs"))
+        os.makedirs(kwargs["logdir"], exist_ok=True)
+    else:
+        kwargs["logdir"] = None
 
     formatter = logging.Formatter('%(asctime)s %(message)s')
+    handlers = []
 
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setLevel(level=verb_map[kwargs["verbosity"]])
     stdout_handler.setFormatter(formatter)
+    handlers.append(stdout_handler)
 
-    file_handler = logging.FileHandler(os.path.join(kwargs["output"], "logs", "general.log"))
-    file_handler.setLevel(level=verb_map[kwargs["verbosity"]])
-    file_handler.setFormatter(formatter)
+    if kwargs["logdir"] is not None:
+        file_handler = logging.FileHandler(os.path.join(kwargs["logdir"], "general.log"))
+        file_handler.setLevel(level=verb_map[kwargs["verbosity"]])
+        file_handler.setFormatter(formatter)
+        handlers.append(file_handler)
 
-    logging.basicConfig(level=verb_map[kwargs["verbosity"]], handlers=[stdout_handler, file_handler])
+    logging.basicConfig(level=verb_map[kwargs["verbosity"]], handlers=handlers)
 
     if output_created:
         logging.warning("Output directory does not exist, DataSAIL creates it automatically")

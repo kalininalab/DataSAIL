@@ -1,7 +1,7 @@
 import logging
 import os
 import shutil
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional
 
 import numpy as np
 
@@ -10,7 +10,7 @@ from datasail.parsers import parse_cdhit_args
 from datasail.reader.utils import DataSet
 
 
-def run_cdhit(dataset: DataSet, log_dir: str) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_cdhit(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run the CD-HIT tool for protein input.
 
@@ -38,11 +38,15 @@ def run_cdhit(dataset: DataSet, log_dir: str) -> Tuple[List[str], Dict[str, str]
     )
 
 
-def cdhit_trial(dataset, add_args, log_name):
+def cdhit_trial(dataset, add_args, log_name: Optional[str]):
     cmd = f"mkdir cdhit && " \
           f"cd cdhit && " \
-          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 {add_args} " \
-          f">{log_name}"
+          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 {add_args} "
+
+    if log_name is None:
+        cmd += "> /dev/null 2>&1"
+    else:
+        f"> {log_name}"
 
     if os.path.exists("cdhit"):
         cmd = "rm -rf cdhit && " + cmd

@@ -104,7 +104,11 @@ def test_report():
         solver="SCIP",
         cache=False,
         cache_dir=None,
+        log_dir="logs"
     )
+
+    assert os.path.isfile("data/perf_7_3/out/lig_similarity.png")
+    assert os.path.isfile("data/perf_7_3/out/prot_similarity.png")
 
     assert os.path.isdir("data/perf_7_3/out/R")
     assert len(os.listdir("data/perf_7_3/out/R")) == 1
@@ -127,27 +131,31 @@ def test_report():
     check_assignment_tsv("data/perf_7_3/out/ICD/Protein_prot_splits.tsv")
 
     assert os.path.isdir("data/perf_7_3/out/CCSe")
-    assert len(os.listdir("data/perf_7_3/out/CCSe")) == 5
+    assert len(os.listdir("data/perf_7_3/out/CCSe")) == 6
     assert os.path.isfile("data/perf_7_3/out/CCSe/Molecule_lig_clusters.png")
     assert os.path.isfile("data/perf_7_3/out/CCSe/Molecule_lig_splits.png")
+    assert os.path.isfile("data/perf_7_3/out/CCSe/Molecule_lig_cluster_hist.png")
     check_assignment_tsv("data/perf_7_3/out/CCSe/inter.tsv")
     check_identity_tsv("data/perf_7_3/out/CCSe/Molecule_lig_clusters.tsv")
     check_assignment_tsv("data/perf_7_3/out/CCSe/Molecule_lig_splits.tsv")
 
     assert os.path.isdir("data/perf_7_3/out/CCSf")
-    assert len(os.listdir("data/perf_7_3/out/CCSf")) == 5
+    assert len(os.listdir("data/perf_7_3/out/CCSf")) == 6
     assert os.path.isfile("data/perf_7_3/out/CCSf/Protein_prot_clusters.png")
     assert os.path.isfile("data/perf_7_3/out/CCSf/Protein_prot_splits.png")
+    assert os.path.isfile("data/perf_7_3/out/CCSf/Protein_prot_cluster_hist.png")
     check_assignment_tsv("data/perf_7_3/out/CCSf/inter.tsv")
     check_identity_tsv("data/perf_7_3/out/CCSf/Protein_prot_clusters.tsv")
     check_assignment_tsv("data/perf_7_3/out/CCSf/Protein_prot_splits.tsv")
 
     assert os.path.isdir("data/perf_7_3/out/CCD")
-    assert len(os.listdir("data/perf_7_3/out/CCD")) == 9
+    assert len(os.listdir("data/perf_7_3/out/CCD")) == 11
     assert os.path.isfile("data/perf_7_3/out/CCD/Molecule_lig_clusters.png")
     assert os.path.isfile("data/perf_7_3/out/CCD/Molecule_lig_splits.png")
+    assert os.path.isfile("data/perf_7_3/out/CCD/Molecule_lig_cluster_hist.png")
     assert os.path.isfile("data/perf_7_3/out/CCD/Protein_prot_clusters.png")
     assert os.path.isfile("data/perf_7_3/out/CCD/Protein_prot_splits.png")
+    assert os.path.isfile("data/perf_7_3/out/CCD/Protein_prot_cluster_hist.png")
     check_assignment_tsv("data/perf_7_3/out/CCD/inter.tsv")
     check_identity_tsv("data/perf_7_3/out/CCD/Molecule_lig_clusters.tsv")
     check_assignment_tsv("data/perf_7_3/out/CCD/Molecule_lig_splits.tsv")

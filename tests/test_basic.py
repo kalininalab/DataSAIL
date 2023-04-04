@@ -21,6 +21,7 @@ def test_ics_scalar():
         max_sec=10,
         max_sol=0,
         solver="SCIP",
+        log_file="./solver.log",
     ) is not None
 
 
@@ -41,6 +42,7 @@ def test_icd_scalar():
         max_sec=10,
         max_sol=0,
         solver="SCIP",
+        log_file="./solver.log",
     ) is not None
 
 
@@ -53,6 +55,7 @@ def test_ccs_scalar():
 def test_ccd_scalar():
     assert solve_ccd_bqp_scalar(
         ["D1", "D2", "D3"],
+        [18, 18, 9],
         np.asarray([
             [5, 5, 0],
             [5, 5, 0],
@@ -61,6 +64,7 @@ def test_ccd_scalar():
         None,
         4,
         ["P1", "P2", "P3"],
+        [18, 18, 9],
         np.asarray([
             [5, 5, 0],
             [5, 5, 0],
@@ -79,6 +83,7 @@ def test_ccd_scalar():
         10,
         0,
         solver="SCIP",
+        log_file="./solver.log",
     ) is not None
 
 
@@ -92,6 +97,7 @@ def test_ics_vector():
         max_sec=10,
         max_sol=0,
         solver="MOSEK",
+        log_file="./solver.log",
     )
 
 
@@ -112,6 +118,7 @@ def test_icd_vector():
         max_sec=10,
         max_sol=0,
         solver="SCIP",
+        log_file="./solver.log",
     )
 
 
@@ -124,7 +131,7 @@ def test_ccs_vector():
 def test_ccd_vector():
     assert solve_ccd_bqp_vector(
         ["D1", "D2", "D3"],
-        [1, 1, 1],
+        [18, 18, 9],
         np.asarray([
             [5, 5, 0],
             [5, 5, 0],
@@ -133,7 +140,7 @@ def test_ccd_vector():
         None,
         4,
         ["P1", "P2", "P3"],
-        [1, 1, 1],
+        [18, 18, 9],
         np.asarray([
             [5, 5, 0],
             [5, 5, 0],
@@ -152,6 +159,7 @@ def test_ccd_vector():
         10,
         0,
         solver="SCIP",
+        log_file="./solver.log",
     ) is not None
 
 
@@ -170,6 +178,7 @@ def test_ccs_sim_scalar_nw(size):
         max_sec=10,
         max_sol=0,
         solver="SCIP",
+        log_file="./solver.log",
     ) is not None
 
 
@@ -192,6 +201,7 @@ def test_ccs_sim_scalar():
         max_sec=10,
         max_sol=0,
         solver="SCIP",
+        log_file="./solver.log",
     ) is not None
 
 
@@ -214,6 +224,7 @@ def test_ccs_dist_scalar():
         max_sec=10,
         max_sol=0,
         solver="SCIP",
+        log_file="./solver.log",
     ) is not None
 
 
@@ -236,6 +247,7 @@ def test_ccs_sim_vector():
         max_sec=10,
         max_sol=0,
         solver="SCIP",
+        log_file="./solver.log",
     ) is not None
 
 
@@ -258,6 +270,7 @@ def test_ccs_sim_vector_3c():
         max_sec=10,
         max_sol=0,
         solver="SCIP",
+        log_file="./solver.log",
     ) is not None
 
 
@@ -280,4 +293,5 @@ def test_ccs_dist_vector():
         max_sec=10,
         max_sol=0,
         solver="SCIP",
+        log_file="./solver.log",
     ) is not None

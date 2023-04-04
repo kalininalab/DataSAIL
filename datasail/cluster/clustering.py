@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Dict, Tuple, List, Union
+from typing import Dict, Tuple, List, Union, Optional
 
 import numpy as np
 from sklearn.cluster import AffinityPropagation, AgglomerativeClustering
@@ -61,14 +61,15 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         whatever(dataset.names, dataset.cluster_map, dataset.distance, dataset.similarity)
         metric = dataset.similarity if dataset.similarity is not None else dataset.distance
         form = "similarity" if dataset.similarity is not None else "distance"
-        heatmap(metric, os.path.join(kwargs["output"], dataset.get_name() + f"_{form}.png"))
+        if kwargs["output"] is not None:
+            heatmap(metric, os.path.join(kwargs["output"], dataset.get_name() + f"_{form}.png"))
 
     store_to_cache(dataset, **kwargs)
 
     return dataset
 
 
-def similarity_clustering(dataset: DataSet, log_dir: str) -> Tuple[
+def similarity_clustering(dataset: DataSet, log_dir: Optional[str]) -> Tuple[
     List[str], Dict[str, str], np.ndarray, Dict[str, float],
 ]:
     """

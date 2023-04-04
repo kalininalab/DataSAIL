@@ -142,13 +142,13 @@ def solve(loss, constraints: List, max_sec: int, num_vars: int, solver: str, log
     else:
         solve_algo = cvxpy.SCIP
         kwargs = {"scip_params": {"limits/time": max_sec}}
-    with open(log_file, "w") as sys.stdout:
-        problem.solve(
-            solver=solve_algo,
-            qcp=True,
-            verbose=True,
-            **kwargs,
-        )
+    # with open(log_file, "w") as sys.stdout:
+    problem.solve(
+        solver=solve_algo,
+        qcp=True,
+        verbose=True,
+        **kwargs,
+    )
 
     logging.info(f"{solver} status: {problem.status}")
     logging.info(f"Solution's score: {problem.value}")

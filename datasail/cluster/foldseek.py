@@ -1,14 +1,14 @@
 import logging
 import os
 import shutil
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional
 
 import numpy as np
 
 from datasail.reader.utils import DataSet
 
 
-def run_foldseek(dataset: DataSet, log_dir: str) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_foldseek(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run FoldSeek to cluster the proteins based on their structure.
 
@@ -22,12 +22,15 @@ def run_foldseek(dataset: DataSet, log_dir: str) -> Tuple[List[str], Dict[str, s
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    log_name = os.path.join(log_dir, f"{dataset.get_name()}_foldseek.log")
     cmd = f"mkdir fs && " \
           f"cd fs && " \
           f"foldseek easy-search {os.path.join('..', dataset.location)} {os.path.join('..', dataset.location)} " \
-          f"aln.m8 tmp --format-output 'query,target,fident' " \
-          f">{log_name}"
+          f"aln.m8 tmp --format-output 'query,target,fident' "
+
+    if log_dir is None:
+        cmd += "> /dev/null 2>&1"
+    else:
+        cmd += f"> {os.path.join(log_dir, f'{dataset.get_name()}_foldseek.log')}"
 
     if os.path.exists("fs"):
         cmd = "rm -rf fs && " + cmd

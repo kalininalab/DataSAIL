@@ -1,7 +1,7 @@
 import logging
 import os
 import shutil
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Optional
 
 import numpy as np
 
@@ -39,7 +39,7 @@ def run_mmseqs(dataset: DataSet, log_dir: str) -> Tuple[List[str], Dict[str, str
     )
 
 
-def mmseqs_trial(dataset, add_args):
+def mmseqs_trial(dataset, add_args, log_file: Optional[str]):
     cmd = f"mkdir mmseqs_results && " \
           f"cd mmseqs_results && " \
           f"mmseqs " \
@@ -50,10 +50,12 @@ def mmseqs_trial(dataset, add_args):
           f"--similarity-type 2 " \
           f"--cov-mode 0 " \
           f"-c 0.8 " \
-          f"{add_args}"
+          f"{add_args} "
 
-    if logging.root.level != logging.DEBUG:
-        cmd += " >/dev/null 2>&1"
+    if log_file is None:
+        cmd += "> /dev/null 2>&1"
+    else:
+        cmd += f"> {log_file}"
 
     if os.path.exists("mmseqs_results"):
         cmd = "rm -rf mmseqs_results && " + cmd
