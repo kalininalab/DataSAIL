@@ -42,6 +42,8 @@ def cluster_sim_dist_constraint(
         s: int
 ) -> List[Constraint]:
     """
+    Define the constraints on similarities between samples in difference splits or distances of samples in the same
+    split.
 
     Args:
         similarities: Similarity matrix of the data
@@ -83,15 +85,6 @@ def cluster_sim_dist_objective(
     Returns:
         An objective function to minimize
     """
-    # n = len(distances) if distances is not None else len(similarities)
-    # normalization = 1 / (2 * cvxpy.sum([cvxpy.sum(x[s]) * n - cvxpy.sum(x[s]) ** 2 for s in range(len(splits))]))
-    # if distances is not None:
-    #     return cvxpy.sum([cvxpy.sum(cvxpy.multiply(
-    #         cvxpy.maximum((x[s] @ ones) + cvxpy.transpose(x[s] @ ones) - (ones.T @ ones), 0), distances
-    #     )) for s in range(len(splits))]) * normalization
-    # return cvxpy.sum([cvxpy.sum(cvxpy.multiply(
-    #     ((x[s] @ ones) - cvxpy.transpose(x[s] @ ones)) ** 2, similarities
-    # )) for s in range(len(splits))]) * normalization
     if isinstance(weights, List):
         weights = np.array(weights)
 
@@ -105,5 +98,5 @@ def cluster_sim_dist_objective(
         leak_matrix = cvxpy.multiply(hit_matrix, similarities)
 
     leak_matrix = cvxpy.multiply(leak_matrix, weight_matrix)
-    leakage = cvxpy.sum(leak_matrix) / cvxpy.sum(cvxpy.multiply(hit_matrix, weight_matrix))
-    return cvxpy.sum(leak_matrix)  # leakage
+    # leakage = cvxpy.sum(leak_matrix) / cvxpy.sum(cvxpy.multiply(hit_matrix, weight_matrix))  # accurate computation
+    return cvxpy.sum(leak_matrix)

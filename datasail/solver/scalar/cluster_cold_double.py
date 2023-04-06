@@ -4,7 +4,7 @@ import numpy as np
 
 from datasail.solver.scalar.utils import init_variables, init_inter_variables_cluster, cluster_sim_dist_constraint, \
     cluster_sim_dist_objective
-from datasail.solver.utils import solve, estimate_number_target_interactions
+from datasail.solver.utils import solve
 
 
 def solve_ccd_bqp(
@@ -33,10 +33,12 @@ def solve_ccd_bqp(
 
     Args:
         e_clusters: List of cluster names to split from the e-dataset
+        e_weights: List of weights of the clusters from e_clusters in the order of the e_cluster argument
         e_similarities: Pairwise similarity matrix of clusters in the order of their names
         e_distances: Pairwise distance matrix of clusters in the order of their names
         e_threshold: Threshold to not undergo when optimizing
         f_clusters: List of cluster names to split from the f-dataset
+        f_weights: List of weights of the clusters from f_clusters in the order of the f_cluster argument
         f_similarities: Pairwise similarity matrix of clusters in the order of their names
         f_distances: Pairwise distance matrix of clusters in the order of their names
         f_threshold: Threshold to not undergo when optimizing
@@ -54,7 +56,7 @@ def solve_ccd_bqp(
         dataset
     """
     alpha = 0.1
-    inter_count = estimate_number_target_interactions(inter, len(e_clusters), len(f_clusters), splits)
+    inter_count = np.sum(inter)
 
     x_e = init_variables(len(splits), len(e_clusters))
     x_f = init_variables(len(splits), len(f_clusters))

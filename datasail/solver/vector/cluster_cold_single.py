@@ -4,8 +4,6 @@ from typing import List, Union, Optional, Dict
 import cvxpy
 import numpy as np
 
-# from datasail.solver.QCQP.qcqp.qcqp import QCQP
-# from datasail.solver.QCQP.qcqp.settings import SDR, COORD_DESCENT
 from datasail.solver.utils import solve
 from datasail.solver.vector.utils import cluster_sim_dist_constraint, cluster_sim_dist_objective
 

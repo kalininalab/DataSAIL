@@ -1,10 +1,19 @@
 import os
-from typing import Generator, Tuple, Dict
+from typing import Generator, Tuple, Dict, List
 
 from datasail.reader.utils import read_csv, DataSet, read_data
 
 
-def read_protein_data(data, weights, sim, dist, max_sim, max_dist, inter, index) -> DataSet:
+def read_protein_data(
+        data: str,
+        weights: str,
+        sim: str,
+        dist: str,
+        max_sim: float,
+        max_dist: float,
+        inter: List[Tuple[str, str]],
+        index: int
+) -> DataSet:
     """
     Read in protein data, compute the weights, and distances or similarities of every entity.
 
@@ -54,7 +63,12 @@ def read_folder(folder_path: str, file_extension: str) -> Generator[Tuple[str, s
             yield ".".join(filename.split(".")[:-1]), os.path.abspath(os.path.join(folder_path, filename))
 
 
-def parse_fasta(path=None, left_split=None, right_split=' ', check_duplicates=False) -> Dict[str, str]:
+def parse_fasta(
+        path: str = None,
+        left_split: chr = None,
+        right_split: chr = ' ',
+        check_duplicates: bool = False
+) -> Dict[str, str]:
     """
     Parse a FASTA file and do some validity checks if requested.
 

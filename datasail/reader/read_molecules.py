@@ -1,9 +1,19 @@
 import os
+from typing import List, Tuple
 
 from datasail.reader.utils import read_csv, DataSet, read_data
 
 
-def read_molecule_data(data, weights, sim, dist, max_sim, max_dist, inter, index) -> DataSet:
+def read_molecule_data(
+        data: str,
+        weights: str,
+        sim: str,
+        dist: str,
+        max_sim: float,
+        max_dist: float,
+        inter: List[Tuple[str, str]],
+        index: int
+) -> DataSet:
     """
     Read in molecular data, compute the weights, and distances or similarities of every entity.
 

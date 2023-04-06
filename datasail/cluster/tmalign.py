@@ -40,7 +40,8 @@ def run_tmalign(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray
     logging.info(cmd[:200])
     os.system(cmd)
 
-    cluster_names, cluster_map, cluster_sim = dataset.names, dict((n, n) for n in dataset.names), read_tmalign_folder(dataset, "tmalign")
+    cluster_names, cluster_map, cluster_sim = dataset.names, dict((n, n) for n in dataset.names), \
+        read_tmalign_folder(dataset, "tmalign")
     shutil.rmtree("tmalign")
 
     return cluster_names, cluster_map, cluster_sim
@@ -52,7 +53,7 @@ def read_tmalign_folder(dataset: DataSet, tmalign_folder: str) -> np.ndarray:
 
     Args:
         dataset: Dataset with the data to cluster
-        tmalign_folder (str): Folderpath of file containing the mapping information
+        tmalign_folder (str): Path to the folder of file containing the mapping information
 
     Returns:
         Map from cluster-members to cluster-representatives (cluster-names)
@@ -65,6 +66,15 @@ def read_tmalign_folder(dataset: DataSet, tmalign_folder: str) -> np.ndarray:
     return sims
 
 
-def read_tmalign_file(filepath) -> float:
+def read_tmalign_file(filepath: str) -> float:
+    """
+    Read one TM-align file holding the output of one tmalign run.
+
+    Args:
+        filepath: path to the file to read from
+
+    Returns:
+        The average tm-score of both directions of that pairwise alignment
+    """
     with open(filepath, "r") as data:
         return sum(map(lambda x: float(x.split(" ")[1]), data.readlines()[17:19])) / 2

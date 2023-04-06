@@ -262,10 +262,19 @@ def parse_datasail_args(args) -> Dict[str, object]:
         default=1.0,
         help="Maximal distance of two samples from the second dataset in the same split."
     )
-    return vars(parser.parse_args())
+    return vars(parser.parse_args(args))
 
 
 def parse_cdhit_args(cdhit_args):
+    """
+    Check if the provided arguments for CD-HIT are valid.
+
+    Args:
+        cdhit_args: String of the additional arguments for CD-HIT
+
+    Returns:
+        The arguments as keys of a dictionary matching them to their provided values
+    """
     cdhit_parser = argparse.ArgumentParser()
     cdhit_parser.add_argument("-c", type=float, default=0.9)
     cdhit_parser.add_argument("-n", type=int, default=5, choices=[2, 3, 4, 5])
@@ -273,6 +282,15 @@ def parse_cdhit_args(cdhit_args):
 
 
 def parse_mash_args(mash_args):
+    """
+    Check if the provided arguments for MASH are valid.
+
+    Args:
+        mash_args: String of the additional arguments for MASH
+
+    Returns:
+        The arguments as keys of a dictionary matching them to their provided values
+    """
     mash_parser = argparse.ArgumentParser()
     mash_parser.add_argument("-k", type=int, default=21)
     mash_parser.add_argument("-s", type=int, default=10000)
@@ -280,6 +298,15 @@ def parse_mash_args(mash_args):
 
 
 def parse_mmseqs_args(mmseqs_args):
+    """
+    Check if the provided arguments for MMseq2 are valid.
+
+    Args:
+        mmseqs_args: String of the additional arguments for MMseqs2
+
+    Returns:
+        The arguments as keys of a dictionary matching them to their provided values
+    """
     mmseqs_parser = argparse.ArgumentParser()
     mmseqs_parser.add_argument("--min-seq-id", type=float, default=0, dest="seq_id")
     return vars(mmseqs_parser.parse_args(mmseqs_args))

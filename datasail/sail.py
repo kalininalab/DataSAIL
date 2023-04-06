@@ -1,4 +1,3 @@
-import argparse
 import logging
 import os.path
 import sys
@@ -21,6 +20,8 @@ verb_map = {
 def error(msg: str, error_code: int) -> None:
     """
     Print an error message with an individual error code to the commandline. Afterwards, the program is stopped.
+
+    TODO: If run as CLI tool, exit with error code, else raise exception
 
     Args:
         msg: Error message
@@ -173,13 +174,31 @@ def validate_cdhit_args(cdhit_args):
 
 
 def validate_mash_args(mash_args):
+    """
+    Validate the custom arguments provided to DataSAIL for executing MASH
+    Args:
+        mash_args:
+
+    Returns:
+
+    """
     parsed = parse_mash_args(mash_args)
+    if parsed["k"] < 1:
+        error("MASH parameter k must be positive.", error_code=20)
+    if parsed["s"] < 1:
+        error("MASH parameter s must be positive.", error_code=21)
 
 
 def validate_mmseqs_args(mmseqs_args):
+    """
+    Validate the custom arguments provided to DataSAIL for executing MMseqs.
+
+    Args:
+        mmseqs_args: String of the arguments that can be set by user
+    """
     parsed = parse_mmseqs_args(mmseqs_args)
     if 1 < parsed["seq_id"] < 0:
-        error("The minimum sequence identity for mmseqs has to be a value between 0 and 1.", error_code=21)
+        error("The minimum sequence identity for mmseqs has to be a value between 0 and 1.", error_code=22)
 
 
 def datasail(
@@ -188,8 +207,8 @@ def datasail(
         max_sec: int = 100,
         max_sol: int = 1000,
         verbose: str = "W",
-        splits: List = [0.7, 0.2, 0.1],
-        names: List[str] = ["train", "val", "test"],
+        splits=None,
+        names=None,
         epsilon: float = 0.05,
         solver: str = "MOSEK",
         vectorized: bool = True,
@@ -212,6 +231,46 @@ def datasail(
         f_max_sim: float = 1.0,
         f_max_dist: float = 1.0,
 ) -> Tuple[Dict, Dict, Dict]:
+    """
+    Entry point for the package usage of DataSAIL.
+
+    Args:
+        techniques: List of techniques to split based on
+        inter: Filepath to a TSV file storing interactions of the e-entities and f-entities.
+        max_sec: Maximal number of seconds to take for optimizing a found solution.
+        max_sol: Maximal number of solutions to look at when optimizing.
+        verbose: Verbosity level for logging.
+        splits: List of splits, have to add up to one, otherwise scaled accordingly.
+        names: List of names of the splits.
+        epsilon: Fraction by how much the provided split sizes may be exceeded
+        solver: Solving algorithm to use.
+        vectorized: Boolean flag indicating to use the vectorized formulation of the problems.
+        cache: Boolean flag indicating to store or load results from cache.
+        cache_dir: Directory to store the cache in if not the default location.
+        e_type: Data format of the first batch of data
+        e_data: Data file of the first batch of data
+        e_weights: Weighting of the datapoints from e_data as TSV format
+        e_sim: Similarity measure to apply for the e-data
+        e_dist: Distance measure to apply for the e-data
+        e_args: Additional arguments for the tools in e_sim or e_dist
+        e_max_sim: Maximal similarity of two entities in different splits
+        e_max_dist: Maximal distance of two entities in the same split
+        f_type: Data format of the second batch of data
+        f_data: Data file of the second batch of data
+        f_weights: Weighting of the datapoints from f-data as TSV format
+        f_sim: Similarity measure to apply for the f-data
+        f_dist: Distance measure to apply for the f-data
+        f_args: Additional arguments for the tools in f_sim or f-dist
+        f_max_sim: Maximal similarity of two f-entities in different splits
+        f_max_dist: Maximal distance of two f-entities in the same split
+
+    Returns:
+        Three dictionaries mapping techniques to another dictionary. The inner dictionary maps input id to their splits.
+    """
+    if names is None:
+        names = ["train", "val", "test"]
+    if splits is None:
+        splits = [0.7, 0.2, 0.1]
     kwargs = validate_args(
         output=None, techniques=techniques, inter=inter, max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
         splits=splits, names=names, epsilon=epsilon, solver=solver, vectorized=not vectorized, cache=cache,
@@ -228,11 +287,13 @@ def sail(**kwargs) -> None:
 
     Args:
         **kwargs: Arguments to DataSAIL in kwargs-format.
-
     """
     kwargs = validate_args(**kwargs)
     bqp_main(**kwargs)
 
 
 if __name__ == '__main__':
+    """
+    Entry point for the CLI tool
+    """
     sail(**parse_datasail_args(sys.argv))

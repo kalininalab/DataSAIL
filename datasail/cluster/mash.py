@@ -9,6 +9,19 @@ from datasail.reader.utils import DataSet
 
 
 def run_mash(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray]]:
+    """
+    Run MASH on the provided dataset.
+
+    Args:
+        dataset: Dataset to run MASH for
+        log_dir: Filepath to store the output of MASH to
+
+    Returns:
+        A tuple containing
+          - the names of the clusters (cluster representatives)
+          - the mapping from cluster members to the cluster names (cluster representatives)
+          - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
+    """
     cmd = f"mkdir mash_results && " \
           f"cd mash_results && " \
           f"mash sketch -s 10000 -o ./cluster {os.path.join('..', dataset.location, '*.fna')} && " \

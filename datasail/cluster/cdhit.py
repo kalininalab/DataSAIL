@@ -96,6 +96,15 @@ def get_cdhit_map(cluster_file: str) -> Dict[str, str]:
 
 
 def c2n(c: float):
+    """
+    For an input value for the C-parameter to CD-HIT, return an appropriate value for the parameter n.
+
+    Args:
+        c: c parameter to CD-HIT
+
+    Returns:
+        An according value for n based on c
+    """
     if 0.4 <= c < 0.5:
         return 2
     if 0.5 <= c < 0.6:

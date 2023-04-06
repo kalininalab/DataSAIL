@@ -18,7 +18,7 @@ def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     start = time.time()
     logging.info("Read data")
 
-    # read e-entities and f-entities in
+    # read e-entities and f-entities
     e_dataset, f_dataset, inter = read_data(**kwargs)
 
     # if required, cluster the input otherwise define the cluster-maps to be None
@@ -63,7 +63,8 @@ def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
                     inter_split_map[technique] = [(e, f, f_name_split_map[t][f]) for e, f in inter]
                 elif e_name_split_map.get(t, None) is not None and f_name_split_map.get(t, None) is not None:
                     inter_split_map[technique] = [
-                        (e, f, e_name_split_map[t][e]) for e, f in inter if e_name_split_map[t][e] == f_name_split_map[t][f]
+                        (e, f, e_name_split_map[t][e]) for e, f in inter
+                        if e_name_split_map[t][e] == f_name_split_map[t][f]
                     ]
 
     logging.info("BQP splitting finished and results stored.")

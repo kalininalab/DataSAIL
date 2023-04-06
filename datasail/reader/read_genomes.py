@@ -1,9 +1,19 @@
 import os
+from typing import List, Tuple
 
 from datasail.reader.utils import DataSet, read_data
 
 
-def read_genome_data(data, weights, sim, dist, max_sim, max_dist, inter, index) -> DataSet:
+def read_genome_data(
+        data: str,
+        weights: str,
+        sim: str,
+        dist: str,
+        max_sim: float,
+        max_dist: float,
+        inter: List[Tuple[str, str]],
+        index: int
+) -> DataSet:
     """
     Read in genomic data, compute the weights, and distances or similarities of every entity.
 

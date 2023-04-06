@@ -3,9 +3,8 @@ import os
 from typing import Dict, Tuple, List, Union
 import math
 
-import grakel
-import numpy as np
 from grakel import Graph, WeisfeilerLehman, VertexHistogram
+import numpy as np
 from rdkit.Chem import MolFromSmiles
 
 from datasail.reader.utils import DataSet
@@ -18,7 +17,7 @@ node_encoding = {
 }
 
 
-def run_wlk(dataset: DataSet, n_iter=4) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_wlk(dataset: DataSet, n_iter: int = 4) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run Weisfeiler-Lehman kernel-based cluster on the input. As a result, every molecule will form its own cluster
 
@@ -67,8 +66,8 @@ def run_wl_kernel(graph_list: List[Graph], n_iter=4) -> np.ndarray:
     return result
 
 
-def mol_to_grakel(mol) -> grakel.graph.Graph:
-    r"""
+def mol_to_grakel(mol) -> Graph:
+    """
     Convert an RDKit molecule into a grakel graph to apply Weisfeiler-Lehman kernels later.
 
     Args:
@@ -92,7 +91,7 @@ def mol_to_grakel(mol) -> grakel.graph.Graph:
         edges[edge.GetEndAtomIdx()].append(edge.GetBeginAtomIdx())
 
     # create the final grakel graph from it
-    return grakel.Graph(edges, node_labels=nodes)
+    return Graph(edges, node_labels=nodes)
 
 
 class PDBStructure:
@@ -137,7 +136,7 @@ class PDBStructure:
             [(res.num, (node_encoding.get(res.name.lower(), 20))) for i, res in enumerate(self.residues.values())])
 
 
-def pdb_to_grakel(pdb: Union[str, PDBStructure], threshold: float = 7) -> grakel.graph.Graph:
+def pdb_to_grakel(pdb: Union[str, PDBStructure], threshold: float = 7) -> Graph:
     """
     Convert a PDB file into a grakel graph to compute WLKs over them.
 

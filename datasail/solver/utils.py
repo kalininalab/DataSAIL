@@ -1,60 +1,17 @@
 import logging
+from typing import List, Tuple, Collection
 import sys
-from typing import List, Tuple, Union
+from typing import List, Tuple, Collection
 
 import cvxpy
-import mosek
 import numpy as np
 
 
-def estimate_number_target_interactions(
-        inter: Union[np.ndarray, List[Tuple[str, str]]],
-        num_e_data: int,
-        num_f_data: int,
-        splits: List[float]
-) -> float:
-    """
-    Estimate number of interactions in the final dataset to use them to compute size-bounds for splits.
-
-    Args:
-        inter: Interactions as list of pairwise interactions or as numpy array counting interactions of clusters
-        num_e_data: Number of entities in e-dataset
-        num_f_data: Number of entities in f-dataset
-        splits: List of splits given by their relative size
-
-    Returns:
-        Estimated number of interactions in the final dataset
-    """
-    if isinstance(inter, np.ndarray):
-        return int(np.sum(inter))
-    else:
-        return len(inter)
-    # return estimate_number_target_interactions(inter)
-
-
-def estimate_surviving_interactions(num_inter: int, num_e: int, num_f: int, splits: List[float]) -> int:
-    """
-    Estimate number of interactions in the final dataset based on how many interactions would be lost on a
-    fully-connected dataset and how sparse the current dataset is.
-
-    Notes:
-        Not working for perfectly separable dataset (Too many interactions are estimated to be lost)
-
-    Args:
-        num_inter: Number of interactions
-        num_e: number of entities in e-dataset
-        num_f: number of entities in f-dataset
-        splits: List of splits given by their relative size
-
-    Returns:
-        Estimated number of interactions in the final dataset
-    """
-    sparsity = num_inter / (num_e * num_f)
-    dense_survivors = sum(s ** 2 for s in splits) * num_e * num_f
-    return int(dense_survivors * sparsity + 0.5)
-
-
-def inter_mask(e_entities: List[str], f_entities: List[str], inter: List[Tuple[str, str]]) -> np.ndarray:
+def inter_mask(
+        e_entities: List[str],
+        f_entities: List[str],
+        inter: Collection[Tuple[str, str]],
+) -> np.ndarray:
     """
     Compute an interaction mask, i.e. an adjacency matrix from the list of interactions.
 
@@ -71,7 +28,7 @@ def inter_mask(e_entities: List[str], f_entities: List[str], inter: List[Tuple[s
         else inter_mask_sparse(e_entities, f_entities, inter)
 
 
-def inter_mask_dense(e_entities, f_entities, inter):
+def inter_mask_dense(e_entities: List[str], f_entities: List[str], inter: Collection[Tuple[str, str]]):
     """
     Compute adjacency matrix by setting every single value to 1 if there is an interaction accordingly.
 
@@ -93,7 +50,7 @@ def inter_mask_dense(e_entities, f_entities, inter):
     return output
 
 
-def inter_mask_sparse(e_entities, f_entities, inter):
+def inter_mask_sparse(e_entities: List[str], f_entities: List[str], inter: Collection[Tuple[str, str]]):
     """
     Compute adjacency matrix by first compute mappings from entity names to their index and then setting the
     individual interactions to 1.

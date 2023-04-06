@@ -24,6 +24,13 @@ class DataSet:
     threshold: Optional[float] = None
 
     def __hash__(self):
+        """
+        Compute the hash value for this dataset to be used in caching. Therefore, the hash is computed on properties
+        that do not change during clustering.
+
+        Returns:
+            The cluster-insensitive hash-value of the instance.
+        """
         hash_val = 0
         for field in filter(lambda f: "cluster" not in f.name, fields(DataSet)):
             obj = getattr(self, field.name)
@@ -41,6 +48,12 @@ class DataSet:
         return hash_val
 
     def get_name(self):
+        """
+        Compute the name of the dataset as the name of the file or the folder storing the data.
+
+        Returns:
+            Name of the dataset
+        """
         return ".".join(self.location.split(os.path.sep)[-1].split(".")[:-1])
 
 
@@ -101,7 +114,16 @@ def read_csv(filepath: str) -> Generator[Tuple[str, str], None, None]:
                 yield output[0], output[0]
 
 
-def read_data(weights, sim, dist, max_sim, max_dist, inter, index, dataset: DataSet) -> DataSet:
+def read_data(
+        weights: str,
+        sim: str,
+        dist: str,
+        max_sim: float,
+        max_dist: float,
+        inter: List[Tuple[str, str]],
+        index: int,
+        dataset: DataSet,
+) -> DataSet:
     """
     Compute the weight and distances or similarities of every entity.
 
@@ -148,9 +170,17 @@ def read_data(weights, sim, dist, max_sim, max_dist, inter, index, dataset: Data
     return dataset
 
 
-def get_default(data_type: str, data_format: str) -> Tuple[
-    Optional[Union[np.ndarray, str]], Optional[Union[np.ndarray, str]]
-]:
+def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Return the default clustering method for a specific type of data and a specific format.
+
+    Args:
+        data_type: Type of data as string representation
+        data_format: Format encoded as string
+
+    Returns:
+        Tuple of the names of the method to use to compute either the similarity or distance for the input
+    """
     if data_type == "P":
         if data_format == "PDB":
             return "foldseek", None

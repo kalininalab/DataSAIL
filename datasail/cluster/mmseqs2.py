@@ -39,7 +39,21 @@ def run_mmseqs(dataset: DataSet, log_dir: str) -> Tuple[List[str], Dict[str, str
     )
 
 
-def mmseqs_trial(dataset, add_args, log_file: Optional[str]):
+def mmseqs_trial(dataset: DataSet, add_args: str, log_file: Optional[str]):
+    """
+    Run MMseqs2 on the dataset with the given sequence similarity defined by add_args.
+
+    Args:
+        dataset: Dataset to run the clustering for
+        add_args: Additional arguments specifying the sequence similarity parameter
+        log_file: Filepath to log the output to
+
+    Returns:
+        A tuple containing
+          - the names of the clusters (cluster representatives)
+          - the mapping from cluster members to the cluster names (cluster representatives)
+          - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
+    """
     cmd = f"mkdir mmseqs_results && " \
           f"cd mmseqs_results && " \
           f"mmseqs " \
