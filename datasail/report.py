@@ -23,8 +23,7 @@ def report(
         split_names: List[str],
 ) -> None:
     # create the output folder to store the results in
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
 
     for t in techniques:
         technique, mode = t[:3], t[-1]

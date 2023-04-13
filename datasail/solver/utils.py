@@ -37,11 +37,17 @@ def inter_mask(
 
 class LoggerRedirect:
     def __init__(self, logfile_name):
+        if logfile_name is None:
+            self.silent = True
+            return
         self.file_handler = logging.FileHandler(logfile_name)
         self.old_stdout = sys.stdout
         self.disabled = {}
+        self.silent = False
 
     def __enter__(self):
+        if self.silent:
+            return
         for name, logger in logging.root.manager.loggerDict.items():
             if isinstance(logger, logging.Logger) and len(logger.handlers) > 0:
                 for handler in logger.handlers:
@@ -49,12 +55,15 @@ class LoggerRedirect:
                         if name not in self.disabled:
                             self.disabled[name] = []
                         self.disabled[name].append(handler)
-                for handler in self.disabled[name]:
-                    logger.removeHandler(handler)
+                if name in self.disabled:
+                    for handler in self.disabled[name]:
+                        logger.removeHandler(handler)
                 logger.addHandler(self.file_handler)
         sys.stdout = self.file_handler.stream
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.silent:
+            return
         for name, handlers in self.disabled.items():
             logger = logging.root.manager.loggerDict[name]
             logger.removeHandler(self.file_handler)

@@ -29,7 +29,7 @@ def run_solver(
         vectorized: bool,
         epsilon: float,
         splits: List[float],
-        names: List[str],
+        split_names: List[str],
         max_sec: int,
         max_sol: int,
         solver: str,
@@ -46,7 +46,7 @@ def run_solver(
         vectorized: Boolean flag indicating to run it in vectorized form
         epsilon: Additive bound for exceeding the requested split size
         splits: List of split sizes
-        names: List of names of the splits in the order of the splits argument
+        split_names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
         max_sol: Maximal number of solution to consider
         solver: Solving algorithm to use to solve the formulated program
@@ -71,7 +71,7 @@ def run_solver(
                 solution = sample_categorical(
                     inter=inter,
                     splits=splits,
-                    names=names,
+                    names=split_names,
                 )
                 output_inter[technique] = solution
             elif technique == "ICS" or (technique == "CCS" and isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]):
@@ -92,7 +92,7 @@ def run_solver(
                     e_weights=weights,
                     epsilon=epsilon,
                     splits=splits,
-                    names=names,
+                    names=split_names,
                     max_sec=max_sec,
                     max_sol=max_sol,
                     solver=solver,
@@ -115,7 +115,7 @@ def run_solver(
                     inter=set(inter),
                     epsilon=epsilon,
                     splits=splits,
-                    names=names,
+                    names=split_names,
                     max_sec=max_sec,
                     max_sol=max_sol,
                     solver=solver,
@@ -134,7 +134,7 @@ def run_solver(
                     e_threshold=dataset.threshold,
                     epsilon=epsilon,
                     splits=splits,
-                    names=names,
+                    names=split_names,
                     max_sec=max_sec,
                     max_sol=max_sol,
                     solver=solver,
@@ -170,7 +170,7 @@ def run_solver(
                     inter=cluster_inter,
                     epsilon=epsilon,
                     splits=splits,
-                    names=names,
+                    names=split_names,
                     max_sec=max_sec,
                     max_sol=max_sol,
                     solver=solver,

@@ -43,7 +43,7 @@ def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
         inter=inter,
         epsilon=kwargs["epsilon"],
         splits=kwargs["splits"],
-        names=kwargs["names"],
+        split_names=kwargs["names"],
         max_sec=kwargs["max_sec"],
         max_sol=kwargs["max_sol"],
         solver=kwargs["solver"],
