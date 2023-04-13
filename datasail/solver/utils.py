@@ -16,49 +16,8 @@ def inter_mask(
 ) -> np.ndarray:
     """
     Compute an interaction mask, i.e. an adjacency matrix from the list of interactions.
-
-    Args:
-        e_entities: Entities in e-dataset
-        f_entities: Entities in f-dataset
-        inter: List of interactions between entities in e-dataset and entities in f-dataset
-
-    Returns:
-        Adjacency matrix based on the list of interactions
-    """
-    # TODO: Figure out which of these methods is faster and for which degree of density
-    return inter_mask_dense(e_entities, f_entities, inter) if len(inter) / (len(e_entities) + len(f_entities)) \
-        else inter_mask_sparse(e_entities, f_entities, inter)
-
-
-def inter_mask_dense(e_entities: List[str], f_entities: List[str], inter: Collection[Tuple[str, str]]):
-    """
-    Compute adjacency matrix by setting every single value to 1 if there is an interaction accordingly.
-
-    Notes:
-        Supposedly fast for sparse matrices, but slow for dense ones
-
-    Args:
-        e_entities: Entities in e-dataset
-        f_entities: Entities in f-dataset
-        inter: List of interactions between entities in e-dataset and entities in f-dataset
-
-    Returns:
-        Adjacency matrix based on the list of interactions
-    """
-    output = np.zeros((len(e_entities), len(f_entities)))
-    for i, e in enumerate(e_entities):
-        for j, f in enumerate(f_entities):
-            output[i, j] = (e, f) in inter
-    return output
-
-
-def inter_mask_sparse(e_entities: List[str], f_entities: List[str], inter: Collection[Tuple[str, str]]):
-    """
     Compute adjacency matrix by first compute mappings from entity names to their index and then setting the
     individual interactions to 1.
-
-    Notes:
-        Supposedly fast for dense matrices, but slow for sparse ones
 
     Args:
         e_entities: Entities in e-dataset

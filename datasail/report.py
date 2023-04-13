@@ -224,7 +224,6 @@ def whatever(
         distances: Distance matrix between entities
         similarities: Similarity matrix between entities
     """
-    # TODO: Optimize this for runtime
     if distances is not None:
         val = float("-inf")
         val2 = float("inf")
