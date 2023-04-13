@@ -30,7 +30,7 @@ source_suffix = ".rst"
 master_doc = "index"
 
 author = "Roman Joeres"
-project = "GlyLES"
+project = "DataSAIL"
 copyright = f"{datetime.datetime.now().year}, {author}"
 
 version = "0.0.1"  # list(open("../pyproject.toml", "r").readlines())[2].strip().split("\"")[1].split("\"")[0]
