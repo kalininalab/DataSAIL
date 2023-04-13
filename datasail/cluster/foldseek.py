@@ -1,4 +1,3 @@
-import logging
 import os
 import shutil
 from typing import Tuple, List, Dict, Optional
@@ -6,6 +5,7 @@ from typing import Tuple, List, Dict, Optional
 import numpy as np
 
 from datasail.reader.utils import DataSet
+from datasail.settings import LOGGER
 
 
 def run_foldseek(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
@@ -36,9 +36,9 @@ def run_foldseek(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], D
     if os.path.exists("fs"):
         cmd = "rm -rf fs && " + cmd
 
-    logging.info("Start FoldSeek clustering")
+    LOGGER.info("Start FoldSeek clustering")
 
-    logging.info(cmd)
+    LOGGER.info(cmd)
     os.system(cmd)
 
     namap = dict((n, i) for i, n in enumerate(dataset.names))

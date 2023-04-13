@@ -1,4 +1,3 @@
-import logging
 import os
 from typing import Dict, Tuple, List, Union, Optional
 
@@ -15,6 +14,7 @@ from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
+from datasail.settings import LOGGER
 
 
 def cluster(dataset: DataSet, **kwargs) -> DataSet:
@@ -29,7 +29,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     """
     cache = load_from_cache(dataset, **kwargs)
     if cache is not None:
-        logging.info("Loaded clustering from cache")
+        LOGGER.info("Loaded clustering from cache")
         return cache
 
     if isinstance(dataset.similarity, str):  # compute the similarity
@@ -158,8 +158,8 @@ def additional_clustering(dataset: DataSet) -> DataSet:
     Returns:
         The dataset with updated clusters
     """
-    logging.info(f"Cluster {len(dataset.cluster_names)} items based on "
-                 f"{'similarities' if dataset.cluster_similarity is not None else 'distances'}")
+    LOGGER.info(f"Cluster {len(dataset.cluster_names)} items based on "
+                f"{'similarities' if dataset.cluster_similarity is not None else 'distances'}")
     # set up the cluster algorithm for similarity or distance based cluster w/o specifying the number of clusters
     if dataset.cluster_similarity is not None:
         cluster_matrix = np.array(dataset.cluster_similarity, dtype=float)
@@ -173,7 +173,7 @@ def additional_clustering(dataset: DataSet) -> DataSet:
             distance_threshold=np.average(dataset.cluster_distance) * 0.9,
             # connectivity=np.asarray(cluster_matrix < np.average(cluster_distance) * 0.9, dtype=int),
         )
-        logging.info(
+        LOGGER.info(
             f"Clustering based on distances. "
             f"Distances above {np.average(dataset.cluster_distance) * 0.9} cannot end up in same cluster."
         )
@@ -207,7 +207,7 @@ def additional_clustering(dataset: DataSet) -> DataSet:
             new_cluster_weights[new_cluster] = 0
         new_cluster_weights[new_cluster] += dataset.cluster_weights[dataset.cluster_map[name]]
 
-    logging.info(f"Reduced number of clusters to {len(new_cluster_names)}.")
+    LOGGER.info(f"Reduced number of clusters to {len(new_cluster_names)}.")
 
     dataset.cluster_names = new_cluster_names
     dataset.cluster_map = new_cluster_map

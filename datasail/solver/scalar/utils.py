@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Sized, List, Optional, Set, Union
+from typing import Dict, Tuple, Sized, List, Optional, Union
 
 import cvxpy
 import numpy as np

@@ -1,4 +1,3 @@
-import logging
 from typing import Tuple, List, Dict
 
 import numpy as np
@@ -7,6 +6,7 @@ from rdkit.Chem import AllChem
 from rdkit.Chem.Scaffolds.MurckoScaffold import MakeScaffoldGeneric
 
 from datasail.reader.utils import DataSet
+from datasail.settings import LOGGER
 
 
 def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
@@ -26,13 +26,13 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
         raise ValueError("ECFP with Tanimoto-scores can only be applied to molecular data.")
 
     scaffolds = {}
-    logging.info("Start ECFP clustering")
+    LOGGER.info("Start ECFP clustering")
 
     invalid_mols = []
     for name in dataset.names:
         scaffold = Chem.MolFromSmiles(dataset.data[name])
         if scaffold is None:
-            logging.warning(f"RDKit cannot parse {name} ({dataset.data[name]})")
+            LOGGER.warning(f"RDKit cannot parse {name} ({dataset.data[name]})")
             invalid_mols.append(name)
             continue
         scaffolds[name] = MakeScaffoldGeneric(scaffold)
@@ -45,9 +45,9 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     for scaffold in cluster_names:
         fps.append(AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(scaffold), 2, nBits=1024))
 
-    logging.info(f"Reduced {len(dataset.names)} molecules to {len(cluster_names)}")
+    LOGGER.info(f"Reduced {len(dataset.names)} molecules to {len(cluster_names)}")
 
-    logging.info("Compute Tanimoto Coefficients")
+    LOGGER.info("Compute Tanimoto Coefficients")
 
     count = len(cluster_names)
     sim_matrix = np.zeros((count, count))

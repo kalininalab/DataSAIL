@@ -1,4 +1,3 @@
-import logging
 from typing import List, Dict, Optional
 
 from datasail.solver.scalar.utils import init_variables, sum_constraint
@@ -50,7 +49,7 @@ def solve_ics_bqp(
         for b in range(len(splits))
     ) * normalization
 
-    solve(dist_loss, constraints, max_sec, len(x_e), solver, log_file)
+    solve(dist_loss, constraints, max_sec, solver, log_file)
 
     return dict(
         (e, names[b]) for b in range(len(splits)) for i, e in enumerate(e_entities) if x_e[i, b].value > 0.1

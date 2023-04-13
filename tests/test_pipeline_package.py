@@ -1,10 +1,6 @@
-import os.path
-import shutil
-
 import pytest
 
-from datasail.sail import sail, datasail
-from tests.utils import check_folder
+from datasail.sail import datasail
 
 
 @pytest.mark.parametrize("data", [

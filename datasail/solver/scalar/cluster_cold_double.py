@@ -103,7 +103,7 @@ def solve_ccd_bqp(
     e_loss = cluster_sim_dist_objective(e_similarities, e_distances, len(e_clusters), e_weights, x_e, len(splits))
     f_loss = cluster_sim_dist_objective(f_similarities, f_distances, len(f_clusters), f_weights, x_f, len(splits))
 
-    solve(alpha * inter_loss + e_loss + f_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver, log_file)
+    solve(alpha * inter_loss + e_loss + f_loss, constraints, max_sec, solver, log_file)
 
     # report the found solution
     output = ([], dict(

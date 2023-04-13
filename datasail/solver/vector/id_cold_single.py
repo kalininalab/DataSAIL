@@ -48,7 +48,7 @@ def solve_ics_bqp(
     ]
     normalization = 1 / (len(splits) * sum(e_weights) * epsilon)
     loss = cvxpy.sum(cvxpy.abs(cvxpy.sum(cvxpy.multiply(w.T, x_e), axis=0) - o)) * normalization
-    problem = solve(loss, constraints, max_sec, 1, solver, log_file)
+    problem = solve(loss, constraints, max_sec, solver, log_file)
 
     return dict(
         (e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[i, s].value > 0.1
