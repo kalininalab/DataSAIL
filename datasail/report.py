@@ -72,7 +72,7 @@ def individual_report(
         save_clusters(save_dir, dataset)
         save_t_sne(save_dir, dataset, name_split_map.get(technique, None), cluster_split_map.get(technique, None),
                    split_names)
-        save_cluster_hist(save_dir, f_dataset)
+        save_cluster_hist(save_dir, dataset)
     split_counts = dict((n, 0) for n in split_names)
     for name in dataset.names:
         split_counts[name_split_map[technique][name]] += dataset.weights.get(name, 0)

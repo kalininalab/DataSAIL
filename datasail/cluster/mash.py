@@ -8,12 +8,13 @@ import numpy as np
 from datasail.reader.utils import DataSet
 
 
-def run_mash(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray]]:
+def run_mash(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray]]:
     """
     Run MASH on the provided dataset.
 
     Args:
         dataset: Dataset to run MASH for
+        threads: number of threads to use for one CD-HIT run
         log_dir: Filepath to store the output of MASH to
 
     Returns:
@@ -24,8 +25,8 @@ def run_mash(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], Dict[
     """
     cmd = f"mkdir mash_results && " \
           f"cd mash_results && " \
-          f"mash sketch -s 10000 -o ./cluster {os.path.join('..', dataset.location, '*.fna')} && " \
-          f"mash dist -t cluster.msh cluster.msh > cluster.tsv "
+          f"mash sketch -s 10000 -p {threads} -o ./cluster {os.path.join('..', dataset.location, '*.fna')} && " \
+          f"mash dist -p {threads} -t cluster.msh cluster.msh > cluster.tsv "
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"

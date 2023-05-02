@@ -10,13 +10,14 @@ from datasail.parsers import parse_cdhit_args
 from datasail.reader.utils import DataSet
 
 
-def run_cdhit(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_cdhit(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run the CD-HIT tool for protein input.
 
     Args:
         dataset: DataSet holding all information on the dta to be clustered
         log_dir: Absolute path to the directory to store all the logs in
+        threads: number of threads to use for one CD-HIT run
 
     Returns:
         A tuple containing
@@ -29,6 +30,7 @@ def run_cdhit(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], Dict
     return cluster_param_binary_search(
         dataset,
         vals,
+        threads,
         (0.4, 2),
         (1, 5),
         cdhit_trial,
@@ -38,10 +40,10 @@ def run_cdhit(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], Dict
     )
 
 
-def cdhit_trial(dataset, add_args, log_name: Optional[str]):
+def cdhit_trial(dataset: DataSet, add_args: Tuple, threads: int, log_name: Optional[str]):
     cmd = f"mkdir cdhit && " \
           f"cd cdhit && " \
-          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 {add_args} "
+          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 {add_args} -T {threads}"
 
     if log_name is None:
         cmd += "> /dev/null 2>&1"

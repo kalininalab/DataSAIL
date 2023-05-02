@@ -56,6 +56,7 @@ def test_pipeline(data):
         cache=False,
         cache_dir=None,
         solver="SCIP",
+        threads=1,
     )
 
     assert any(mode[:3] in x for x in [e_name_split_map, f_name_split_map, inter_split_map])
@@ -88,6 +89,7 @@ def test_report():
         solver="SCIP",
         cache=False,
         cache_dir=None,
+        threads=1,
     )
 
     assert "ICS" in e_name_split_map

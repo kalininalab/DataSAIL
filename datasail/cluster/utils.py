@@ -11,6 +11,7 @@ from datasail.reader.utils import DataSet
 def cluster_param_binary_search(
         dataset: DataSet,
         init_args: Tuple,
+        threads: int,
         min_args: Tuple,
         max_args: Tuple,
         trial: Callable,
@@ -33,7 +34,7 @@ def cluster_param_binary_search(
         )
 
     # cluster with the initial arguments
-    cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(init_args), args2log(init_args))
+    cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(init_args), args2log(init_args), threads)
     num_clusters = len(cluster_names)
     logging.info(f"First round of clustering found {num_clusters} clusters for {len(dataset.names)} samples.")
 
@@ -56,7 +57,7 @@ def cluster_param_binary_search(
         max_args = init_args
         max_clusters = num_clusters
         max_cluster_names, max_cluster_map, max_cluster_sim = cluster_names, cluster_map, cluster_sim
-        min_cluster_names, min_cluster_map, min_cluster_sim = trial(dataset, args2str(min_args), args2log(min_args))
+        min_cluster_names, min_cluster_map, min_cluster_sim = trial(dataset, args2str(min_args), args2log(min_args), threads)
         min_clusters = len(min_cluster_names)
         logging.info(f"First round of clustering found {min_clusters} clusters for {len(dataset.names)} samples.")
 
@@ -83,7 +84,7 @@ def cluster_param_binary_search(
     while True:
         iteration_count += 1
         args = gen_args(min_args, max_args)
-        cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(args), args2log(args))
+        cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(args), args2log(args), threads)
         num_clusters = len(cluster_names)
         logging.info(f"Next round of clustering ({iteration_count + 2}.) "
                      f"found {num_clusters} clusters for {len(dataset.names)} samples.")
