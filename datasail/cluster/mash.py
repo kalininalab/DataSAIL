@@ -8,7 +8,11 @@ from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER
 
 
-def run_mash(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray]]:
+def run_mash(
+        dataset: DataSet,
+        threads: int,
+        log_dir: Optional[str]
+) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray]]:
     """
     Run MASH on the provided dataset.
 
