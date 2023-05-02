@@ -6,15 +6,7 @@ from typing import Dict, List, Tuple
 from datasail.parsers import parse_cdhit_args, parse_mash_args, parse_mmseqs_args, DIST_ALGOS, SIM_ALGOS, \
     parse_datasail_args
 from datasail.run import bqp_main
-
-verb_map = {
-    "C": logging.CRITICAL,
-    "F": logging.FATAL,
-    "E": logging.ERROR,
-    "W": logging.WARNING,
-    "I": logging.INFO,
-    "D": logging.DEBUG,
-}
+from datasail.settings import LOGGER, FORMATTER, VERB_MAP
 
 
 def error(msg: str, error_code: int) -> None:
@@ -27,7 +19,7 @@ def error(msg: str, error_code: int) -> None:
         msg: Error message
         error_code: Code of the error to identify it
     """
-    logging.error(msg)
+    LOGGER.error(msg)
     exit(error_code)
 
 
@@ -48,32 +40,23 @@ def validate_args(**kwargs) -> Dict[str, object]:
         output_created = True
         os.makedirs(kwargs["output"], exist_ok=True)
 
+    LOGGER.setLevel(VERB_MAP[kwargs["verbosity"]])
+    LOGGER.handlers[0].setLevel(level=VERB_MAP[kwargs["verbosity"]])
+
     if kwargs["output"] is not None:
         kwargs["logdir"] = os.path.abspath(os.path.join(kwargs["output"], "logs"))
         os.makedirs(kwargs["logdir"], exist_ok=True)
+        file_handler = logging.FileHandler(os.path.join(kwargs["logdir"], "general.log"))
+        file_handler.setLevel(level=VERB_MAP[kwargs["verbosity"]])
+        file_handler.setFormatter(FORMATTER)
+        LOGGER.addHandler(file_handler)
     else:
         kwargs["logdir"] = None
 
-    formatter = logging.Formatter('%(asctime)s %(message)s')
-    handlers = []
-
-    stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setLevel(level=verb_map[kwargs["verbosity"]])
-    stdout_handler.setFormatter(formatter)
-    handlers.append(stdout_handler)
-
-    if kwargs["logdir"] is not None:
-        file_handler = logging.FileHandler(os.path.join(kwargs["logdir"], "general.log"))
-        file_handler.setLevel(level=verb_map[kwargs["verbosity"]])
-        file_handler.setFormatter(formatter)
-        handlers.append(file_handler)
-
-    logging.basicConfig(level=verb_map[kwargs["verbosity"]], handlers=handlers)
-
     if output_created:
-        logging.warning("Output directory does not exist, DataSAIL creates it automatically")
+        LOGGER.warning("Output directory does not exist, DataSAIL creates it automatically")
 
-    logging.info("Validating arguments")
+    LOGGER.info("Validating arguments")
 
     # check splits to be more than 1 and their fractions sum up to 1 and check the names
     if len(kwargs["splits"]) < 2:
@@ -110,7 +93,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
 
     # check the input regarding the caching
     if kwargs["cache"] and not os.path.isdir(kwargs["cache_dir"]):
-        logging.warning("Cache directory does not exist, DataSAIL creates it automatically")
+        LOGGER.warning("Cache directory does not exist, DataSAIL creates it automatically")
         os.makedirs(kwargs["cache_dir"], exist_ok=True)
 
     # syntactically parse the input data for the E-dataset
@@ -304,4 +287,4 @@ if __name__ == '__main__':
     """
     Entry point for the CLI tool
     """
-    sail(**parse_datasail_args(sys.argv))
+    sail(**parse_datasail_args(sys.argv[1:]))

@@ -1,4 +1,3 @@
-import logging
 import math
 import os
 from typing import Dict, List, Optional, Tuple, Set
@@ -8,6 +7,7 @@ from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 
 from datasail.reader.utils import DataSet
+from datasail.settings import LOGGER
 
 
 def report(
@@ -23,8 +23,7 @@ def report(
         split_names: List[str],
 ) -> None:
     # create the output folder to store the results in
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
 
     for t in techniques:
         technique, mode = t[:3], t[-1]
@@ -204,7 +203,10 @@ def save_cluster_hist(save_dir, dataset):
     counts = [0] * len(clusters)
     for n, c in dataset.cluster_map.items():
         counts[clusters[c]] += 1
-    plt.hist(clusters)
+    sizes = [0] * (max(counts) + 1)
+    for c in counts:
+        sizes[c] += 1
+    plt.hist(counts)
     plt.savefig(os.path.join(save_dir, f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_cluster_hist.png"))
     plt.clf()
 
@@ -221,7 +223,6 @@ def whatever(
         distances: Distance matrix between entities
         similarities: Similarity matrix between entities
     """
-    # TODO: Optimize this for runtime
     if distances is not None:
         val = float("-inf")
         val2 = float("inf")
@@ -243,22 +244,22 @@ def whatever(
 
     metric_name = "distance   " if distances is not None else "similarity "
     metric = distances.flatten() if distances is not None else similarities.flatten()
-    logging.info("Some cluster statistics:")
-    logging.info(f"\tMin {metric_name}: {np.min(metric):.5f}")
-    logging.info(f"\tMax {metric_name}: {np.max(metric):.5f}")
-    logging.info(f"\tAvg {metric_name}: {np.average(metric):.5f}")
-    logging.info(f"\tMean {metric_name[:-1]}: {np.mean(metric):.5f}")
-    logging.info(f"\tVar {metric_name}: {np.var(metric):.5f}")
+    LOGGER.info("Some cluster statistics:")
+    LOGGER.info(f"\tMin {metric_name}: {np.min(metric):.5f}")
+    LOGGER.info(f"\tMax {metric_name}: {np.max(metric):.5f}")
+    LOGGER.info(f"\tAvg {metric_name}: {np.average(metric):.5f}")
+    LOGGER.info(f"\tMean {metric_name[:-1]}: {np.mean(metric):.5f}")
+    LOGGER.info(f"\tVar {metric_name}: {np.var(metric):.5f}")
     if distances is not None:
-        logging.info(f"\tMaximal distance in same split: {val:.5f}")
-        logging.info(f"\t{(metric > val).sum() / len(metric) * 100:.2}% of distances are larger")
-        logging.info(f"\tMinimal distance between two splits: {val:.5f}")
-        logging.info(f"\t{(metric < val2).sum() / len(metric) * 100:.2}% of distances are smaller")
+        LOGGER.info(f"\tMaximal distance in same split: {val:.5f}")
+        LOGGER.info(f"\t{(metric > val).sum() / len(metric) * 100:.2}% of distances are larger")
+        LOGGER.info(f"\tMinimal distance between two splits: {val:.5f}")
+        LOGGER.info(f"\t{(metric < val2).sum() / len(metric) * 100:.2}% of distances are smaller")
     else:
-        logging.info(f"Minimal similarity in same split {val:.5f}")
-        logging.info(f"\t{(metric < val).sum() / len(metric) * 100:.2}% of similarities are smaller")
-        logging.info(f"Maximal similarity between two splits {val:.5f}")
-        logging.info(f"\t{(metric > val).sum() / len(metric) * 100:.2}% of similarities are larger")
+        LOGGER.info(f"Minimal similarity in same split {val:.5f}")
+        LOGGER.info(f"\t{(metric < val).sum() / len(metric) * 100:.2}% of similarities are smaller")
+        LOGGER.info(f"Maximal similarity between two splits {val:.5f}")
+        LOGGER.info(f"\t{(metric > val).sum() / len(metric) * 100:.2}% of similarities are larger")
 
 
 def stats_string(count: int, split_stats: Dict[str, float]):

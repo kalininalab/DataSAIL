@@ -1,12 +1,12 @@
-import logging
 import os
-from typing import Tuple, Optional, List, Dict, Union, Set
+from typing import Tuple, Optional, List, Dict, Union
 
 import numpy as np
 from cvxpy import SolverError
 
 from datasail.cluster.clustering import reverse_clustering, cluster_interactions
 from datasail.reader.utils import DataSet
+from datasail.settings import LOGGER
 from datasail.solver.scalar.id_cold_single import solve_ics_bqp as solve_ics_bqp_scalar
 from datasail.solver.vector.id_cold_single import solve_ics_bqp as solve_ics_bqp_vector
 from datasail.solver.scalar.id_cold_double import solve_icd_bqp as solve_icd_bqp_scalar
@@ -29,7 +29,7 @@ def run_solver(
         vectorized: bool,
         epsilon: float,
         splits: List[float],
-        names: List[str],
+        split_names: List[str],
         max_sec: int,
         max_sol: int,
         solver: str,
@@ -46,7 +46,7 @@ def run_solver(
         vectorized: Boolean flag indicating to run it in vectorized form
         epsilon: Additive bound for exceeding the requested split size
         splits: List of split sizes
-        names: List of names of the splits in the order of the splits argument
+        split_names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
         max_sol: Maximal number of solution to consider
         solver: Solving algorithm to use to solve the formulated program
@@ -58,11 +58,11 @@ def run_solver(
     """
     output_inter, output_e_entities, output_f_entities, output_e_clusters, output_f_clusters = dict(), dict(), dict(), dict(), dict()
 
-    logging.info("Define optimization problem")
+    LOGGER.info("Define optimization problem")
 
     for technique in techniques:
         try:
-            logging.info(technique)
+            LOGGER.info(technique)
             technique, mode = technique[:3], technique[-1]
             dataset = f_dataset if mode == "f" else e_dataset
             log_file = None if log_dir is None else os.path.join(log_dir, f"{dataset.get_name()}_{technique}{mode}.log")
@@ -71,7 +71,7 @@ def run_solver(
                 solution = sample_categorical(
                     inter=inter,
                     splits=splits,
-                    names=names,
+                    names=split_names,
                 )
                 output_inter[technique] = solution
             elif technique == "ICS" or (technique == "CCS" and isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]):
@@ -80,12 +80,19 @@ def run_solver(
                 else:
                     fun = solve_ics_bqp_scalar
 
+                if technique == "CCS" and isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]:
+                    names = dataset.cluster_names
+                    weights = [dataset.cluster_weights.get(x, 0) for x in dataset.cluster_names]
+                else:
+                    names = dataset.names
+                    weights = [dataset.weights.get(x, 0) for x in dataset.names]
+
                 solution = fun(
-                    e_entities=dataset.names,
-                    e_weights=[dataset.weights.get(x, 0) for x in dataset.names],
+                    e_entities=names,
+                    e_weights=weights,
                     epsilon=epsilon,
                     splits=splits,
-                    names=names,
+                    names=split_names,
                     max_sec=max_sec,
                     max_sol=max_sol,
                     solver=solver,
@@ -108,7 +115,7 @@ def run_solver(
                     inter=set(inter),
                     epsilon=epsilon,
                     splits=splits,
-                    names=names,
+                    names=split_names,
                     max_sec=max_sec,
                     max_sol=max_sol,
                     solver=solver,
@@ -127,7 +134,7 @@ def run_solver(
                     e_threshold=dataset.threshold,
                     epsilon=epsilon,
                     splits=splits,
-                    names=names,
+                    names=split_names,
                     max_sec=max_sec,
                     max_sol=max_sol,
                     solver=solver,
@@ -163,7 +170,7 @@ def run_solver(
                     inter=cluster_inter,
                     epsilon=epsilon,
                     splits=splits,
-                    names=names,
+                    names=split_names,
                     max_sec=max_sec,
                     max_sol=max_sol,
                     solver=solver,
@@ -175,6 +182,6 @@ def run_solver(
                     output_e_entities[technique] = reverse_clustering(cluster_split[1], e_dataset.cluster_map)
                     output_f_entities[technique] = reverse_clustering(cluster_split[2], f_dataset.cluster_map)
         except SolverError:
-            logging.error(f"Splitting failed for {technique}, try to increase the timelimit or the epsilon value.")
+            LOGGER.error(f"Splitting failed for {technique}, try to increase the timelimit or the epsilon value.")
 
     return output_inter, output_e_entities, output_f_entities, output_e_clusters, output_f_clusters

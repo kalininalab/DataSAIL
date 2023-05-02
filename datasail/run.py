@@ -1,10 +1,10 @@
-import logging
 import time
 from typing import Dict, Tuple
 
 from datasail.cluster.clustering import cluster
 from datasail.reader.read import read_data
 from datasail.report import report
+from datasail.settings import LOGGER
 from datasail.solver.solve import run_solver
 
 
@@ -16,7 +16,7 @@ def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
         **kwargs: Parsed commandline arguments to DataSAIL.
     """
     start = time.time()
-    logging.info("Read data")
+    LOGGER.info("Read data")
 
     # read e-entities and f-entities
     e_dataset, f_dataset, inter = read_data(**kwargs)
@@ -27,13 +27,13 @@ def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     cluster_f = len(clusters) != 0 and any(c[-1] in {"D", "f"} for c in clusters)
 
     if cluster_e:
-        logging.info("Cluster first set of entities.")
+        LOGGER.info("Cluster first set of entities.")
         e_dataset = cluster(e_dataset, **kwargs)
     if cluster_f:
-        logging.info("Cluster second set of entities.")
+        LOGGER.info("Cluster second set of entities.")
         f_dataset = cluster(f_dataset, **kwargs)
 
-    logging.info("Split data")
+    LOGGER.info("Split data")
     # split the data into dictionaries mapping interactions, e-entities, and f-entities into the splits
     inter_split_map, e_name_split_map, f_name_split_map, e_cluster_split_map, f_cluster_split_map = run_solver(
         techniques=kwargs["techniques"],
@@ -43,14 +43,14 @@ def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
         inter=inter,
         epsilon=kwargs["epsilon"],
         splits=kwargs["splits"],
-        names=kwargs["names"],
+        split_names=kwargs["names"],
         max_sec=kwargs["max_sec"],
         max_sol=kwargs["max_sol"],
         solver=kwargs["solver"],
         log_dir=kwargs["logdir"],
     )
 
-    logging.info("Store results")
+    LOGGER.info("Store results")
 
     # infer interaction assignment from entity assignment if necessary and possible
     if inter is not None:
@@ -67,8 +67,8 @@ def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
                         if e_name_split_map[t][e] == f_name_split_map[t][f]
                     ]
 
-    logging.info("BQP splitting finished and results stored.")
-    logging.info(f"Total runtime: {time.time() - start:.5f}s")
+    LOGGER.info("BQP splitting finished and results stored.")
+    LOGGER.info(f"Total runtime: {time.time() - start:.5f}s")
 
     if kwargs["output"] is not None:
         report(

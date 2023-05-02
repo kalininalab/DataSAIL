@@ -1,4 +1,3 @@
-import logging
 import os
 import shutil
 from typing import Dict, Tuple, List, Optional
@@ -8,6 +7,7 @@ import numpy as np
 from datasail.cluster.utils import cluster_param_binary_search
 from datasail.parsers import parse_mmseqs_args
 from datasail.reader.utils import DataSet
+from datasail.settings import LOGGER
 
 
 def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
@@ -27,7 +27,7 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[
     """
     args = parse_mmseqs_args(dataset.args)
     vals = (args["seq_id"],)
-    logging.info("Starting MMseqs clustering")
+    LOGGER.info("Starting MMseqs clustering")
     return cluster_param_binary_search(
         dataset,
         vals,
@@ -78,13 +78,13 @@ def mmseqs_trial(dataset: DataSet, add_args: str, threads: int, log_file: Option
     if os.path.exists("mmseqs_results"):
         cmd = "rm -rf mmseqs_results && " + cmd
 
-    logging.info(cmd)
+    LOGGER.info(cmd)
     os.system(cmd)
 
     cluster_map = get_mmseqs_map("mmseqs_results/mmseqs_out_cluster.tsv")
     cluster_names = list(set(cluster_map.values()))
     cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
-    logging.info(f"MMseqs2 clustered {len(cluster_map)} sequences into {len(cluster_names)} clusters")
+    LOGGER.info(f"MMseqs2 clustered {len(cluster_map)} sequences into {len(cluster_names)} clusters")
 
     shutil.rmtree("mmseqs_results")
 

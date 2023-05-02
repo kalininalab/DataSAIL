@@ -1,4 +1,3 @@
-import logging
 import os
 import shutil
 from typing import Tuple, List, Dict, Optional
@@ -8,6 +7,7 @@ import numpy as np
 from datasail.cluster.utils import cluster_param_binary_search
 from datasail.parsers import parse_cdhit_args
 from datasail.reader.utils import DataSet
+from datasail.settings import LOGGER
 
 
 def run_cdhit(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
@@ -48,12 +48,12 @@ def cdhit_trial(dataset: DataSet, add_args: Tuple, threads: int, log_name: Optio
     if log_name is None:
         cmd += "> /dev/null 2>&1"
     else:
-        f"> {log_name}"
+        cmd += f"> {log_name}"
 
     if os.path.exists("cdhit"):
         cmd = "rm -rf cdhit && " + cmd
 
-    logging.info(cmd)
+    LOGGER.info(cmd)
     os.system(cmd)
 
     cluster_map = get_cdhit_map("cdhit/clusters.clstr")

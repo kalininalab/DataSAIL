@@ -1,4 +1,3 @@
-import logging
 from typing import List, Optional, Dict, Union
 
 import numpy as np
@@ -57,11 +56,11 @@ def solve_ccs_bqp(
         ] + cluster_sim_dist_constraint(e_similarities, e_distances, e_threshold, len(e_clusters), x_e, s)
 
     size_loss = sum(
-        (sum(x_e[i, s] * e_weights[i] for i in range(len(e_clusters))) - splits[b] * sum(e_weights)) ** 2
-        for b in range(len(splits))
+        (sum(x_e[i, s] * e_weights[i] for i in range(len(e_clusters))) - splits[s] * sum(e_weights)) ** 2
+        for s in range(len(splits))
     )
     e_loss = cluster_sim_dist_objective(e_similarities, e_distances, len(e_clusters), e_weights, x_e, len(splits))
 
-    solve(alpha * size_loss + e_loss, constraints, max_sec, len(x_e), solver, log_file)
+    solve(alpha * size_loss + e_loss, constraints, max_sec, solver, log_file)
 
     return dict((e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_clusters) if x_e[i, s].value > 0.1)
