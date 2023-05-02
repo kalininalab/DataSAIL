@@ -1,6 +1,7 @@
 from typing import Tuple, List, Dict
 
 import numpy as np
+import rdkit
 from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
 from rdkit.Chem.Scaffolds.MurckoScaffold import MakeScaffoldGeneric
@@ -35,7 +36,12 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
             LOGGER.warning(f"RDKit cannot parse {name} ({dataset.data[name]})")
             invalid_mols.append(name)
             continue
-        scaffolds[name] = MakeScaffoldGeneric(scaffold)
+        try:
+            scaffolds[name] = MakeScaffoldGeneric(scaffold)
+        except rdkit.Chem.rdchem.MolSanitizeException:
+            LOGGER.warning(f"RDKit cannot parse {name} ({dataset.data[name]})")
+            invalid_mols.append(name)
+            continue
     for invalid_name in invalid_mols:
         dataset.names.remove(invalid_name)
         dataset.data.pop(invalid_name)
