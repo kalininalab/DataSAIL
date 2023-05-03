@@ -10,13 +10,14 @@ from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER
 
 
-def run_cdhit(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_cdhit(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run the CD-HIT tool for protein input.
 
     Args:
         dataset: DataSet holding all information on the dta to be clustered
         log_dir: Absolute path to the directory to store all the logs in
+        threads: number of threads to use for one CD-HIT run
 
     Returns:
         A tuple containing
@@ -29,6 +30,7 @@ def run_cdhit(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], Dict
     return cluster_param_binary_search(
         dataset,
         vals,
+        threads,
         (0.4, 2),
         (1, 5),
         cdhit_trial,
@@ -38,15 +40,30 @@ def run_cdhit(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], Dict
     )
 
 
-def cdhit_trial(dataset, add_args, log_name: Optional[str]):
+def cdhit_trial(dataset: DataSet, add_args: Tuple, threads: int, log_file: Optional[str]):
+    """
+    Run CD-HIT on the dataset with the given sequence similarity defined by add_args.
+
+    Args:
+        dataset: Dataset to run the clustering for
+        add_args: Additional arguments specifying the sequence similarity parameter
+        threads: number of threads to use for one CD-HIT run
+        log_file: Filepath to log the output to
+
+    Returns:
+        A tuple containing
+          - the names of the clusters (cluster representatives)
+          - the mapping from cluster members to the cluster names (cluster representatives)
+          - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
+    """
     cmd = f"mkdir cdhit && " \
           f"cd cdhit && " \
-          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 {add_args} "
+          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 {add_args} -T {threads}"
 
-    if log_name is None:
+    if log_file is None:
         cmd += "> /dev/null 2>&1"
     else:
-        cmd += f"> {log_name}"
+        cmd += f"> {log_file}"
 
     if os.path.exists("cdhit"):
         cmd = "rm -rf cdhit && " + cmd

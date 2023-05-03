@@ -60,6 +60,7 @@ def test_pipeline(data):
         cache=False,
         cache_dir=None,
         solver="SCIP",
+        threads=1,
     )
 
     check_folder(
@@ -104,11 +105,12 @@ def test_report():
         solver="SCIP",
         cache=False,
         cache_dir=None,
-        log_dir="logs"
+        log_dir="logs",
+        threads=1,
     )
 
-    assert os.path.isfile("data/perf_7_3/out/lig_similarity.png")
-    assert os.path.isfile("data/perf_7_3/out/prot_similarity.png")
+    assert os.path.isfile("data/perf_7_3/out/data_perf_7_3_lig_similarity.png")
+    assert os.path.isfile("data/perf_7_3/out/data_perf_7_3_prot_similarity.png")
 
     assert os.path.isdir("data/perf_7_3/out/R")
     assert len(os.listdir("data/perf_7_3/out/R")) == 1

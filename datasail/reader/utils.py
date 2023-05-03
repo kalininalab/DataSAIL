@@ -54,7 +54,7 @@ class DataSet:
         Returns:
             Name of the dataset
         """
-        return ".".join(self.location.split(os.path.sep)[-1].split(".")[:-1])
+        return ".".join(self.location.split(os.path.sep)[-1].split(".")[:-1]).replace("/", "_")
 
 
 def count_inter(inter: List[Tuple[str, str]], mode: int) -> Generator[Tuple[str, int], None, None]:

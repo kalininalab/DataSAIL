@@ -8,6 +8,7 @@ tests/data/split_icp/
 tests/data/split_r/
 tests/data/pipeline/out/
 sample_data
+kinodata/
 issue_*
 main.py
 datasail/cluster/wlk_olga.py

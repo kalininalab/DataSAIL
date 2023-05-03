@@ -76,6 +76,12 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The maximal search time must be a positive integer.", error_code=3)
     if kwargs["max_sol"] < 1:
         error("The maximal number of solutions to look at has to be a positive integer.", error_code=4)
+    if kwargs["threads"] <= 0:
+        error("The number of threads to use has to be a non-negative integer.", error_code=23)
+    if kwargs["threads"] == 0:
+        kwargs["threads"] = os.cpu_count()
+    else:
+        kwargs["threads"] = min(kwargs["threads"], os.cpu_count())
 
     # check the interaction file
     if kwargs["inter"] is not None and not os.path.isfile(kwargs["inter"]):
@@ -213,6 +219,7 @@ def datasail(
         f_args="",
         f_max_sim: float = 1.0,
         f_max_dist: float = 1.0,
+        threads: int = 1,
 ) -> Tuple[Dict, Dict, Dict]:
     """
     Entry point for the package usage of DataSAIL.
@@ -246,6 +253,7 @@ def datasail(
         f_args: Additional arguments for the tools in f_sim or f-dist
         f_max_sim: Maximal similarity of two f-entities in different splits
         f_max_dist: Maximal distance of two f-entities in the same split
+        threads: number of threads to use for one CD-HIT run
 
     Returns:
         Three dictionaries mapping techniques to another dictionary. The inner dictionary maps input id to their splits.
@@ -259,7 +267,7 @@ def datasail(
         splits=splits, names=names, epsilon=epsilon, solver=solver, vectorized=not vectorized, cache=cache,
         cache_dir=cache_dir, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=e_dist,
         e_args=e_args, e_max_sim=e_max_sim, e_max_dist=e_max_dist, f_type=f_type, f_data=f_data, f_weights=f_weights,
-        f_sim=f_sim, f_dist=f_dist, f_args=f_args, f_max_sim=f_max_sim, f_max_dist=f_max_dist
+        f_sim=f_sim, f_dist=f_dist, f_args=f_args, f_max_sim=f_max_sim, f_max_dist=f_max_dist, threads=threads,
     )
     return bqp_main(**kwargs)
 

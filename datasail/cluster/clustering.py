@@ -34,11 +34,11 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
 
     if isinstance(dataset.similarity, str):  # compute the similarity
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity, dataset.cluster_weights = \
-            similarity_clustering(dataset, kwargs["logdir"])
+            similarity_clustering(dataset, kwargs["threads"], kwargs["logdir"])
 
     elif isinstance(dataset.distance, str):  # compute the distance
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_distance, dataset.cluster_weights = \
-            distance_clustering(dataset, kwargs["logdir"])
+            distance_clustering(dataset, kwargs["threads"], kwargs["logdir"])
 
     # if the similarity/distance is already given, store it
     elif dataset.similarity is not None or dataset.distance is not None:
@@ -71,7 +71,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     return dataset
 
 
-def similarity_clustering(dataset: DataSet, log_dir: Optional[str]) -> Tuple[
+def similarity_clustering(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[
     List[str], Dict[str, str], np.ndarray, Dict[str, float],
 ]:
     """
@@ -79,6 +79,7 @@ def similarity_clustering(dataset: DataSet, log_dir: Optional[str]) -> Tuple[
 
     Args:
         dataset: Mapping from molecule names to molecule description (fasta, PDB, SMILES, ...)
+        threads: number of threads to use for one CD-HIT run
         log_dir: Absolute path to the directory to store all the logs in
 
     Returns:
@@ -92,11 +93,11 @@ def similarity_clustering(dataset: DataSet, log_dir: Optional[str]) -> Tuple[
     if dataset.similarity.lower() == "wlk":
         cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
     elif dataset.similarity.lower() == "mmseqs":
-        cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset, log_dir)
+        cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "foldseek":
-        cluster_names, cluster_map, cluster_sim = run_foldseek(dataset, log_dir)
+        cluster_names, cluster_map, cluster_sim = run_foldseek(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "cdhit":
-        cluster_names, cluster_map, cluster_sim = run_cdhit(dataset, log_dir)
+        cluster_names, cluster_map, cluster_sim = run_cdhit(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "ecfp":
         cluster_names, cluster_map, cluster_sim = run_ecfp(dataset)
     else:
@@ -113,7 +114,7 @@ def similarity_clustering(dataset: DataSet, log_dir: Optional[str]) -> Tuple[
     return cluster_names, cluster_map, cluster_sim, cluster_weights
 
 
-def distance_clustering(dataset: DataSet, log_dir: Optional[str]) -> Tuple[
+def distance_clustering(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[
     List[str], Dict[str, str], np.ndarray, Dict[str, float],
 ]:
     """
@@ -121,6 +122,7 @@ def distance_clustering(dataset: DataSet, log_dir: Optional[str]) -> Tuple[
 
     Args:
         dataset: DataSet with all information what and how to cluster
+        threads: number of threads to use for one CD-HIT run
         log_dir: Absolute path to the directory to store all the logs in
 
     Returns:
@@ -132,7 +134,7 @@ def distance_clustering(dataset: DataSet, log_dir: Optional[str]) -> Tuple[
           - Mapping from current clusters to their weights
     """
     if dataset.distance.lower() == "mash":
-        cluster_names, cluster_map, cluster_dist = run_mash(dataset, log_dir)
+        cluster_names, cluster_map, cluster_dist = run_mash(dataset, threads, log_dir)
     else:
         raise ValueError(f"Unknown cluster method: {dataset.distance}")
 

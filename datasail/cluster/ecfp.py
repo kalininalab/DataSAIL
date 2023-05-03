@@ -1,10 +1,10 @@
 from typing import Tuple, List, Dict
 
 import numpy as np
-import rdkit
 from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
 from rdkit.Chem.Scaffolds.MurckoScaffold import MakeScaffoldGeneric
+from rdkit.Chem.rdchem import MolSanitizeException
 
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER
@@ -38,7 +38,7 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
             continue
         try:
             scaffolds[name] = MakeScaffoldGeneric(scaffold)
-        except rdkit.Chem.rdchem.MolSanitizeException:
+        except MolSanitizeException:
             LOGGER.warning(f"RDKit cannot parse {name} ({dataset.data[name]})")
             invalid_mols.append(name)
             continue
@@ -79,5 +79,3 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     # dataset.similarity = element_sim_matrix
 
     return cluster_names, cluster_map, sim_matrix
-
-

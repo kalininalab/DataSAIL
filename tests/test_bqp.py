@@ -35,6 +35,7 @@ def run_identity_splitting(root_dir, out_folder, mode, vectorized):
         cache=False,
         cache_dir=None,
         solver="SCIP",
+        threads=1,
     )
 
 

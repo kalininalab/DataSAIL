@@ -39,4 +39,3 @@ def read_other_data(
         raise ValueError()
 
     return read_data(weights, sim, dist, max_sim, max_dist, inter, index, dataset)
-
