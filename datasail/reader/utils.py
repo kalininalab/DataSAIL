@@ -40,8 +40,8 @@ class DataSet:
                 hv = hash(tuple(obj.items()))
             elif isinstance(obj, list):
                 hv = hash(tuple(obj))
-            elif isinstance(obj, np.ndarray):
-                hv = hash(str(obj.data))
+            # elif isinstance(obj, np.ndarray):
+            #     hv = hash(str(obj.data))
             else:
                 hv = hash(obj)
             hash_val ^= hv
@@ -193,3 +193,8 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
         if data_format == "FASTA":
             return None, "mash"
     return None, None
+
+
+def unite_molecules(dataset: DataSet, inter: List[Tuple[str, str]], index: int) -> Tuple[DataSet, List[Tuple[str, str]]]:
+
+    return dataset, inter

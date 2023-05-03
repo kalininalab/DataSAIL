@@ -4,7 +4,7 @@ from datasail.reader.read_genomes import read_genome_data
 from datasail.reader.read_molecules import read_molecule_data
 from datasail.reader.read_other import read_other_data
 from datasail.reader.read_proteins import read_protein_data
-from datasail.reader.utils import read_csv, DataSet
+from datasail.reader.utils import read_csv, DataSet, unite_molecules
 
 
 def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]]]]:
@@ -29,6 +29,12 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
         kwargs["f_dist"], kwargs["f_max_sim"], kwargs["f_max_dist"], inter, 1
     )
     f_dataset.args = kwargs["f_args"]
+
+    if e_dataset.type == "M":
+        e_dataset, inter = unite_molecules(e_dataset, inter, 0)
+    if f_dataset.type == "M":
+        f_dataset, inter = unite_molecules(f_dataset, inter, 1)
+
     return e_dataset, f_dataset, inter
 
 

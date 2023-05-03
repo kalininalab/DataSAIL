@@ -58,13 +58,13 @@ def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
             t = technique[:3]
             if inter_split_map.get(technique, None) is None:
                 if e_name_split_map.get(t, None) is not None and f_name_split_map.get(t, None) is None:
-                    inter_split_map[technique] = [(e, f, e_name_split_map[t][e]) for e, f in inter]
+                    inter_split_map[technique] = [(e, f, e_name_split_map[t].get(e, "")) for e, f in inter]
                 elif e_name_split_map.get(t, None) is None and f_name_split_map.get(t, None) is not None:
-                    inter_split_map[technique] = [(e, f, f_name_split_map[t][f]) for e, f in inter]
+                    inter_split_map[technique] = [(e, f, f_name_split_map[t].get(f, "")) for e, f in inter]
                 elif e_name_split_map.get(t, None) is not None and f_name_split_map.get(t, None) is not None:
                     inter_split_map[technique] = [
-                        (e, f, e_name_split_map[t][e]) for e, f in inter
-                        if e_name_split_map[t][e] == f_name_split_map[t][f]
+                        (e, f, e_name_split_map[t].get(e, "")) for e, f in inter
+                        if e_name_split_map[t].get(e, "") == f_name_split_map[t].get(f, "")
                     ]
 
     LOGGER.info("BQP splitting finished and results stored.")

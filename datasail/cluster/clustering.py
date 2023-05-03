@@ -163,7 +163,7 @@ def additional_clustering(dataset: DataSet) -> DataSet:
     # set up the cluster algorithm for similarity or distance based cluster w/o specifying the number of clusters
     if dataset.cluster_similarity is not None:
         cluster_matrix = np.array(dataset.cluster_similarity, dtype=float)
-        ca = AffinityPropagation(affinity='precomputed', random_state=42)
+        ca = AffinityPropagation(affinity='precomputed', random_state=42, verbose=True)
     else:
         cluster_matrix = np.array(dataset.cluster_distance, dtype=float)
         ca = AgglomerativeClustering(
@@ -171,6 +171,7 @@ def additional_clustering(dataset: DataSet) -> DataSet:
             metric='precomputed',
             linkage='average',
             distance_threshold=np.average(dataset.cluster_distance) * 0.9,
+            # verbose=True,
             # connectivity=np.asarray(cluster_matrix < np.average(cluster_distance) * 0.9, dtype=int),
         )
         LOGGER.info(
@@ -201,11 +202,11 @@ def additional_clustering(dataset: DataSet) -> DataSet:
 
     # compute the mapping of new clusters to their weights as the sum of their members weights
     new_cluster_weights = {}
-    for name in list(dataset.cluster_map.keys()):
-        new_cluster = new_cluster_map[name]
+    for i, name in enumerate(dataset.cluster_names):
+        new_cluster = labels[i]
         if new_cluster not in new_cluster_weights:
             new_cluster_weights[new_cluster] = 0
-        new_cluster_weights[new_cluster] += dataset.cluster_weights[dataset.cluster_map[name]]
+        new_cluster_weights[new_cluster] += dataset.cluster_weights[name]
 
     LOGGER.info(f"Reduced number of clusters to {len(new_cluster_names)}.")
 
