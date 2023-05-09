@@ -37,6 +37,11 @@ def inter_mask(
 
 class LoggerRedirect:
     def __init__(self, logfile_name):
+        """
+        Initialize this redirection module to be used to pipe messages to stdout to some file.
+        Args:
+            logfile_name: Filename to write stdout logs to instead of the console
+        """
         if logfile_name is None:
             self.silent = True
             return
@@ -46,6 +51,9 @@ class LoggerRedirect:
         self.silent = False
 
     def __enter__(self):
+        """
+        Remove the stream from all loggers that print to stdout.
+        """
         if self.silent:
             return
         for name, logger in logging.root.manager.loggerDict.items():
@@ -62,6 +70,14 @@ class LoggerRedirect:
         sys.stdout = self.file_handler.stream
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Re-instantiate all loggers with their streams.
+
+        Args:
+            exc_type: ignored
+            exc_val: ignored
+            exc_tb: ignored
+        """
         if self.silent:
             return
         for name, handlers in self.disabled.items():

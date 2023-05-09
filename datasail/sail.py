@@ -27,6 +27,9 @@ def validate_args(**kwargs) -> Dict[str, object]:
     """
     Validate the arguments given to the program.
 
+    Notes:
+        next error code: 25
+
     Args:
         **kwargs: Arguments in kwargs-format
 
@@ -63,9 +66,12 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("Less then two splits required. This is no useful input, please check the input again.", error_code=1)
     if kwargs["names"] is None:
         kwargs["names"] = [f"Split{x:03d}" for x in range(len(kwargs["splits"]))]
-    elif len(kwargs["names"]) != len(kwargs["names"]):
+    elif len(kwargs["splits"]) != len(kwargs["names"]):
         error("Different number of splits and names. You have to give the same number of splits and names for them.",
               error_code=2)
+    elif len(kwargs["names"]) != len(set(kwargs["names"])):
+        error("At least two splits will have the same name. Please check the naming of the splits again to have unique "
+              "names", error_code=24)
     kwargs["splits"] = [x / sum(kwargs["splits"]) for x in kwargs["splits"]]
 
     # convert vectorized from the input question to the flag used in the code
@@ -76,7 +82,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The maximal search time must be a positive integer.", error_code=3)
     if kwargs["max_sol"] < 1:
         error("The maximal number of solutions to look at has to be a positive integer.", error_code=4)
-    if kwargs["threads"] <= 0:
+    if kwargs["threads"] < 0:
         error("The number of threads to use has to be a non-negative integer.", error_code=23)
     if kwargs["threads"] == 0:
         kwargs["threads"] = os.cpu_count()

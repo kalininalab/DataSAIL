@@ -41,14 +41,14 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
             distance_clustering(dataset, kwargs["threads"], kwargs["logdir"])
 
     # if the similarity/distance is already given, store it
-    elif dataset.similarity is not None or dataset.distance is not None:
+    elif isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
         dataset.cluster_names = dataset.names
         dataset.cluster_map = dict([(d, d) for d in dataset.names])
         dataset.cluster_similarity = dataset.similarity
         dataset.cluster_distance = dataset.distance
         dataset.cluster_weights = dataset.weights
 
-    if dataset.cluster_names is None:
+    if dataset.cluster_names is None:  # No clustering to do?!
         return dataset
 
     # if there are too many clusters, reduce their number based on some cluster algorithms.

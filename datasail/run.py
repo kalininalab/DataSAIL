@@ -3,6 +3,7 @@ from typing import Dict, Tuple
 
 from datasail.cluster.clustering import cluster
 from datasail.reader.read import read_data
+from datasail.reader.utils import check_duplicates
 from datasail.report import report
 from datasail.settings import LOGGER
 from datasail.solver.solve import run_solver
@@ -17,6 +18,8 @@ def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     """
     start = time.time()
     LOGGER.info("Read data")
+
+    kwargs = check_duplicates(**kwargs)
 
     # read e-entities and f-entities
     e_dataset, f_dataset, inter = read_data(**kwargs)

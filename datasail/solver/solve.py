@@ -80,7 +80,7 @@ def run_solver(
                 else:
                     fun = solve_ics_bqp_scalar
 
-                if technique == "CCS" and isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]:
+                if technique == "CCS" and (isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]):
                     names = dataset.cluster_names
                     weights = [dataset.cluster_weights.get(x, 0) for x in dataset.cluster_names]
                 else:
@@ -100,10 +100,18 @@ def run_solver(
                 )
 
                 if solution is not None:
-                    if mode == "f":
-                        output_f_entities[technique] = solution
+                    if isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]:
+                        if mode == "f":
+                            output_f_clusters[technique] = solution
+                            output_f_entities[technique] = reverse_clustering(solution, f_dataset.cluster_map)
+                        else:
+                            output_e_clusters[technique] = solution
+                            output_e_entities[technique] = reverse_clustering(solution, e_dataset.cluster_map)
                     else:
-                        output_e_entities[technique] = solution
+                        if mode == "f":
+                            output_f_entities[technique] = solution
+                        else:
+                            output_e_entities[technique] = solution
             elif technique == "ICD":
                 if vectorized:
                     fun = solve_icd_bqp_vector

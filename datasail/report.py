@@ -22,6 +22,22 @@ def report(
         output_dir: str,
         split_names: List[str],
 ) -> None:
+    """
+    Central entrypoint to create reports on the computed splits. This stores t-SNE plots, histograms, cluster- and
+    split assignments for every split where the according reporting applies.
+
+    Args:
+        techniques: Set of techniques used to split the data
+        e_dataset: First dataset
+        f_dataset: Second dataset
+        e_name_split_map: Mapping of splits to a mapping of names to splits for first dataset
+        f_name_split_map: Mapping of splits to a mapping of names to splits for second dataset
+        e_cluster_split_map: Mapping of splits to a mapping of names to cluster names for first dataset
+        f_cluster_split_map: Mapping of splits to a mapping of names to cluster names for second dataset
+        inter_split_map: Mapping of splits to a mapping of interactions to splits
+        output_dir: Output directory where to store the results
+        split_names: Names of the splits
+    """
     # create the output folder to store the results in
     os.makedirs(output_dir, exist_ok=True)
 
@@ -30,17 +46,21 @@ def report(
         if mode.isupper():
             mode = None
 
+        # create output directory for reports of this split
         save_dir = os.path.join(output_dir, t)
         os.makedirs(save_dir, exist_ok=True)
 
+        # save mapping of interactions for this split if applicable
         if t in inter_split_map:
             save_inter_assignment(save_dir, inter_split_map[t])
 
+        # Compile report for first dataset if applies for this split
         if e_dataset.type is not None \
                 and ((mode is not None and mode != "f") or technique[-1] == "D") \
                 and technique in e_name_split_map:
             individual_report(save_dir, e_dataset, e_name_split_map, e_cluster_split_map, technique, split_names)
 
+        # Compile report for second dataset if applies for this split
         if f_dataset.type is not None \
                 and ((mode is not None and mode != "e") or technique[-1] == "D") \
                 and technique in f_name_split_map:
@@ -54,7 +74,7 @@ def individual_report(
         cluster_split_map: Dict[str, Dict[str, str]],
         technique: str,
         split_names: List[str],
-):
+) -> None:
     """
     Create all the report files for one dataset and one technique.
 
@@ -66,19 +86,24 @@ def individual_report(
         technique: Technique to treat here
         split_names: Names of the splits
     """
+    # Save assignment of names to splits
     save_assignment(save_dir, dataset, name_split_map.get(technique, None))
+
+    # Save clustering-related reports
     if technique[0] == "C":
         save_clusters(save_dir, dataset)
         save_t_sne(save_dir, dataset, name_split_map.get(technique, None), cluster_split_map.get(technique, None),
                    split_names)
         save_cluster_hist(save_dir, dataset)
+
+    # print statistics on how the sizes of the splits are distributed
     split_counts = dict((n, 0) for n in split_names)
     for name in dataset.names:
         split_counts[name_split_map[technique][name]] += dataset.weights.get(name, 0)
     print(stats_string(sum(dataset.weights.values()), split_counts))
 
 
-def save_inter_assignment(save_dir: str, inter_split_map: Optional[List[Tuple[str, str, str]]]):
+def save_inter_assignment(save_dir: str, inter_split_map: Optional[List[Tuple[str, str, str]]]) -> None:
     """
     Save the assignment of interactions to splits in a TSV file.
 
@@ -93,7 +118,7 @@ def save_inter_assignment(save_dir: str, inter_split_map: Optional[List[Tuple[st
             print(e, f, s, sep="\t", file=output)
 
 
-def save_assignment(save_dir: str, dataset: DataSet, name_split_map: Optional[Dict[str, str]]):
+def save_assignment(save_dir: str, dataset: DataSet, name_split_map: Optional[Dict[str, str]]) -> None:
     """
     Save an assignment from data points to splits.
 
@@ -111,7 +136,7 @@ def save_assignment(save_dir: str, dataset: DataSet, name_split_map: Optional[Di
             print(e, s, sep="\t", file=output)
 
 
-def save_clusters(save_dir: str, dataset: DataSet):
+def save_clusters(save_dir: str, dataset: DataSet) -> None:
     """
     Save a clustering to a TSV file. The clustering is the mapping from data points to cluster representatives or names.
 
@@ -134,7 +159,7 @@ def save_t_sne(
         name_split_map: Dict[str, str],
         cluster_split_map: Dict[str, str],
         split_names: List[str]
-):
+) -> None:
     """
     Compute and save the tSNE-plots for the splits visualizing the cluster assignments in 2D space.
 
@@ -150,31 +175,42 @@ def save_t_sne(
     ]):
         if (isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray)) \
                 and name_split_map is not None:
-            distance = dataset.distance if dataset.distance is not None else 1 - dataset.similarity
-            t_sne(dataset.names, distance, name_split_map, split_names, os.path.join(
-                save_dir, f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_splits.png"
-            ))
+            save_matrix_tsne(dataset.similarity, dataset.distance, dataset.names, dataset, name_split_map, split_names,
+                             save_dir, "splits")
 
         if (isinstance(dataset.cluster_similarity, np.ndarray) or isinstance(dataset.cluster_distance, np.ndarray)) \
                 and cluster_split_map is not None:
-            distance = dataset.cluster_distance if dataset.cluster_distance is not None \
-                else 1 - dataset.cluster_similarity
-            t_sne(dataset.cluster_names, distance, cluster_split_map, split_names, os.path.join(
-                save_dir, f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_clusters.png"
-            ))
+            save_matrix_tsne(dataset.cluster_similarity, dataset.cluster_distance, dataset.cluster_names, dataset,
+                             cluster_split_map, split_names, save_dir, "clusters")
 
 
-def t_sne(names, distances, name_split_map: Dict[str, str], split_names: List[str], output_file_name: str):
+def save_matrix_tsne(
+        similarities: Optional[np.ndarray],
+        distances: Optional[np.ndarray],
+        names: List[str],
+        dataset: DataSet,
+        entity_split_map: Dict[str, str],
+        split_names: List[str],
+        save_dir: str,
+        postfix: str
+) -> None:
     """
     Plot a tSNE embedding of the clusters and how they are assigned to clusters.
 
     Args:
-        names: List of names in the dataset
+        similarities: a similarity matrix to convert into distance before running tSNE
         distances: a distance matrix to use for tSNE
-        name_split_map: Mapping from names to splits
+        names: List of names in the dataset
+        dataset: The dataset to run tSNE for. This is used to get additional information on the dataset
+        entity_split_map: Mapping from names to splits
         split_names: names of the splits
-        output_file_name: filepath to store the tSNE plot at
+        save_dir: Directory where to save the computed tSNE plot
+        postfix: Postfix for the filename
     """
+    distances = distances if distances is not None else 1 - similarities
+    output_file_name = os.path.join(
+        save_dir, f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_{postfix}.png"
+    )
     # compute t-SNE embeddings
     embeds = TSNE(
         n_components=2,
@@ -187,7 +223,7 @@ def t_sne(names, distances, name_split_map: Dict[str, str], split_names: List[st
     # plot everything
     split_masks = np.zeros((len(split_names), len(names)))
     for i, name in enumerate(names):
-        split_masks[split_names.index(name_split_map[name]), i] = 1
+        split_masks[split_names.index(entity_split_map[name]), i] = 1
     for i, n in enumerate(split_names):
         plt.scatter(embeds[split_masks[i, :] == 1, 0], embeds[split_masks[i, :] == 1, 1], s=10, label=n)
     plt.xticks([])
@@ -197,7 +233,14 @@ def t_sne(names, distances, name_split_map: Dict[str, str], split_names: List[st
     plt.clf()
 
 
-def save_cluster_hist(save_dir, dataset):
+def save_cluster_hist(save_dir: str, dataset: DataSet) -> None:
+    """
+    Store visualization of cluster sizes.
+
+    Args:
+        save_dir: Directory to store the image in
+        dataset: Dataset to compute the visualization for
+    """
     clusters = set(dataset.cluster_map.values())
     clusters = dict((c, i) for i, c in enumerate(clusters))
     counts = [0] * len(clusters)
@@ -206,13 +249,19 @@ def save_cluster_hist(save_dir, dataset):
     sizes = [0] * (max(counts) + 1)
     for c in counts:
         sizes[c] += 1
-    plt.hist(counts)
-    plt.savefig(os.path.join(save_dir, f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_cluster_hist.png"))
+    plt.bar(counts)
+    plt.xlabel("Size of Cluster")
+    plt.ylabel("Number of Clusters")
+    plt.title("Size distribution of clusters")
+    plt.savefig(os.path.join(
+        save_dir,
+        f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_cluster_hist.png"
+    ))
     plt.clf()
 
 
 def whatever(
-        names: List[str], clusters: Dict[str, str], distances: Optional[np.ndarray], similarities: Optional[np.ndarray]
+        names: List[str], clusters: Dict[str, str], distances: Optional[np.ndarray], similarities: Optional[np.ndarray],
 ) -> None:
     """
     Compute and print some statistics.
@@ -262,7 +311,7 @@ def whatever(
         LOGGER.info(f"\t{(metric > val).sum() / len(metric) * 100:.2}% of similarities are larger")
 
 
-def stats_string(count: int, split_stats: Dict[str, float]):
+def stats_string(count: int, split_stats: Dict[str, float]) -> str:
     """
     Compute and print some statistics about the final splits.
 

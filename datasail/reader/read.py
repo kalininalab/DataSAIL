@@ -4,7 +4,7 @@ from datasail.reader.read_genomes import read_genome_data
 from datasail.reader.read_molecules import read_molecule_data
 from datasail.reader.read_other import read_other_data
 from datasail.reader.read_proteins import read_protein_data
-from datasail.reader.utils import read_csv, DataSet, unite_molecules
+from datasail.reader.utils import read_csv, DataSet
 
 
 def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]]]]:
@@ -19,21 +19,16 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
     """
     # TODO: Semantic checks of arguments
     inter = list(tuple(x) for x in read_csv(kwargs["inter"])) if kwargs["inter"] else None
-    e_dataset = read_data_type(kwargs["e_type"])(
-        kwargs["e_data"], kwargs["e_weights"], kwargs["e_sim"],
-        kwargs["e_dist"], kwargs["e_max_sim"], kwargs["e_max_dist"], inter, 0
+    e_dataset, inter = read_data_type(kwargs["e_type"])(
+        kwargs["e_data"], kwargs["e_weights"], kwargs["e_sim"], kwargs["e_dist"], kwargs["e_max_sim"],
+        kwargs["e_max_dist"], inter, kwargs.get("e_id_map", None), 0
     )
     e_dataset.args = kwargs["e_args"]
-    f_dataset = read_data_type(kwargs["f_type"])(
-        kwargs["f_data"], kwargs["f_weights"], kwargs["f_sim"],
-        kwargs["f_dist"], kwargs["f_max_sim"], kwargs["f_max_dist"], inter, 1
+    f_dataset, inter = read_data_type(kwargs["f_type"])(
+        kwargs["f_data"], kwargs["f_weights"], kwargs["f_sim"], kwargs["f_dist"], kwargs["f_max_sim"],
+        kwargs["f_max_dist"], inter, kwargs.get("f_id_map", None), 1
     )
     f_dataset.args = kwargs["f_args"]
-
-    if e_dataset.type == "M":
-        e_dataset, inter = unite_molecules(e_dataset, inter, 0)
-    if f_dataset.type == "M":
-        f_dataset, inter = unite_molecules(f_dataset, inter, 1)
 
     return e_dataset, f_dataset, inter
 

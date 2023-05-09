@@ -58,7 +58,7 @@ def cdhit_trial(dataset: DataSet, add_args: Tuple, threads: int, log_file: Optio
     """
     cmd = f"mkdir cdhit && " \
           f"cd cdhit && " \
-          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 {add_args} -T {threads}"
+          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 {add_args} -d 0 -T {threads} "
 
     if log_file is None:
         cmd += "> /dev/null 2>&1"
@@ -74,6 +74,7 @@ def cdhit_trial(dataset: DataSet, add_args: Tuple, threads: int, log_file: Optio
     cluster_map = get_cdhit_map("cdhit/clusters.clstr")
     cluster_names = list(set(cluster_map.values()))
     cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
+
     shutil.rmtree("cdhit")
 
     return cluster_names, cluster_map, cluster_sim

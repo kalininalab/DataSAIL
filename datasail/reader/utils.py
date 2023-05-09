@@ -1,8 +1,13 @@
 import os
 from dataclasses import dataclass, fields
-from typing import Generator, Tuple, List, Optional, Dict, Union
+from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
 
 import numpy as np
+
+from datasail.reader.read_genomes import remove_genome_duplicates
+from datasail.reader.read_molecules import remove_molecule_duplicates
+from datasail.reader.read_other import remove_other_duplicates
+from datasail.reader.read_proteins import remove_protein_duplicates
 
 
 @dataclass
@@ -11,6 +16,7 @@ class DataSet:
     format: Optional[str] = None
     args: str = ""
     names: Optional[List[str]] = None
+    id_map: Optional[Dict[str, str]] = None
     cluster_names: Optional[List[str]] = None
     data: Optional[Dict[str, str]] = None
     cluster_map: Optional[Dict[str, str]] = None
@@ -23,7 +29,7 @@ class DataSet:
     cluster_distance: Optional[Union[np.ndarray, str]] = None
     threshold: Optional[float] = None
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """
         Compute the hash value for this dataset to be used in caching. Therefore, the hash is computed on properties
         that do not change during clustering.
@@ -47,7 +53,7 @@ class DataSet:
             hash_val ^= hv
         return hash_val
 
-    def get_name(self):
+    def get_name(self) -> str:
         """
         Compute the name of the dataset as the name of the file or the folder storing the data.
 
@@ -115,15 +121,16 @@ def read_csv(filepath: str) -> Generator[Tuple[str, str], None, None]:
 
 
 def read_data(
-        weights: str,
+        weights: Optional[str],
         sim: str,
         dist: str,
         max_sim: float,
         max_dist: float,
-        inter: List[Tuple[str, str]],
+        id_map: Optional[str],
+        inter: Optional[List[Tuple[str, str]]],
         index: int,
         dataset: DataSet,
-) -> DataSet:
+) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     """
     Compute the weight and distances or similarities of every entity.
 
@@ -133,6 +140,7 @@ def read_data(
         dist: Distance file or metric
         max_sim: Maximal similarity between entities in two splits
         max_dist: Maximal similarity between entities in one split
+        id_map: Mapping of ids in case of duplicates in the dataset
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
         dataset: A dataset object storing information on the read
@@ -167,7 +175,43 @@ def read_data(
             dataset.distance = dist
             dataset.threshold = max_dist
         dataset.names = list(dataset.data.keys())
-    return dataset
+
+    # parse mapping of duplicates
+    if id_map is None:
+        dataset.id_map = {k: k for k in dataset.names}
+        return dataset, inter
+
+    dataset.id_map = dict(read_csv(id_map))
+
+    # update names and interactions
+    new_names = []
+    removed_indices = []
+    unique_names = dataset.id_map.values()
+    for i, name in enumerate(dataset.names):
+        if name in unique_names:
+            new_names.append(name)
+        removed_indices.append(i)
+    dataset.names = new_names
+    inter = [((dataset.id_map[a], b) if index == 0 else (a, dataset.id_map[b])) for a, b in inter]
+
+    # update weights
+    new_weights = dict()
+    for name, weight in dataset.weights:
+        new_name = dataset.id_map[name]
+        if new_name not in new_weights:
+            new_weights[new_name] = 0
+        new_weights[new_name] += weight
+    dataset.weights = new_weights
+
+    # Apply id_map to similarities, distances
+    if isinstance(dataset.similarity, np.ndarray):
+        dataset.similarity = np.delete(dataset.similarity, removed_indices, axis=0)
+        dataset.similarity = np.delete(dataset.similarity, removed_indices, axis=1)
+    elif isinstance(dataset.distance, np.ndarray):
+        dataset.distance = np.delete(dataset.distance, removed_indices, axis=0)
+        dataset.distance = np.delete(dataset.distance, removed_indices, axis=1)
+
+    return dataset, inter
 
 
 def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Optional[str]]:
@@ -195,6 +239,58 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
     return None, None
 
 
-def unite_molecules(dataset: DataSet, inter: List[Tuple[str, str]], index: int) -> Tuple[DataSet, List[Tuple[str, str]]]:
+def check_duplicates(**kwargs) -> Dict[str, Any]:
+    """
+    Remove duplicates from the input data. This is done for every input type individually by calling the respective
+    function here.
 
-    return dataset, inter
+    Args:
+        **kwargs: Keyword arguments provided to the program
+
+    Returns:
+        The updated keyword arguments as data might have been moved
+    """
+    os.makedirs(os.path.join(kwargs["output"], "tmp"))
+
+    # remove duplicates from first dataset
+    kwargs.update(get_remover_fun(kwargs["e_type"])("e_", **get_prefix_args("e_", **kwargs)))
+
+    # if existent, remove duplicates from second dataset as well
+    if kwargs["f_type"] is not None:
+        kwargs.update(get_remover_fun(kwargs["f_type"])("f_", **get_prefix_args("f_", **kwargs)))
+
+    return kwargs
+
+
+def get_prefix_args(prefix, **kwargs) -> Dict[str, Any]:
+    """
+    Remove prefix from keys and return those key-value-pairs.
+
+    Args:
+        prefix: Prefix to use for selecting key-value-pairs
+        **kwargs: Keyword arguments provided to the program
+
+    Returns:
+        A subset of the key-value-pairs
+    """
+    return {k[len(prefix):]: v for k, v in kwargs.items() if k.startswith(prefix)}
+
+
+def get_remover_fun(data_type: str) -> Callable:
+    """
+    Proxy function selecting the correct function to remove duplicates from the input data by matching the input
+    data-type.
+
+    Args:
+        data_type: Input data-type
+
+    Returns:
+        A callable function to remove duplicates from an input dataset
+    """
+    if data_type == "P":
+        return remove_protein_duplicates
+    if data_type == "M":
+        return remove_molecule_duplicates
+    if data_type == "G":
+        return remove_genome_duplicates
+    return remove_other_duplicates
