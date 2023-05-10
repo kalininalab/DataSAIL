@@ -6,15 +6,7 @@ from typing import Dict, List, Tuple
 from datasail.parsers import parse_cdhit_args, parse_mash_args, parse_mmseqs_args, DIST_ALGOS, SIM_ALGOS, \
     parse_datasail_args
 from datasail.run import bqp_main
-
-verb_map = {
-    "C": logging.CRITICAL,
-    "F": logging.FATAL,
-    "E": logging.ERROR,
-    "W": logging.WARNING,
-    "I": logging.INFO,
-    "D": logging.DEBUG,
-}
+from datasail.settings import LOGGER, FORMATTER, VERB_MAP
 
 
 def error(msg: str, error_code: int) -> None:
@@ -27,13 +19,16 @@ def error(msg: str, error_code: int) -> None:
         msg: Error message
         error_code: Code of the error to identify it
     """
-    logging.error(msg)
+    LOGGER.error(msg)
     exit(error_code)
 
 
 def validate_args(**kwargs) -> Dict[str, object]:
     """
     Validate the arguments given to the program.
+
+    Notes:
+        next error code: 25
 
     Args:
         **kwargs: Arguments in kwargs-format
@@ -48,41 +43,35 @@ def validate_args(**kwargs) -> Dict[str, object]:
         output_created = True
         os.makedirs(kwargs["output"], exist_ok=True)
 
+    LOGGER.setLevel(VERB_MAP[kwargs["verbosity"]])
+    LOGGER.handlers[0].setLevel(level=VERB_MAP[kwargs["verbosity"]])
+
     if kwargs["output"] is not None:
         kwargs["logdir"] = os.path.abspath(os.path.join(kwargs["output"], "logs"))
         os.makedirs(kwargs["logdir"], exist_ok=True)
+        file_handler = logging.FileHandler(os.path.join(kwargs["logdir"], "general.log"))
+        file_handler.setLevel(level=VERB_MAP[kwargs["verbosity"]])
+        file_handler.setFormatter(FORMATTER)
+        LOGGER.addHandler(file_handler)
     else:
         kwargs["logdir"] = None
 
-    formatter = logging.Formatter('%(asctime)s %(message)s')
-    handlers = []
-
-    stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setLevel(level=verb_map[kwargs["verbosity"]])
-    stdout_handler.setFormatter(formatter)
-    handlers.append(stdout_handler)
-
-    if kwargs["logdir"] is not None:
-        file_handler = logging.FileHandler(os.path.join(kwargs["logdir"], "general.log"))
-        file_handler.setLevel(level=verb_map[kwargs["verbosity"]])
-        file_handler.setFormatter(formatter)
-        handlers.append(file_handler)
-
-    logging.basicConfig(level=verb_map[kwargs["verbosity"]], handlers=handlers)
-
     if output_created:
-        logging.warning("Output directory does not exist, DataSAIL creates it automatically")
+        LOGGER.warning("Output directory does not exist, DataSAIL creates it automatically")
 
-    logging.info("Validating arguments")
+    LOGGER.info("Validating arguments")
 
     # check splits to be more than 1 and their fractions sum up to 1 and check the names
     if len(kwargs["splits"]) < 2:
         error("Less then two splits required. This is no useful input, please check the input again.", error_code=1)
     if kwargs["names"] is None:
         kwargs["names"] = [f"Split{x:03d}" for x in range(len(kwargs["splits"]))]
-    elif len(kwargs["names"]) != len(kwargs["names"]):
+    elif len(kwargs["splits"]) != len(kwargs["names"]):
         error("Different number of splits and names. You have to give the same number of splits and names for them.",
               error_code=2)
+    elif len(kwargs["names"]) != len(set(kwargs["names"])):
+        error("At least two splits will have the same name. Please check the naming of the splits again to have unique "
+              "names", error_code=24)
     kwargs["splits"] = [x / sum(kwargs["splits"]) for x in kwargs["splits"]]
 
     # convert vectorized from the input question to the flag used in the code
@@ -93,6 +82,12 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The maximal search time must be a positive integer.", error_code=3)
     if kwargs["max_sol"] < 1:
         error("The maximal number of solutions to look at has to be a positive integer.", error_code=4)
+    if kwargs["threads"] < 0:
+        error("The number of threads to use has to be a non-negative integer.", error_code=23)
+    if kwargs["threads"] == 0:
+        kwargs["threads"] = os.cpu_count()
+    else:
+        kwargs["threads"] = min(kwargs["threads"], os.cpu_count())
 
     # check the interaction file
     if kwargs["inter"] is not None and not os.path.isfile(kwargs["inter"]):
@@ -104,7 +99,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
 
     # check the input regarding the caching
     if kwargs["cache"] and not os.path.isdir(kwargs["cache_dir"]):
-        logging.warning("Cache directory does not exist, DataSAIL creates it automatically")
+        LOGGER.warning("Cache directory does not exist, DataSAIL creates it automatically")
         os.makedirs(kwargs["cache_dir"], exist_ok=True)
 
     # syntactically parse the input data for the E-dataset
@@ -230,6 +225,7 @@ def datasail(
         f_args="",
         f_max_sim: float = 1.0,
         f_max_dist: float = 1.0,
+        threads: int = 1,
 ) -> Tuple[Dict, Dict, Dict]:
     """
     Entry point for the package usage of DataSAIL.
@@ -263,6 +259,7 @@ def datasail(
         f_args: Additional arguments for the tools in f_sim or f-dist
         f_max_sim: Maximal similarity of two f-entities in different splits
         f_max_dist: Maximal distance of two f-entities in the same split
+        threads: number of threads to use for one CD-HIT run
 
     Returns:
         Three dictionaries mapping techniques to another dictionary. The inner dictionary maps input id to their splits.
@@ -276,7 +273,7 @@ def datasail(
         splits=splits, names=names, epsilon=epsilon, solver=solver, vectorized=not vectorized, cache=cache,
         cache_dir=cache_dir, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=e_dist,
         e_args=e_args, e_max_sim=e_max_sim, e_max_dist=e_max_dist, f_type=f_type, f_data=f_data, f_weights=f_weights,
-        f_sim=f_sim, f_dist=f_dist, f_args=f_args, f_max_sim=f_max_sim, f_max_dist=f_max_dist
+        f_sim=f_sim, f_dist=f_dist, f_args=f_args, f_max_sim=f_max_sim, f_max_dist=f_max_dist, threads=threads,
     )
     return bqp_main(**kwargs)
 
@@ -296,4 +293,4 @@ if __name__ == '__main__':
     """
     Entry point for the CLI tool
     """
-    sail(**parse_datasail_args(sys.argv))
+    sail(**parse_datasail_args(sys.argv[1:]))

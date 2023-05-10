@@ -18,18 +18,18 @@ def generate(train_frac=0.8, size=100, folder="perf_80_20"):
         print("Drug_ID\tSMILES", file=lig)
         print("Target_ID\taaseq", file=prot)
         for d in range(train_size):
-            print(f"D{d + 1:05}\tCCC", file=lig)
+            print(f"D{d + 1:05}\t{'C' * (d + 1)}", file=lig)
             for p in range(train_size):
                 if d == 0:
-                    print(f"P{p + 1:05}\tAAT", file=prot)
-                    print(f">P{p + 1:05}\nAAT", file=prot_fasta)
+                    print(f"P{p + 1:05}\t{'AAT' * (p + 1)}", file=prot)
+                    print(f">P{p + 1:05}\n{'AAT' * (p + 1)}", file=prot_fasta)
                 print(f"D{d + 1:05}\tP{p + 1:05}\t{int(random.random() + 0.5)}", file=inter)
         for d in range(train_size, size):
-            print(f"D{d + 1:05}\tCCC", file=lig)
+            print(f"D{d + 1:05}\t{'C' * (d + 1)}", file=lig)
             for p in range(train_size, size):
                 if d == train_size:
-                    print(f"P{p + 1:05}\tAAT", file=prot)
-                    print(f">P{p + 1:05}\nAAT", file=prot_fasta)
+                    print(f"P{p + 1:05}\t{'AAT' * (p + 1)}", file=prot)
+                    print(f">P{p + 1:05}\n{'AAT' * (p + 1)}", file=prot_fasta)
                 print(f"D{d + 1:05}\tP{p + 1:05}\t{int(random.random() + 0.5)}", file=inter)
 
         prot_sims, drug_sims = np.zeros((size, size)), np.zeros((size, size))

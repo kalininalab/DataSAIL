@@ -60,6 +60,7 @@ def test_pipeline(data):
         cache=False,
         cache_dir=None,
         solver="SCIP",
+        threads=1,
     )
 
     check_folder(
@@ -104,7 +105,8 @@ def test_report():
         solver="SCIP",
         cache=False,
         cache_dir=None,
-        log_dir="logs"
+        log_dir="logs",
+        threads=1,
     )
 
     assert os.path.isfile("data/perf_7_3/out/lig_similarity.png")

@@ -1,4 +1,3 @@
-import logging
 import os
 from typing import Tuple, List, Dict, Callable
 
@@ -6,11 +5,13 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from datasail.reader.utils import DataSet
+from datasail.settings import LOGGER
 
 
 def cluster_param_binary_search(
         dataset: DataSet,
         init_args: Tuple,
+        threads: int,
         min_args: Tuple,
         max_args: Tuple,
         trial: Callable,
@@ -33,9 +34,9 @@ def cluster_param_binary_search(
         )
 
     # cluster with the initial arguments
-    cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(init_args), args2log(init_args))
+    cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(init_args), threads, args2log(init_args))
     num_clusters = len(cluster_names)
-    logging.info(f"First round of clustering found {num_clusters} clusters for {len(dataset.names)} samples.")
+    LOGGER.info(f"First round of clustering found {num_clusters} clusters for {len(dataset.names)} samples.")
 
     # there are too few clusters, rerun with maximal arguments which has to result in every sample becomes a cluster
     if num_clusters <= 10:
@@ -45,7 +46,7 @@ def cluster_param_binary_search(
         max_cluster_names, max_cluster_map, max_cluster_sim = dataset.names, dict(
             (n, n) for n in dataset.names), np.zeros((len(dataset.names), len(dataset.names)))
         max_clusters = len(max_cluster_names)
-        logging.info(f"Second round of clustering found {max_clusters} clusters for {len(dataset.names)} samples.")
+        LOGGER.info(f"Second round of clustering found {max_clusters} clusters for {len(dataset.names)} samples.")
 
     # if the number of clusters ranges in a good window, return the result
     elif 10 < num_clusters <= 100:
@@ -56,9 +57,10 @@ def cluster_param_binary_search(
         max_args = init_args
         max_clusters = num_clusters
         max_cluster_names, max_cluster_map, max_cluster_sim = cluster_names, cluster_map, cluster_sim
-        min_cluster_names, min_cluster_map, min_cluster_sim = trial(dataset, args2str(min_args), args2log(min_args))
+        min_cluster_names, min_cluster_map, min_cluster_sim = trial(dataset, args2str(min_args), threads,
+                                                                    args2log(min_args))
         min_clusters = len(min_cluster_names)
-        logging.info(f"First round of clustering found {min_clusters} clusters for {len(dataset.names)} samples.")
+        LOGGER.info(f"First round of clustering found {min_clusters} clusters for {len(dataset.names)} samples.")
 
     # if the minimal number of clusters is in the target window, return them
     if 10 < min_clusters <= 100:
@@ -70,12 +72,12 @@ def cluster_param_binary_search(
 
     # if the maximal number of clusters is still less than the lower bound of the window, report and warn
     if max_clusters < 10:
-        logging.warning(f"CD-HIT cannot optimally cluster the data. The maximal number of clusters is {max_clusters}.")
+        LOGGER.warning(f"CD-HIT cannot optimally cluster the data. The maximal number of clusters is {max_clusters}.")
         return max_cluster_names, max_cluster_map, max_cluster_sim
 
     # if the minimal number of clusters is still more than the upper bound of the window, report and warn
     if 100 < min_clusters:
-        logging.warning(f"CD-HIT cannot optimally cluster the data. The minimal number of clusters is {min_clusters}.")
+        LOGGER.warning(f"CD-HIT cannot optimally cluster the data. The minimal number of clusters is {min_clusters}.")
         return min_cluster_names, min_cluster_map, min_cluster_sim
 
     # for 8 rounds, apply binary search on the variable parameter space and try to hit the target window
@@ -83,10 +85,10 @@ def cluster_param_binary_search(
     while True:
         iteration_count += 1
         args = gen_args(min_args, max_args)
-        cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(args), args2log(args))
+        cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(args), threads, args2log(args))
         num_clusters = len(cluster_names)
-        logging.info(f"Next round of clustering ({iteration_count + 2}.) "
-                     f"found {num_clusters} clusters for {len(dataset.names)} samples.")
+        LOGGER.info(f"Next round of clustering ({iteration_count + 2}.) "
+                    f"found {num_clusters} clusters for {len(dataset.names)} samples.")
         if num_clusters <= 10:
             min_args = args
         elif 10 < num_clusters <= 100 or iteration_count >= 8:

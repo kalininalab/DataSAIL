@@ -1,4 +1,3 @@
-import logging
 import os
 import shutil
 from typing import Tuple, List, Dict, Optional
@@ -6,14 +5,20 @@ from typing import Tuple, List, Dict, Optional
 import numpy as np
 
 from datasail.reader.utils import DataSet
+from datasail.settings import LOGGER
 
 
-def run_foldseek(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_foldseek(
+        dataset: DataSet,
+        threads: int,
+        log_dir: Optional[str]
+) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run FoldSeek to cluster the proteins based on their structure.
 
     Args:
         dataset: DataSet holding all information on the dta to be clustered
+        threads: number of threads to use for one CD-HIT run
         log_dir: Absolute path to the directory to store all the logs in
 
     Returns:
@@ -26,7 +31,7 @@ def run_foldseek(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], D
           f"cd fs && " \
           f"foldseek easy-search {os.path.join('..', dataset.location)} {os.path.join('..', dataset.location)} " \
           f"aln.m8 tmp --alignment-type 1 --tmscore-threshold 0.0 --format-output 'query,target,fident' " \
-          f"--exhaustive-search 1 -e inf"
+          f"--exhaustive-search 1 -e inf --threads {threads} "  # TODO: Check when ext. search and when thats too long
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"
@@ -36,9 +41,9 @@ def run_foldseek(dataset: DataSet, log_dir: Optional[str]) -> Tuple[List[str], D
     if os.path.exists("fs"):
         cmd = "rm -rf fs && " + cmd
 
-    logging.info("Start FoldSeek clustering")
+    LOGGER.info("Start FoldSeek clustering")
 
-    logging.info(cmd)
+    LOGGER.info(cmd)
     os.system(cmd)
 
     namap = dict((n, i) for i, n in enumerate(dataset.names))

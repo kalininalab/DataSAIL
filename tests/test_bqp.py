@@ -35,6 +35,7 @@ def run_identity_splitting(root_dir, out_folder, mode, vectorized):
         cache=False,
         cache_dir=None,
         solver="SCIP",
+        threads=1,
     )
 
 
@@ -44,4 +45,4 @@ def run_identity_splitting(root_dir, out_folder, mode, vectorized):
 def test_perf_bin_2(root_dir, mode, vectorized):
     run_identity_splitting(root_dir, mode[1], mode[0], vectorized)
 
-    check_folder(f"{root_dir}/{mode[1]}/{mode[0]}", 0.25, None, None, "Molecule_drug_splits.tsv", "Protein_prot_splits.tsv")
+    check_folder(f"{root_dir}/{mode[1]}/{mode[0]}", 0.25, None, None, "Molecule_lig_splits.tsv", "Protein_prot_splits.tsv")

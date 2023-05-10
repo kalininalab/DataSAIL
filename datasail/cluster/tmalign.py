@@ -1,4 +1,3 @@
-import logging
 import os
 import shutil
 from typing import Dict, Tuple, List
@@ -6,6 +5,7 @@ from typing import Dict, Tuple, List
 import numpy as np
 
 from datasail.reader.utils import DataSet
+from datasail.settings import LOGGER
 
 
 def run_tmalign(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
@@ -35,9 +35,9 @@ def run_tmalign(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray
             if count % 100 == 0:
                 cmd += f" && echo {count} / {total}"
 
-    logging.info("Start TMalign clustering")
+    LOGGER.info("Start TMalign clustering")
 
-    logging.info(cmd[:200])
+    LOGGER.info(cmd[:200])
     os.system(cmd)
 
     cluster_names, cluster_map, cluster_sim = dataset.names, dict((n, n) for n in dataset.names), \

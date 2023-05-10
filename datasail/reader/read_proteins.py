@@ -1,5 +1,5 @@
 import os
-from typing import Generator, Tuple, Dict, List
+from typing import Generator, Tuple, Dict, List, Any, Optional
 
 from datasail.reader.utils import read_csv, DataSet, read_data
 
@@ -11,9 +11,10 @@ def read_protein_data(
         dist: str,
         max_sim: float,
         max_dist: float,
+        id_map: Optional[str],
         inter: List[Tuple[str, str]],
-        index: int
-) -> DataSet:
+        index: int,
+) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     """
     Read in protein data, compute the weights, and distances or similarities of every entity.
 
@@ -24,6 +25,7 @@ def read_protein_data(
         dist: Distance file or metric
         max_sim: Maximal similarity between entities in two splits
         max_dist: Maximal similarity between entities in one split
+        id_map: Mapping of ids in case of duplicates in the dataset
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
 
@@ -31,7 +33,7 @@ def read_protein_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type="P")
-    if data.endswith(".fasta") or data.endswith(".fa") or data.endswith(".fna"):
+    if data.split(".")[-1].lower() in {"fasta", "fa", "fna"}:
         dataset.data = parse_fasta(data)
         dataset.format = "FASTA"
     elif os.path.isfile(data):
@@ -44,7 +46,65 @@ def read_protein_data(
         raise ValueError()
     dataset.location = data
 
-    return read_data(weights, sim, dist, max_sim, max_dist, inter, index, dataset)
+    dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, dataset)
+
+    return dataset, inter
+
+
+def remove_protein_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[str, Any]:
+    """
+    Remove duplicates in protein input. This is done for FASTA input as well as for PDB input.
+
+    Args:
+       prefix: Prefix of the data. This is either 'e_' or 'f_'
+       output_dir: Directory to store data to in case of detected duplicates
+        **kwargs: Arguments for this data input
+
+    Returns:
+        Update arguments as teh location of the data might change and an ID-Map file might be added.
+    """
+    # read the data
+    output_args = {prefix + k: v for k, v in kwargs.items()}
+    if kwargs["data"].split(".")[-1].lower() in {"fasta", "fa", "fna"}:
+        sequences = parse_fasta(kwargs["data"])
+    elif os.path.isfile(kwargs["data"]):
+        sequences = dict(read_csv(kwargs["data"]))
+    else:
+        # input is PDB data. TODO: Identity detection with PDB files
+        return output_args
+
+    id_list = []  # unique ids
+    id_map = {}  # mapping of all ids to their representative
+    duplicate_found = False
+    for idx, seq in sequences.items():
+        for q_id in id_list:
+            if seq == sequences[q_id]:
+                id_map[idx] = q_id
+                duplicate_found = True
+        if idx not in id_map:
+            id_list.append(idx)
+            id_map[idx] = idx
+
+    # no duplicates found, no further action necessary
+    if not duplicate_found:
+        return output_args
+
+    # store the new FASTA file
+    fasta_filename = os.path.abspath(os.path.join(output_dir, "tmp", prefix + "seqs.fasta"))
+    with open(fasta_filename, "w") as out:
+        for idx in id_list:
+            print(f">{idx}\n{sequences[idx]}", file=out)
+    output_args[prefix + "data"] = fasta_filename
+
+    # store the mapping of IDs
+    id_map_filename = os.path.join(output_dir, "tmp", prefix + "id_map.tsv")
+    with open(id_map_filename, "w") as out:
+        print("Name\tRepresentative", file=out)
+        for idx, rep_id in id_map.items():
+            print(idx, rep_id, sep="\t", file=out)
+    output_args[prefix + "id_map"] = id_map_filename
+
+    return output_args
 
 
 def read_folder(folder_path: str, file_extension: str) -> Generator[Tuple[str, str], None, None]:
@@ -65,18 +125,12 @@ def read_folder(folder_path: str, file_extension: str) -> Generator[Tuple[str, s
 
 def parse_fasta(
         path: str = None,
-        left_split: chr = None,
-        right_split: chr = ' ',
-        check_duplicates: bool = False
 ) -> Dict[str, str]:
     """
     Parse a FASTA file and do some validity checks if requested.
 
     Args:
         path: Path to the FASTA file
-        left_split: Char to use to split on the left side
-        right_split: Char to use to split on the right side
-        check_duplicates: Flag to check duplicates
 
     Returns:
         Dictionary mapping sequences IDs to amino acid sequences
@@ -85,21 +139,11 @@ def parse_fasta(
 
     with open(path, "r") as fasta:
         for line in fasta.readlines():
-            line = line.replace('\n', '')
+            line = line.strip()
             if len(line) == 0:
                 continue
             if line[0] == '>':
-                entry_id = line[1:].replace('β', 'beta')
-
-                if entry_id[:3] == 'sp|' or entry_id[:3] == 'tr|':  # Detect uniprot/tremble ID strings
-                    entry_id = entry_id.split('|')[1]
-
-                if left_split is not None:
-                    entry_id = entry_id.split(left_split, 1)[1]
-                if right_split is not None:
-                    entry_id = entry_id.split(right_split, 1)[0]
-                if check_duplicates and entry_id in seq_map:
-                    print(f'Duplicate entry in fasta input detected: {entry_id}')
+                entry_id = line[1:].replace(" ", "_")
                 seq_map[entry_id] = ''
             else:
                 seq_map[entry_id] += line

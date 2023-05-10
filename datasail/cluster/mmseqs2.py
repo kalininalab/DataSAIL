@@ -1,4 +1,3 @@
-import logging
 import os
 import shutil
 from typing import Dict, Tuple, List, Optional
@@ -8,14 +7,16 @@ import numpy as np
 from datasail.cluster.utils import cluster_param_binary_search
 from datasail.parsers import parse_mmseqs_args
 from datasail.reader.utils import DataSet
+from datasail.settings import LOGGER
 
 
-def run_mmseqs(dataset: DataSet, log_dir: str) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run mmseqs in the commandline and read in the results into clusters.
 
     Args:
         dataset: DataSet holding all information on the dta to be clustered
+        threads: number of threads to use for one CD-HIT run
         log_dir: Absolute path to the directory to store all the logs in
 
     Returns:
@@ -26,10 +27,11 @@ def run_mmseqs(dataset: DataSet, log_dir: str) -> Tuple[List[str], Dict[str, str
     """
     args = parse_mmseqs_args(dataset.args)
     vals = (args["seq_id"],)
-    logging.info("Starting MMseqs clustering")
+    LOGGER.info("Starting MMseqs clustering")
     return cluster_param_binary_search(
         dataset,
         vals,
+        threads,
         (0,),
         (1,),
         mmseqs_trial,
@@ -39,13 +41,14 @@ def run_mmseqs(dataset: DataSet, log_dir: str) -> Tuple[List[str], Dict[str, str
     )
 
 
-def mmseqs_trial(dataset: DataSet, add_args: str, log_file: Optional[str]):
+def mmseqs_trial(dataset: DataSet, add_args: str, threads: int, log_file: Optional[str]):
     """
     Run MMseqs2 on the dataset with the given sequence similarity defined by add_args.
 
     Args:
         dataset: Dataset to run the clustering for
         add_args: Additional arguments specifying the sequence similarity parameter
+        threads: number of threads to use for one CD-HIT run
         log_file: Filepath to log the output to
 
     Returns:
@@ -64,6 +67,7 @@ def mmseqs_trial(dataset: DataSet, add_args: str, log_file: Optional[str]):
           f"--similarity-type 2 " \
           f"--cov-mode 0 " \
           f"-c 0.8 " \
+          f"--threads {threads} " \
           f"{add_args} "
 
     if log_file is None:
@@ -74,13 +78,13 @@ def mmseqs_trial(dataset: DataSet, add_args: str, log_file: Optional[str]):
     if os.path.exists("mmseqs_results"):
         cmd = "rm -rf mmseqs_results && " + cmd
 
-    logging.info(cmd)
+    LOGGER.info(cmd)
     os.system(cmd)
 
     cluster_map = get_mmseqs_map("mmseqs_results/mmseqs_out_cluster.tsv")
     cluster_names = list(set(cluster_map.values()))
     cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
-    logging.info(f"MMseqs2 clustered {len(cluster_map)} sequences into {len(cluster_names)} clusters")
+    LOGGER.info(f"MMseqs2 clustered {len(cluster_map)} sequences into {len(cluster_names)} clusters")
 
     shutil.rmtree("mmseqs_results")
 

@@ -59,6 +59,14 @@ def parse_datasail_args(args) -> Dict[str, object]:
              "is ignored so far."
     )
     parser.add_argument(
+        "--threads",
+        default=0,
+        dest="threads",
+        type=int,
+        help="Number of threads to use throughout the computation. This number of threads is also forwarded to "
+             "clustering programs used internally. If 0, all available CPUs will be used."
+    )
+    parser.add_argument(
         "--verbose",
         default="W",
         type=str,

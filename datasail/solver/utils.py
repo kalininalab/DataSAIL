@@ -1,10 +1,12 @@
 import logging
-from typing import List, Tuple, Collection
+import math
 import sys
 from typing import List, Tuple, Collection
 
 import cvxpy
 import numpy as np
+
+from datasail.settings import LOGGER
 
 
 def inter_mask(
@@ -14,49 +16,8 @@ def inter_mask(
 ) -> np.ndarray:
     """
     Compute an interaction mask, i.e. an adjacency matrix from the list of interactions.
-
-    Args:
-        e_entities: Entities in e-dataset
-        f_entities: Entities in f-dataset
-        inter: List of interactions between entities in e-dataset and entities in f-dataset
-
-    Returns:
-        Adjacency matrix based on the list of interactions
-    """
-    # TODO: Figure out which of these methods is faster and for which degree of density
-    return inter_mask_dense(e_entities, f_entities, inter) if len(inter) / (len(e_entities) + len(f_entities)) \
-        else inter_mask_sparse(e_entities, f_entities, inter)
-
-
-def inter_mask_dense(e_entities: List[str], f_entities: List[str], inter: Collection[Tuple[str, str]]):
-    """
-    Compute adjacency matrix by setting every single value to 1 if there is an interaction accordingly.
-
-    Notes:
-        Supposedly fast for sparse matrices, but slow for dense ones
-
-    Args:
-        e_entities: Entities in e-dataset
-        f_entities: Entities in f-dataset
-        inter: List of interactions between entities in e-dataset and entities in f-dataset
-
-    Returns:
-        Adjacency matrix based on the list of interactions
-    """
-    output = np.zeros((len(e_entities), len(f_entities)))
-    for i, e in enumerate(e_entities):
-        for j, f in enumerate(f_entities):
-            output[i, j] = (e, f) in inter
-    return output
-
-
-def inter_mask_sparse(e_entities: List[str], f_entities: List[str], inter: Collection[Tuple[str, str]]):
-    """
     Compute adjacency matrix by first compute mappings from entity names to their index and then setting the
     individual interactions to 1.
-
-    Notes:
-        Supposedly fast for dense matrices, but slow for sparse ones
 
     Args:
         e_entities: Entities in e-dataset
@@ -74,7 +35,60 @@ def inter_mask_sparse(e_entities: List[str], f_entities: List[str], inter: Colle
     return output
 
 
-def solve(loss, constraints: List, max_sec: int, num_vars: int, solver: str, log_file: str):
+class LoggerRedirect:
+    def __init__(self, logfile_name):
+        """
+        Initialize this redirection module to be used to pipe messages to stdout to some file.
+        Args:
+            logfile_name: Filename to write stdout logs to instead of the console
+        """
+        if logfile_name is None:
+            self.silent = True
+            return
+        self.file_handler = logging.FileHandler(logfile_name)
+        self.old_stdout = sys.stdout
+        self.disabled = {}
+        self.silent = False
+
+    def __enter__(self):
+        """
+        Remove the stream from all loggers that print to stdout.
+        """
+        if self.silent:
+            return
+        for name, logger in logging.root.manager.loggerDict.items():
+            if isinstance(logger, logging.Logger) and len(logger.handlers) > 0:
+                for handler in logger.handlers:
+                    if handler.stream.name == "<stdout>":
+                        if name not in self.disabled:
+                            self.disabled[name] = []
+                        self.disabled[name].append(handler)
+                if name in self.disabled:
+                    for handler in self.disabled[name]:
+                        logger.removeHandler(handler)
+                logger.addHandler(self.file_handler)
+        sys.stdout = self.file_handler.stream
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Re-instantiate all loggers with their streams.
+
+        Args:
+            exc_type: ignored
+            exc_val: ignored
+            exc_tb: ignored
+        """
+        if self.silent:
+            return
+        for name, handlers in self.disabled.items():
+            logger = logging.root.manager.loggerDict[name]
+            logger.removeHandler(self.file_handler)
+            for handler in handlers:
+                logger.addHandler(handler)
+        sys.stdout = self.old_stdout
+
+
+def solve(loss, constraints: List, max_sec: int, solver: str, log_file: str):
     """
     Minimize the loss function based on the constraints with the timelimit specified by max_sec.
 
@@ -82,36 +96,38 @@ def solve(loss, constraints: List, max_sec: int, num_vars: int, solver: str, log
         loss: Loss function to minimize
         constraints: Constraints that have to hold
         max_sec: Maximal number of seconds to optimize the initial solution
-        num_vars: Number of variables for statistics
         solver: Solving algorithm to use to solve the formulated program
         log_file: File to store the detailed log from the solver to
 
     Returns:
 
     """
-    logging.info(f"Start solving with {solver}")
-    logging.info(f"The problem has {num_vars} variables and {len(constraints)} constraints.")
-
     problem = cvxpy.Problem(cvxpy.Minimize(loss), constraints)
+    LOGGER.info(f"Start solving with {solver}")
+    LOGGER.info(f"The problem has {sum([math.prod(v.shape) for v in problem.variables()])} variables "
+                f"and {sum([math.prod(c.shape) for c in problem.constraints])} constraints.")
+
     if solver == "MOSEK":
         solve_algo = cvxpy.MOSEK
         kwargs = {"mosek_params": {"MSK_DPAR_OPTIMIZER_MAX_TIME": max_sec}}
     else:
         solve_algo = cvxpy.SCIP
         kwargs = {"scip_params": {"limits/time": max_sec}}
-    # with open(log_file, "w") as sys.stdout:
-    problem.solve(
-        solver=solve_algo,
-        qcp=True,
-        verbose=True,
-        **kwargs,
-    )
+    with LoggerRedirect(log_file):
+        print("std-out captured?")
+        LOGGER.info("INFO captured?")
+        problem.solve(
+            solver=solve_algo,
+            qcp=True,
+            verbose=True,
+            **kwargs,
+        )
 
-    logging.info(f"{solver} status: {problem.status}")
-    logging.info(f"Solution's score: {problem.value}")
+    LOGGER.info(f"{solver} status: {problem.status}")
+    LOGGER.info(f"Solution's score: {problem.value}")
 
     if "optimal" not in problem.status:
-        logging.warning(
+        LOGGER.warning(
             'SCIP cannot solve the problem. Please consider relaxing split restrictions, '
             'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
         )

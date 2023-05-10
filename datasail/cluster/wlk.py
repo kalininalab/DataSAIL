@@ -1,4 +1,3 @@
-import logging
 import os
 from typing import Dict, Tuple, List, Union
 import math
@@ -8,6 +7,7 @@ import numpy as np
 from rdkit.Chem import MolFromSmiles
 
 from datasail.reader.utils import DataSet
+from datasail.settings import LOGGER
 
 Point = Tuple[float, float, float]
 
@@ -34,7 +34,7 @@ def run_wlk(dataset: DataSet, n_iter: int = 4) -> Tuple[List[str], Dict[str, str
     if dataset.type != "M":
         raise ValueError("ECFP with Tanimoto-scores can only be applied to molecular data.")
 
-    logging.info("Start WLK clustering")
+    LOGGER.info("Start WLK clustering")
 
     if os.path.isfile(list(dataset.data.values())[1]):  # read PDB files into grakel graph objects
         graphs = [pdb_to_grakel(dataset.data[name]) for name in dataset.names]

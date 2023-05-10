@@ -108,13 +108,13 @@ def genome_fasta_data():
 
 @pytest.mark.nowin
 def test_cdhit_protein(protein_fasta_data):
-    check_clustering(*run_cdhit(protein_fasta_data, "./"), protein_fasta_data)
+    check_clustering(*run_cdhit(protein_fasta_data, 1, "./"), protein_fasta_data)
 
 
 @pytest.mark.todo
 @pytest.mark.nowin
 def test_cdhit_genome(genome_fasta_data):
-    check_clustering(*run_cdhit(genome_fasta_data, "./"), genome_fasta_data)
+    check_clustering(*run_cdhit(genome_fasta_data, 1, "./"), genome_fasta_data)
 
 
 def test_ecfp_molecule(molecule_data):
@@ -123,17 +123,17 @@ def test_ecfp_molecule(molecule_data):
 
 @pytest.mark.nowin
 def test_foldseek_protein(protein_pdb_data):
-    check_clustering(*run_foldseek(protein_pdb_data, "./"), protein_pdb_data)
+    check_clustering(*run_foldseek(protein_pdb_data, 1, "./"), protein_pdb_data)
 
 
 @pytest.mark.nowin
 def test_mash_genomic(genome_fasta_data):
-    check_clustering(*run_mash(genome_fasta_data, "./"), genome_fasta_data)
+    check_clustering(*run_mash(genome_fasta_data, 1, "./"), genome_fasta_data)
 
 
 @pytest.mark.nowin
 def test_mmseqs2_protein(protein_fasta_data):
-    check_clustering(*run_mmseqs(protein_fasta_data, "./"), protein_fasta_data)
+    check_clustering(*run_mmseqs(protein_fasta_data, 1, "./"), protein_fasta_data)
 
 
 @pytest.mark.nowin

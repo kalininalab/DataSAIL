@@ -66,7 +66,7 @@ def solve_icd_bqp(
 
     inter_loss = cvxpy.sum(cvxpy.sum(inter_ones - cvxpy.sum([x for x in x_i]), axis=0), axis=0) / inter_count
 
-    problem = solve(inter_loss, constraints, max_sec, len(x_e) + len(x_f) + len(x_i), solver, log_file)
+    problem = solve(inter_loss, constraints, max_sec, solver, log_file)
 
     # report the found solution
     output = ([], dict(
