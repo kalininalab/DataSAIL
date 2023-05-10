@@ -45,12 +45,13 @@ def read_other_data(
     return dataset, inter
 
 
-def remove_other_duplicates(prefix: str, **kwargs) -> Dict[str, Any]:
+def remove_other_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[str, Any]:
     """
     Remove duplicates in other data input. Currently, this is not implemented and will return the input arguments.
 
     Args:
         prefix: Prefix of the data. This is either 'e_' or 'f_'
+        output_dir: Directory to store data to in case of detected duplicates
         **kwargs: Arguments for this data input
 
     Returns:

@@ -109,8 +109,8 @@ def test_report():
         threads=1,
     )
 
-    assert os.path.isfile("data/perf_7_3/out/data_perf_7_3_lig_similarity.png")
-    assert os.path.isfile("data/perf_7_3/out/data_perf_7_3_prot_similarity.png")
+    assert os.path.isfile("data/perf_7_3/out/lig_similarity.png")
+    assert os.path.isfile("data/perf_7_3/out/prot_similarity.png")
 
     assert os.path.isdir("data/perf_7_3/out/R")
     assert len(os.listdir("data/perf_7_3/out/R")) == 1

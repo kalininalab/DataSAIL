@@ -100,7 +100,7 @@ def run_solver(
                 )
 
                 if solution is not None:
-                    if isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]:
+                    if technique == "CCS" and isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]:
                         if mode == "f":
                             output_f_clusters[technique] = solution
                             output_f_entities[technique] = reverse_clustering(solution, f_dataset.cluster_map)

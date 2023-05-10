@@ -4,11 +4,6 @@ from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
 
 import numpy as np
 
-from datasail.reader.read_genomes import remove_genome_duplicates
-from datasail.reader.read_molecules import remove_molecule_duplicates
-from datasail.reader.read_other import remove_other_duplicates
-from datasail.reader.read_proteins import remove_protein_duplicates
-
 
 @dataclass
 class DataSet:
@@ -196,7 +191,7 @@ def read_data(
 
     # update weights
     new_weights = dict()
-    for name, weight in dataset.weights:
+    for name, weight in dataset.weights.items():
         new_name = dataset.id_map[name]
         if new_name not in new_weights:
             new_weights[new_name] = 0
@@ -239,29 +234,6 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
     return None, None
 
 
-def check_duplicates(**kwargs) -> Dict[str, Any]:
-    """
-    Remove duplicates from the input data. This is done for every input type individually by calling the respective
-    function here.
-
-    Args:
-        **kwargs: Keyword arguments provided to the program
-
-    Returns:
-        The updated keyword arguments as data might have been moved
-    """
-    os.makedirs(os.path.join(kwargs["output"], "tmp"))
-
-    # remove duplicates from first dataset
-    kwargs.update(get_remover_fun(kwargs["e_type"])("e_", **get_prefix_args("e_", **kwargs)))
-
-    # if existent, remove duplicates from second dataset as well
-    if kwargs["f_type"] is not None:
-        kwargs.update(get_remover_fun(kwargs["f_type"])("f_", **get_prefix_args("f_", **kwargs)))
-
-    return kwargs
-
-
 def get_prefix_args(prefix, **kwargs) -> Dict[str, Any]:
     """
     Remove prefix from keys and return those key-value-pairs.
@@ -274,23 +246,3 @@ def get_prefix_args(prefix, **kwargs) -> Dict[str, Any]:
         A subset of the key-value-pairs
     """
     return {k[len(prefix):]: v for k, v in kwargs.items() if k.startswith(prefix)}
-
-
-def get_remover_fun(data_type: str) -> Callable:
-    """
-    Proxy function selecting the correct function to remove duplicates from the input data by matching the input
-    data-type.
-
-    Args:
-        data_type: Input data-type
-
-    Returns:
-        A callable function to remove duplicates from an input dataset
-    """
-    if data_type == "P":
-        return remove_protein_duplicates
-    if data_type == "M":
-        return remove_molecule_duplicates
-    if data_type == "G":
-        return remove_genome_duplicates
-    return remove_other_duplicates

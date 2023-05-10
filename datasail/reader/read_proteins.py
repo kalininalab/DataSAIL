@@ -51,12 +51,13 @@ def read_protein_data(
     return dataset, inter
 
 
-def remove_protein_duplicates(prefix: str, **kwargs) -> Dict[str, Any]:
+def remove_protein_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[str, Any]:
     """
     Remove duplicates in protein input. This is done for FASTA input as well as for PDB input.
 
     Args:
        prefix: Prefix of the data. This is either 'e_' or 'f_'
+       output_dir: Directory to store data to in case of detected duplicates
         **kwargs: Arguments for this data input
 
     Returns:
@@ -89,16 +90,17 @@ def remove_protein_duplicates(prefix: str, **kwargs) -> Dict[str, Any]:
         return output_args
 
     # store the new FASTA file
-    fasta_filename = os.path.abspath(os.path.join(kwargs["output"], "tmp", prefix + "seqs.fasta"))
+    fasta_filename = os.path.abspath(os.path.join(output_dir, "tmp", prefix + "seqs.fasta"))
     with open(fasta_filename, "w") as out:
         for idx in id_list:
             print(f">{idx}\n{sequences[idx]}", file=out)
     output_args[prefix + "data"] = fasta_filename
 
     # store the mapping of IDs
-    id_map_filename = os.path.join(kwargs["output"], "tmp", prefix + "id_map.tsv")
+    id_map_filename = os.path.join(output_dir, "tmp", prefix + "id_map.tsv")
     with open(id_map_filename, "w") as out:
-        for idx, rep_id in id_map:
+        print("Name\tRepresentative", file=out)
+        for idx, rep_id in id_map.items():
             print(idx, rep_id, sep="\t", file=out)
     output_args[prefix + "id_map"] = id_map_filename
 

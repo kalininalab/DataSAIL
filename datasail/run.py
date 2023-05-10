@@ -2,8 +2,7 @@ import time
 from typing import Dict, Tuple
 
 from datasail.cluster.clustering import cluster
-from datasail.reader.read import read_data
-from datasail.reader.utils import check_duplicates
+from datasail.reader.read import read_data, check_duplicates
 from datasail.report import report
 from datasail.settings import LOGGER
 from datasail.solver.solve import run_solver

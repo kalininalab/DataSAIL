@@ -249,7 +249,8 @@ def save_cluster_hist(save_dir: str, dataset: DataSet) -> None:
     sizes = [0] * (max(counts) + 1)
     for c in counts:
         sizes[c] += 1
-    plt.bar(counts)
+    min_index, max_index = next((i for i, x in enumerate(sizes) if x), None), len(sizes) - next((i for i, x in enumerate(reversed(sizes)) if x), None)
+    plt.bar(range(min_index, max_index), counts)
     plt.xlabel("Size of Cluster")
     plt.ylabel("Number of Clusters")
     plt.title("Size distribution of clusters")

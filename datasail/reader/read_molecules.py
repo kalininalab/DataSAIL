@@ -49,13 +49,14 @@ def read_molecule_data(
     return dataset, inter
 
 
-def remove_molecule_duplicates(prefix: str, **kwargs) -> Dict[str, Any]:
+def remove_molecule_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[str, Any]:
     """
     Remove duplicates from molecular input data by checking if the input molecules are the same. If a molecule cannot
     be read by RDKit, it will be considered unique and survive the check.
 
     Args:
-       prefix: Prefix of the data. This is either 'e_' or 'f_'
+        prefix: Prefix of the data. This is either 'e_' or 'f_'
+        output_dir: Directory to store data to in case of detected duplicates
         **kwargs: Arguments for this data input
 
     Returns:
@@ -65,14 +66,14 @@ def remove_molecule_duplicates(prefix: str, **kwargs) -> Dict[str, Any]:
     # TODO: turn off rdkit errors and warnings
     if kwargs["data"].lower().endswith(".tsv"):
         input_data = dict(read_csv(kwargs["data"]))
-        molecules = {k: MolFromSmiles(v) for k, v in input_data}
+        molecules = {k: MolFromSmiles(v) for k, v in input_data.items()}
     else:
         return output_args
 
     # Extract invalid molecules
     non_mols = []
     valid_mols = dict()
-    for k, mol in molecules:
+    for k, mol in molecules.items():
         if mol is None:
             non_mols.append(k)
         else:
@@ -100,16 +101,18 @@ def remove_molecule_duplicates(prefix: str, **kwargs) -> Dict[str, Any]:
     id_map.update({k: k for k in non_mols})
 
     # store the new SMILES TSV file
-    smiles_filename = os.path.abspath(os.path.join(kwargs["output"], "tmp", prefix + "smiles.tsv"))
+    smiles_filename = os.path.abspath(os.path.join(output_dir, "tmp", prefix + "smiles.tsv"))
     with open(smiles_filename, "w") as out:
+        print("Representative\tSMILES", file=out)
         for idx in id_list:
             print(idx, valid_mols[idx], sep="\t", file=out)
     output_args[prefix + "data"] = smiles_filename
 
     # store the mapping of IDs
-    id_map_filename = os.path.join(kwargs["output"], "tmp", prefix + "id_map.tsv")
+    id_map_filename = os.path.join(output_dir, "tmp", prefix + "id_map.tsv")
     with open(id_map_filename, "w") as out:
-        for idx, rep_id in id_map:
+        print("Name\tRepresentative", file=out)
+        for idx, rep_id in id_map.items():
             print(idx, rep_id, sep="\t", file=out)
     output_args[prefix + "id_map"] = id_map_filename
 
