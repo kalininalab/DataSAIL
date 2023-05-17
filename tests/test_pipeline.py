@@ -189,7 +189,7 @@ def test_genomes():
 def check_identity_tsv(filename):
     assert os.path.isfile(filename)
     with open(filename, "r") as data:
-        for line in data.readlines():
+        for line in data.readlines()[1:]:
             parts = line.strip().split("\t")
             assert len(parts) == 2
             assert parts[0] == parts[1]
@@ -198,7 +198,7 @@ def check_identity_tsv(filename):
 def check_assignment_tsv(filename):
     assert os.path.isfile(filename)
     with open(filename, "r") as data:
-        for line in data.readlines():
+        for line in data.readlines()[1:]:
             parts = line.strip().split("\t")
             assert len(parts) == (3 if "inter" in filename else 2)
             assert parts[0] not in ["train", "test", "not_selected"]
