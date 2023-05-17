@@ -147,7 +147,6 @@ def pdb_to_grakel(pdb: Union[str, PDBStructure], threshold: float = 7) -> Graph:
     Returns:
         A grakel graph based on the PDB structure
     """
-    pdb_str = pdb
     if isinstance(pdb, str):
         pdb = PDBStructure(pdb)
 
@@ -157,10 +156,6 @@ def pdb_to_grakel(pdb: Union[str, PDBStructure], threshold: float = 7) -> Graph:
         if start not in edges:
             edges[start] = []
         edges[start].append(end)
-
-    if len(edges) < 10 or len(pdb.get_nodes()) < 10:
-        print(len(edges), "|", len(pdb.get_nodes()))
-        print("\t", pdb_str)
 
     return Graph(edges, node_labels=pdb.get_nodes())
 

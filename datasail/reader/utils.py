@@ -174,37 +174,30 @@ def read_data(
     # parse mapping of duplicates
     if id_map is None:
         dataset.id_map = {k: k for k in dataset.names}
+        print("No duplicates found.")
         return dataset, inter
 
     dataset.id_map = dict(read_csv(id_map))
 
-    # update names and interactions
-    new_names = []
-    removed_indices = []
-    unique_names = dataset.id_map.values()
-    for i, name in enumerate(dataset.names):
-        if name in unique_names:
-            new_names.append(name)
-        removed_indices.append(i)
-    dataset.names = new_names
-    inter = [((dataset.id_map[a], b) if index == 0 else (a, dataset.id_map[b])) for a, b in inter]
+    if inter is not None:
+        new_inter = []
+        for a, b in inter:
+            if index == 0 and a in dataset.id_map:
+                new_inter.append((dataset.id_map[a], b))
+            elif index == 1 and b in dataset.id_map:
+                new_inter.append((a, dataset.id_map[b]))
+        inter = new_inter
 
     # update weights
     new_weights = dict()
     for name, weight in dataset.weights.items():
+        if name not in dataset.id_map:
+            continue
         new_name = dataset.id_map[name]
         if new_name not in new_weights:
             new_weights[new_name] = 0
         new_weights[new_name] += weight
     dataset.weights = new_weights
-
-    # Apply id_map to similarities, distances
-    if isinstance(dataset.similarity, np.ndarray):
-        dataset.similarity = np.delete(dataset.similarity, removed_indices, axis=0)
-        dataset.similarity = np.delete(dataset.similarity, removed_indices, axis=1)
-    elif isinstance(dataset.distance, np.ndarray):
-        dataset.distance = np.delete(dataset.distance, removed_indices, axis=0)
-        dataset.distance = np.delete(dataset.distance, removed_indices, axis=1)
 
     return dataset, inter
 

@@ -34,7 +34,7 @@ def run_cdhit(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[L
         (0.4, 2),
         (1, 5),
         cdhit_trial,
-        lambda x: f"-c {x[0]} -n {x[1]}",
+        lambda x: f"-c {x[0]} -n {x[1]} -l {x[1] - 1}",
         lambda x, y: ((x[0] + y[0]) / 2, c2n((x[0] + y[0]) / 2)),
         log_dir,
     )

@@ -1,5 +1,7 @@
 import os
-from typing import Generator, Tuple, Dict, List, Any, Optional
+from typing import Generator, Tuple, Dict, List, Any, Optional, Set
+
+import numpy as np
 
 from datasail.reader.utils import read_csv, DataSet, read_data
 
@@ -123,9 +125,7 @@ def read_folder(folder_path: str, file_extension: str) -> Generator[Tuple[str, s
             yield ".".join(filename.split(".")[:-1]), os.path.abspath(os.path.join(folder_path, filename))
 
 
-def parse_fasta(
-        path: str = None,
-) -> Dict[str, str]:
+def parse_fasta(path: str = None) -> Dict[str, str]:
     """
     Parse a FASTA file and do some validity checks if requested.
 
@@ -149,3 +149,98 @@ def parse_fasta(
                 seq_map[entry_id] += line
 
     return seq_map
+
+
+def check_pdb_pair(pdb_seqs1: List[str], pdb_seqs2: List[str]) -> bool:
+    """
+    Entry point for the comparison of two PDB files.
+
+    Args:
+        pdb_seqs1: filepath to the first PDB file
+        pdb_seqs2: filepath to the second PDB file
+
+    Returns:
+        A boolean flag indicating (dis-)similarity of the two PDB files.
+    """
+    if len(pdb_seqs1) != len(pdb_seqs2):
+        # If the number of sequence does not match, the PDB files cannot describe the same protein
+        return False
+    return check_pdb_pair_rec(pdb_seqs1, pdb_seqs2, 0, set(), np.full((len(pdb_seqs1), len(pdb_seqs1)), -1))
+
+
+def check_pdb_pair_rec(
+        pdb_seqs1: List[str],
+        pdb_seqs2: List[str],
+        index1: int,
+        blocked: Set[int],
+        dp_table: np.ndarray
+) -> bool:
+    """
+    Check if two pdb files contain the same protein. This is done in recursive manner by finding a match for one
+    sequence in the first pdb file and check recursively if all sequences can be matched based on that assignment.
+    This works somewhat like DFS on a tree of all possible assignments.
+
+    Args:
+        pdb_seqs1: List of amino acid sequences from the first PDB file.
+        pdb_seqs2: List of amino acid sequences from the second PDB file.
+        index1: The index of the sequence in pdb_seqs1 looking for a mate in pdb_seqs2.
+        blocked: List of indices already assigned in higher iteration of the recursion
+        dp_table: Table of already computed sequence similarities
+
+    Returns:
+        True if the two lists of amino acid sequences from the two files can be matched, otherwise False
+    """
+    if index1 == len(pdb_seqs1):  # every seq in pdb_seqs1 has found a mate in pdb_seqs2
+        return True
+
+    # iterate over all sequences in pdb_seqs2 ...
+    for index in range(len(pdb_seqs2)):
+        if index in blocked:
+            continue
+
+        # ... and check if they match the current sequence from pdb_seqs1
+        if dp_table[index1, index] == -1:
+            dp_table[index1, index] = seqs_equality(pdb_seqs1[index1], pdb_seqs2[index])
+
+        # if I found a match, go deeper recursively and check if I can match the rest as well
+        if dp_table[index1, index] == 1:
+            blocked.add(index)
+            if check_pdb_pair_rec(pdb_seqs1, pdb_seqs2, index + 1, blocked, dp_table):
+                return True
+            blocked.remove(index)
+    return False
+
+
+def seqs_equality(seq1: str, seq2: str) -> float:
+    """
+    Compute if two sequences are similar or not.
+
+    Args:
+        seq1: First sequence to compare
+        seq2: Second sequence to compare
+
+    Returns:
+        A similarity measure for the two sequences
+    """
+    return 1.0 if seq1 == seq2 else 0.0
+
+
+def extract_pdb_seqs(pdb_file: str) -> Dict[str, str]:
+    """
+    Extract all amino acid sequences from a PDB file.
+
+    Args:
+        pdb_file: filepath to the PDB file in question.
+
+    Returns:
+        A dictionary of all chain ids mapping to their amino acid sequence.
+    """
+    seqs = {}
+    with open(pdb_file, "r") as pdb:
+        for line in pdb.readlines():
+            if line.startswith("ATOM") and line[12:16].strip() == "CA":
+                res_num = line[20:22].strip()
+                if res_num not in seqs:
+                    seqs[res_num] = ""
+                seqs[res_num] += line[17:20].strip()
+    return seqs
