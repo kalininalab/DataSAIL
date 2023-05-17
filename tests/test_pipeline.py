@@ -4,7 +4,7 @@ import shutil
 import pytest
 
 from datasail.sail import sail
-from tests.utils import check_folder
+from tests.utils import check_folder, run_sail
 
 
 @pytest.mark.parametrize("data", [
@@ -29,6 +29,7 @@ from tests.utils import check_folder
 ])
 def test_pipeline(data):
     pdb, prot_weights, prot_sim, prot_dist, drugs, drug_weights, drug_sim, drug_dist, inter, mode = data
+    shutil.rmtree("data/pipeline/out/", ignore_errors=True)
 
     sail(
         inter="data/pipeline/inter.tsv" if inter else None,
@@ -75,38 +76,23 @@ def test_pipeline(data):
 
 def test_report():
     shutil.rmtree("data/perf_7_3/out", ignore_errors=True)
-    sail(
+
+    run_sail(
         inter="data/perf_7_3/inter.tsv",
         output="data/perf_7_3/out/",
         max_sec=100,
-        max_sol=10,
-        verbosity="I",
         techniques=["R", "ICSe", "ICSf", "ICD", "CCSe", "CCSf", "CCD"],
-        vectorized=True,
         splits=[0.7, 0.3],
         names=["train", "test"],
         epsilon=0.25,
         e_type="M",
         e_data="data/perf_7_3/lig.tsv",
-        e_weights=None,
         e_sim="data/perf_7_3/lig_sim.tsv",
-        e_dist=None,
-        e_max_sim=1,
-        e_max_dist=1,
-        e_args="",
         f_type="P",
         f_data="data/perf_7_3/prot.fasta",
-        f_weights=None,
         f_sim="data/perf_7_3/prot_sim.tsv",
-        f_dist=None,
-        f_max_sim=1,
-        f_max_dist=1,
-        f_args="",
         solver="SCIP",
-        cache=False,
-        cache_dir=None,
-        log_dir="logs",
-        threads=1,
+        # log_dir="logs",
     )
 
     assert os.path.isfile("data/perf_7_3/out/lig_similarity.png")

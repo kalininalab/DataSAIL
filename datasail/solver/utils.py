@@ -114,8 +114,6 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: str):
         solve_algo = cvxpy.SCIP
         kwargs = {"scip_params": {"limits/time": max_sec}}
     with LoggerRedirect(log_file):
-        print("std-out captured?")
-        LOGGER.info("INFO captured?")
         problem.solve(
             solver=solve_algo,
             qcp=True,
@@ -139,7 +137,7 @@ def sample_categorical(
         inter: List[Tuple[str, str]],
         splits: List[float],
         names: List[str],
-):
+) -> List[Tuple[str, str, str]]:
     """
     Sample interactions randomly into splits. This is the random split. It relies on the idea of categorical sampling.
 

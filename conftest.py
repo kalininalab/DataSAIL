@@ -13,7 +13,10 @@ def pytest_sessionfinish(session):
     try:
         shutil.rmtree("data/perf_7_3")
         shutil.rmtree("data/perf_70_30")
+        shutil.rmtree("data/pipeline/out/")
         if os.path.isfile("data/solver.log"):
             os.remove("data/solver.log")
+        if os.path.isfile("solver.log"):
+            os.remove("solver.log")
     except OSError:
         pass

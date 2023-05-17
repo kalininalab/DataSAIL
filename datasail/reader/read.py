@@ -8,7 +8,7 @@ from datasail.reader.read_proteins import read_protein_data, remove_protein_dupl
 from datasail.reader.utils import read_csv, DataSet, get_prefix_args
 
 
-def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]]]]:
+def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]]], Optional[List[Tuple[str, str]]]]:
     """
     Read data from the input arguments.
 
@@ -19,10 +19,10 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
         Two datasets storing the information on the input entities and a list of interactions between
     """
     # TODO: Semantic checks of arguments
-    inter = list(tuple(x) for x in read_csv(kwargs["inter"])) if kwargs["inter"] else None
+    old_inter = list(tuple(x) for x in read_csv(kwargs["inter"])) if kwargs["inter"] else None
     e_dataset, inter = read_data_type(kwargs["e_type"])(
         kwargs["e_data"], kwargs["e_weights"], kwargs["e_sim"], kwargs["e_dist"], kwargs["e_max_sim"],
-        kwargs["e_max_dist"], kwargs.get("e_id_map", None), inter, 0
+        kwargs["e_max_dist"], kwargs.get("e_id_map", None), old_inter, 0
     )
     e_dataset.args = kwargs["e_args"]
     f_dataset, inter = read_data_type(kwargs["f_type"])(
@@ -31,7 +31,7 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
     )
     f_dataset.args = kwargs["f_args"]
 
-    return e_dataset, f_dataset, inter
+    return e_dataset, f_dataset, inter, old_inter
 
 
 def check_duplicates(**kwargs) -> Dict[str, Any]:
@@ -52,7 +52,9 @@ def check_duplicates(**kwargs) -> Dict[str, Any]:
 
     # if existent, remove duplicates from second dataset as well
     if kwargs["f_type"] is not None:
-        kwargs.update(get_remover_fun(kwargs["f_type"])("f_", kwargs["output"] or "", **get_prefix_args("f_", **kwargs)))
+        kwargs.update(
+            get_remover_fun(kwargs["f_type"])("f_", kwargs["output"] or "", **get_prefix_args("f_", **kwargs))
+        )
 
     return kwargs
 

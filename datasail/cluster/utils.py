@@ -60,7 +60,7 @@ def cluster_param_binary_search(
         min_cluster_names, min_cluster_map, min_cluster_sim = trial(dataset, args2str(min_args), threads,
                                                                     args2log(min_args))
         min_clusters = len(min_cluster_names)
-        LOGGER.info(f"First round of clustering found {min_clusters} clusters for {len(dataset.names)} samples.")
+        LOGGER.info(f"Second round of clustering found {min_clusters} clusters for {len(dataset.names)} samples.")
 
     # if the minimal number of clusters is in the target window, return them
     if 10 < min_clusters <= 100:
@@ -72,12 +72,14 @@ def cluster_param_binary_search(
 
     # if the maximal number of clusters is still less than the lower bound of the window, report and warn
     if max_clusters < 10:
-        LOGGER.warning(f"CD-HIT cannot optimally cluster the data. The maximal number of clusters is {max_clusters}.")
+        LOGGER.warning(f"{trial.__name__[:-6]} cannot optimally cluster the data. The maximal number of clusters is "
+                       f"{max_clusters}.")
         return max_cluster_names, max_cluster_map, max_cluster_sim
 
     # if the minimal number of clusters is still more than the upper bound of the window, report and warn
     if 100 < min_clusters:
-        LOGGER.warning(f"CD-HIT cannot optimally cluster the data. The minimal number of clusters is {min_clusters}.")
+        LOGGER.warning(f"{trial.__name__[:-6]} cannot optimally cluster the data. The minimal number of clusters is "
+                       f"{min_clusters}.")
         return min_cluster_names, min_cluster_map, min_cluster_sim
 
     # for 8 rounds, apply binary search on the variable parameter space and try to hit the target window
@@ -89,7 +91,7 @@ def cluster_param_binary_search(
         num_clusters = len(cluster_names)
         LOGGER.info(f"Next round of clustering ({iteration_count + 2}.) "
                     f"found {num_clusters} clusters for {len(dataset.names)} samples.")
-        if num_clusters <= 10:
+        if num_clusters <= 10 and iteration_count < 8:
             min_args = args
         elif 10 < num_clusters <= 100 or iteration_count >= 8:
             return cluster_names, cluster_map, cluster_sim

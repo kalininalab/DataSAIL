@@ -114,6 +114,7 @@ def save_inter_assignment(save_dir: str, inter_split_map: Optional[List[Tuple[st
     if inter_split_map is None:
         return
     with open(os.path.join(save_dir, "inter.tsv"), "w") as output:
+        print("E_IDs", "F_IDs", "Split", sep="\t", file=output)
         for e, f, s in inter_split_map:
             print(e, f, s, sep="\t", file=output)
 
@@ -132,8 +133,9 @@ def save_assignment(save_dir: str, dataset: DataSet, name_split_map: Optional[Di
     with open(os.path.join(
             save_dir, f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_splits.tsv"
     ), "w") as output:
-        for e, s in name_split_map.items():
-            print(e, s, sep="\t", file=output)
+        print("ID", "Split", sep="\t", file=output)
+        for name, rep in dataset.id_map.items():
+            print(name, name_split_map[rep], sep="\t", file=output)
 
 
 def save_clusters(save_dir: str, dataset: DataSet) -> None:
@@ -149,8 +151,9 @@ def save_clusters(save_dir: str, dataset: DataSet) -> None:
     with open(os.path.join(
         save_dir, f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_clusters.tsv"
     ), "w") as output:
-        for e, c in dataset.cluster_map.items():
-            print(e, c, sep="\t", file=output)
+        print("ID", "Cluster_ID", sep="\t", file=output)
+        for name, rep in dataset.id_map.items():
+            print(name, dataset.cluster_map[rep], sep="\t", file=output)
 
 
 def save_t_sne(
@@ -249,8 +252,9 @@ def save_cluster_hist(save_dir: str, dataset: DataSet) -> None:
     sizes = [0] * (max(counts) + 1)
     for c in counts:
         sizes[c] += 1
-    min_index, max_index = next((i for i, x in enumerate(sizes) if x), None), len(sizes) - next((i for i, x in enumerate(reversed(sizes)) if x), None)
-    plt.bar(range(min_index, max_index), counts)
+    min_index = next((i for i, x in enumerate(sizes) if x), None)
+    max_index = len(sizes) - next((i for i, x in enumerate(reversed(sizes)) if x), None)
+    plt.bar(list(range(min_index, max_index)), sizes[min_index:max_index])
     plt.xlabel("Size of Cluster")
     plt.ylabel("Number of Clusters")
     plt.title("Size distribution of clusters")

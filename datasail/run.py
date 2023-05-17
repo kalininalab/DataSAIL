@@ -21,7 +21,7 @@ def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     kwargs = check_duplicates(**kwargs)
 
     # read e-entities and f-entities
-    e_dataset, f_dataset, inter = read_data(**kwargs)
+    e_dataset, f_dataset, inter, old_inter = read_data(**kwargs)
 
     # if required, cluster the input otherwise define the cluster-maps to be None
     clusters = list(filter(lambda x: x[0] == "C", kwargs["techniques"]))
@@ -55,18 +55,19 @@ def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     LOGGER.info("Store results")
 
     # infer interaction assignment from entity assignment if necessary and possible
-    if inter is not None:
+    if old_inter is not None:
         for technique in kwargs["techniques"]:
             t = technique[:3]
+            # How to deal with duplicates in ?CD-splits when interactions are already assigned in the splitting process
+            # TODO: Detect the duplicates in old_inter and assign them based on an id_map
             if inter_split_map.get(technique, None) is None:
-                if e_name_split_map.get(t, None) is not None and f_name_split_map.get(t, None) is None:
-                    inter_split_map[technique] = [(e, f, e_name_split_map[t].get(e, "")) for e, f in inter]
-                elif e_name_split_map.get(t, None) is None and f_name_split_map.get(t, None) is not None:
-                    inter_split_map[technique] = [(e, f, f_name_split_map[t].get(f, "")) for e, f in inter]
-                elif e_name_split_map.get(t, None) is not None and f_name_split_map.get(t, None) is not None:
+                if e_name_split_map.get(t, None) is not None and technique not in inter_split_map:
                     inter_split_map[technique] = [
-                        (e, f, e_name_split_map[t].get(e, "")) for e, f in inter
-                        if e_name_split_map[t].get(e, "") == f_name_split_map[t].get(f, "")
+                        (e, f, e_name_split_map[t].get(e, "not selected")) for e, f in old_inter
+                    ]
+                if f_name_split_map.get(t, None) is not None and technique not in inter_split_map:
+                    inter_split_map[technique] = [
+                        (e, f, f_name_split_map[t].get(f, "not selected")) for e, f in old_inter
                     ]
 
     LOGGER.info("BQP splitting finished and results stored.")
