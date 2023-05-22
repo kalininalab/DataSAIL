@@ -1,21 +1,21 @@
 import os
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Tuple, Dict, Any, Optional, Callable, Generator
 
 from rdkit.Chem import MolFromSmiles, MolToSmiles
 
-from datasail.reader.utils import read_csv, DataSet, read_data
+from datasail.reader.utils import read_csv, DataSet, read_data, DATA_INPUT, MATRIX_INPUT
 
 
 def read_molecule_data(
-        data: str,
-        weights: str,
-        sim: str,
-        dist: str,
+        data: DATA_INPUT,
+        weights: DATA_INPUT,
+        sim: MATRIX_INPUT,
+        dist: MATRIX_INPUT,
         max_sim: float,
         max_dist: float,
         id_map: Optional[str],
-        inter: List[Tuple[str, str]],
-        index: int,
+        inter: Optional[List[Tuple[str, str]]],
+        index: Optional[int],
 ) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     """
     Read in molecular data, compute the weights, and distances or similarities of every entity.
@@ -35,14 +35,25 @@ def read_molecule_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type="M")
-    if data.lower().endswith(".tsv"):
-        dataset.data = dict(read_csv(data))
-        dataset.format = "SMILES"
-    elif os.path.isdir(data):
-        pass
+    dataset.location = None
+    if isinstance(data, str):
+        if data.lower().endswith(".tsv"):
+            dataset.data = dict(read_csv(data))
+        elif os.path.isdir(data):
+            pass
+        else:
+            raise ValueError()
+        dataset.location = data
+    elif isinstance(data, dict):
+        dataset.data = data
+    elif isinstance(data, Callable):
+        dataset.data = data()
+    elif isinstance(data, Generator):
+        dataset.data = dict(data)
     else:
         raise ValueError()
-    dataset.location = data
+
+    dataset.format = "SMILES"
 
     dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, dataset)
 
@@ -63,12 +74,12 @@ def remove_molecule_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[s
         Update arguments as teh location of the data might change and an ID-Map file might be added.
     """
     output_args = {prefix + k: v for k, v in kwargs.items()}
+    if not isinstance(kwargs["data"], str) or not kwargs["data"].lower().endswith(".tsv"):
+        return output_args
     # TODO: turn off rdkit errors and warnings
-    if kwargs["data"].lower().endswith(".tsv"):
+    else:
         input_data = dict(read_csv(kwargs["data"]))
         molecules = {k: MolFromSmiles(v) for k, v in input_data.items()}
-    else:
-        return output_args
 
     # Extract invalid molecules
     non_mols = []

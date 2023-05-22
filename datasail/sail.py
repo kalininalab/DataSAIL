@@ -1,10 +1,13 @@
 import logging
 import os.path
 import sys
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Callable, Union, Optional, Generator
+
+import numpy as np
 
 from datasail.parsers import parse_cdhit_args, parse_mash_args, parse_mmseqs_args, DIST_ALGOS, SIM_ALGOS, \
     parse_datasail_args
+from datasail.reader.utils import LIST_INPUT, DATA_INPUT, MATRIX_INPUT
 from datasail.run import bqp_main
 from datasail.settings import LOGGER, FORMATTER, VERB_MAP
 
@@ -103,24 +106,30 @@ def validate_args(**kwargs) -> Dict[str, object]:
         os.makedirs(kwargs["cache_dir"], exist_ok=True)
 
     # syntactically parse the input data for the E-dataset
-    if kwargs["e_data"] is not None and not os.path.exists(kwargs["e_data"]):
+    if kwargs["e_data"] is not None and not isinstance(kwargs["e_data"], Callable) \
+            and not os.path.exists(kwargs["e_data"]):
         error("The filepath to the E-data is invalid.", error_code=7)
-    if kwargs["e_weights"] is not None and not os.path.isfile(kwargs["e_weights"]):
+    if kwargs["e_weights"] is not None and not isinstance(kwargs["e_weights"], Callable) \
+            and not os.path.isfile(kwargs["e_weights"]):
         error("The filepath to the weights of the E-data is invalid.", error_code=8)
-    if kwargs["e_sim"] is not None and kwargs["e_sim"].lower() not in SIM_ALGOS and not os.path.isfile(kwargs["e_sim"]):
+    if kwargs["e_sim"] is not None and not isinstance(kwargs["e_sim"], Callable) \
+            and kwargs["e_sim"].lower() not in SIM_ALGOS and not os.path.isfile(kwargs["e_sim"]):
         error(
             f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", error_code=9
         )
-    if kwargs["e_dist"] is not None and kwargs["e_dist"].lower() not in DIST_ALGOS and not os.path.isfile(
+    if kwargs["e_dist"] is not None and not isinstance(kwargs["e_dist"], Callable) \
+            and kwargs["e_dist"].lower() not in DIST_ALGOS and not os.path.isfile(
             kwargs["e_dist"]):
         error(
             f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", error_code=10
         )
-    if kwargs["e_sim"] is not None and kwargs["e_sim"].lower() == "cdhit":
+    if kwargs["e_sim"] is not None and not isinstance(kwargs["e_sim"], Callable) and kwargs["e_sim"].lower() == "cdhit":
         validate_cdhit_args(kwargs["e_args"])
-    if kwargs["e_sim"] is not None and kwargs["e_sim"].lower() == "mmseqs":
+    if kwargs["e_sim"] is not None and not isinstance(kwargs["e_sim"], Callable) \
+            and kwargs["e_sim"].lower() == "mmseqs":
         validate_mmseqs_args(kwargs["e_args"])
-    if kwargs["e_dist"] is not None and kwargs["e_dist"].lower() == "mash":
+    if kwargs["e_dist"] is not None and not isinstance(kwargs["e_dist"], Callable) \
+            and kwargs["e_dist"].lower() == "mash":
         validate_mash_args(kwargs["e_args"])
     if 1 < kwargs["e_max_sim"] < 0:
         error("The maximal similarity value for the E-data has to be a real value in [0,1].", error_code=11)
@@ -128,24 +137,29 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The maximal distance value for the E-data has to be a real value in [0,1].", error_code=12)
 
     # syntactically parse the input data for the F-dataset
-    if kwargs["f_data"] is not None and not os.path.exists(kwargs["f_data"]):
+    if kwargs["f_data"] is not None and not isinstance(kwargs["e_sim"], Callable) \
+            and not os.path.exists(kwargs["f_data"]):
         error("The filepath to the F-data is invalid.", error_code=13)
-    if kwargs["f_weights"] is not None and not os.path.isfile(kwargs["f_weights"]):
+    if kwargs["f_weights"] is not None and not isinstance(kwargs["e_sim"], Callable) \
+            and not os.path.isfile(kwargs["f_weights"]):
         error("The filepath to the weights of the F-data is invalid.", error_code=14)
-    if kwargs["f_sim"] is not None and kwargs["f_sim"].lower() not in SIM_ALGOS and not os.path.isfile(kwargs["f_sim"]):
+    if kwargs["f_sim"] is not None and not isinstance(kwargs["e_sim"], Callable) \
+            and kwargs["f_sim"].lower() not in SIM_ALGOS and not os.path.isfile(kwargs["f_sim"]):
         error(
             f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", error_code=15
         )
-    if kwargs["f_dist"] is not None and kwargs["f_dist"].lower() not in DIST_ALGOS and not os.path.isfile(
+    if kwargs["f_dist"] is not None and not isinstance(kwargs["e_sim"], Callable) \
+            and kwargs["f_dist"].lower() not in DIST_ALGOS and not os.path.isfile(
             kwargs["f_dist"]):
         error(
             f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", error_code=16
         )
-    if kwargs["f_sim"] is not None and kwargs["f_sim"] == "CDHIT":
+    if kwargs["f_sim"] is not None and not isinstance(kwargs["e_sim"], Callable) and kwargs["f_sim"] == "CDHIT":
         validate_cdhit_args(kwargs["f_args"])
-    if kwargs["f_sim"] is not None and kwargs["f_sim"].lower() == "mmseqs":
+    if kwargs["f_sim"] is not None and not isinstance(kwargs["e_sim"], Callable) \
+            and kwargs["f_sim"].lower() == "mmseqs":
         validate_mmseqs_args(kwargs["e_args"])
-    if kwargs["f_dist"] is not None and kwargs["f_dist"] == "MASH":
+    if kwargs["f_dist"] is not None and not isinstance(kwargs["e_sim"], Callable) and kwargs["f_dist"] == "MASH":
         validate_mash_args(kwargs["f_args"])
     if 1 < kwargs["f_max_sim"] < 0:
         error("The maximal similarity value for the F-data has to be a real value in [0,1].", error_code=17)
@@ -197,8 +211,8 @@ def validate_mmseqs_args(mmseqs_args):
 
 
 def datasail(
-        techniques: List[str],
-        inter=None,
+        techniques: LIST_INPUT = None,
+        inter: LIST_INPUT = None,
         max_sec: int = 100,
         max_sol: int = 1000,
         verbose: str = "W",
@@ -210,18 +224,18 @@ def datasail(
         cache: bool = False,
         cache_dir: str = None,
         e_type: str = None,
-        e_data=None,
-        e_weights=None,
-        e_sim=None,
-        e_dist=None,
+        e_data: DATA_INPUT = None,
+        e_weights: DATA_INPUT = None,
+        e_sim: MATRIX_INPUT = None,
+        e_dist: MATRIX_INPUT = None,
         e_args: str = "",
         e_max_sim: float = 1.0,
         e_max_dist: float = 1.0,
         f_type: str = None,
-        f_data=None,
-        f_weights=None,
-        f_sim=None,
-        f_dist=None,
+        f_data: DATA_INPUT = None,
+        f_weights: DATA_INPUT = None,
+        f_sim: MATRIX_INPUT = None,
+        f_dist: MATRIX_INPUT = None,
         f_args: str = "",
         f_max_sim: float = 1.0,
         f_max_dist: float = 1.0,

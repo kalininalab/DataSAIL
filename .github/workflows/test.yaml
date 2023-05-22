@@ -37,7 +37,7 @@ jobs:
         shell: bash -l {0}
         run: |
           mamba install -c conda-forge -c bioconda -y numpy pandas networkx matplotlib pytest setuptools pyscipopt foldseek mmseqs2 cd-hit mash tmalign
-          pip install grakel cvxpy pytest-cov mosek rdkit
+          pip install grakel cvxpy pytest-cov mosek rdkit pytest-cases
         
       - name: Run tests
         shell: bash -l {0}

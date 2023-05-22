@@ -1,21 +1,21 @@
 import os
-from typing import Generator, Tuple, Dict, List, Any, Optional, Set
+from typing import Generator, Tuple, Dict, List, Any, Optional, Set, Callable
 
 import numpy as np
 
-from datasail.reader.utils import read_csv, DataSet, read_data
+from datasail.reader.utils import read_csv, DataSet, read_data, read_folder, DATA_INPUT, MATRIX_INPUT
 
 
 def read_protein_data(
-        data: str,
-        weights: str,
-        sim: str,
-        dist: str,
+        data: DATA_INPUT,
+        weights: DATA_INPUT,
+        sim: MATRIX_INPUT,
+        dist: MATRIX_INPUT,
         max_sim: float,
         max_dist: float,
         id_map: Optional[str],
-        inter: List[Tuple[str, str]],
-        index: int,
+        inter: Optional[List[Tuple[str, str]]],
+        index: Optional[int],
 ) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     """
     Read in protein data, compute the weights, and distances or similarities of every entity.
@@ -34,19 +34,29 @@ def read_protein_data(
     Returns:
         A dataset storing all information on that datatype
     """
-    dataset = DataSet(type="P")
-    if data.split(".")[-1].lower() in {"fasta", "fa", "fna"}:
-        dataset.data = parse_fasta(data)
-        dataset.format = "FASTA"
-    elif os.path.isfile(data):
-        dataset.data = dict(read_csv(data))
-        dataset.format = "FASTA"
-    elif os.path.isdir(data):
-        dataset.data = dict(read_folder(data, ".pdb"))
-        dataset.format = "PDB"
+    dataset = DataSet(type="P", location=None)
+    if isinstance(data, str):
+        if data.split(".")[-1].lower() in {"fasta", "fa", "fna"}:
+            dataset.data = parse_fasta(data)
+            dataset.format = "FASTA"
+        elif os.path.isfile(data):
+            dataset.data = dict(read_csv(data))
+            dataset.format = "FASTA"
+        elif os.path.isdir(data):
+            dataset.data = dict(read_folder(data, ".pdb"))
+            dataset.format = "PDB"
+        else:
+            raise ValueError()
+    elif isinstance(data, dict):
+        dataset.data = data
+    elif isinstance(data, Callable):
+        dataset.data = data()
+    elif isinstance(data, Generator):
+        dataset.data = dict(data)
     else:
         raise ValueError()
-    dataset.location = data
+
+    dataset.format = "PDB" if os.path.exists(next(iter(dataset.data.values()))) else "FASTA"
 
     dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, dataset)
 
@@ -67,6 +77,8 @@ def remove_protein_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[st
     """
     # read the data
     output_args = {prefix + k: v for k, v in kwargs.items()}
+    if not isinstance(kwargs["data"], str):
+        return output_args
     if kwargs["data"].split(".")[-1].lower() in {"fasta", "fa", "fna"}:
         sequences = parse_fasta(kwargs["data"])
     elif os.path.isfile(kwargs["data"]):
@@ -107,22 +119,6 @@ def remove_protein_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[st
     output_args[prefix + "id_map"] = id_map_filename
 
     return output_args
-
-
-def read_folder(folder_path: str, file_extension: str) -> Generator[Tuple[str, str], None, None]:
-    """
-    Read in all PDB file from a folder and ignore non-PDB files.
-
-    Args:
-        folder_path: Path to the folder storing the PDB files
-        file_extension: File extension to parse
-
-    Yields:
-        Pairs of the PDB files name and the path to the file
-    """
-    for filename in os.listdir(folder_path):
-        if filename.endswith(file_extension):
-            yield ".".join(filename.split(".")[:-1]), os.path.abspath(os.path.join(folder_path, filename))
 
 
 def parse_fasta(path: str = None) -> Dict[str, str]:

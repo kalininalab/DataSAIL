@@ -1,5 +1,5 @@
 import os
-from typing import Tuple, List, Optional, Callable, Dict, Any
+from typing import Tuple, List, Optional, Callable, Dict, Any, Generator
 
 from datasail.reader.read_genomes import read_genome_data, remove_genome_duplicates
 from datasail.reader.read_molecules import read_molecule_data, remove_molecule_duplicates
@@ -19,7 +19,19 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
         Two datasets storing the information on the input entities and a list of interactions between
     """
     # TODO: Semantic checks of arguments
-    old_inter = list(tuple(x) for x in read_csv(kwargs["inter"])) if kwargs["inter"] else None
+    if kwargs["inter"] is None:
+        old_inter = None
+    elif isinstance(kwargs["inter"], str):
+        old_inter = list(tuple(x) for x in read_csv(kwargs["inter"]))
+    elif isinstance(kwargs["inter"], list):
+        old_inter = kwargs["inter"]
+    elif isinstance(kwargs["inter"], Callable):
+        old_inter = kwargs["inter"]()
+    elif isinstance(kwargs["inter"], Generator):
+        old_inter = list(kwargs["inter"])
+    else:
+        raise ValueError()
+
     e_dataset, inter = read_data_type(kwargs["e_type"])(
         kwargs["e_data"], kwargs["e_weights"], kwargs["e_sim"], kwargs["e_dist"], kwargs["e_max_sim"],
         kwargs["e_max_dist"], kwargs.get("e_id_map", None), old_inter, 0
@@ -45,15 +57,17 @@ def check_duplicates(**kwargs) -> Dict[str, Any]:
     Returns:
         The updated keyword arguments as data might have been moved
     """
-    os.makedirs(os.path.join(kwargs["output"] or "", "tmp"), exist_ok=True)
+    os.makedirs(os.path.join(kwargs.get("output", None) or "", "tmp"), exist_ok=True)
 
     # remove duplicates from first dataset
-    kwargs.update(get_remover_fun(kwargs["e_type"])("e_", kwargs["output"] or "", **get_prefix_args("e_", **kwargs)))
+    kwargs.update(
+        get_remover_fun(kwargs["e_type"])("e_", kwargs.get("output", None) or "", **get_prefix_args("e_", **kwargs))
+    )
 
     # if existent, remove duplicates from second dataset as well
     if kwargs["f_type"] is not None:
         kwargs.update(
-            get_remover_fun(kwargs["f_type"])("f_", kwargs["output"] or "", **get_prefix_args("f_", **kwargs))
+            get_remover_fun(kwargs["f_type"])("f_", kwargs.get("output", None) or "", **get_prefix_args("f_", **kwargs))
         )
 
     return kwargs

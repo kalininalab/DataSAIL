@@ -1,14 +1,14 @@
 import os
-from typing import List, Tuple, Dict, Any, Optional, Generator
+from typing import List, Tuple, Dict, Any, Optional, Generator, Callable
 
-from datasail.reader.utils import DataSet, read_data
+from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_folder
 
 
 def read_genome_data(
-        data: str,
-        weights: str,
-        sim: str,
-        dist: str,
+        data: DATA_INPUT,
+        weights: DATA_INPUT,
+        sim: MATRIX_INPUT,
+        dist: MATRIX_INPUT,
         max_sim: float,
         max_dist: float,
         id_map: Optional[str],
@@ -32,31 +32,22 @@ def read_genome_data(
     Returns:
         A dataset storing all information on that datatype
     """
-    dataset = DataSet(type="G")
-    if os.path.exists(data):
-        dataset.data = read_folder(data)
+    dataset = DataSet(type="G", location=None, format="FASTA")
+    if isinstance(data, str):
+        dataset.data = dict(read_folder(data))
         dataset.location = data
-        dataset.format = "FASTA"
+    elif isinstance(data, dict):
+        dataset.data = data
+    elif isinstance(data, Callable):
+        dataset.data = data()
+    elif isinstance(data, Generator):
+        dataset.data = dict(data)
     else:
         raise ValueError()
 
     dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, dataset)
 
     return dataset, inter
-
-
-def read_folder(folder_path: str) -> Generator[Tuple[str, str], None, None]:
-    """
-    Read a folder of files with arbitrary data.
-
-    Args:
-        folder_path: Path to the folder containing the data, one sample per file
-
-    Yields:
-        Pairs of sample id (filename) and the absolute path to that file
-    """
-    for filename in os.listdir(folder_path):
-        yield ".".join(filename.split(".")[:-1]), os.path.abspath(os.path.join(folder_path, filename))
 
 
 def remove_genome_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[str, Any]:

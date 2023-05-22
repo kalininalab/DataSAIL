@@ -4,6 +4,10 @@ from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
 
 import numpy as np
 
+LIST_INPUT = Union[str, List[str], Callable[..., List[str]], Generator[str, None, None]]
+DATA_INPUT = Optional[Union[str, Dict[str, str], Callable[..., Dict[str, str]], Generator[Tuple[str, str], None, None]]]
+MATRIX_INPUT = Optional[Union[str, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
+
 
 @dataclass
 class DataSet:
@@ -47,6 +51,9 @@ class DataSet:
                 hv = hash(obj)
             hash_val ^= hv
         return hash_val
+
+    def __eq__(self, other):
+        return isinstance(other, DataSet) and hash(self) == hash(other)
 
     def get_name(self) -> str:
         """
@@ -115,15 +122,49 @@ def read_csv(filepath: str) -> Generator[Tuple[str, str], None, None]:
                 yield output[0], output[0]
 
 
+def read_matrix_input(
+        in_data: MATRIX_INPUT, max_val: float, default_names: Optional[List[str]]
+) -> Tuple[List[str], Union[np.ndarray, str], float]:
+    """
+    Read the data from different types of similarity or distance.
+
+    Args:
+        in_data: Matrix data encoding the similarities/distances and the names of the samples
+        max_val: Maximal value of the used metric, either distance or similarity
+        default_names: Names to use as default, if max_val specifies a clustering method
+
+    Returns:
+        Tuple of names of the data samples, a matrix holding their similarities/distances or a string encoding a method
+        to compute the fore-mentioned, and the threshold to apply when splitting
+    """
+    if isinstance(in_data, str):
+        if os.path.isfile(in_data):
+            names, similarity = read_clustering_file(in_data)
+            threshold = max_val
+        else:
+            names = default_names
+            similarity = in_data
+            threshold = max_val
+    elif isinstance(in_data, Tuple):
+        names, similarity = in_data
+        threshold = max_val
+    elif isinstance(in_data, Callable):
+        names, similarity = in_data()
+        threshold = max_val
+    else:
+        raise ValueError()
+    return names, similarity, threshold
+
+
 def read_data(
-        weights: Optional[str],
-        sim: str,
-        dist: str,
+        weights: DATA_INPUT,
+        sim: MATRIX_INPUT,
+        dist: MATRIX_INPUT,
         max_sim: float,
         max_dist: float,
         id_map: Optional[str],
         inter: Optional[List[Tuple[str, str]]],
-        index: int,
+        index: Optional[int],
         dataset: DataSet,
 ) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     """
@@ -145,7 +186,14 @@ def read_data(
     """
     # parse the protein weights
     if weights is not None:
-        dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
+        if isinstance(weights, str):
+            dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
+        elif isinstance(weights, dict):
+            dataset.weights = weights
+        elif isinstance(weights, Callable):
+            dataset.weights = weights()
+        elif isinstance(weights, Generator):
+            dataset.weights = dict(weights)
     elif inter is not None:
         dataset.weights = dict(count_inter(inter, index))
     else:
@@ -156,12 +204,12 @@ def read_data(
         dataset.similarity, dataset.distance = get_default(dataset.type, dataset.format)
         dataset.names = list(dataset.data.keys())
         dataset.threshold = 1
-    elif sim is not None and os.path.isfile(sim):
-        dataset.names, dataset.similarity = read_clustering_file(sim)
-        dataset.threshold = max_sim
-    elif dist is not None and os.path.isfile(dist):
-        dataset.names, dataset.distance = read_clustering_file(dist)
-        dataset.threshold = max_dist
+    elif sim is not None:
+        dataset.names, dataset.similarity, dataset.threshold = read_matrix_input(sim, max_sim,
+                                                                                 list(dataset.data.keys()))
+    elif dist is not None:
+        dataset.names, dataset.distance, dataset.threshold = read_matrix_input(dist, max_dist,
+                                                                               list(dataset.data.keys()))
     else:
         if sim is not None:
             dataset.similarity = sim
@@ -200,6 +248,22 @@ def read_data(
     dataset.weights = new_weights
 
     return dataset, inter
+
+
+def read_folder(folder_path: str, file_extension: Optional[str] = None) -> Generator[Tuple[str, str], None, None]:
+    """
+    Read in all PDB file from a folder and ignore non-PDB files.
+
+    Args:
+        folder_path: Path to the folder storing the PDB files
+        file_extension: File extension to parse, None if the files shall not be filtered
+
+    Yields:
+        Pairs of the PDB files name and the path to the file
+    """
+    for filename in os.listdir(folder_path):
+        if file_extension is None or filename.endswith(file_extension):
+            yield ".".join(filename.split(".")[:-1]), os.path.abspath(os.path.join(folder_path, filename))
 
 
 def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Optional[str]]:
