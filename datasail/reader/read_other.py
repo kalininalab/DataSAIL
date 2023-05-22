@@ -1,14 +1,15 @@
 import os
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Tuple, Dict, Any, Optional, Generator, Callable
 
-from datasail.reader.utils import DataSet, read_data
+from datasail.reader.read_genomes import read_folder
+from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT
 
 
 def read_other_data(
-        data: str,
-        weights: str,
-        sim: str,
-        dist: str,
+        data: DATA_INPUT,
+        weights: DATA_INPUT,
+        sim: MATRIX_INPUT,
+        dist: MATRIX_INPUT,
         max_sim: float,
         max_dist: float,
         id_map: Optional[str],
@@ -34,9 +35,15 @@ def read_other_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type="O")
-    if os.path.exists(data):
-        dataset.location = data
+    if isinstance(data, str) and os.path.exists(data):
+        dataset.location = read_folder(data)
         dataset.format = "Other"
+    elif isinstance(data, dict):
+        dataset.data = data
+    elif isinstance(data, Callable):
+        dataset.data = data()
+    elif isinstance(data, Generator):
+        dataset.data = dict(data)
     else:
         raise ValueError()
 
