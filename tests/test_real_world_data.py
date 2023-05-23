@@ -8,6 +8,7 @@ from datasail.reader.utils import read_csv
 from tests.utils import run_sail
 
 
+@pytest.mark.real
 @pytest.mark.parametrize(
     "ligand_data,ligand_weights,protein_data,protein_weights,interactions,output", [
         (None, None, "data/rw_data/mave/mave_db_gold_standard_only_sequences.fasta",

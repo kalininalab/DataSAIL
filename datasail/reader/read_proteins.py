@@ -47,6 +47,7 @@ def read_protein_data(
             dataset.format = "PDB"
         else:
             raise ValueError()
+        dataset.location = data
     elif isinstance(data, dict):
         dataset.data = data
     elif isinstance(data, Callable):

@@ -27,7 +27,7 @@ jobs:
       - name: Setup Mamba
         uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: 3.9
+          python-version: 3.10
           miniforge-variant: Mambaforge
           miniforge-version: latest
           activate-environment: datasail
@@ -37,7 +37,8 @@ jobs:
         shell: bash -l {0}
         run: |
           mamba install -c conda-forge -c bioconda -y numpy pandas networkx matplotlib pytest setuptools pyscipopt foldseek mmseqs2 cd-hit mash tmalign
-          pip install grakel cvxpy pytest-cov mosek rdkit pytest-cases
+          mamba install -c mosek mosek
+          pip install grakel cvxpy pytest-cov rdkit pytest-cases
         
       - name: Run tests
         shell: bash -l {0}
