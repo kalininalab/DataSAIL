@@ -10,6 +10,7 @@ from tests.pipeline_package_fixtures import *
 
 @pytest.mark.parametrize("data", [
     (True, False, None, None, None, False, None, None, False, "ICSf"),
+    (True, False, "wlk", None, None, False, None, None, False, "ICSf"),
     (False, False, None, None, None, False, None, None, False, "ICSf"),
     # (False, False, "mmseqs", None, None, False, None, None, False, "ICP"),
     (False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "ICSf"),
@@ -19,7 +20,9 @@ from tests.pipeline_package_fixtures import *
     (False, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "ICSe"),
     (False, False, None, None, "data/pipeline/drugs.tsv", True, None, None, False, "ICSe"),
     (False, False, None, None, "data/pipeline/drugs.tsv", False, "data/pipeline/drug_sim.tsv", None, False, "ICSe"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", True, "wlk", None, False, "ICSe"),  # <-- 10/11
     (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "ICSe"),
+    (True, False, "wlk", None, "data/pipeline/drugs.tsv", False, "wlk", None, True, "ICSf"),
     # (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "CCSe"),
     # (False, False, "data/pipeline/prot_sim.tsv", None, "data/pipeline/drugs.tsv", False, None,
     #  "data/pipeline/drug_dist.tsv", False, "CCSf"),
