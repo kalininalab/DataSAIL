@@ -99,7 +99,7 @@ def cluster_param_binary_search(
             max_args = args
 
 
-def heatmap(matrix: np.ndarray, output_file: str):
+def heatmap(matrix: np.ndarray, output_file: str) -> None:
     """
     Create a heatmap from a numpy array and two lists of labels.
 

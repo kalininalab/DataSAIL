@@ -8,7 +8,7 @@ from datasail.settings import LOGGER
 from datasail.solver.solve import run_solver
 
 
-def bqp_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
+def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     """
     Main routine of DataSAIL. Here the parsed input is aggregated into structures and then split and saved.
 

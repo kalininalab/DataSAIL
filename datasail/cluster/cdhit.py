@@ -10,7 +10,11 @@ from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER
 
 
-def run_cdhit(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_cdhit(
+        dataset: DataSet,
+        threads: int = 1,
+        log_dir: Optional[str] = None
+) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run the CD-HIT tool for protein input.
 
@@ -40,7 +44,12 @@ def run_cdhit(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[L
     )
 
 
-def cdhit_trial(dataset: DataSet, add_args: Tuple, threads: int, log_file: Optional[str]):
+def cdhit_trial(
+        dataset: DataSet,
+        add_args: Tuple,
+        threads: int = 1,
+        log_file: Optional[str] = None
+) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run CD-HIT on the dataset with the given sequence similarity defined by add_args.
 
@@ -123,10 +132,12 @@ def c2n(c: float):
     Returns:
         An according value for n based on c
     """
-    if 0.4 <= c < 0.5:
-        return 2
-    if 0.5 <= c < 0.6:
-        return 3
-    if 0.6 <= c < 0.7:
-        return 4
-    return 5
+    match c:
+        case c if 0.4 <= c < 0.5:
+            return 2
+        case c if 0.5 <= c < 0.6:
+            return 3
+        case c if 0.6 <= c < 0.7:
+            return 4
+        case _:
+            return 5

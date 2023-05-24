@@ -10,8 +10,8 @@ from datasail.settings import LOGGER
 
 def run_mash(
         dataset: DataSet,
-        threads: int,
-        log_dir: Optional[str]
+        threads: int = 1,
+        log_dir: Optional[str] = None,
 ) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray]]:
     """
     Run MASH on the provided dataset.

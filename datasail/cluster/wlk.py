@@ -99,7 +99,7 @@ class PDBStructure:
 
     def __init__(self, filename: str) -> None:
         """
-        Read the $C_\alpha$ atoms from a PDB file.
+        Read the $C_{\alpha}$ atoms from a PDB file.
 
         Args:
             filename: PDB filename to read from

@@ -7,14 +7,14 @@ from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT
 
 def read_other_data(
         data: DATA_INPUT,
-        weights: DATA_INPUT,
-        sim: MATRIX_INPUT,
-        dist: MATRIX_INPUT,
-        max_sim: float,
-        max_dist: float,
-        id_map: Optional[str],
-        inter: List[Tuple[str, str]],
-        index: int
+        weights: DATA_INPUT = None,
+        sim: MATRIX_INPUT = None,
+        dist: MATRIX_INPUT = None,
+        max_sim: float = 1.0,
+        max_dist: float = 1.0,
+        id_map: Optional[str] = None,
+        inter: Optional[List[Tuple[str, str]]] = None,
+        index: Optional[int] = None,
 ) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     """
     Read in other data, i.e., non-protein, non-molecular, and non-genomic data, compute the weights, and distances or
@@ -34,18 +34,22 @@ def read_other_data(
     Returns:
         A dataset storing all information on that datatype
     """
-    dataset = DataSet(type="O")
-    if isinstance(data, str) and os.path.exists(data):
-        dataset.location = read_folder(data)
-        dataset.format = "Other"
-    elif isinstance(data, dict):
-        dataset.data = data
-    elif isinstance(data, Callable):
-        dataset.data = data()
-    elif isinstance(data, Generator):
-        dataset.data = dict(data)
-    else:
-        raise ValueError()
+    dataset = DataSet(type="O", format="Other")
+    match data:
+        case str():
+            if os.path.exists(data):
+                dataset.data = read_folder(data)
+                dataset.location = data
+            else:
+                raise ValueError()
+        case dict():
+            dataset.data = data
+        case Callable():
+            dataset.data = data()
+        case Generator():
+            dataset.data = dict(data)
+        case _:
+            raise ValueError()
 
     dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, dataset)
 
