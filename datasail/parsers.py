@@ -2,7 +2,7 @@ import argparse
 from typing import Dict
 
 SIM_ALGOS = [
-    "wlk", "mmseqs", "foldseek", "cdhit", "ecfp",
+    "mmseqs", "foldseek", "cdhit", "ecfp",
 ]
 
 DIST_ALGOS = [
@@ -238,7 +238,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         dest="f_sim",
         default=None,
         help="Provide the name of a method to determine similarity between samples of the second input dataset. This "
-             "can either be [WLK], [mmseqs], [FoldSeek], [CDHIT], [ECFP], or a filepath to a file storing the pairwise "
+             "can either be [mmseqs], [FoldSeek], [CDHIT], [ECFP], or a filepath to a file storing the pairwise "
              "similarities in TSV.",
     )
     f_ent.add_argument(
