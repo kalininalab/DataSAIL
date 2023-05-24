@@ -1,0 +1,42 @@
+package:
+  name: "datasail"
+  version: "0.0.1"
+
+source:
+  git_url: https://github.com/kalininalab/DataSAIL.git
+  git_rev: master
+
+requirements:
+  host:
+    - python
+    - setuptools
+    - pip
+  build:
+    - python
+  run:
+    - python==3.10
+    - numpy
+    - pandas
+    - networkx
+    - matplotlib
+    - pytest
+    - setuptools
+    - pyscipopt
+    - foldseek
+    - mmseqs2
+    - cd-hit
+    - mash
+    - tmalign
+    - mosek
+    - cvxpy
+    - pytest-cov
+    - rdkit
+    - pytest-cases
+    - pip:
+        - grakel
+
+about:
+  home: https://github.com/kalininalab/DataSAIL
+  license: MIT
+  license_file: LICENSE
+  summary: DataSAIL is a tool to split datasets while reducing information leakage.
