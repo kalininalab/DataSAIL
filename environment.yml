@@ -1,0 +1,27 @@
+name: datasail
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - python=3.10
+  - numpy
+  - pandas
+  - networkx
+  - matplotlib
+  - pytest
+  - setuptools
+  - pyscipopt
+  - foldseek
+  - mmseqs2
+  - cd-hit
+  - mash
+  - tmalign
+  - cvxpy
+  - pytest-cov
+  - pytest-cases
+  - rdkit
+  - mosek::mosek
+  - pip:
+      - grakel
