@@ -11,7 +11,6 @@ from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
 from datasail.cluster.utils import heatmap
-from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
 from datasail.settings import LOGGER
@@ -93,8 +92,6 @@ def similarity_clustering(
           - Mapping from current clusters to their weights
     """
     match dataset.similarity.lower():
-        case "wlk":
-            cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
         case "mmseqs":
             cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset, threads, log_dir)
         case "foldseek":
