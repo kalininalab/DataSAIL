@@ -52,7 +52,16 @@ class DataSet:
             hash_val ^= hv
         return hash_val
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
+        """
+        Determine equality of two DataSets based on their hash value.
+
+        Args:
+            other: Other  object to compare to
+
+        Returns:
+            True if other object is a DataSet and contains the same information as this one.
+        """
         return isinstance(other, DataSet) and hash(self) == hash(other)
 
     def get_name(self) -> str:
@@ -123,7 +132,7 @@ def read_csv(filepath: str) -> Generator[Tuple[str, str], None, None]:
 
 
 def read_matrix_input(
-        in_data: MATRIX_INPUT, max_val: float, default_names: Optional[List[str]]
+        in_data: MATRIX_INPUT, max_val: float = 1.0, default_names: Optional[List[str]] = None
 ) -> Tuple[List[str], Union[np.ndarray, str], float]:
     """
     Read the data from different types of similarity or distance.
@@ -137,22 +146,23 @@ def read_matrix_input(
         Tuple of names of the data samples, a matrix holding their similarities/distances or a string encoding a method
         to compute the fore-mentioned, and the threshold to apply when splitting
     """
-    if isinstance(in_data, str):
-        if os.path.isfile(in_data):
-            names, similarity = read_clustering_file(in_data)
+    match in_data:
+        case str():
+            if os.path.isfile(in_data):
+                names, similarity = read_clustering_file(in_data)
+                threshold = max_val
+            else:
+                names = default_names
+                similarity = in_data
+                threshold = max_val
+        case Tuple():
+            names, similarity = in_data
             threshold = max_val
-        else:
-            names = default_names
-            similarity = in_data
+        case Callable():
+            names, similarity = in_data()
             threshold = max_val
-    elif isinstance(in_data, Tuple):
-        names, similarity = in_data
-        threshold = max_val
-    elif isinstance(in_data, Callable):
-        names, similarity = in_data()
-        threshold = max_val
-    else:
-        raise ValueError()
+        case _:
+            raise ValueError()
     return names, similarity, threshold
 
 
@@ -186,14 +196,15 @@ def read_data(
     """
     # parse the protein weights
     if weights is not None:
-        if isinstance(weights, str):
-            dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
-        elif isinstance(weights, dict):
-            dataset.weights = weights
-        elif isinstance(weights, Callable):
-            dataset.weights = weights()
-        elif isinstance(weights, Generator):
-            dataset.weights = dict(weights)
+        match weights:
+            case str():
+                dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
+            case dict():
+                dataset.weights = weights
+            case Callable():
+                dataset.weights = weights()
+            case Generator():
+                dataset.weights = dict(weights)
     elif inter is not None:
         dataset.weights = dict(count_inter(inter, index))
     else:
@@ -277,16 +288,15 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
     Returns:
         Tuple of the names of the method to use to compute either the similarity or distance for the input
     """
-    if data_type == "P":
-        if data_format == "PDB":
-            return "foldseek", None
-        elif data_format == "FASTA":
-            return "cdhit", None
-    elif data_type == "M":
-        if data_format == "SMILES":
+    match data_type:
+        case "P":
+            if data_format == "PDB":
+                return "foldseek", None
+            elif data_format == "FASTA":
+                return "cdhit", None
+        case _ if "M" and data_format == "SMILES":
             return "ecfp", None
-    elif data_type == "G":
-        if data_format == "FASTA":
+        case _ if "G" and data_format == "FASTA":
             return None, "mash"
     return None, None
 

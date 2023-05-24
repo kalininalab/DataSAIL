@@ -41,7 +41,12 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[
     )
 
 
-def mmseqs_trial(dataset: DataSet, add_args: str, threads: int, log_file: Optional[str]):
+def mmseqs_trial(
+        dataset: DataSet,
+        add_args: str,
+        threads: int = 1,
+        log_file: Optional[str] = None
+) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run MMseqs2 on the dataset with the given sequence similarity defined by add_args.
 

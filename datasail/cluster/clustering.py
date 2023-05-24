@@ -71,9 +71,11 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     return dataset
 
 
-def similarity_clustering(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[
-    List[str], Dict[str, str], np.ndarray, Dict[str, float],
-]:
+def similarity_clustering(
+        dataset: DataSet,
+        threads: int = 1,
+        log_dir: Optional[str] = None
+) -> Tuple[List[str], Dict[str, str], np.ndarray, Dict[str, float]]:
     """
     Compute the similarity based cluster based on a cluster method.
 
@@ -90,18 +92,19 @@ def similarity_clustering(dataset: DataSet, threads: int, log_dir: Optional[str]
           - Symmetric matrix of pairwise similarities between the current clusters
           - Mapping from current clusters to their weights
     """
-    if dataset.similarity.lower() == "wlk":
-        cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
-    elif dataset.similarity.lower() == "mmseqs":
-        cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "foldseek":
-        cluster_names, cluster_map, cluster_sim = run_foldseek(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "cdhit":
-        cluster_names, cluster_map, cluster_sim = run_cdhit(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "ecfp":
-        cluster_names, cluster_map, cluster_sim = run_ecfp(dataset)
-    else:
-        raise ValueError(f"Unknown cluster method: {dataset.similarity}")
+    match dataset.similarity.lower():
+        case "wlk":
+            cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
+        case "mmseqs":
+            cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset, threads, log_dir)
+        case "foldseek":
+            cluster_names, cluster_map, cluster_sim = run_foldseek(dataset, threads, log_dir)
+        case "cdhit":
+            cluster_names, cluster_map, cluster_sim = run_cdhit(dataset, threads, log_dir)
+        case "ecfp":
+            cluster_names, cluster_map, cluster_sim = run_ecfp(dataset)
+        case _:
+            raise ValueError(f"Unknown cluster method: {dataset.similarity}")
 
     # compute the weights for the clusters
     cluster_weights = {}
@@ -114,9 +117,11 @@ def similarity_clustering(dataset: DataSet, threads: int, log_dir: Optional[str]
     return cluster_names, cluster_map, cluster_sim, cluster_weights
 
 
-def distance_clustering(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[
-    List[str], Dict[str, str], np.ndarray, Dict[str, float],
-]:
+def distance_clustering(
+        dataset: DataSet,
+        threads: int = 1,
+        log_dir: Optional[str] = None
+) -> Tuple[List[str], Dict[str, str], np.ndarray, Dict[str, float]]:
     """
     Compute the distance based cluster based on a cluster method or a file to extract pairwise distance from.
 

@@ -8,14 +8,14 @@ from datasail.reader.utils import read_csv, DataSet, read_data, DATA_INPUT, MATR
 
 def read_molecule_data(
         data: DATA_INPUT,
-        weights: DATA_INPUT,
-        sim: MATRIX_INPUT,
-        dist: MATRIX_INPUT,
-        max_sim: float,
-        max_dist: float,
-        id_map: Optional[str],
-        inter: Optional[List[Tuple[str, str]]],
-        index: Optional[int],
+        weights: DATA_INPUT = None,
+        sim: MATRIX_INPUT = None,
+        dist: MATRIX_INPUT = None,
+        max_sim: float = 1.0,
+        max_dist: float = 1.0,
+        id_map: Optional[str] = None,
+        inter: Optional[List[Tuple[str, str]]] = None,
+        index: Optional[int] = None,
 ) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     """
     Read in molecular data, compute the weights, and distances or similarities of every entity.
@@ -34,26 +34,24 @@ def read_molecule_data(
     Returns:
         A dataset storing all information on that datatype
     """
-    dataset = DataSet(type="M")
-    dataset.location = None
-    if isinstance(data, str):
-        if data.lower().endswith(".tsv"):
-            dataset.data = dict(read_csv(data))
-        elif os.path.isdir(data):
-            pass
-        else:
+    dataset = DataSet(type="M", format="SMILES")
+    match data:
+        case str():
+            if data.lower().endswith(".tsv"):
+                dataset.data = dict(read_csv(data))
+            elif os.path.isdir(data):
+                pass
+            else:
+                raise ValueError()
+            dataset.location = data
+        case dict():
+            dataset.data = data
+        case Callable():
+            dataset.data = data()
+        case Generator():
+            dataset.data = dict(data)
+        case _:
             raise ValueError()
-        dataset.location = data
-    elif isinstance(data, dict):
-        dataset.data = data
-    elif isinstance(data, Callable):
-        dataset.data = data()
-    elif isinstance(data, Generator):
-        dataset.data = dict(data)
-    else:
-        raise ValueError()
-
-    dataset.format = "SMILES"
 
     dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, dataset)
 

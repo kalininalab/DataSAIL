@@ -19,18 +19,19 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
         Two datasets storing the information on the input entities and a list of interactions between
     """
     # TODO: Semantic checks of arguments
-    if kwargs["inter"] is None:
-        old_inter = None
-    elif isinstance(kwargs["inter"], str):
-        old_inter = list(tuple(x) for x in read_csv(kwargs["inter"]))
-    elif isinstance(kwargs["inter"], list):
-        old_inter = kwargs["inter"]
-    elif isinstance(kwargs["inter"], Callable):
-        old_inter = kwargs["inter"]()
-    elif isinstance(kwargs["inter"], Generator):
-        old_inter = list(kwargs["inter"])
-    else:
-        raise ValueError()
+    match kwargs["inter"]:
+        case None:
+            old_inter = None
+        case str():
+            old_inter = list(tuple(x) for x in read_csv(kwargs["inter"]))
+        case list():
+            old_inter = kwargs["inter"]
+        case Callable():
+            old_inter = kwargs["inter"]()
+        case Generator():
+            old_inter = list(kwargs["inter"])
+        case _:
+            raise ValueError()
 
     e_dataset, inter = read_data_type(kwargs["e_type"])(
         kwargs["e_data"], kwargs["e_weights"], kwargs["e_sim"], kwargs["e_dist"], kwargs["e_max_sim"],
@@ -84,13 +85,15 @@ def get_remover_fun(data_type: str) -> Callable:
     Returns:
         A callable function to remove duplicates from an input dataset
     """
-    if data_type == "P":
-        return remove_protein_duplicates
-    if data_type == "M":
-        return remove_molecule_duplicates
-    if data_type == "G":
-        return remove_genome_duplicates
-    return remove_other_duplicates
+    match data_type:
+        case "P":
+            return remove_protein_duplicates
+        case "M":
+            return remove_molecule_duplicates
+        case "G":
+            return remove_genome_duplicates
+        case _:
+            return remove_other_duplicates
 
 
 def read_data_type(data_type: chr) -> Callable:
@@ -103,15 +106,17 @@ def read_data_type(data_type: chr) -> Callable:
     Returns:
         full name of the type of data
     """
-    if data_type == "P":
-        return read_protein_data
-    if data_type == "M":
-        return read_molecule_data
-    if data_type == "G":
-        return read_genome_data
-    if data_type == "O":
-        return read_other_data
-    return read_none_data
+    match data_type:
+        case "P":
+            return read_protein_data
+        case "M":
+            return read_molecule_data
+        case "G":
+            return read_genome_data
+        case "O":
+            return read_other_data
+        case _:
+            return read_none_data
 
 
 def read_none_data(*_) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
