@@ -22,13 +22,13 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
     match kwargs["inter"]:
         case None:
             old_inter = None
-        case str():
+        case x if isinstance(x, str):
             old_inter = list(tuple(x) for x in read_csv(kwargs["inter"]))
-        case list():
+        case x if isinstance(x, list):
             old_inter = kwargs["inter"]
-        case Callable():
+        case x if isinstance(x, Callable):
             old_inter = kwargs["inter"]()
-        case Generator():
+        case x if isinstance(x, Generator):
             old_inter = list(kwargs["inter"])
         case _:
             raise ValueError()

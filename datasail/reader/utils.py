@@ -158,7 +158,7 @@ def read_matrix_input(
         case Tuple():
             names, similarity = in_data
             threshold = max_val
-        case Callable():
+        case x if isinstance(x, Callable):
             names, similarity = in_data()
             threshold = max_val
         case _:
@@ -201,9 +201,9 @@ def read_data(
                 dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
             case dict():
                 dataset.weights = weights
-            case Callable():
+            case x if isinstance(x, Callable):
                 dataset.weights = weights()
-            case Generator():
+            case x if isinstance(x, Generator):
                 dataset.weights = dict(weights)
     elif inter is not None:
         dataset.weights = dict(count_inter(inter, index))

@@ -46,9 +46,9 @@ def read_molecule_data(
             dataset.location = data
         case dict():
             dataset.data = data
-        case Callable():
+        case x if isinstance(x, Callable):
             dataset.data = data()
-        case Generator():
+        case x if isinstance(x, Generator):
             dataset.data = dict(data)
         case _:
             raise ValueError()
