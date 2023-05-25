@@ -1,18 +1,26 @@
 package:
   name: "datasail"
-  version: "0.0.1"
+  version: "0.0.2"
 
 source:
   git_url: https://github.com/kalininalab/DataSAIL.git
-  git_rev: master
+  git_rev: main
+
+build:
+  entry_points:
+    - datasail = datasail.sail:datasail
 
 requirements:
   host:
     - python
     - setuptools
+    - setuptools_scm
     - pip
   build:
     - python
+    - setuptools
+    - setuptools_scm
+    - pip
   run:
     - python==3.10
     - numpy
@@ -32,8 +40,6 @@ requirements:
     - pytest-cov
     - rdkit
     - pytest-cases
-    - pip:
-        - grakel
 
 about:
   home: https://github.com/kalininalab/DataSAIL
