@@ -36,9 +36,9 @@ jobs:
       - name: Update environment
         shell: bash -l {0}
         run: |
-          mamba install -c conda-forge -c bioconda -y numpy pandas networkx matplotlib pytest setuptools pyscipopt foldseek mmseqs2 cd-hit mash tmalign
+          mamba install -c conda-forge -c bioconda -y numpy pandas networkx matplotlib pytest setuptools pyscipopt foldseek mmseqs2 cd-hit mash tmalign cvxpy pytest-cov rdkit pytest-cases
           mamba install -c mosek mosek
-          pip install grakel cvxpy pytest-cov rdkit pytest-cases
+          pip install grakel
         
       - name: Run tests
         shell: bash -l {0}
