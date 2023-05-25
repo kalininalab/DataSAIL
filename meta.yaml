@@ -1,6 +1,6 @@
 package:
   name: "datasail"
-  version: "0.0.2"
+  version: "0.0.3"
 
 source:
   git_url: https://github.com/kalininalab/DataSAIL.git
@@ -12,12 +12,12 @@ build:
 
 requirements:
   host:
-    - python
+    - python==3.10
     - setuptools
     - setuptools_scm
     - pip
   build:
-    - python
+    - python==3.10
     - setuptools
     - setuptools_scm
     - pip
