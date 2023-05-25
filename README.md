@@ -3,6 +3,12 @@
 ![testing](https://github.com/kalininalab/glyles/actions/workflows/test.yaml/badge.svg)
 ![docs-image](https://readthedocs.org/projects/glyles/badge/?version=latest)
 [![codecov](https://codecov.io/gh/kalininalab/DataSAIL/branch/main/graph/badge.svg)](https://codecov.io/gh/kalininalab/DataSAIL)
+![anaconda](https://anaconda.org/kalininalab/datasail/badges/version.svg)
+![update](https://anaconda.org/kalininalab/datasail/badges/latest_release_date.svg)
+![platforms](https://anaconda.org/kalininalab/datasail/badges/platforms.svg)
+![license](https://anaconda.org/kalininalab/datasail/badges/license.svg)
+![downloads](https://anaconda.org/kalininalab/datasail/badges/downloads.svg)
+![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)
 
 DataSAIL is a tool that splits data while minimizing the information leakage. This tool formulates the splitting of a 
 dataset as constrained minimization problem and computes the assignment of data points to splits while minimizing the 
@@ -22,14 +28,14 @@ Apart from the here presented short overview, you can find a more detailed expla
 DataSAIL is installable from `conda` (`mamba` works equivalently) using
 
 ````shell
-conda create -n sail -c kalininalab python=3.8 datasail
+conda create -n sail -c conda-forge -c kalininalab -c mosek -c bioconda datasail
 conda activate sail
 ````
 
 to install it into a new empty environment or
 
 ````shell
-conda install -c kalininalab datasail
+conda install -c conda-forge -c kalininalab -c mosek -c bioconda datasail
 ````
 
 to install DataSAIL in an already existing environment. Due to dependencies of the clustering algorithms, the latter 
