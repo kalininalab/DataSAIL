@@ -24,8 +24,9 @@ The usage is pretty simple, just execute
 
     datasail -h
 
-to run DataSAIL in the command line and see the parameters DataSAIL takes. For a more detailed description see LINK.
-DataSAIL can also directly be included as a normal package into your Python program using
+to run DataSAIL in the command line and see the parameters DataSAIL takes. For a more detailed description see
+:ref:`here <datasail-doc-label>`. DataSAIL can also directly be included as a normal package into your Python program
+using
 
 .. code-block:: python
 

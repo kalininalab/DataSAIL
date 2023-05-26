@@ -4,6 +4,8 @@ Package
 
 .. module:: datasail
 
+.. _datasail-doc-label:
+
 datasail
 --------
 

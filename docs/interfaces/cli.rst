@@ -12,7 +12,8 @@ In this section, we're discussing the argument structure of DataSAIL. The argume
 python function and the CLI. Their functionality does not change, but some of the arguments are not available for the
 package version. This is noted accordingly. What might change is the type of input accepted. The package version of
 DataSAIL usually accepts string input to a file, a dictionary or a list (depending on the argument), and a function or
-generator therefore. For more details on the supported types, please checkout the type annotations HERE.
+generator therefore. For more details on the supported types, please checkout the type annotations of the
+:ref:`package entry to DataSAIL <datasail-doc-label>`.
 
 **Every TSV file has to have a header line. Otherwise, the first line entry is ignored by DataSAIL.**
 
