@@ -1,14 +1,14 @@
 # DataSAIL: Data Splitting Against Information Leaking 
 
 ![testing](https://github.com/kalininalab/glyles/actions/workflows/test.yaml/badge.svg)
-![docs-image](https://readthedocs.org/projects/glyles/badge/?version=latest)
+[![docs-image](https://readthedocs.org/projects/glyles/badge/?version=latest)](https://datasail.readthedocs.io/en/latest/index.html)
 [![codecov](https://codecov.io/gh/kalininalab/DataSAIL/branch/main/graph/badge.svg)](https://codecov.io/gh/kalininalab/DataSAIL)
-![anaconda](https://anaconda.org/kalininalab/datasail/badges/version.svg)
-![update](https://anaconda.org/kalininalab/datasail/badges/latest_release_date.svg)
-![platforms](https://anaconda.org/kalininalab/datasail/badges/platforms.svg)
-![license](https://anaconda.org/kalininalab/datasail/badges/license.svg)
-![downloads](https://anaconda.org/kalininalab/datasail/badges/downloads.svg)
-![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)
+[![anaconda](https://anaconda.org/kalininalab/datasail/badges/version.svg)](https://anaconda.org/kalininalab/datasail)
+[![update](https://anaconda.org/kalininalab/datasail/badges/latest_release_date.svg)](https://anaconda.org/kalininalab/datasail)
+[![platforms](https://anaconda.org/kalininalab/datasail/badges/platforms.svg)](https://anaconda.org/kalininalab/datasail)
+[![license](https://anaconda.org/kalininalab/datasail/badges/license.svg)](https://anaconda.org/kalininalab/datasail)
+[![downloads](https://anaconda.org/kalininalab/datasail/badges/downloads.svg)](https://anaconda.org/kalininalab/datasail)
+[![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
 
 DataSAIL is a tool that splits data while minimizing the information leakage. This tool formulates the splitting of a 
 dataset as constrained minimization problem and computes the assignment of data points to splits while minimizing the 
@@ -16,7 +16,8 @@ objective function that accounts for information leakage.
 
 Internally, DataSAIL uses disciplined quasi-convex programming and binary quadratic programs to formulate the 
 optimization task. To solve this DataSAIL relies on [SCIP](https://scipopt.org/), one of the fastest non-commercial 
-solvers for this type of problems.
+solvers for this type of problems and [MOSEK](https://mosek.com), a commercial solver that distributes free licenses 
+for academic use.
 
 Apart from the here presented short overview, you can find a more detailed explanation of the tool on 
 [ReadTheDocs](https://datasail.readthedocs.io/en/latest/index.html). 
@@ -25,7 +26,8 @@ Apart from the here presented short overview, you can find a more detailed expla
 
 **This is currently not possible as DataSAIL is not uploaded to conda yet.**
 
-DataSAIL is installable from `conda` (`mamba` works equivalently) using
+DataSAIL is installable from `conda` (`mamba` works equivalently) ([Link](https://anaconda.org/kalininalab/datasail)) 
+using
 
 ````shell
 conda create -n sail -c conda-forge -c kalininalab -c mosek -c bioconda datasail
