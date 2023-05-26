@@ -9,6 +9,9 @@ sys.path.insert(0, os.path.abspath("./.."))
 
 import datasail
 
+with open("meta.yaml") as meta_file:
+    version = meta_file.readlines()[2].split("\"")[1]
+
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
@@ -33,7 +36,6 @@ author = "Roman Joeres"
 project = "DataSAIL"
 copyright = f"{datetime.datetime.now().year}, {author}"
 
-version = "0.0.1"  # list(open("../pyproject.toml", "r").readlines())[2].strip().split("\"")[1].split("\"")[0]
 release = version
 
 html_theme = "sphinx_rtd_theme"

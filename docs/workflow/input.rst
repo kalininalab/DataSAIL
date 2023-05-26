@@ -1,6 +1,6 @@
-============
+************
 Input format
-============
+************
 
 DataSAIL has been designed to split biochemical datasets. Therefore, it accepts three different biochemical input
 entities, namely proteins, molecules, and genomic input (either RNA, DNA, or whole genomes).

@@ -4,10 +4,12 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as desc_file:
     long_description = desc_file.read()
 
+with open("meta.yaml") as meta_file:
+    version = meta_file.readlines()[2].split("\"")[1]
 
 setup(
     name="DataSAIL",
-    version="0.0.1",
+    version=version,
     description="Data Splitting Against Information Leaking",
     long_description=long_description,
     long_description_content_type="text/markdown",

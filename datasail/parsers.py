@@ -86,7 +86,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "--techniques",
         type=str,
         required=True,
-        choices=["R", "ICS", "ICD", "CCS", "CCD", "ICSe", "ICSf", "CCSe", "CCSf"],
+        choices=["R", "ICSe", "ICSf", "ICD", "CCD", "CCSe", "CCSf"],
         nargs="+",
         dest="techniques",
         help="Select the mode to split the data. Choices: R: Random split, ICS: identity-based cold-single split, "
@@ -131,7 +131,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         default=False,
         action='store_true',
         dest="vectorized",
-        help="Flag indicating to run the program in scalar for instead of vectorized formulation [default]."
+        help="Flag indicating to run the program in scalar for instead of vectorized formulation."
     )
     split.add_argument(
         "--cache",
@@ -185,7 +185,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         dest="e_dist",
         default=None,
         help="Provide the name of a method to determine distance between samples of the first input dataset. This can "
-             f"be {', '.join('[' + x + ']' for x in SIM_ALGOS)}, or a filepath to a file storing the pairwise "
+             f"be {', '.join('[' + x + ']' for x in DIST_ALGOS)}, or a filepath to a file storing the pairwise "
              "distances in TSV."
     )
     e_ent.add_argument(
