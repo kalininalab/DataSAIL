@@ -9,6 +9,9 @@ DIST_ALGOS = [
     "mash",
 ]
 
+with open("meta.yaml") as meta_file:
+    version = meta_file.readlines()[2].split("\"")[1]
+
 
 def parse_datasail_args(args) -> Dict[str, object]:
     """
@@ -78,7 +81,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "-v",
         "--version",
         action='version',
-        version="%(prog)s 0.0.1"
+        version=f"%(prog)s {version}"
     )
     split = parser.add_argument_group("Splitting Arguments")
     split.add_argument(
