@@ -130,8 +130,8 @@ Details about the clustering algorithms
 CD-HIT
 ------
 
-CD-HIT is used to cluster protein sequences, for more information on CD-HIT, visit the `website <https://sites.google.com/view/cd-hit>`_,
-checkout the `GitHub repository <https://github.com/weizhongli/cdhit>`_, or read the `paper <https://doi.org/10.1093/bioinformatics/bts565>`_.
+CD-HIT is used to cluster protein sequences, for more information on CD-HIT, visit the `website <https://sites.google.com/view/cd-hit>`__,
+checkout the `GitHub repository <https://github.com/weizhongli/cdhit>`__, or read the `paper <https://doi.org/10.1093/bioinformatics/bts565>`__.
 
 CD-HIT has two parameters to adjust how fine or coarse the clustering will be. Those are :code:`-n` and :code:`-c`.
 Those are automatically adjusted and searched to find a good clustering to start splitting the data.
@@ -148,17 +148,17 @@ ECFP++
 ------
 
 ECFP++ is a short name for a 3-step process to detect clusters in a dataset of chemical molecules. The first step is to
-compute Scaffolds following `RDKits MakeScaffoldGeneric <https://rdkit.org/docs/source/rdkit.Chem.Scaffolds.MurckoScaffold.html#rdkit.Chem.Scaffolds.MurckoScaffold.MakeScaffoldGeneric>`_.
+compute Scaffolds following `RDKits MakeScaffoldGeneric <https://rdkit.org/docs/source/rdkit.Chem.Scaffolds.MurckoScaffold.html#rdkit.Chem.Scaffolds.MurckoScaffold.MakeScaffoldGeneric>`__.
 This way, molecules are simplified by replacing every heavy atom with carbon atoms and every bond with a single bond.
-The second step is to compute a 1024-bit `Morgan fingerprint <https://doi.org/10.1021/ci100050t>`_ with radius 2.
-Lastly, DataSAIL computes the similarity of these fingerprints as `Tanimoto-Similarities <https://en.wikipedia.org/wiki/Jaccard_index>`_
+The second step is to compute a 1024-bit `Morgan fingerprint <https://doi.org/10.1021/ci100050t>`__ with radius 2.
+Lastly, DataSAIL computes the similarity of these fingerprints as `Tanimoto-Similarities <https://en.wikipedia.org/wiki/Jaccard_index>`__
 of the bit-vectors.
 
 FoldSeek
 --------
 
-FoldSeek is used to cluster protein structures based on PDB input. For more information checkout the `GitHub repository <https://github.com/steineggerlab/foldseek>`_
-and the `paper <https://doi.org/10.1101/2022.02.07.479398>`_.
+FoldSeek is used to cluster protein structures based on PDB input. For more information checkout the `GitHub repository <https://github.com/steineggerlab/foldseek>`__
+and the `paper <https://doi.org/10.1101/2022.02.07.479398>`__.
 
 As FoldSeek produces a pairwise similarity matrix, it is not optimizes such as CD-HIT, but will be followed by some
 additional clustering.
@@ -174,7 +174,7 @@ MASH
 
 To cluster genomes in DataSAIL, the only option so far is MASH (CD-HIT-EST is to be included). Similar to FoldSeek it
 produces a pairwise distance matrix which is used in subsequent rounds of additional clustering. To get more
-information on MASH, read the `paper <https://doi.org/10.1186/s13059-016-0997-x>`_ and the `ReadTheDocs page <https://mash.readthedocs.io/en/latest/>`_.
+information on MASH, read the `paper <https://doi.org/10.1186/s13059-016-0997-x>`__ and the `ReadTheDocs page <https://mash.readthedocs.io/en/latest/>`__.
 
 DataSAIl calls MASH in two steps. First to compute the sketches and then to compute their distance
 
@@ -187,7 +187,7 @@ MMseqs2
 =======
 
 An alternative to CD-HIT to cluster protein sequences is MMseqs2. To get more information on the functionality of
-MMseqs2, checkout the `GitHub repository <https://github.com/soedinglab/MMseqs2>`_ and the `paper <https://doi.org/10.1038/nbt.3988>`_.
+MMseqs2, checkout the `GitHub repository <https://github.com/soedinglab/MMseqs2>`__ and the `paper <https://doi.org/10.1038/nbt.3988>`__.
 
 To interact with MMseqs2, DataSAIL calls it through commandline with
 
@@ -203,4 +203,4 @@ WL-Kernel
 
 The last method to compute similarities of graph-structured data such as PDB files is to use Weisfeiler-Lehman kernels.
 This method is not established and mostly experimental, therefore there is no literature to link, but you can have a
-look at `grakel <https://ysig.github.io/GraKeL/0.1a8/>`_, the Python package DataSAIL uses to apply WLKernel.
+look at `grakel <https://ysig.github.io/GraKeL/0.1a8/>`__, the Python package DataSAIL uses to apply WLKernel.

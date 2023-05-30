@@ -103,6 +103,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         help="Sizes of the individual splits the program shall produce.",
     )
     split.add_argument(
+        "-n",
         "--names",
         default=None,
         dest="names",
@@ -111,6 +112,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         help="Names of the splits in order of the -s argument. If left empty, splits will be called Split1, Split2, ..."
     )
     split.add_argument(
+        "-e",
         "--epsilon",
         default=0.05,
         type=float,
