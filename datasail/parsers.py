@@ -9,7 +9,7 @@ DIST_ALGOS = [
     "mash",
 ]
 
-with open("meta.yaml") as meta_file:
+with open("../meta.yaml") as meta_file:
     version = meta_file.readlines()[2].split("\"")[1]
 
 
