@@ -30,6 +30,7 @@ requirements:
     - pytest
     - setuptools
     - pyscipopt
+    - scikit-learn
     - foldseek
     - mmseqs2
     - cd-hit
