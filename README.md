@@ -32,12 +32,14 @@ using
 ````shell
 conda create -n sail -c conda-forge -c kalininalab -c mosek -c bioconda datasail
 conda activate sail
+pip install grakel
 ````
 
 to install it into a new empty environment or
 
 ````shell
 conda install -c conda-forge -c kalininalab -c mosek -c bioconda datasail
+pip install grakel
 ````
 
 to install DataSAIL in an already existing environment. Due to dependencies of the clustering algorithms, the latter 
@@ -53,6 +55,18 @@ sail --e-type P --e-data <path_to_fasta> --e-sim mmseqs --output <path_to_output
 
 to split a set of proteins that have been clustered using mmseqs. For a full list of arguments run `sail -h` and 
 checkout [ReadTheDocs](https://datasail.readthedocs.io/en/stable/index.html).
+
+## When to use DataSAIL and when not to use
+
+One can distinguish two main ways to train a machine learning model on biological data. 
+* Either the model shall be applied to data that is substantially different from the data to train on. In this case it 
+  is important to have test cases that model this real world application scenario properly by being as dissimilar as 
+  possible to the training data. 
+* Or the training dataset already covers the full space of possible samples shown to the model.
+
+DataSAIL is created to compute complex splits of the data by separating data based on similarities. This creates 
+complex data-splits for the first scenario. Therefore, use DataSAIL when your model is applied to data that is 
+different from your training data but not if the data in application is more or less the same as in the training.
 
 ## Splitting techniques
 

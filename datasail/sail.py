@@ -304,13 +304,14 @@ def datasail(
     return datasail_main(**kwargs)
 
 
-def sail(**kwargs) -> None:
+def sail(args) -> None:
     """
     Invocation routine of DataSAIL. Here, the arguments are validated and the main routine is invoked.
 
     Args:
-        **kwargs: Arguments to DataSAIL in kwargs-format.
+        args: Arguments to DataSAIL read from the commandline.
     """
+    kwargs = parse_datasail_args(args)
     kwargs["cli"] = True
     kwargs = validate_args(**kwargs)
     datasail_main(**kwargs)
@@ -320,4 +321,4 @@ if __name__ == '__main__':
     """
     Entry point for the CLI tool
     """
-    sail(**parse_datasail_args(sys.argv[1:]))
+    sail(sys.argv[1:])

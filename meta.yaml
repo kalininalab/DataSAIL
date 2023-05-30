@@ -8,7 +8,7 @@ source:
 
 build:
   entry_points:
-    - datasail = datasail.sail:datasail
+    - datasail = datasail.sail:sail
 
 requirements:
   host:
