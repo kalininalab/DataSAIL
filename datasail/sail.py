@@ -1,7 +1,7 @@
 import logging
 import os.path
 import sys
-from typing import Dict, List, Tuple, Callable
+from typing import Dict, List, Tuple, Callable, Iterable
 
 from datasail.parsers import parse_cdhit_args, parse_mash_args, parse_mmseqs_args, DIST_ALGOS, SIM_ALGOS, \
     parse_datasail_args
@@ -304,12 +304,13 @@ def datasail(
     return datasail_main(**kwargs)
 
 
-def sail() -> None:
+def sail(args=None, **kwargs) -> None:
     """
     Entry point for the CLI tool. Invocation routine of DataSAIL. Here, the arguments are validated and the main
     routine is invoked.
     """
-    kwargs = parse_datasail_args(sys.argv[1:])
+    if kwargs is None:
+        kwargs = parse_datasail_args(args or sys.argv[1:])
     kwargs["cli"] = True
     kwargs = validate_args(**kwargs)
     datasail_main(**kwargs)
