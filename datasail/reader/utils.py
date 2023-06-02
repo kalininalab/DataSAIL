@@ -45,7 +45,8 @@ class DataSet:
                 hv = hash(tuple(obj.items()))
             elif isinstance(obj, list):
                 hv = hash(tuple(obj))
-            # elif isinstance(obj, np.ndarray):
+            elif isinstance(obj, np.ndarray):
+                pass
             #     hv = hash(str(obj.data))
             else:
                 hv = hash(obj)
