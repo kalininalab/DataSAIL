@@ -46,8 +46,7 @@ class DataSet:
             elif isinstance(obj, list):
                 hv = hash(tuple(obj))
             elif isinstance(obj, np.ndarray):
-                pass
-            #     hv = hash(str(obj.data))
+                hv = 0  # hash(str(obj.data))
             else:
                 hv = hash(obj)
             hash_val ^= hv
@@ -72,7 +71,33 @@ class DataSet:
         Returns:
             Name of the dataset
         """
-        return ".".join(self.location.split(os.path.sep)[-1].split(".")[:-1]).replace("/", "_")
+        if os.path.isfile(self.location):
+            return ".".join(self.location.split("/")[-1].split(".")[:-1]).replace("/", "_")
+        elif os.path.isdir(self.location):
+            return ".".join(self.location.split("/")[-1].split(".")[:-1]).replace("/", "_")
+
+    def shuffle(self):
+        """
+        Shuffle this dataset randomly to introduce variance in the solution space.
+        """
+        permutation = np.random.permutation(len(self.names))
+        self.names = [self.names[x] for x in permutation]
+        if isinstance(self.similarity, np.ndarray):
+            self.similarity = self.similarity[permutation, :]
+            self.similarity = self.similarity[:, permutation]
+        if isinstance(self.distance, np.ndarray):
+            self.distance = self.distance[permutation, :]
+            self.distance = self.distance[:, permutation]
+
+        if self.cluster_names is not None:
+            cluster_permutation = np.random.permutation(len(self.cluster_names))
+            self.cluster_names = [self.cluster_names[x] for x in cluster_permutation]
+            if isinstance(self.cluster_similarity, np.ndarray):
+                self.cluster_similarity = self.cluster_similarity[cluster_permutation, :]
+                self.cluster_similarity = self.cluster_similarity[:, cluster_permutation]
+            if isinstance(self.cluster_distance, np.ndarray):
+                self.cluster_distance = self.cluster_distance[cluster_permutation, :]
+                self.cluster_distance = self.cluster_distance[:, cluster_permutation]
 
 
 def count_inter(inter: List[Tuple[str, str]], mode: int) -> Generator[Tuple[str, int], None, None]:
