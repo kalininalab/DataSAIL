@@ -31,7 +31,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
     Validate the arguments given to the program.
 
     Notes:
-        next error code: 25
+        next error code: 26
 
     Args:
         **kwargs: Arguments in kwargs-format
@@ -99,6 +99,10 @@ def validate_args(**kwargs) -> Dict[str, object]:
     # check the epsilon value
     if 1 < kwargs["epsilon"] < 0:
         error("The epsilon value has to be a real value between 0 and 1.", 6, kwargs["cli"])
+
+    # check number of runs to be a positive integer
+    if kwargs["runs"] < 1:
+        error("The number of runs cannot be lower than 1.", 25, kwargs["cli"])
 
     # check the input regarding the caching
     if kwargs["cache"] and not os.path.isdir(kwargs["cache_dir"]):
@@ -230,6 +234,7 @@ def datasail(
         splits: List[float] = None,
         names: List[str] = None,
         epsilon: float = 0.05,
+        runs: int = 1,
         solver: str = "MOSEK",
         vectorized: bool = True,
         cache: bool = False,
@@ -264,6 +269,7 @@ def datasail(
         splits: List of splits, have to add up to one, otherwise scaled accordingly.
         names: List of names of the splits.
         epsilon: Fraction by how much the provided split sizes may be exceeded
+        runs: Number of runs to perform per split. This may introduce some variance in the splits.
         solver: Solving algorithm to use.
         vectorized: Boolean flag indicating to use the vectorized formulation of the problems.
         cache: Boolean flag indicating to store or load results from cache.
@@ -295,7 +301,7 @@ def datasail(
         splits = [0.7, 0.2, 0.1]
     kwargs = validate_args(
         output=None, techniques=techniques, inter=inter, max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
-        splits=splits, names=names, epsilon=epsilon, solver=solver, vectorized=not vectorized, cache=cache,
+        splits=splits, names=names, epsilon=epsilon, runs=runs, solver=solver, vectorized=not vectorized, cache=cache,
         cache_dir=cache_dir, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=e_dist,
         e_args=e_args, e_max_sim=e_max_sim, e_max_dist=e_max_dist, f_type=f_type, f_data=f_data, f_weights=f_weights,
         f_sim=f_sim, f_dist=f_dist, f_args=f_args, f_max_sim=f_max_sim, f_max_dist=f_max_dist, threads=threads,
@@ -309,7 +315,7 @@ def sail(args=None, **kwargs) -> None:
     Entry point for the CLI tool. Invocation routine of DataSAIL. Here, the arguments are validated and the main
     routine is invoked.
     """
-    if kwargs is None:
+    if kwargs is None or len(kwargs) == 0:
         kwargs = parse_datasail_args(args or sys.argv[1:])
     kwargs["cli"] = True
     kwargs = validate_args(**kwargs)
@@ -318,3 +324,4 @@ def sail(args=None, **kwargs) -> None:
 
 if __name__ == '__main__':
     sail()
+

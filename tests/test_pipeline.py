@@ -42,6 +42,7 @@ def test_pipeline(data):
         splits=[0.67, 0.33] if mode in ["IC", "CC"] else [0.7, 0.3],
         names=["train", "test"],
         epsilon=0.25,
+        runs=1,
         e_type=None if drugs is None else "M",
         e_data=drugs,
         e_weights="data/pipeline/drug_weights.tsv" if drug_weights else None,
@@ -92,7 +93,6 @@ def test_report():
         f_data="data/perf_7_3/prot.fasta",
         f_sim="data/perf_7_3/prot_sim.tsv",
         solver="SCIP",
-        # log_dir="logs",
     )
 
     assert os.path.isfile("data/perf_7_3/out/lig_similarity.png")
@@ -152,6 +152,55 @@ def test_report():
 
 
 @pytest.mark.todo
+def test_report_repeat():
+    shutil.rmtree("data/perf_7_3/out", ignore_errors=True)
+
+    run_sail(
+        inter="data/perf_7_3/inter.tsv",
+        output="data/perf_7_3/out/",
+        max_sec=100,
+        techniques=["R", "ICSe", "ICSf", "ICD", "CCSe", "CCSf", "CCD"],
+        splits=[0.7, 0.3],
+        names=["train", "test"],
+        epsilon=0.25,
+        e_type="M",
+        e_data="data/perf_7_3/lig.tsv",
+        e_sim="data/perf_7_3/lig_sim.tsv",
+        f_type="P",
+        f_data="data/perf_7_3/prot.fasta",
+        f_sim="data/perf_7_3/prot_sim.tsv",
+        solver="SCIP",
+        runs=3,
+    )
+
+    assert os.path.isfile("data/perf_7_3/out/lig_similarity.png")
+    assert os.path.isfile("data/perf_7_3/out/prot_similarity.png")
+
+    for i in range(1, 4):
+
+        assert os.path.isdir(f"data/perf_7_3/out/R_{i}")
+        assert len(os.listdir(f"data/perf_7_3/out/R_{i}")) == 1
+
+        assert os.path.isdir(f"data/perf_7_3/out/ICSe_{i}")
+        assert len(os.listdir(f"data/perf_7_3/out/ICSe_{i}")) == 2
+
+        assert os.path.isdir(f"data/perf_7_3/out/ICSf_{i}")
+        assert len(os.listdir(f"data/perf_7_3/out/ICSf_{i}")) == 2
+
+        assert os.path.isdir(f"data/perf_7_3/out/ICD_{i}")
+        assert len(os.listdir(f"data/perf_7_3/out/ICD_{i}")) == 3
+
+        assert os.path.isdir(f"data/perf_7_3/out/CCSe_{i}")
+        assert len(os.listdir(f"data/perf_7_3/out/CCSe_{i}")) == 6
+
+        assert os.path.isdir(f"data/perf_7_3/out/CCSf_{i}")
+        assert len(os.listdir(f"data/perf_7_3/out/CCSf_{i}")) == 6
+
+        assert os.path.isdir(f"data/perf_7_3/out/CCD_{i}")
+        assert len(os.listdir(f"data/perf_7_3/out/CCD_{i}")) == 11
+
+
+@pytest.mark.todo
 def test_genomes():
     sail(
         inter=None,
@@ -164,6 +213,7 @@ def test_genomes():
         splits=[0.7, 0.3],
         names=["train", "test"],
         epsilon=0.25,
+        runs=1,
         e_type="M",
         e_data="data/perf_7_3/lig.tsv",
         e_weights=None,

@@ -41,6 +41,8 @@ def test_shuffling(size):
     for i in range(5):
         shuffle_dataset.shuffle()
         check_true_equality(original_dataset, shuffle_dataset)
+        assert original_dataset.names != shuffle_dataset.names
+        assert original_dataset.cluster_names != shuffle_dataset.cluster_names
 
 
 def check_true_equality(truth, shuffled):

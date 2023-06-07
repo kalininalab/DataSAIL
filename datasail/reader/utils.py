@@ -7,6 +7,7 @@ import numpy as np
 LIST_INPUT = Union[str, List[str], Callable[..., List[str]], Generator[str, None, None]]
 DATA_INPUT = Optional[Union[str, Dict[str, str], Callable[..., Dict[str, str]], Generator[Tuple[str, str], None, None]]]
 MATRIX_INPUT = Optional[Union[str, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
+DictMap = Dict[str, List[Dict[str, str]]]
 
 
 @dataclass

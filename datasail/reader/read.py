@@ -44,6 +44,11 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
     )
     f_dataset.args = kwargs["f_args"]
 
+    if f_dataset.type is None: 
+        inter = list(filter(lambda x: x[0] in e_dataset.names, inter))
+    else:
+        inter = list(filter(lambda x: x[0] in e_dataset.names and x[1] in f_dataset.names, inter))
+
     return e_dataset, f_dataset, inter, old_inter
 
 

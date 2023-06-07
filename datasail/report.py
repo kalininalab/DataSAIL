@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 
-from datasail.reader.utils import DataSet
+from datasail.reader.utils import DataSet, DictMap
 from datasail.settings import LOGGER
 
 
@@ -14,11 +14,12 @@ def report(
         techniques: Set[str],
         e_dataset: DataSet,
         f_dataset: DataSet,
-        e_name_split_map: Dict[str, Dict[str, str]],
-        f_name_split_map: Dict[str, Dict[str, str]],
-        e_cluster_split_map: Dict[str, Dict[str, str]],
-        f_cluster_split_map: Dict[str, Dict[str, str]],
-        inter_split_map: Dict[str, List[Tuple[str, str, str]]],
+        e_name_split_map: DictMap,
+        f_name_split_map: DictMap,
+        e_cluster_split_map: DictMap,
+        f_cluster_split_map: DictMap,
+        inter_split_map: Dict[str, List[List[Tuple[str, str, str]]]],
+        runs: int,
         output_dir: str,
         split_names: List[str],
 ) -> None:
@@ -35,6 +36,7 @@ def report(
         e_cluster_split_map: Mapping of splits to a mapping of names to cluster names for first dataset
         f_cluster_split_map: Mapping of splits to a mapping of names to cluster names for second dataset
         inter_split_map: Mapping of splits to a mapping of interactions to splits
+        runs:
         output_dir: Output directory where to store the results
         split_names: Names of the splits
     """
@@ -42,29 +44,47 @@ def report(
     os.makedirs(output_dir, exist_ok=True)
 
     for t in techniques:
-        technique, mode = t[:3], t[-1]
-        if mode.isupper():
-            mode = None
+        for run in range(runs):
+            technique, mode = t[:3], t[-1]
+            if mode.isupper():
+                mode = None
 
-        # create output directory for reports of this split
-        save_dir = os.path.join(output_dir, t)
-        os.makedirs(save_dir, exist_ok=True)
+            # create output directory for reports of this split
+            folder_name = t
+            if runs > 1:
+                folder_name += f"_{run + 1}"
+            save_dir = os.path.join(output_dir, folder_name)
+            os.makedirs(save_dir, exist_ok=True)
 
-        # save mapping of interactions for this split if applicable
-        if t in inter_split_map:
-            save_inter_assignment(save_dir, inter_split_map[t])
+            # save mapping of interactions for this split if applicable
+            if t in inter_split_map:
+                save_inter_assignment(save_dir, inter_split_map[t][run])
 
-        # Compile report for first dataset if applies for this split
-        if e_dataset.type is not None \
-                and ((mode is not None and mode != "f") or technique[-1] == "D") \
-                and technique in e_name_split_map:
-            individual_report(save_dir, e_dataset, e_name_split_map, e_cluster_split_map, technique, split_names)
+            # Compile report for first dataset if applies for this split
+            if e_dataset.type is not None \
+                    and ((mode is not None and mode != "f") or technique[-1] == "D") \
+                    and technique in e_name_split_map:
+                individual_report(
+                    save_dir,
+                    e_dataset,
+                    dict((t, e_name_split_map[t][run]) for t in e_name_split_map),
+                    dict((t, e_cluster_split_map[t][run]) for t in e_cluster_split_map),
+                    technique,
+                    split_names
+                )
 
-        # Compile report for second dataset if applies for this split
-        if f_dataset.type is not None \
-                and ((mode is not None and mode != "e") or technique[-1] == "D") \
-                and technique in f_name_split_map:
-            individual_report(save_dir, f_dataset, f_name_split_map, f_cluster_split_map, technique, split_names)
+            # Compile report for second dataset if applies for this split
+            if f_dataset.type is not None \
+                    and ((mode is not None and mode != "e") or technique[-1] == "D") \
+                    and technique in f_name_split_map:
+                individual_report(
+                    save_dir,
+                    f_dataset,
+                    dict((t, f_name_split_map[t][run]) for t in f_name_split_map),
+                    dict((t, f_cluster_split_map[t][run]) for t in f_cluster_split_map),
+                    technique,
+                    split_names
+                )
 
 
 def individual_report(

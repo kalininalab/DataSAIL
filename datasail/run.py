@@ -5,7 +5,7 @@ from datasail.cluster.clustering import cluster
 from datasail.reader.read import read_data, check_duplicates
 from datasail.report import report
 from datasail.settings import LOGGER
-from datasail.solver.solve import run_solver
+from datasail.solver.solve import run_solver, insert
 
 
 def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
@@ -44,6 +44,7 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
         f_dataset=f_dataset,
         inter=inter,
         epsilon=kwargs["epsilon"],
+        runs=kwargs["runs"],
         splits=kwargs["splits"],
         split_names=kwargs["names"],
         max_sec=kwargs["max_sec"],
@@ -57,34 +58,41 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     # infer interaction assignment from entity assignment if necessary and possible
     if old_inter is not None:
         for technique in kwargs["techniques"]:
-            t = technique[:3]
-            # How to deal with duplicates in ?CD-splits when interactions are already assigned in the splitting process
-            # TODO: Detect the duplicates in old_inter and assign them based on an id_map
-            if inter_split_map.get(technique, None) is None:
-                if e_name_split_map.get(t, None) is not None and technique not in inter_split_map:
-                    inter_split_map[technique] = [
-                        (e, f, e_name_split_map[t].get(e, "not selected")) for e, f in old_inter
-                    ]
-                if f_name_split_map.get(t, None) is not None and technique not in inter_split_map:
-                    inter_split_map[technique] = [
-                        (e, f, f_name_split_map[t].get(f, "not selected")) for e, f in old_inter
-                    ]
+            for run in range(kwargs["runs"]):
+                t = technique[:3]
+                # How to deal with duplicates in ?CD-splits when interactions are already assigned in the splitting process
+                # TODO: Detect the duplicates in old_inter and assign them based on an id_map
+                if len(inter_split_map.get(technique, [])) < kwargs["runs"]:
+                    if e_name_split_map.get(t, None) is not None:
+                        insert(
+                            inter_split_map,
+                            technique,
+                            [(e, f, e_name_split_map[t][run].get(e, "not selected")) for e, f in old_inter]
+                        )
+                    if f_name_split_map.get(t, None) is not None:
+                        insert(
+                            inter_split_map,
+                            technique,
+                            [(e, f, f_name_split_map[t][run].get(f, "not selected")) for e, f in old_inter],
+                        )
 
     LOGGER.info("BQP splitting finished and results stored.")
     LOGGER.info(f"Total runtime: {time.time() - start:.5f}s")
 
     if kwargs["output"] is not None:
         report(
-            kwargs["techniques"],
-            e_dataset,
-            f_dataset,
-            e_name_split_map,
-            f_name_split_map,
-            e_cluster_split_map,
-            f_cluster_split_map,
-            inter_split_map,
-            kwargs["output"],
-            kwargs["names"],
+            techniques=kwargs["techniques"],
+            e_dataset=e_dataset,
+            f_dataset=f_dataset,
+            e_name_split_map=e_name_split_map,
+            f_name_split_map=f_name_split_map,
+            e_cluster_split_map=e_cluster_split_map,
+            f_cluster_split_map=f_cluster_split_map,
+            inter_split_map=inter_split_map,
+            runs=kwargs["runs"],
+            output_dir=kwargs["output"],
+            split_names=kwargs["names"],
         )
     else:
         return e_name_split_map, f_name_split_map, inter_split_map
+

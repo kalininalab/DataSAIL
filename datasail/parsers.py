@@ -120,6 +120,14 @@ def parse_datasail_args(args) -> Dict[str, object]:
         help="Multiplicative factor by how much the limits of the splits can be exceeded.",
     )
     split.add_argument(
+        "-r",
+        "--runs",
+        default=1,
+        type=int,
+        dest="runs",
+        help="Specify a number of runs to perform per split. This may introduce some variance in the splits."
+    )
+    split.add_argument(
         "--solver",
         default="MOSEK",
         type=str,
@@ -272,6 +280,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         default=1.0,
         help="Maximal distance of two samples from the second dataset in the same split."
     )
+    print("Parsers\n", args)
     return vars(parser.parse_args(args))
 
 
