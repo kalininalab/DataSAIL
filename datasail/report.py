@@ -133,10 +133,15 @@ def save_inter_assignment(save_dir: str, inter_split_map: Optional[List[Tuple[st
     """
     if inter_split_map is None:
         return
+
+    split_counts = dict((n, 0) for n in ["train", "val", "test"])
     with open(os.path.join(save_dir, "inter.tsv"), "w") as output:
         print("E_IDs", "F_IDs", "Split", sep="\t", file=output)
         for e, f, s in inter_split_map:
             print(e, f, s, sep="\t", file=output)
+            split_counts[s] += 1
+
+    print(stats_string(sum(split_counts), split_counts))
 
 
 def save_assignment(save_dir: str, dataset: DataSet, name_split_map: Optional[Dict[str, str]]) -> None:
@@ -155,7 +160,8 @@ def save_assignment(save_dir: str, dataset: DataSet, name_split_map: Optional[Di
     ), "w") as output:
         print("ID", "Split", sep="\t", file=output)
         for name, rep in dataset.id_map.items():
-            print(name, name_split_map[rep], sep="\t", file=output)
+            # TODO: fix this! Example: TOCADD run config
+            print(name, name_split_map.get(rep, ""), sep="\t", file=output)
 
 
 def save_clusters(save_dir: str, dataset: DataSet) -> None:
@@ -173,7 +179,8 @@ def save_clusters(save_dir: str, dataset: DataSet) -> None:
     ), "w") as output:
         print("ID", "Cluster_ID", sep="\t", file=output)
         for name, rep in dataset.id_map.items():
-            print(name, dataset.cluster_map[rep], sep="\t", file=output)
+            # TODO: Fix this! Example: TOCADD run config
+            print(name, dataset.cluster_map.get(rep, ""), sep="\t", file=output)
 
 
 def save_t_sne(

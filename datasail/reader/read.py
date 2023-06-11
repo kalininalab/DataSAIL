@@ -43,16 +43,6 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
         kwargs["f_max_dist"], kwargs.get("f_id_map", None), inter, 1
     )
     f_dataset.args = kwargs["f_args"]
-    
-    if inter is not None:
-        if e_dataset.type is not None and f_dataset.type is not None:
-            inter = list(filter(lambda x: x[0] in e_dataset.names and x[1] in f_dataset.names, inter))
-        elif e_dataset.type is not None: 
-            inter = list(filter(lambda x: x[0] in e_dataset.names, inter))
-        elif f_dataset.type is not None:
-            inter = list(filter(lambda x: x[1] in f_dataset.names, inter))
-        else:
-            raise ValueError()
 
     return e_dataset, f_dataset, inter, old_inter
 

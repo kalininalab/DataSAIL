@@ -35,6 +35,16 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
         LOGGER.info("Cluster second set of entities.")
         f_dataset = cluster(f_dataset, **kwargs)
 
+    if inter is not None:
+        if e_dataset.type is not None and f_dataset.type is not None:
+            inter = list(filter(lambda x: x[0] in e_dataset.names and x[1] in f_dataset.names, inter))
+        elif e_dataset.type is not None:
+            inter = list(filter(lambda x: x[0] in e_dataset.names, inter))
+        elif f_dataset.type is not None:
+            inter = list(filter(lambda x: x[1] in f_dataset.names, inter))
+        else:
+            raise ValueError()
+
     LOGGER.info("Split data")
     # split the data into dictionaries mapping interactions, e-entities, and f-entities into the splits
     inter_split_map, e_name_split_map, f_name_split_map, e_cluster_split_map, f_cluster_split_map = run_solver(

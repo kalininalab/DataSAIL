@@ -19,6 +19,10 @@ def load_from_cache(dataset: DataSet, **kwargs) -> Optional[DataSet]:
     """
     if kwargs.get("cache", False):
         name = f"{hex(hash(dataset))[2:34]}.pkl"
+        # if dataset.type == "M":
+        #     name = "x6368c7e92f0ab1a3.pkl"
+        # elif dataset.type == "P":
+        #     name = "x4e3541057cf4bd3.pkl"
         cache_dir = kwargs.get("cache_dir", user_cache_dir("DataSAIL"))
         if os.path.isfile(os.path.join(cache_dir, name)):
             return pickle.load(open(os.path.join(cache_dir, name), "rb"))
