@@ -141,7 +141,7 @@ def save_inter_assignment(save_dir: str, inter_split_map: Optional[List[Tuple[st
             print(e, f, s, sep="\t", file=output)
             split_counts[s] += 1
 
-    print(stats_string(sum(split_counts), split_counts))
+    print(stats_string(sum(split_counts.values()), split_counts))
 
 
 def save_assignment(save_dir: str, dataset: DataSet, name_split_map: Optional[Dict[str, str]]) -> None:
