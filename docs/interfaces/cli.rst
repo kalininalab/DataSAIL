@@ -2,6 +2,8 @@
 Commandline Interface
 *********************
 
+.. _datasail-cli-label:
+
 Here, we discuss the arguments for the Commandline Interface in more detail. As they are more or less the same as for
 the package usage of DataSAIL, this is also an extended description of package.
 
@@ -81,6 +83,12 @@ The names of the splits in order of the -s argument. If left empty, splits will 
 ---------------
 A multiplicative factor by how much the limits (as defined in the -s / --splits argument defined) of the splits can be
 exceeded.
+
+-r / -\-runs
+------------
+The number of different to perform per technique. The idea is to compute several different splits of the dataset using
+the same technique to investigate the variance of the model on different data-splits. The variance in splits is
+introduced by shuffling the dataset everytime a new split is requested.
 
 -\-solver
 ---------
