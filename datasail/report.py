@@ -134,7 +134,7 @@ def save_inter_assignment(save_dir: str, inter_split_map: Optional[List[Tuple[st
     if inter_split_map is None:
         return
 
-    split_counts = dict((n, 0) for n in ["train", "val", "test"])
+    split_counts = dict((n, 0) for n in ["train", "val", "test", "not selected", ""])
     with open(os.path.join(save_dir, "inter.tsv"), "w") as output:
         print("E_IDs", "F_IDs", "Split", sep="\t", file=output)
         for e, f, s in inter_split_map:
