@@ -54,7 +54,7 @@ sail --e-type P --e-data <path_to_fasta> --e-sim mmseqs --output <path_to_output
 ````
 
 to split a set of proteins that have been clustered using mmseqs. For a full list of arguments run `sail -h` and 
-checkout [ReadTheDocs](https://datasail.readthedocs.io/en/stable/index.html).
+checkout [ReadTheDocs](https://datasail.readthedocs.io/en/latest/index.html).
 
 ## When to use DataSAIL and when not to use
 
