@@ -56,6 +56,9 @@ html_theme_options = {
     "logo_only": True,
     "navigation_depth": 2,
 }
+html_context = {}
+html_logo = "imgs/logo.jpg"
+html_show_sourcelink = True
 
 rst_context = {"DataSAIL": datasail}
 
