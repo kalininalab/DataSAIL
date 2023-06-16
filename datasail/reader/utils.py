@@ -81,6 +81,8 @@ class DataSet:
         """
         Shuffle this dataset randomly to introduce variance in the solution space.
         """
+        if self.type is None:
+            return
         permutation = np.random.permutation(len(self.names))
         self.names = [self.names[x] for x in permutation]
         if isinstance(self.similarity, np.ndarray):
