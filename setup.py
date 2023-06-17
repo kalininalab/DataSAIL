@@ -41,6 +41,7 @@ setup(
         "pytest-cases",
         "scikit-learn",
         "mosek",
+        "grakel",
     ],
 
     package_data={
