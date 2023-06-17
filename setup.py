@@ -34,7 +34,7 @@ setup(
         "matplotlib",
         "pytest",
         "setuptools",
-        "pyscipopt",
+        # "pyscipopt",
         "cvxpy",
         "pytest-cov",
         "rdkit",
