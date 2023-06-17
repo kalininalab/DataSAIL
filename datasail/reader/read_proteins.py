@@ -34,7 +34,7 @@ def read_protein_data(
     Returns:
         A dataset storing all information on that datatype
     """
-    dataset = DataSet(type="P")
+    dataset = DataSet(type="P", location="unknown")
     match data:
         case str():
             if data.split(".")[-1].lower() in {"fasta", "fa", "fna"}:

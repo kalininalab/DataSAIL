@@ -73,9 +73,10 @@ class DataSet:
             Name of the dataset
         """
         if os.path.isfile(self.location):
-            return ".".join(self.location.split("/")[-1].split(".")[:-1]).replace("/", "_")
+            return os.path.splitext(os.path.basename(self.location))[0]
         elif os.path.isdir(self.location):
-            return ".".join(self.location.split("/")[-1].split(".")[:-1]).replace("/", "_")
+            return os.path.split(self.location)[-1]
+        return self.location
 
     def shuffle(self):
         """

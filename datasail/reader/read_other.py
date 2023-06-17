@@ -34,7 +34,7 @@ def read_other_data(
     Returns:
         A dataset storing all information on that datatype
     """
-    dataset = DataSet(type="O", format="Other")
+    dataset = DataSet(type="O", location="unknown", format="Other")
     match data:
         case str():
             if os.path.exists(data):

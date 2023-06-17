@@ -34,7 +34,7 @@ def read_molecule_data(
     Returns:
         A dataset storing all information on that datatype
     """
-    dataset = DataSet(type="M", format="SMILES")
+    dataset = DataSet(type="M", format="SMILES", location="unknown")
     match data:
         case str():
             if data.lower().endswith(".tsv"):

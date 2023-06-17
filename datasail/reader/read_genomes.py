@@ -31,7 +31,7 @@ def read_genome_data(
     Returns:
         A dataset storing all information on that datatype
     """
-    dataset = DataSet(type="G", location=None, format="FASTA")
+    dataset = DataSet(type="G", location="unknown", format="FASTA")
     match data:
         case str():
             dataset.data = dict(read_folder(data))
