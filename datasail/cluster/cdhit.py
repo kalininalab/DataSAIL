@@ -31,6 +31,14 @@ def run_cdhit(
     """
     args = parse_cdhit_args(dataset.args)
     vals = (args["c"], args["n"])
+
+    if not os.path.exists(dataset.location):
+        with open(dataset.location + ".fasta" if dataset.location.endswith("unknown") else "", "w") as out:
+            for idx, seq in dataset.data.items():
+                print(">" + idx, file=out)
+                print(seq, file=out)
+        dataset.location = dataset.location + ".fasta" if dataset.location.endswith("unknown") else ""
+
     return cluster_param_binary_search(
         dataset,
         vals,

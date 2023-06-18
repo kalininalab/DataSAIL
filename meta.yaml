@@ -9,6 +9,7 @@ source:
 build:
   entry_points:
     - datasail = datasail.sail:sail
+  preserve_egg_dir: True
 
 requirements:
   host:

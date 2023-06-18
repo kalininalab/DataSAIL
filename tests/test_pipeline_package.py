@@ -95,6 +95,11 @@ def test_pipeline_inputs(
         inter=interactions, e_type=ligand_type, e_data=ligand_data, e_weights=ligand_weights, e_sim=ligand_sim,
         f_type=protein_type, f_data=protein_data, f_weights=protein_weights, f_sim=protein_sim,
     )
+    if e_dataset.type is not None:
+        e_dataset = cluster(e_dataset, threads=1, logdir="")
+    if f_dataset.type is not None:
+        f_dataset = cluster(f_dataset, threads=1, logdir="")
+
     parts = combo.split("|")
     if parts[0] == "e":
         reference = reference_dataset(parts[1])

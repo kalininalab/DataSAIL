@@ -1,5 +1,6 @@
 import pytest
 
+from datasail.cluster.clustering import cluster
 from datasail.reader.utils import read_csv
 
 from datasail.reader.read_molecules import read_molecule_data
@@ -21,27 +22,43 @@ def sabdab_inter_generator():
 
 @pytest.fixture
 def sabdab_ag_dataset():
-    return read_protein_data("data/rw_data/sabdab_full/ag.fasta", None, None, None, 1, 1, None, list(read_csv("data/rw_data/sabdab_full/interactions.tsv")), 0)[0]
+    return cluster(
+        read_protein_data("data/rw_data/sabdab_full/ag.fasta", None, None, None, 1, 1, None, list(read_csv("data/rw_data/sabdab_full/interactions.tsv")), 0)[0],
+        threads=1,
+        logdir="",
+    )
 
 
 @pytest.fixture
 def sabdab_vh_dataset():
-    return read_protein_data("data/rw_data/sabdab_full/vh.fasta", None, None, None, 1, 1, None, list(read_csv("data/rw_data/sabdab_full/interactions.tsv")), 1)[0]
+    return cluster(
+        read_protein_data("data/rw_data/sabdab_full/vh.fasta", None, None, None, 1, 1, None, list(read_csv("data/rw_data/sabdab_full/interactions.tsv")), 1)[0],
+        threads=1,
+        logdir="",
+    )
 
 
 @pytest.fixture
 def mave_dataset():
-    return read_protein_data(
-        "data/rw_data/mave/mave_db_gold_standard_only_sequences.fasta",
-        "data/rw_data/mave/mave_db_gold_standard_weights.tsv", None, None, 1, 1, None, None, None
-    )[0]
+    return cluster(
+        read_protein_data(
+            "data/rw_data/mave/mave_db_gold_standard_only_sequences.fasta",
+            "data/rw_data/mave/mave_db_gold_standard_weights.tsv", None, None, 1, 1, None, None, None
+        )[0],
+        threads=1,
+        logdir="",
+    )
 
 
 @pytest.fixture
 def mibig_dataset():
-    return read_molecule_data(
-        "data/rw_data/mibig/compounds.tsv", None, None, None, 1, 1, None, None, None
-    )[0]
+    return cluster(
+        read_molecule_data(
+            "data/rw_data/mibig/compounds.tsv", None, None, None, 1, 1, None, None, None
+        )[0],
+        threads=1,
+        logdir="",
+    )
 
 
 def mibig_dict():

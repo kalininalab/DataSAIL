@@ -28,6 +28,14 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[
     args = parse_mmseqs_args(dataset.args)
     vals = (args["seq_id"],)
     LOGGER.info("Starting MMseqs clustering")
+
+    if not os.path.exists(dataset.location):
+        with open(dataset.location + ".fasta" if dataset.location.endswith("unknown") else "", "w") as out:
+            for idx, seq in dataset.data.items():
+                print(">" + idx, file=out)
+                print(seq, file=out)
+        dataset.location = dataset.location + ".fasta" if dataset.location.endswith("unknown") else ""
+
     return cluster_param_binary_search(
         dataset,
         vals,
