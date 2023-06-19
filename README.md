@@ -24,9 +24,8 @@ Apart from the here presented short overview, you can find a more detailed expla
 
 ## Installation
 
-**This is currently not possible as DataSAIL is not uploaded to conda yet.**
-
-DataSAIL is installable from `conda` (`mamba` works equivalently) ([Link](https://anaconda.org/kalininalab/datasail)) 
+DataSAIL is installable from [conda](https://anaconda.org/kalininalab/datasail) using
+[mamba](https://mamba.readthedocs.io/en/latest/installation.html#existing-conda-install>).
 using
 
 ````shell

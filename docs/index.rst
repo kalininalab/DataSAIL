@@ -4,7 +4,8 @@ DataSAIL
 
 The code for Data Splitting Against Information Leakage, short DataSAIL, is available on
 `GitHub <https://github.com/kalininalab/datasail>`_ and can be installed from
-`conda <https://anaconda.org/kalininalab/datasail>`_ using :code:`mamba`.
+`conda <https://anaconda.org/kalininalab/datasail>`_ using
+`mamba <https://mamba.readthedocs.io/en/latest/installation.html#existing-conda-install>`_.
 
 Quick Start
 ===========

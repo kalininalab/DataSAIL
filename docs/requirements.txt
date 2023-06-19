@@ -1,1 +1,14 @@
 sphinx-rtd-theme==1.0.0
+numpy
+pandas
+networkx
+matplotlib
+pytest
+setuptools
+cvxpy
+pytest-cov
+rdkit
+pytest-cases
+scikit-learn
+mosek
+grakel
