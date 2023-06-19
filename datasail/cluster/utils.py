@@ -29,8 +29,8 @@ def cluster_param_binary_search(
         Returns:
             Path to the file to write the execution log to
         """
-        return os.path.join(
-            log_dir, f"{dataset.get_name()}_{trial.__name__[:-6]}_{args2str(x).replace('-', '').replace(' ', '_')}.log"
+        return None if log_dir is None else os.path.join(
+            f"{dataset.get_name()}_{trial.__name__[:-6]}_{args2str(x).replace('-', '').replace(' ', '_')}.log"
         )
 
     # cluster with the initial arguments
