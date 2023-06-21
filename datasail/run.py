@@ -104,5 +104,20 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
             split_names=kwargs["names"],
         )
     else:
-        return e_name_split_map, f_name_split_map, inter_split_map
+        full_e_name_split_map = fill_split_maps(e_dataset, e_name_split_map)
+        full_f_name_split_map = fill_split_maps(f_dataset, f_name_split_map)
+        return full_e_name_split_map, full_f_name_split_map, inter_split_map
 
+
+def fill_split_maps(dataset, name_split_map):
+    if dataset.type is not None:
+        full_name_split_map = dict()
+        for technique, runs in name_split_map.items():
+            full_name_split_map[technique] = []
+            for r, run in enumerate(runs):
+                full_name_split_map[technique].append(dict())
+                for name, rep in dataset.id_map.items():
+                    full_name_split_map[technique][-1][name] = name_split_map[technique][r][rep]
+        return full_name_split_map
+    else:
+        return None

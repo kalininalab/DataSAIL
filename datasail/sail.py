@@ -232,7 +232,7 @@ def datasail(
         names: List[str] = None,
         epsilon: float = 0.05,
         runs: int = 1,
-        solver: str = "MOSEK",
+        solver: str = "SCIP",
         vectorized: bool = True,
         cache: bool = False,
         cache_dir: str = None,
