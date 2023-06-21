@@ -1,6 +1,6 @@
 package:
   name: "datasail"
-  version: "0.0.13"
+  version: "0.0.14"
 
 source:
   git_url: https://github.com/kalininalab/DataSAIL.git
