@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from datasail.cluster.cdhit import run_cdhit
-from datasail.cluster.clustering import additional_clustering
+from datasail.cluster.clustering import stable_additional_clustering
 from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
@@ -55,7 +55,7 @@ def test_additional_clustering():
     d_dataset.cluster_similarity = None
     d_dataset.cluster_distance = distance
 
-    s_dataset = additional_clustering(s_dataset)
+    s_dataset = stable_additional_clustering(s_dataset)
     assert len(s_dataset.cluster_names) < 10
     assert set(s_dataset.cluster_names) == set(s_dataset.cluster_map.values())
     assert set(s_dataset.cluster_names) == set(s_dataset.cluster_weights.keys())
@@ -68,7 +68,7 @@ def test_additional_clustering():
     assert s_dataset.cluster_distance is None
     assert [s_dataset.cluster_weights[i] for i in s_dataset.cluster_names] == [18, 12, 6, 12, 4]
 
-    d_dataset = additional_clustering(d_dataset)
+    d_dataset = stable_additional_clustering(d_dataset)
     assert len(d_dataset.cluster_names) < 10
     assert set(d_dataset.cluster_names) == set(d_dataset.cluster_map.values())
     assert set(d_dataset.cluster_names) == set(d_dataset.cluster_weights.keys())

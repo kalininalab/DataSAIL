@@ -1,3 +1,4 @@
+import copy
 import os
 from typing import Dict, Tuple, List, Union, Optional
 
@@ -57,7 +58,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         num_old_cluster = len(dataset.cluster_names) + 1
         while 100 < len(dataset.cluster_names) < num_old_cluster:
             num_old_cluster = len(dataset.cluster_names)
-            dataset = additional_clustering(dataset)
+            dataset = stable_additional_clustering(dataset)
 
         if isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
             whatever(dataset.names, dataset.cluster_map, dataset.distance, dataset.similarity)
@@ -154,10 +155,10 @@ def distance_clustering(
     return cluster_names, cluster_map, cluster_dist, cluster_weights
 
 
-def additional_clustering(dataset: DataSet) -> DataSet:
+def stable_additional_clustering(dataset: DataSet) -> DataSet:
     """
-    Perform additional cluster based on a distance or similarity matrix. This is done to reduce the number of
-    clusters and to speed up the further splitting steps.
+    Wrapper method around additional clustering to stabilize results. This is only necessary for Affinity Propagation
+    as this might not converge.
 
     Args:
         dataset: DataSet to perform additional clustering on
@@ -165,12 +166,42 @@ def additional_clustering(dataset: DataSet) -> DataSet:
     Returns:
         The dataset with updated clusters
     """
+    # make a deep copy of the data as we might need to cluster this dataset multiple times as it is modified in add_c.
+    ds = copy.deepcopy(dataset)
+
+    # define lower, current, and upper value for damping value
+    min_d, curr_d, max_d = 0.5, 0.5, 0.95
+    tmp, conv = additional_clustering(ds, damping=min_d)
+    if conv:
+        return tmp
+
+    # increase damping factor until the algorithm converges
+    while not conv:
+        curr_d = (min_d + max_d) / 2
+        min_d = curr_d
+        tmp, conv = additional_clustering(ds, damping=curr_d)
+    return tmp
+
+
+def additional_clustering(dataset: DataSet, damping: float = 0.5, max_iter: int = 1000) -> Tuple[DataSet, bool]:
+    """
+    Perform additional cluster based on a distance or similarity matrix. This is done to reduce the number of
+    clusters and to speed up the further splitting steps.
+
+    Args:
+        dataset: DataSet to perform additional clustering on
+        damping: damping factor for affinity propagation
+        max_iter: maximal number of iterations for affinity propagation
+
+    Returns:
+        The dataset with updated clusters and a bool flag indicating convergence of the used clustering algorithm
+    """
     LOGGER.info(f"Cluster {len(dataset.cluster_names)} items based on "
                 f"{'similarities' if dataset.cluster_similarity is not None else 'distances'}")
     # set up the cluster algorithm for similarity or distance based cluster w/o specifying the number of clusters
     if dataset.cluster_similarity is not None:
         cluster_matrix = np.array(dataset.cluster_similarity, dtype=float)
-        ca = AffinityPropagation(affinity='precomputed', random_state=42, verbose=True)
+        ca = AffinityPropagation(affinity='precomputed', random_state=42, verbose=True, damping=damping, max_iter=max_iter)
     else:
         cluster_matrix = np.array(dataset.cluster_distance, dtype=float)
         ca = AgglomerativeClustering(
@@ -185,9 +216,11 @@ def additional_clustering(dataset: DataSet) -> DataSet:
             f"Clustering based on distances. "
             f"Distances above {np.average(dataset.cluster_distance) * 0.9} cannot end up in same cluster."
         )
+        kwargs = {}
 
     # cluster the clusters into new, fewer, and bigger clusters
     labels = ca.fit_predict(cluster_matrix)
+    converged = not hasattr(ca, "n_iter_") or ca.n_iter_ < max_iter
 
     # extract the names of the new clusters and compute a mapping from the element names to the clusters
     old_cluster_map = dict((y, x) for x, y in enumerate(dataset.cluster_names))
@@ -227,7 +260,7 @@ def additional_clustering(dataset: DataSet) -> DataSet:
     else:
         dataset.cluster_distance = np.minimum(new_cluster_matrix, 1 - np.eye(len(new_cluster_matrix)))
 
-    return dataset
+    return dataset, converged
 
 
 def cluster_interactions(

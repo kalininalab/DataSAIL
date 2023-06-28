@@ -120,4 +120,4 @@ def fill_split_maps(dataset, name_split_map):
                     full_name_split_map[technique][-1][name] = name_split_map[technique][r][rep]
         return full_name_split_map
     else:
-        return None
+        return {}
