@@ -115,27 +115,18 @@ def validate_args(**kwargs) -> Dict[str, object]:
     if kwargs["e_weights"] is not None and isinstance(kwargs["e_weights"], str) and \
             not os.path.isfile(kwargs["e_weights"]):
         error("The filepath to the weights of the E-data is invalid.", 8, kwargs["cli"])
-    if kwargs["e_sim"] is not None and not isinstance(kwargs["e_sim"], Callable) \
-            and kwargs["e_sim"].lower() not in SIM_ALGOS and not os.path.isfile(kwargs["e_sim"]):
-        error(
-            f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", 9,
-            kwargs["cli"]
-        )
-    if kwargs["e_dist"] is not None and not isinstance(kwargs["e_dist"], Callable) \
-            and kwargs["e_dist"].lower() not in DIST_ALGOS and not os.path.isfile(
-            kwargs["e_dist"]):
-        error(
-            f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10,
-            kwargs["cli"]
-        )
-    if kwargs["e_sim"] is not None and not isinstance(kwargs["e_sim"], Callable) and kwargs["e_sim"].lower() == "cdhit":
-        validate_cdhit_args(kwargs["e_args"], kwargs["cli"])
-    if kwargs["e_sim"] is not None and not isinstance(kwargs["e_sim"], Callable) \
-            and kwargs["e_sim"].lower() == "mmseqs":
-        validate_mmseqs_args(kwargs["e_args"], kwargs["cli"])
-    if kwargs["e_dist"] is not None and not isinstance(kwargs["e_dist"], Callable) \
-            and kwargs["e_dist"].lower() == "mash":
-        validate_mash_args(kwargs["e_args"], kwargs["cli"])
+    if kwargs["e_sim"] is not None and isinstance(kwargs["e_sim"], str):
+        if kwargs["e_sim"].lower() not in SIM_ALGOS and not os.path.isfile(kwargs["e_sim"]):
+            error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", 9, kwargs["cli"])
+        elif kwargs["e_sim"].lower() == "cdhit":
+            validate_cdhit_args(kwargs["e_args"], kwargs["cli"])
+        elif kwargs["e_sim"].lower() == "mmseqs":
+            validate_mmseqs_args(kwargs["e_args"], kwargs["cli"])
+    if kwargs["e_dist"] is not None and isinstance(kwargs["e_dist"], str):
+        if kwargs["e_dist"].lower() not in DIST_ALGOS and not os.path.isfile(kwargs["e_dist"]):
+            error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10, kwargs["cli"])
+        elif kwargs["e_dist"].lower() == "mash":
+            validate_mash_args(kwargs["e_args"], kwargs["cli"])
     if 1 < kwargs["e_max_sim"] < 0:
         error("The maximal similarity value for the E-data has to be a real value in [0,1].", 11, kwargs["cli"])
     if 1 < kwargs["e_max_dist"] < 0:
@@ -144,28 +135,20 @@ def validate_args(**kwargs) -> Dict[str, object]:
     # syntactically parse the input data for the F-dataset
     if kwargs["f_data"] is not None and isinstance(kwargs["f_data"], str) and not os.path.exists(kwargs["f_data"]):
         error("The filepath to the F-data is invalid.", 13, kwargs["cli"])
-    if kwargs["f_weights"] is not None and isinstance(kwargs["e_sim"], str) and not os.path.isfile(kwargs["f_weights"]):
+    if kwargs["f_weights"] is not None and isinstance(kwargs["f_weights"], str) and not os.path.isfile(kwargs["f_weights"]):
         error("The filepath to the weights of the F-data is invalid.", 14, kwargs["cli"])
-    if kwargs["f_sim"] is not None and not isinstance(kwargs["e_sim"], Callable) \
-            and kwargs["f_sim"].lower() not in SIM_ALGOS and not os.path.isfile(kwargs["f_sim"]):
-        error(
-            f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", 15,
-            kwargs["cli"]
-        )
-    if kwargs["f_dist"] is not None and not isinstance(kwargs["e_sim"], Callable) \
-            and kwargs["f_dist"].lower() not in DIST_ALGOS and not os.path.isfile(
-            kwargs["f_dist"]):
-        error(
-            f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16,
-            kwargs["cli"]
-        )
-    if kwargs["f_sim"] is not None and not isinstance(kwargs["e_sim"], Callable) and kwargs["f_sim"] == "CDHIT":
-        validate_cdhit_args(kwargs["f_args"], kwargs["cli"])
-    if kwargs["f_sim"] is not None and not isinstance(kwargs["e_sim"], Callable) \
-            and kwargs["f_sim"].lower() == "mmseqs":
-        validate_mmseqs_args(kwargs["e_args"], kwargs["cli"])
-    if kwargs["f_dist"] is not None and not isinstance(kwargs["e_sim"], Callable) and kwargs["f_dist"] == "MASH":
-        validate_mash_args(kwargs["f_args"], kwargs["cli"])
+    if kwargs["f_sim"] is not None and isinstance(kwargs["f_sim"], str):
+        if kwargs["f_sim"].lower() not in SIM_ALGOS and not os.path.isfile(kwargs["f_sim"]):
+            error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", 15, kwargs["cli"])
+        elif kwargs["f_sim"].lower() == "cdhit":
+            validate_cdhit_args(kwargs["f_args"], kwargs["cli"])
+        elif kwargs["f_sim"].lower() == "mmseqs":
+            validate_mmseqs_args(kwargs["f_args"], kwargs["cli"])
+    if kwargs["f_dist"] is not None and isinstance(kwargs["f_dist"], str):
+        if kwargs["f_dist"].lower() not in DIST_ALGOS and not os.path.isfile(kwargs["f_dist"]):
+            error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16, kwargs["cli"])
+        elif kwargs["f_dist"].lower() == "mash":
+            validate_mash_args(kwargs["f_args"], kwargs["cli"])
     if 1 < kwargs["f_max_sim"] < 0:
         error("The maximal similarity value for the F-data has to be a real value in [0,1].", 17, kwargs["cli"])
     if 1 < kwargs["f_max_dist"] < 0:

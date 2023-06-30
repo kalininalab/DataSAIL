@@ -177,7 +177,7 @@ def read_matrix_input(
         to compute the fore-mentioned, and the threshold to apply when splitting
     """
     match in_data:
-        case str():
+        case x if isinstance(x, str):
             if os.path.isfile(in_data):
                 names, similarity = read_clustering_file(in_data)
                 threshold = max_val
@@ -185,7 +185,7 @@ def read_matrix_input(
                 names = default_names
                 similarity = in_data
                 threshold = max_val
-        case Tuple():
+        case x if isinstance(x, tuple):
             names, similarity = in_data
             threshold = max_val
         case x if isinstance(x, Callable):
@@ -246,11 +246,11 @@ def read_data(
         dataset.names = list(dataset.data.keys())
         dataset.threshold = 1
     elif sim is not None:
-        dataset.names, dataset.similarity, dataset.threshold = read_matrix_input(sim, max_sim,
-                                                                                 list(dataset.data.keys()))
+        dataset.names, dataset.similarity, dataset.threshold = \
+            read_matrix_input(sim, max_sim, list(dataset.data.keys()))
     elif dist is not None:
-        dataset.names, dataset.distance, dataset.threshold = read_matrix_input(dist, max_dist,
-                                                                               list(dataset.data.keys()))
+        dataset.names, dataset.distance, dataset.threshold = \
+            read_matrix_input(dist, max_dist, list(dataset.data.keys()))
     else:
         if sim is not None:
             dataset.similarity = sim

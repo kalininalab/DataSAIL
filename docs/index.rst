@@ -75,3 +75,4 @@ Welcome to the documentation of DataSAIL!
     :caption: Examples
 
     examples/qm9
+    examples/hiv

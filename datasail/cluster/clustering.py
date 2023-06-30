@@ -157,8 +157,8 @@ def distance_clustering(
 
 def stable_additional_clustering(dataset: DataSet) -> DataSet:
     """
-    Wrapper method around additional clustering to stabilize results. This is only necessary for Affinity Propagation
-    as this might not converge.
+    Wrapper method around additional clustering to stabilize results. This is necessary for Affinity Propagation
+    as this might not converge and for agglomerative clustering as it might lead to too few clusters.
 
     Args:
         dataset: DataSet to perform additional clustering on
@@ -169,21 +169,40 @@ def stable_additional_clustering(dataset: DataSet) -> DataSet:
     # make a deep copy of the data as we might need to cluster this dataset multiple times as it is modified in add_c.
     ds = copy.deepcopy(dataset)
 
-    # define lower, current, and upper value for damping value
-    min_d, curr_d, max_d = 0.5, 0.5, 0.95
-    tmp, conv = additional_clustering(ds, damping=min_d)
-    if conv:
-        return tmp
+    if dataset.cluster_similarity is not None:  # stabilize affinity propagation
+        # define lower, current, and upper value for damping value
+        min_d, curr_d, max_d = 0.5, 0.5, 0.95
+        ds, conv = additional_clustering(ds, damping=min_d)
+        if conv:
+            return ds
 
-    # increase damping factor until the algorithm converges
-    while not conv:
-        curr_d = (min_d + max_d) / 2
-        min_d = curr_d
-        tmp, conv = additional_clustering(ds, damping=curr_d)
-    return tmp
+        # increase damping factor until the algorithm converges
+        while not conv:
+            curr_d = (min_d + max_d) / 2
+            min_d = curr_d
+            ds = copy.deepcopy(dataset)
+            ds, conv = additional_clustering(ds, damping=curr_d)
+        return ds
+    else:
+        min_f, curr_f, max_f = 0, 0.9, 1
+        ds, _ = additional_clustering(ds, dist_factor=curr_f)
+        while len(ds.cluster_names) < 10 or 100 < len(ds.cluster_names):
+            if len(ds.cluster_names) < 10:
+                max_f = curr_f
+            else:
+                min_f = curr_f
+            curr_f = (min_f + max_f) / 2
+            ds = copy.deepcopy(dataset)
+            ds, _ = additional_clustering(ds, dist_factor=min_f)
+        return ds
 
 
-def additional_clustering(dataset: DataSet, damping: float = 0.5, max_iter: int = 1000) -> Tuple[DataSet, bool]:
+def additional_clustering(
+        dataset: DataSet,
+        damping: float = 0.5,
+        max_iter: int = 1000,
+        dist_factor: float = 0.9
+) -> Tuple[DataSet, bool]:
     """
     Perform additional cluster based on a distance or similarity matrix. This is done to reduce the number of
     clusters and to speed up the further splitting steps.
@@ -192,6 +211,7 @@ def additional_clustering(dataset: DataSet, damping: float = 0.5, max_iter: int 
         dataset: DataSet to perform additional clustering on
         damping: damping factor for affinity propagation
         max_iter: maximal number of iterations for affinity propagation
+        dist_factor: factor to multiply the average distance with in agglomerate clustering
 
     Returns:
         The dataset with updated clusters and a bool flag indicating convergence of the used clustering algorithm
@@ -208,7 +228,7 @@ def additional_clustering(dataset: DataSet, damping: float = 0.5, max_iter: int 
             n_clusters=None,
             metric='precomputed',
             linkage='average',
-            distance_threshold=np.average(dataset.cluster_distance) * 0.9,
+            distance_threshold=np.average(dataset.cluster_distance) * dist_factor,
             # verbose=True,
             # connectivity=np.asarray(cluster_matrix < np.average(cluster_distance) * 0.9, dtype=int),
         )
