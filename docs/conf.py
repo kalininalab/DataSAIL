@@ -21,8 +21,8 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
-    # "nbsphinx",
-    # "nbsphinx_link",
+    "nbsphinx",
+    "nbsphinx_link",
 ]
 
 autosummary_generate = True

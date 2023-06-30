@@ -7,8 +7,10 @@ tests/data/split_icd/
 tests/data/split_icp/
 tests/data/split_r/
 tests/data/pipeline/out/
-sample_data
+.ipynb_checkpoints/
 kinodata/
+sample_data/
+notebooks/tmp/
 issue_*
 main.py
 datasail/cluster/wlk_olga.py

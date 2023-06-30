@@ -68,3 +68,10 @@ Welcome to the documentation of DataSAIL!
 
     interfaces/cli
     interfaces/package
+
+.. toctree::
+    :glob:
+    :maxdepth: 1
+    :caption: Examples
+
+    examples/qm9
