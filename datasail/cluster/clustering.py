@@ -155,13 +155,14 @@ def distance_clustering(
     return cluster_names, cluster_map, cluster_dist, cluster_weights
 
 
-def stable_additional_clustering(dataset: DataSet) -> DataSet:
+def stable_additional_clustering(dataset: DataSet, min_num_clusters: int = 10) -> DataSet:
     """
     Wrapper method around additional clustering to stabilize results. This is necessary for Affinity Propagation
     as this might not converge and for agglomerative clustering as it might lead to too few clusters.
 
     Args:
         dataset: DataSet to perform additional clustering on
+        min_num_clusters: minimal number of clusters
 
     Returns:
         The dataset with updated clusters
@@ -186,8 +187,8 @@ def stable_additional_clustering(dataset: DataSet) -> DataSet:
     else:
         min_f, curr_f, max_f = 0, 0.9, 1
         ds, _ = additional_clustering(ds, dist_factor=curr_f)
-        while len(ds.cluster_names) < 10 or 100 < len(ds.cluster_names):
-            if len(ds.cluster_names) < 10:
+        while len(ds.cluster_names) < min_num_clusters or 100 < len(ds.cluster_names):
+            if len(ds.cluster_names) < min_num_clusters:
                 max_f = curr_f
             else:
                 min_f = curr_f

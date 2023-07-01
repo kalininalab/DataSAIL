@@ -55,7 +55,7 @@ def test_additional_clustering():
     d_dataset.cluster_similarity = None
     d_dataset.cluster_distance = distance
 
-    s_dataset = stable_additional_clustering(s_dataset)
+    s_dataset = stable_additional_clustering(s_dataset, min_num_clusters=0)
     assert len(s_dataset.cluster_names) < 10
     assert set(s_dataset.cluster_names) == set(s_dataset.cluster_map.values())
     assert set(s_dataset.cluster_names) == set(s_dataset.cluster_weights.keys())
@@ -68,7 +68,7 @@ def test_additional_clustering():
     assert s_dataset.cluster_distance is None
     assert [s_dataset.cluster_weights[i] for i in s_dataset.cluster_names] == [18, 12, 6, 12, 4]
 
-    d_dataset = stable_additional_clustering(d_dataset)
+    d_dataset = stable_additional_clustering(d_dataset, min_num_clusters=0)
     assert len(d_dataset.cluster_names) < 10
     assert set(d_dataset.cluster_names) == set(d_dataset.cluster_map.values())
     assert set(d_dataset.cluster_names) == set(d_dataset.cluster_weights.keys())
