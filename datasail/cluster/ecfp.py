@@ -45,6 +45,7 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     for invalid_name in invalid_mols:
         dataset.names.remove(invalid_name)
         dataset.data.pop(invalid_name)
+        dataset.id_map.pop(invalid_name)
 
     fps = []
     cluster_names = list(set(Chem.MolToSmiles(s) for s in list(scaffolds.values())))
