@@ -11,7 +11,15 @@ tests/data/pipeline/out/
 kinodata/
 sample_data/
 notebooks/tmp/
+tests/test_cache/
 issue_*
 main.py
 datasail/cluster/wlk_olga.py
 datasail/cluster/ecfp_amay.py
+experiments/
+tmp/
+log*.txt
+
+MoleculeNet.py
+run_moleculenet.sh
+viz_molnet.py
