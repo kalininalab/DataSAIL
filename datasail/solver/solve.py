@@ -48,7 +48,7 @@ def run_solver(
         max_sol: int,
         solver: str,
         log_dir: str,
-) -> Tuple[Dict[str, List[List[Tuple[str, str, str]]]], DictMap, DictMap, DictMap, DictMap]:
+) -> Tuple[Dict[str, List[Dict[Tuple[str, str], str]]], DictMap, DictMap, DictMap, DictMap]:
     """
     Run a solver based on the selected technique.
 
@@ -82,9 +82,9 @@ def run_solver(
         for technique in techniques:
             try:
                 LOGGER.info(technique)
-                technique, mode = technique[:3], technique[-1]
+                mode = technique[-1]
                 dataset = f_dataset if mode == "f" else e_dataset
-                log_file = None if log_dir is None else os.path.join(log_dir, f"{dataset.get_name()}_{technique}{mode}.log")
+                log_file = None if log_dir is None else os.path.join(log_dir, f"{dataset.get_name()}_{technique}.log")
 
                 if technique == "R":
                     solution = sample_categorical(
@@ -93,13 +93,13 @@ def run_solver(
                         names=split_names,
                     )
                     insert(output_inter, technique, solution)
-                elif technique == "ICS" or (technique == "CCS" and isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]):
+                elif technique[:3] == "ICS" or (technique[:3] == "CCS" and isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]):
                     if vectorized:
                         fun = solve_ics_bqp_vector
                     else:
                         fun = solve_ics_bqp_scalar
 
-                    if technique == "CCS" and (isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]):
+                    if technique[:3] == "CCS" and (isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]):
                         names = dataset.cluster_names
                         weights = [dataset.cluster_weights.get(x, 0) for x in dataset.cluster_names]
                     else:
@@ -119,7 +119,7 @@ def run_solver(
                     )
 
                     if solution is not None:
-                        if technique == "CCS" and isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]:
+                        if technique[:3] == "CCS" and isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]:
                             if mode == "f":
                                 insert(output_f_clusters, technique, solution)
                                 insert(output_f_entities, technique, reverse_clustering(solution, f_dataset.cluster_map))
@@ -131,7 +131,7 @@ def run_solver(
                                 insert(output_f_entities, technique, solution)
                             else:
                                 insert(output_e_entities, technique, solution)
-                elif technique == "ICD":
+                elif technique[:3] == "ICD":
                     if vectorized:
                         fun = solve_icd_bqp_vector
                     else:
@@ -153,7 +153,7 @@ def run_solver(
                         insert(output_e_entities, technique, solution[1])
                         insert(output_f_entities, technique, solution[2])
                         # output_inter[technique], output_e_entities[technique], output_f_entities[technique] = solution
-                elif technique == "CCS":
+                elif technique[:3] == "CCS":
                     fun = solve_ccs_bqp_vector if vectorized else solve_ccs_bqp_scalar
 
                     cluster_split = fun(
@@ -177,7 +177,7 @@ def run_solver(
                         else:
                             insert(output_e_clusters, technique, cluster_split)
                             insert(output_e_entities, technique, reverse_clustering(cluster_split, e_dataset.cluster_map))
-                elif technique == "CCD":
+                elif technique[:3] == "CCD":
                     cluster_inter = cluster_interactions(
                         inter,
                         e_dataset.cluster_map,

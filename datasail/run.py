@@ -68,22 +68,22 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     # infer interaction assignment from entity assignment if necessary and possible
     if old_inter is not None:
         for technique in kwargs["techniques"]:
-            for run in range(kwargs["runs"]):
-                t = technique[:3]
-                # How to deal with duplicates in ?CD-splits when interactions are already assigned in the splitting process
-                # TODO: Detect the duplicates in old_inter and assign them based on an id_map
-                if len(inter_split_map.get(technique, [])) < kwargs["runs"]:
-                    if e_name_split_map.get(t, None) is not None:
+            if len(inter_split_map.get(technique, [])) < kwargs["runs"]:
+                for run in range(kwargs["runs"]):
+                    # How to deal with duplicates in ?CD-splits when interactions are already assigned in the splitting process
+                    # TODO: Detect the duplicates in old_inter and assign them based on an id_map
+
+                    if e_name_split_map.get(technique, None) is not None:
                         insert(
                             inter_split_map,
                             technique,
-                            [(e, f, e_name_split_map[t][run].get(e, "not selected")) for e, f in old_inter]
+                            {(e, f): e_name_split_map[technique][run].get(e, "not selected") for e, f in old_inter}
                         )
-                    if f_name_split_map.get(t, None) is not None:
+                    if f_name_split_map.get(technique, None) is not None:
                         insert(
                             inter_split_map,
                             technique,
-                            [(e, f, f_name_split_map[t][run].get(f, "not selected")) for e, f in old_inter],
+                            {(e, f): f_name_split_map[technique][run].get(f, "not selected") for e, f in old_inter},
                         )
 
     LOGGER.info("BQP splitting finished and results stored.")

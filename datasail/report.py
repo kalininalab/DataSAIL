@@ -18,7 +18,7 @@ def report(
         f_name_split_map: DictMap,
         e_cluster_split_map: DictMap,
         f_cluster_split_map: DictMap,
-        inter_split_map: Dict[str, List[List[Tuple[str, str, str]]]],
+        inter_split_map: Dict[str, List[Dict[Tuple[str, str], str]]],
         runs: int,
         output_dir: str,
         split_names: List[str],
@@ -45,7 +45,7 @@ def report(
 
     for t in techniques:
         for run in range(runs):
-            technique, mode = t[:3], t[-1]
+            mode = t[-1]
             if mode.isupper():
                 mode = None
 
@@ -61,28 +61,26 @@ def report(
                 save_inter_assignment(save_dir, inter_split_map[t][run])
 
             # Compile report for first dataset if applies for this split
-            if e_dataset.type is not None \
-                    and ((mode is not None and mode != "f") or technique[-1] == "D") \
-                    and technique in e_name_split_map:
+            if e_dataset.type is not None and ((mode is not None and mode != "f") or t[-1] == "D") and \
+                    t in e_name_split_map:
                 individual_report(
                     save_dir,
                     e_dataset,
                     dict((t, e_name_split_map[t][run]) for t in e_name_split_map),
                     dict((t, e_cluster_split_map[t][run]) for t in e_cluster_split_map),
-                    technique,
+                    t,
                     split_names
                 )
 
             # Compile report for second dataset if applies for this split
-            if f_dataset.type is not None \
-                    and ((mode is not None and mode != "e") or technique[-1] == "D") \
-                    and technique in f_name_split_map:
+            if f_dataset.type is not None and ((mode is not None and mode != "e") or t[-1] == "D") \
+                    and t in f_name_split_map:
                 individual_report(
                     save_dir,
                     f_dataset,
                     dict((t, f_name_split_map[t][run]) for t in f_name_split_map),
                     dict((t, f_cluster_split_map[t][run]) for t in f_cluster_split_map),
-                    technique,
+                    t,
                     split_names
                 )
 
@@ -123,7 +121,7 @@ def individual_report(
     print(stats_string(sum(dataset.weights.values()), split_counts))
 
 
-def save_inter_assignment(save_dir: str, inter_split_map: Optional[List[Tuple[str, str, str]]]) -> None:
+def save_inter_assignment(save_dir: str, inter_split_map: Optional[Dict[Tuple[str, str], str]]) -> None:
     """
     Save the assignment of interactions to splits in a TSV file.
 
@@ -137,7 +135,7 @@ def save_inter_assignment(save_dir: str, inter_split_map: Optional[List[Tuple[st
     split_counts = dict((n, 0) for n in ["train", "val", "test", "not selected", ""])
     with open(os.path.join(save_dir, "inter.tsv"), "w") as output:
         print("E_IDs", "F_IDs", "Split", sep="\t", file=output)
-        for e, f, s in inter_split_map:
+        for (e, f), s in inter_split_map.items():
             print(e, f, s, sep="\t", file=output)
             split_counts[s] += 1
 

@@ -27,7 +27,7 @@ def solve_ccd_bqp(
         max_sol: int,
         solver: str,
         log_file: str,
-) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
+) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[str, str], Dict[str, str]]]:
     """
     Solve cluster-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
     programming.
@@ -95,7 +95,7 @@ def solve_ccd_bqp(
     solve(alpha * inter_loss + e_loss + f_loss, constraints, max_sec, solver, log_file)
 
     # report the found solution
-    output = ([], dict(
+    output = ({}, dict(
         (e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_clusters) if x_e[s][:, 0][i].value > 0.1
     ), dict(
         (f, names[s]) for s in range(len(splits)) for j, f in enumerate(f_clusters) if x_f[s][:, 0][j].value > 0.1
@@ -104,7 +104,7 @@ def solve_ccd_bqp(
         for j, f in enumerate(f_clusters):
             for s in range(len(splits)):
                 if x_i[s][i, j].value > 0:
-                    output[0].append((e_clusters[i], f_clusters[j], names[s]))
+                    output[0][(e_clusters[i], f_clusters[j])] = names[s]
             if sum(x_i[b][i, j].value for b in range(len(splits))) == 0:
-                output[0].append((e_clusters[i], f_clusters[j], "not selected"))
+                output[0][(e_clusters[i], f_clusters[j])] = "not selected"
     return output

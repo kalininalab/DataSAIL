@@ -1,11 +1,11 @@
 import logging
 import os.path
 import sys
-from typing import Dict, List, Tuple, Callable, Iterable
+from typing import Dict, List, Tuple, Callable, Iterable, Union, Generator
 
 from datasail.parsers import parse_cdhit_args, parse_mash_args, parse_mmseqs_args, DIST_ALGOS, SIM_ALGOS, \
     parse_datasail_args
-from datasail.reader.utils import LIST_INPUT, DATA_INPUT, MATRIX_INPUT
+from datasail.reader.utils import DATA_INPUT, MATRIX_INPUT
 from datasail.run import datasail_main
 from datasail.settings import LOGGER, FORMATTER, VERB_MAP
 
@@ -93,7 +93,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
         kwargs["threads"] = min(kwargs["threads"], os.cpu_count())
 
     # check the interaction file
-    if kwargs["inter"] is not None and not os.path.isfile(kwargs["inter"]):
+    if kwargs["inter"] is not None and isinstance(kwargs["inter"], str) and not os.path.isfile(kwargs["inter"]):
         error("The interaction filepath is not valid.", 5, kwargs["cli"])
 
     # check the epsilon value
@@ -105,7 +105,8 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The number of runs cannot be lower than 1.", 25, kwargs["cli"])
 
     # check the input regarding the caching
-    if kwargs["cache"] and not os.path.isdir(kwargs["cache_dir"]):
+    if kwargs["cache"] is not None and kwargs["cache_dir"] is not None and isinstance(kwargs["cache_dir"], str) and \
+            not os.path.isdir(kwargs["cache_dir"]):
         LOGGER.warning("Cache directory does not exist, DataSAIL creates it automatically")
         os.makedirs(kwargs["cache_dir"], exist_ok=True)
 
@@ -206,8 +207,8 @@ def validate_mmseqs_args(mmseqs_args, cli) -> None:
 
 
 def datasail(
-        techniques: LIST_INPUT = None,
-        inter: LIST_INPUT = None,
+        techniques: Union[str, List[str], Callable[..., List[str]], Generator[str, None, None]] = None,
+        inter: Union[str, List[Tuple[str, str]], Callable[..., List[str]], Generator[str, None, None]] = None,
         max_sec: int = 100,
         max_sol: int = 1000,
         verbose: str = "W",

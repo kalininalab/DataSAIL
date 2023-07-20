@@ -52,7 +52,7 @@ def test_pipeline(data):
         solver="SCIP",
     )
 
-    assert any(mode[:3] in x for x in [e_name_split_map, f_name_split_map, inter_split_map])
+    assert any(mode in x for x in [e_name_split_map, f_name_split_map, inter_split_map])
 
 
 @pytest.mark.parametrize(
@@ -128,15 +128,15 @@ def test_report():
         solver="SCIP",
     )
 
-    assert "ICS" in e_name_split_map
-    assert "ICS" in f_name_split_map
+    assert "ICSe" in e_name_split_map
+    assert "ICSf" in f_name_split_map
     assert "ICSe" in inter_split_map
     assert "ICSf" in inter_split_map
     assert "ICD" in e_name_split_map
     assert "ICD" in f_name_split_map
     assert "ICD" in inter_split_map
-    assert "CCS" in e_name_split_map
-    assert "CCS" in f_name_split_map
+    assert "CCSe" in e_name_split_map
+    assert "CCSf" in f_name_split_map
     assert "CCSe" in inter_split_map
     assert "CCSf" in inter_split_map
     assert "CCD" in e_name_split_map

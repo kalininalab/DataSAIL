@@ -17,7 +17,7 @@ def solve_icd_bqp(
         max_sol: int,
         solver: str,
         log_file: str,
-) -> Optional[Tuple[List[Tuple[str, str, str]], Dict[str, str], Dict[str, str]]]:
+) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[str, str], Dict[str, str]]]:
     """
     Solve identity-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
     programming.
@@ -80,7 +80,7 @@ def solve_icd_bqp(
     solve(inter_loss, constraints, max_sec, solver, log_file)
 
     # report the found solution
-    output = ([], dict(
+    output = ({}, dict(
         (e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[i, s].value > 0.1
     ), dict(
         (f, names[s]) for s in range(len(splits)) for j, f in enumerate(f_entities) if x_f[j, s].value > 0.1
@@ -90,8 +90,8 @@ def solve_icd_bqp(
             if (e, f) in inter:
                 for s in range(len(splits)):
                     if x_i[i, j, s].value > 0:
-                        output[0].append((e, f, names[s]))
+                        output[0][(e, f)] = names[s]
                 if sum(x_i[i, j, b].value for b in range(len(splits))) == 0:
-                    output[0].append((e, f, "not selected"))
+                    output[0][(e, f)] = "not selected"
 
     return output

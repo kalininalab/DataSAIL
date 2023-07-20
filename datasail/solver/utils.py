@@ -1,7 +1,7 @@
 import logging
 import math
 import sys
-from typing import List, Tuple, Collection
+from typing import List, Tuple, Collection, Dict
 
 import cvxpy
 import numpy as np
@@ -137,7 +137,7 @@ def sample_categorical(
         inter: List[Tuple[str, str]],
         splits: List[float],
         names: List[str],
-) -> List[Tuple[str, str, str]]:
+) -> Dict[Tuple[str, str], str]:
     """
     Sample interactions randomly into splits. This is the random split. It relies on the idea of categorical sampling.
 
@@ -156,7 +156,7 @@ def sample_categorical(
             yield inter[int(sum(splits[:index]) * len(inter)):int(sum(splits[:(index + 1)]) * len(inter))]
         yield inter[int(sum(splits[:-1]) * len(inter)):]
 
-    output = []
+    output = {}
     for i, split in enumerate(gen()):
-        output += [(d, p, names[i]) for d, p in split]
+        output.update({(d, p): names[i] for d, p in split})
     return output
