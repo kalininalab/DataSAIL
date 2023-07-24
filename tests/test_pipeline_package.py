@@ -161,8 +161,8 @@ def test_genomes():
         solver="SCIP",
     )
 
-    assert "ICS" in e_name_split_map
-    assert "CCS" in e_name_split_map
+    assert "ICSe" in e_name_split_map
+    assert "CCSe" in e_name_split_map
     assert len(f_name_split_map) == 0
     assert len(inter_split_map) == 0
 

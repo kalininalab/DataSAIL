@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple, Set
 
 import cvxpy
 import numpy as np
@@ -7,14 +7,21 @@ from cvxpy.constraints.constraint import Constraint
 
 
 def interaction_constraints(
-        len_e_data: int, len_f_data: int, x_e: List[Variable], x_f: List[Variable], x_i: List[Variable], s: int
+        e_data: List[str],
+        f_data: List[str],
+        inter: Set[Tuple[str, str]],
+        x_e: List[Variable],
+        x_f: List[Variable],
+        x_i: List[Variable],
+        s: int
 ) -> List[Constraint]:
     """
     Define the constraints that two clusters are in the same split iff their interaction (if exists) is in that split.
 
     Args:
-        len_e_data: Number of datapoints in the e-dataset
-        len_f_data: Number of datapoints in the f-dataset
+        e_data: Names of datapoints in the e-dataset
+        f_data: Names of datapoints in the f-dataset
+        inter: a set of interactions between pairs of entities
         x_e: List of variables for the e-dataset
         x_f: List of variables for the f-dataset
         x_i: List of variables for the interactions
@@ -24,12 +31,13 @@ def interaction_constraints(
         A list of cvxpy constraints
     """
     constraints = []
-    for i in range(len_e_data):
-        for j in range(len_f_data):
-            constraints.append(x_i[s][i, j] >= (x_e[s][:, 0][i] + x_f[s][:, 0][j] - 1.5))
-            constraints.append(x_i[s][i, j] <= (x_e[s][:, 0][i] + x_f[s][:, 0][j]) * 0.5)
-            constraints.append(x_e[s][:, 0][i] >= x_i[s][i, j])
-            constraints.append(x_f[s][:, 0][j] >= x_i[s][i, j])
+    for i, e1 in enumerate(e_data):
+        for j, e2 in enumerate(f_data):
+            if (e1, e2) in inter:
+                constraints.append(x_i[s][i, j] >= (x_e[s][:, 0][i] + x_f[s][:, 0][j] - 1.5))
+                constraints.append(x_i[s][i, j] <= (x_e[s][:, 0][i] + x_f[s][:, 0][j]) * 0.5)
+                constraints.append(x_e[s][:, 0][i] >= x_i[s][i, j])
+                constraints.append(x_f[s][:, 0][j] >= x_i[s][i, j])
     return constraints
 
 

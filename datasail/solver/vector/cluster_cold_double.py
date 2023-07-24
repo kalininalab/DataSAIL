@@ -80,7 +80,7 @@ def solve_ccd_bqp(
         constraints += [
             min_lim[s] <= cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter, x_i[s]), axis=0), axis=0),
             cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter, x_i[s]), axis=0), axis=0) <= max_lim[s],
-        ] + interaction_constraints(len(e_clusters), len(f_clusters), x_e, x_f, x_i, s) + [
+        ] + interaction_constraints(e_clusters, f_clusters, inter, x_e, x_f, x_i, s) + [
             cluster_sim_dist_constraint(e_similarities, e_distances, e_t, e_ones, x_e, s),
             cluster_sim_dist_constraint(f_similarities, f_distances, f_t, f_ones, x_f, s),
         ]

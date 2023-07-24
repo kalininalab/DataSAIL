@@ -260,7 +260,7 @@ def check_assignment_tsv(filename):
 
 @pytest.mark.issue
 def test_issue1():
-    test_pipeline(False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "CCS")
+    test_pipeline(False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "CCSe")
 
 
 @pytest.mark.issue

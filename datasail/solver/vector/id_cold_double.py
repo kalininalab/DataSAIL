@@ -60,9 +60,7 @@ def solve_icd_bqp(
         constraints += [
             min_lim[s] <= cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter_ones, x_i[s]), axis=0), axis=0),
             cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter_ones, x_i[s]), axis=0), axis=0) <= max_lim[s],
-        ]
-
-        interaction_constraints(len(e_entities), len(f_entities), x_e, x_f, x_i, s)
+        ] + interaction_constraints(e_entities, f_entities, inter, x_e, x_f, x_i, s)
 
     inter_loss = cvxpy.sum(cvxpy.sum(inter_ones - cvxpy.sum([x for x in x_i]), axis=0), axis=0) / inter_count
 
