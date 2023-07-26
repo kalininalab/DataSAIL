@@ -35,7 +35,6 @@ def test_pipeline(data):
         inter="data/pipeline/inter.tsv" if inter else None,
         max_sec=10,
         techniques=[mode],
-        vectorized=False,
         splits=[0.67, 0.33] if mode in ["IC", "CC"] else [0.7, 0.3],
         names=["train", "test"],
         epsilon=0.25,

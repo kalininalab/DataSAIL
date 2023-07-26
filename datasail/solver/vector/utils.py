@@ -9,7 +9,7 @@ from cvxpy.constraints.constraint import Constraint
 def interaction_constraints(
         e_data: List[str],
         f_data: List[str],
-        inter: Set[Tuple[str, str]],
+        inter: Union[Set[Tuple[str, str]], np.ndarray],
         x_e: List[Variable],
         x_f: List[Variable],
         x_i: List[Variable],
@@ -33,7 +33,7 @@ def interaction_constraints(
     constraints = []
     for i, e1 in enumerate(e_data):
         for j, e2 in enumerate(f_data):
-            if (e1, e2) in inter:
+            if (e1, e2) in inter or isinstance(inter, np.ndarray):
                 constraints.append(x_i[s][i, j] >= (x_e[s][:, 0][i] + x_f[s][:, 0][j] - 1.5))
                 constraints.append(x_i[s][i, j] <= (x_e[s][:, 0][i] + x_f[s][:, 0][j]) * 0.5)
                 constraints.append(x_e[s][:, 0][i] >= x_i[s][i, j])
