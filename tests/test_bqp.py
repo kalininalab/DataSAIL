@@ -15,7 +15,7 @@ def test_perf_bin_2(root_dir, mode, vectorized):
         output=f"{root_dir}/{mode[1]}/",
         inter=f"{root_dir}/inter.tsv",
         techniques=[mode[0]],
-        vectorized=vectorized,
+        scalar=vectorized,
         splits=[0.7, 0.3],
         names=["train", "test"],
         epsilon=0.05,

@@ -1,6 +1,7 @@
 from typing import List, Optional, Tuple, Dict, Union
 
 import numpy as np
+from datasail.settings import LOGGER
 
 from datasail.solver.scalar.utils import init_variables, init_inter_variables_cluster, cluster_sim_dist_constraint, \
     cluster_sim_dist_objective
@@ -55,6 +56,7 @@ def solve_ccd_bqp(
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
         dataset
     """
+    LOGGER.warn("The usage of scalar solver is deprecated.")
     alpha = 0.1
     inter_count = np.sum(inter)
 

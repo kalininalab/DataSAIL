@@ -2,6 +2,7 @@ from typing import Optional, Tuple, List, Set, Dict
 
 import cvxpy
 import numpy as np
+from datasail.settings import LOGGER
 
 from datasail.solver.utils import solve, inter_mask
 from datasail.solver.vector.utils import interaction_constraints
@@ -63,7 +64,11 @@ def solve_icd_bqp(
         ] + interaction_constraints(e_entities, f_entities, inter, x_e, x_f, x_i, s)
 
     inter_loss = cvxpy.sum(cvxpy.sum(inter_ones - cvxpy.sum([x for x in x_i]), axis=0), axis=0) / inter_count
-
+    LOGGER.info(f"#E: {len(e_entities)}")
+    LOGGER.info(f"#F: {len(f_entities)}")
+    LOGGER.info(f"#I: {len(inter)}")
+    LOGGER.info(f"#S: {len(splits)}")
+    LOGGER.info(f"#C: {len(constraints)}")
     problem = solve(inter_loss, constraints, max_sec, solver, log_file)
 
     # report the found solution

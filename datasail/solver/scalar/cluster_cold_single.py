@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict, Union
 
 import numpy as np
+from datasail.settings import LOGGER
 
 from datasail.solver.scalar.utils import cluster_sim_dist_constraint, cluster_sim_dist_objective, \
     init_variables, sum_constraint
@@ -41,6 +42,7 @@ def solve_ccs_bqp(
     Returns:
         Mapping from clusters to splits optimizing the objective function
     """
+    LOGGER.warn("The usage of scalar solver is deprecated.")
     alpha = 0.01
 
     x_e = init_variables(len(splits), len(e_clusters))

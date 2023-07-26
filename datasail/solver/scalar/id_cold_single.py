@@ -1,5 +1,7 @@
 from typing import List, Dict, Optional
 
+from datasail.settings import LOGGER
+
 from datasail.solver.scalar.utils import init_variables, sum_constraint
 from datasail.solver.utils import solve
 
@@ -32,6 +34,7 @@ def solve_ics_bqp(
     Returns:
         Mapping from entities to splits optimizing the objective function
     """
+    LOGGER.warn("The usage of scalar solver is deprecated.")
     x_e = init_variables(len(splits), len(e_entities))
 
     constraints = sum_constraint(x_e, len(e_entities), len(splits))

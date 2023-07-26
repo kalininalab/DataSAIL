@@ -151,6 +151,32 @@ def test_report():
     check_assignment_tsv("data/perf_7_3/out/CCD/Protein_prot_splits.tsv")
 
 
+def test_report_ICD():
+    shutil.rmtree("data/perf_7_3/out", ignore_errors=True)
+
+    run_sail(
+        inter="data/perf_7_3/inter.tsv",
+        output="data/perf_7_3/out/",
+        max_sec=100,
+        techniques=["ICD"],
+        splits=[0.7, 0.3],
+        names=["train", "test"],
+        epsilon=0.25,
+        e_type="M",
+        e_data="data/perf_7_3/lig.tsv",
+        e_sim="data/perf_7_3/lig_sim.tsv",
+        f_type="P",
+        f_data="data/perf_7_3/prot.fasta",
+        f_sim="data/perf_7_3/prot_sim.tsv",
+        solver="SCIP",
+    )
+    assert os.path.isdir("data/perf_7_3/out/ICD")
+    assert len(os.listdir("data/perf_7_3/out/ICD")) == 3
+    check_assignment_tsv("data/perf_7_3/out/ICD/inter.tsv")
+    check_assignment_tsv("data/perf_7_3/out/ICD/Molecule_lig_splits.tsv")
+    check_assignment_tsv("data/perf_7_3/out/ICD/Protein_prot_splits.tsv")
+
+
 @pytest.mark.todo
 def test_report_repeat():
     shutil.rmtree("data/perf_7_3/out", ignore_errors=True)

@@ -1,6 +1,7 @@
 from typing import Optional, Tuple, List, Set, Dict
 
 import cvxpy
+from datasail.settings import LOGGER
 
 from datasail.solver.scalar.utils import init_variables, sum_constraint
 from datasail.solver.utils import solve
@@ -38,6 +39,7 @@ def solve_icd_bqp(
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
         dataset
     """
+    LOGGER.warn("The usage of scalar solver is deprecated.")
     inter_count = len(inter)
 
     x_e = init_variables(len(splits), len(e_entities))

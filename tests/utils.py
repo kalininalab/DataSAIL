@@ -16,14 +16,14 @@ def read_tsv(filepath):
 def run_sail(
         inter=None, output: str = "", max_sec: int = 100, max_sol: int = 1000, verbosity: str = "I",
         splits: List[float] = None, names: List[str] = None, epsilon: float = 0.05, runs: int = 1, solver: str = "MOSEK",
-        techniques: List[str] = None, vectorized: bool = True, cache: bool = False, cache_dir: str = None,
+        techniques: List[str] = None, scalar: bool = False, cache: bool = False, cache_dir: str = None,
         e_type: str = None, e_data=None, e_weights=None, e_sim=None, e_dist=None, e_args: str = "",
         e_max_sim: float = 1.0, e_max_dist: float = 1.0, f_type: str = None, f_data=None, f_weights=None, f_sim=None,
         f_dist=None, f_args: str = "", f_max_sim: float = 1.0, f_max_dist: float = 1.0, threads: int = 1,
 ):
     sail(
         inter=inter, output=output, max_sec=max_sec, max_sol=max_sol, verbosity=verbosity, techniques=techniques,
-        vectorized=vectorized, splits=splits, names=names, epsilon=epsilon, runs=runs, e_type=e_type, e_data=e_data,
+        vectorized=scalar, splits=splits, names=names, epsilon=epsilon, runs=runs, e_type=e_type, e_data=e_data,
         e_weights=e_weights, e_sim=e_sim, e_dist=e_dist, e_max_sim=e_max_sim, e_max_dist=e_max_dist,
         e_args=e_args, f_type=f_type, f_data=f_data, f_weights=f_weights, f_sim=f_sim, f_dist=f_dist,
         f_max_sim=f_max_sim, f_max_dist=f_max_dist, f_args=f_args, cache=cache, cache_dir=cache_dir,
