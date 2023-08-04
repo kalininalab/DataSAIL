@@ -4,6 +4,7 @@ from typing import Generator, Tuple, Dict, List, Any, Optional, Set, Callable
 import numpy as np
 
 from datasail.reader.utils import read_csv, DataSet, read_data, read_folder, DATA_INPUT, MATRIX_INPUT
+from datasail.settings import P_TYPE, UNK_LOCATION, FORM_PDB, FORM_FASTA, KW_DATA, FASTA_FORMATS
 
 
 def read_protein_data(
@@ -34,10 +35,10 @@ def read_protein_data(
     Returns:
         A dataset storing all information on that datatype
     """
-    dataset = DataSet(type="P", location="unknown")
+    dataset = DataSet(type=P_TYPE, location=UNK_LOCATION)
     match data:
         case str():
-            if data.split(".")[-1].lower() in {"fasta", "fa", "fna"}:
+            if data.split(".")[-1].lower() in FASTA_FORMATS:
                 dataset.data = parse_fasta(data)
             elif os.path.isfile(data):
                 dataset.data = dict(read_csv(data))
@@ -55,7 +56,7 @@ def read_protein_data(
         case _:
             raise ValueError()
 
-    dataset.format = "PDB" if os.path.exists(next(iter(dataset.data.values()))) else "FASTA"
+    dataset.format = FORM_PDB if os.path.exists(next(iter(dataset.data.values()))) else FORM_FASTA
 
     dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, dataset)
 
@@ -76,12 +77,12 @@ def remove_protein_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[st
     """
     # read the data
     output_args = {prefix + k: v for k, v in kwargs.items()}
-    if not isinstance(kwargs["data"], str):
+    if not isinstance(kwargs[KW_DATA], str):
         return output_args
-    if kwargs["data"].split(".")[-1].lower() in {"fasta", "fa", "fna"}:
-        sequences = parse_fasta(kwargs["data"])
-    elif os.path.isfile(kwargs["data"]):
-        sequences = dict(read_csv(kwargs["data"]))
+    if kwargs[KW_DATA].split(".")[-1].lower() in FASTA_FORMATS:
+        sequences = parse_fasta(kwargs[KW_DATA])
+    elif os.path.isfile(kwargs[KW_DATA]):
+        sequences = dict(read_csv(kwargs[KW_DATA]))
     else:
         # input is PDB data. TODO: Identity detection with PDB files
         return output_args

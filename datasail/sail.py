@@ -3,11 +3,11 @@ import os.path
 import sys
 from typing import Dict, List, Tuple, Callable, Iterable, Union, Generator
 
-from datasail.parsers import parse_cdhit_args, parse_mash_args, parse_mmseqs_args, DIST_ALGOS, SIM_ALGOS, \
+from datasail.parsers import parse_cdhit_args, parse_mash_args, parse_mmseqs_args, \
     parse_datasail_args
 from datasail.reader.utils import DATA_INPUT, MATRIX_INPUT
 from datasail.run import datasail_main
-from datasail.settings import LOGGER, FORMATTER, VERB_MAP
+from datasail.settings import *
 
 
 def error(msg: str, error_code: int, cli: bool) -> None:
@@ -42,22 +42,22 @@ def validate_args(**kwargs) -> Dict[str, object]:
 
     # create output directory
     output_created = False
-    if kwargs["output"] is not None and not os.path.isdir(kwargs["output"]):
+    if kwargs[KW_OUTDIR] is not None and not os.path.isdir(kwargs[KW_OUTDIR]):
         output_created = True
-        os.makedirs(kwargs["output"], exist_ok=True)
+        os.makedirs(kwargs[KW_OUTDIR], exist_ok=True)
 
-    LOGGER.setLevel(VERB_MAP[kwargs["verbosity"]])
-    LOGGER.handlers[0].setLevel(level=VERB_MAP[kwargs["verbosity"]])
+    LOGGER.setLevel(VERB_MAP[kwargs[KW_VERBOSE]])
+    LOGGER.handlers[0].setLevel(level=VERB_MAP[kwargs[KW_VERBOSE]])
 
-    if kwargs["output"] is not None:
-        kwargs["logdir"] = os.path.abspath(os.path.join(kwargs["output"], "logs"))
-        os.makedirs(kwargs["logdir"], exist_ok=True)
-        file_handler = logging.FileHandler(os.path.join(kwargs["logdir"], "general.log"))
-        file_handler.setLevel(level=VERB_MAP[kwargs["verbosity"]])
+    if kwargs[KW_OUTDIR] is not None:
+        kwargs[KW_LOGDIR] = os.path.abspath(os.path.join(kwargs[KW_OUTDIR], "logs"))
+        os.makedirs(kwargs[KW_LOGDIR], exist_ok=True)
+        file_handler = logging.FileHandler(os.path.join(kwargs[KW_LOGDIR], "general.log"))
+        file_handler.setLevel(level=VERB_MAP[kwargs[KW_VERBOSE]])
         file_handler.setFormatter(FORMATTER)
         LOGGER.addHandler(file_handler)
     else:
-        kwargs["logdir"] = None
+        kwargs[KW_LOGDIR] = None
 
     if output_created:
         LOGGER.warning("Output directory does not exist, DataSAIL creates it automatically")
@@ -65,95 +65,96 @@ def validate_args(**kwargs) -> Dict[str, object]:
     LOGGER.info("Validating arguments")
 
     # check splits to be more than 1 and their fractions sum up to 1 and check the names
-    if len(kwargs["splits"]) < 2:
-        error("Less then two splits required. This is no useful input, please check the input again.", 1, kwargs["cli"])
-    if kwargs["names"] is None:
-        kwargs["names"] = [f"Split{x:03d}" for x in range(len(kwargs["splits"]))]
-    elif len(kwargs["splits"]) != len(kwargs["names"]):
+    if len(kwargs[KW_SPLITS]) < 2:
+        error("Less then two splits required. This is no useful input, please check the input again.", 1, 
+              kwargs[KW_CLI])
+    if kwargs[KW_NAMES] is None:
+        kwargs[KW_NAMES] = [f"Split{x:03d}" for x in range(len(kwargs[KW_SPLITS]))]
+    elif len(kwargs[KW_SPLITS]) != len(kwargs[KW_NAMES]):
         error("Different number of splits and names. You have to give the same number of splits and names for them.",
-              2, kwargs["cli"])
-    elif len(kwargs["names"]) != len(set(kwargs["names"])):
+              2, kwargs[KW_CLI])
+    elif len(kwargs[KW_NAMES]) != len(set(kwargs[KW_NAMES])):
         error("At least two splits will have the same name. Please check the naming of the splits again to have unique "
-              "names", 24, kwargs["cli"])
-    kwargs["splits"] = [x / sum(kwargs["splits"]) for x in kwargs["splits"]]
+              "names", 24, kwargs[KW_CLI])
+    kwargs[KW_SPLITS] = [x / sum(kwargs[KW_SPLITS]) for x in kwargs[KW_SPLITS]]
 
     # convert vectorized from the input question to the flag used in the code
-    kwargs["vectorized"] = not kwargs["vectorized"]
+    kwargs[KW_VECTORIZED] = not kwargs[KW_VECTORIZED]
 
     # check search termination criteria
-    if kwargs["max_sec"] < 1:
-        error("The maximal search time must be a positive integer.", 3, kwargs["cli"])
-    if kwargs["max_sol"] < 1:
-        error("The maximal number of solutions to look at has to be a positive integer.", 4, kwargs["cli"])
-    if kwargs["threads"] < 0:
-        error("The number of threads to use has to be a non-negative integer.", 23, kwargs["cli"])
-    if kwargs["threads"] == 0:
-        kwargs["threads"] = os.cpu_count()
+    if kwargs[KW_MAX_SEC] < 1:
+        error("The maximal search time must be a positive integer.", 3, kwargs[KW_CLI])
+    if kwargs[KW_MAX_SOL] < 1:
+        error("The maximal number of solutions to look at has to be a positive integer.", 4, kwargs[KW_CLI])
+    if kwargs[KW_THREADS] < 0:
+        error("The number of threads to use has to be a non-negative integer.", 23, kwargs[KW_CLI])
+    if kwargs[KW_THREADS] == 0:
+        kwargs[KW_THREADS] = os.cpu_count()
     else:
-        kwargs["threads"] = min(kwargs["threads"], os.cpu_count())
+        kwargs[KW_THREADS] = min(kwargs[KW_THREADS], os.cpu_count())
 
     # check the interaction file
-    if kwargs["inter"] is not None and isinstance(kwargs["inter"], str) and not os.path.isfile(kwargs["inter"]):
-        error("The interaction filepath is not valid.", 5, kwargs["cli"])
+    if kwargs[KW_INTER] is not None and isinstance(kwargs[KW_INTER], str) and not os.path.isfile(kwargs[KW_INTER]):
+        error("The interaction filepath is not valid.", 5, kwargs[KW_CLI])
 
     # check the epsilon value
-    if 1 < kwargs["epsilon"] < 0:
-        error("The epsilon value has to be a real value between 0 and 1.", 6, kwargs["cli"])
+    if 1 < kwargs[KW_EPSILON] < 0:
+        error("The epsilon value has to be a real value between 0 and 1.", 6, kwargs[KW_CLI])
 
     # check number of runs to be a positive integer
-    if kwargs["runs"] < 1:
-        error("The number of runs cannot be lower than 1.", 25, kwargs["cli"])
+    if kwargs[KW_RUNS] < 1:
+        error("The number of runs cannot be lower than 1.", 25, kwargs[KW_CLI])
 
     # check the input regarding the caching
-    if kwargs["cache"] is not None and kwargs["cache_dir"] is not None and isinstance(kwargs["cache_dir"], str) and \
-            not os.path.isdir(kwargs["cache_dir"]):
+    if kwargs[KW_CACHE] is not None and kwargs[KW_CACHE_DIR] is not None and isinstance(kwargs[KW_CACHE_DIR], str) and \
+            not os.path.isdir(kwargs[KW_CACHE_DIR]):
         LOGGER.warning("Cache directory does not exist, DataSAIL creates it automatically")
-        os.makedirs(kwargs["cache_dir"], exist_ok=True)
+        os.makedirs(kwargs[KW_CACHE_DIR], exist_ok=True)
 
     # syntactically parse the input data for the E-dataset
-    if kwargs["e_data"] is not None and isinstance(kwargs["e_data"], str) and not os.path.exists(kwargs["e_data"]):
-        error("The filepath to the E-data is invalid.", 7, kwargs["cli"])
-    if kwargs["e_weights"] is not None and isinstance(kwargs["e_weights"], str) and \
-            not os.path.isfile(kwargs["e_weights"]):
-        error("The filepath to the weights of the E-data is invalid.", 8, kwargs["cli"])
-    if kwargs["e_sim"] is not None and isinstance(kwargs["e_sim"], str):
-        if kwargs["e_sim"].lower() not in SIM_ALGOS and not os.path.isfile(kwargs["e_sim"]):
-            error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", 9, kwargs["cli"])
-        elif kwargs["e_sim"].lower() == "cdhit":
-            validate_cdhit_args(kwargs["e_args"], kwargs["cli"])
-        elif kwargs["e_sim"].lower() == "mmseqs":
-            validate_mmseqs_args(kwargs["e_args"], kwargs["cli"])
-    if kwargs["e_dist"] is not None and isinstance(kwargs["e_dist"], str):
-        if kwargs["e_dist"].lower() not in DIST_ALGOS and not os.path.isfile(kwargs["e_dist"]):
-            error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10, kwargs["cli"])
-        elif kwargs["e_dist"].lower() == "mash":
-            validate_mash_args(kwargs["e_args"], kwargs["cli"])
-    if 1 < kwargs["e_max_sim"] < 0:
-        error("The maximal similarity value for the E-data has to be a real value in [0,1].", 11, kwargs["cli"])
-    if 1 < kwargs["e_max_dist"] < 0:
-        error("The maximal distance value for the E-data has to be a real value in [0,1].", 12, kwargs["cli"])
+    if kwargs[KW_E_DATA] is not None and isinstance(kwargs[KW_E_DATA], str) and not os.path.exists(kwargs[KW_E_DATA]):
+        error("The filepath to the E-data is invalid.", 7, kwargs[KW_CLI])
+    if kwargs[KW_E_WEIGHTS] is not None and isinstance(kwargs[KW_E_WEIGHTS], str) and \
+            not os.path.isfile(kwargs[KW_E_WEIGHTS]):
+        error("The filepath to the weights of the E-data is invalid.", 8, kwargs[KW_CLI])
+    if kwargs[KW_E_SIM] is not None and isinstance(kwargs[KW_E_SIM], str):
+        if kwargs[KW_E_SIM].lower() not in SIM_ALGOS and not os.path.isfile(kwargs[KW_E_SIM]):
+            error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", 9, kwargs[KW_CLI])
+        elif kwargs[KW_E_SIM].lower() == "cdhit":
+            validate_cdhit_args(kwargs[KW_E_ARGS], kwargs[KW_CLI])
+        elif kwargs[KW_E_SIM].lower() == "mmseqs":
+            validate_mmseqs_args(kwargs[KW_E_ARGS], kwargs[KW_CLI])
+    if kwargs[KW_E_DIST] is not None and isinstance(kwargs[KW_E_DIST], str):
+        if kwargs[KW_E_DIST].lower() not in DIST_ALGOS and not os.path.isfile(kwargs[KW_E_DIST]):
+            error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10, kwargs[KW_CLI])
+        elif kwargs[KW_E_DIST].lower() == "mash":
+            validate_mash_args(kwargs[KW_E_ARGS], kwargs[KW_CLI])
+    if 1 < kwargs[KW_E_MAX_SIM] < 0:
+        error("The maximal similarity value for the E-data has to be a real value in [0,1].", 11, kwargs[KW_CLI])
+    if 1 < kwargs[KW_E_MAX_DIST] < 0:
+        error("The maximal distance value for the E-data has to be a real value in [0,1].", 12, kwargs[KW_CLI])
 
     # syntactically parse the input data for the F-dataset
-    if kwargs["f_data"] is not None and isinstance(kwargs["f_data"], str) and not os.path.exists(kwargs["f_data"]):
-        error("The filepath to the F-data is invalid.", 13, kwargs["cli"])
-    if kwargs["f_weights"] is not None and isinstance(kwargs["f_weights"], str) and not os.path.isfile(kwargs["f_weights"]):
-        error("The filepath to the weights of the F-data is invalid.", 14, kwargs["cli"])
-    if kwargs["f_sim"] is not None and isinstance(kwargs["f_sim"], str):
-        if kwargs["f_sim"].lower() not in SIM_ALGOS and not os.path.isfile(kwargs["f_sim"]):
-            error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", 15, kwargs["cli"])
-        elif kwargs["f_sim"].lower() == "cdhit":
-            validate_cdhit_args(kwargs["f_args"], kwargs["cli"])
-        elif kwargs["f_sim"].lower() == "mmseqs":
-            validate_mmseqs_args(kwargs["f_args"], kwargs["cli"])
-    if kwargs["f_dist"] is not None and isinstance(kwargs["f_dist"], str):
-        if kwargs["f_dist"].lower() not in DIST_ALGOS and not os.path.isfile(kwargs["f_dist"]):
-            error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16, kwargs["cli"])
-        elif kwargs["f_dist"].lower() == "mash":
-            validate_mash_args(kwargs["f_args"], kwargs["cli"])
-    if 1 < kwargs["f_max_sim"] < 0:
-        error("The maximal similarity value for the F-data has to be a real value in [0,1].", 17, kwargs["cli"])
-    if 1 < kwargs["f_max_dist"] < 0:
-        error("The maximal distance value for the F-data has to be a real value in [0,1].", 18, kwargs["cli"])
+    if kwargs[KW_F_DATA] is not None and isinstance(kwargs[KW_F_DATA], str) and not os.path.exists(kwargs[KW_F_DATA]):
+        error("The filepath to the F-data is invalid.", 13, kwargs[KW_CLI])
+    if kwargs[KW_F_WEIGHTS] is not None and isinstance(kwargs[KW_F_WEIGHTS], str) and not os.path.isfile(kwargs[KW_F_WEIGHTS]):
+        error("The filepath to the weights of the F-data is invalid.", 14, kwargs[KW_CLI])
+    if kwargs[KW_F_SIM] is not None and isinstance(kwargs[KW_F_SIM], str):
+        if kwargs[KW_F_SIM].lower() not in SIM_ALGOS and not os.path.isfile(kwargs[KW_F_SIM]):
+            error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", 15, kwargs[KW_CLI])
+        elif kwargs[KW_F_SIM].lower() == "cdhit":
+            validate_cdhit_args(kwargs[KW_F_ARGS], kwargs[KW_CLI])
+        elif kwargs[KW_F_SIM].lower() == "mmseqs":
+            validate_mmseqs_args(kwargs[KW_F_ARGS], kwargs[KW_CLI])
+    if kwargs[KW_F_DIST] is not None and isinstance(kwargs[KW_F_DIST], str):
+        if kwargs[KW_F_DIST].lower() not in DIST_ALGOS and not os.path.isfile(kwargs[KW_F_DIST]):
+            error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16, kwargs[KW_CLI])
+        elif kwargs[KW_F_DIST].lower() == "mash":
+            validate_mash_args(kwargs[KW_F_ARGS], kwargs[KW_CLI])
+    if 1 < kwargs[KW_F_MAX_SIM] < 0:
+        error("The maximal similarity value for the F-data has to be a real value in [0,1].", 17, kwargs[KW_CLI])
+    if 1 < kwargs[KW_F_MAX_DIST] < 0:
+        error("The maximal distance value for the F-data has to be a real value in [0,1].", 18, kwargs[KW_CLI])
 
     return kwargs
 
@@ -216,7 +217,7 @@ def datasail(
         names: List[str] = None,
         epsilon: float = 0.05,
         runs: int = 1,
-        solver: str = "SCIP",
+        solver: str = SOLVER_SCIP,
         scalar: bool = False,
         cache: bool = False,
         cache_dir: str = None,
@@ -298,7 +299,7 @@ def sail(args=None, **kwargs) -> None:
     """
     if kwargs is None or len(kwargs) == 0:
         kwargs = parse_datasail_args(args or sys.argv[1:])
-    kwargs["cli"] = True
+    kwargs[KW_CLI] = True
     kwargs = validate_args(**kwargs)
     datasail_main(**kwargs)
 

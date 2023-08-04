@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 
 from datasail.reader.utils import DataSet, DictMap
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, NOT_ASSIGNED
 
 
 def report(
@@ -58,7 +58,7 @@ def report(
 
             # save mapping of interactions for this split if applicable
             if t in inter_split_map:
-                save_inter_assignment(save_dir, inter_split_map[t][run])
+                save_inter_assignment(save_dir, split_names, inter_split_map[t][run])
 
             # Compile report for first dataset if applies for this split
             if e_dataset.type is not None and ((mode is not None and mode != "f") or t[-1] == "D") and \
@@ -121,18 +121,19 @@ def individual_report(
     print(stats_string(sum(dataset.weights.values()), split_counts))
 
 
-def save_inter_assignment(save_dir: str, inter_split_map: Optional[Dict[Tuple[str, str], str]]) -> None:
+def save_inter_assignment(save_dir: str, split_names: List[str], inter_split_map: Optional[Dict[Tuple[str, str], str]]) -> None:
     """
     Save the assignment of interactions to splits in a TSV file.
 
     Args:
         save_dir: Directory to store the file in.
+        split_names: List of the names of splits
         inter_split_map: Mapping from interactions to the splits
     """
     if inter_split_map is None:
         return
 
-    split_counts = dict((n, 0) for n in ["train", "val", "test", "not selected", ""])
+    split_counts = dict((n, 0) for n in split_names + [NOT_ASSIGNED])
     with open(os.path.join(save_dir, "inter.tsv"), "w") as output:
         print("E_IDs", "F_IDs", "Split", sep="\t", file=output)
         for (e, f), s in inter_split_map.items():
@@ -356,9 +357,9 @@ def stats_string(count: int, split_stats: Dict[str, float]) -> str:
             output += f" {100 * v / count:>6.2f}%"
         else:
             output += f" {0:>6.2f}%"
-        if k != "not selected":
-            if (count - split_stats.get('not selected', 0)) > 0:
-                output += f" {100 * v / (count - split_stats.get('not selected', 0)):>6.2f}%"
+        if k != NOT_ASSIGNED:
+            if (count - split_stats.get(NOT_ASSIGNED, 0)) > 0:
+                output += f" {100 * v / (count - split_stats.get(NOT_ASSIGNED, 0)):>6.2f}%"
             else:
                 output += f" {0:>6.2f}%"
         output += "\n"
@@ -375,10 +376,12 @@ def char2name(c: chr) -> str:
     Returns:
         String telling the full name of the data type
     """
-    if c == "P":
-        return "Protein"
-    if c == "M":
-        return "Molecule"
-    if c == "G":
-        return "Genome"
-    return "Other"
+    match c:
+        case "P":
+            return "Protein"
+        case "M":
+            return "Molecule"
+        case "G":
+            return "Genome"
+        case _:
+            return "Other"

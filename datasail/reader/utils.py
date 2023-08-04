@@ -4,6 +4,8 @@ from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
 
 import numpy as np
 
+from datasail.settings import FORM_FASTA, FORM_SMILES, FORM_PDB
+
 DATA_INPUT = Optional[Union[str, Dict[str, str], Callable[..., Dict[str, str]], Generator[Tuple[str, str], None, None]]]
 MATRIX_INPUT = Optional[Union[str, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
 DictMap = Dict[str, List[Dict[str, str]]]
@@ -319,13 +321,13 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
     """
     match data_type:
         case "P":
-            if data_format == "PDB":
+            if data_format == FORM_PDB:
                 return "foldseek", None
-            elif data_format == "FASTA":
+            elif data_format == FORM_FASTA:
                 return "cdhit", None
-        case _ if "M" and data_format == "SMILES":
+        case _ if "M" and data_format == FORM_SMILES:
             return "ecfp", None
-        case _ if "G" and data_format == "FASTA":
+        case _ if "G" and data_format == FORM_FASTA:
             return None, "mash"
     return None, None
 

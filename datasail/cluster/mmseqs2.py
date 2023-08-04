@@ -7,7 +7,7 @@ import numpy as np
 from datasail.cluster.utils import cluster_param_binary_search
 from datasail.parsers import parse_mmseqs_args
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, UNK_LOCATION
 
 
 def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
@@ -30,11 +30,11 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[
     LOGGER.info("Starting MMseqs clustering")
 
     if not os.path.exists(dataset.location):
-        with open(dataset.location + ".fasta" if dataset.location.endswith("unknown") else "", "w") as out:
+        with open(dataset.location + ".fasta" if dataset.location.endswith(UNK_LOCATION) else "", "w") as out:
             for idx, seq in dataset.data.items():
                 print(">" + idx, file=out)
                 print(seq, file=out)
-        dataset.location = dataset.location + ".fasta" if dataset.location.endswith("unknown") else ""
+        dataset.location = dataset.location + ".fasta" if dataset.location.endswith(UNK_LOCATION) else ""
 
     return cluster_param_binary_search(
         dataset,
@@ -117,7 +117,7 @@ def get_mmseqs_map(cluster_file: str) -> Dict[str, str]:
     mapping = {}
     with open(cluster_file, 'r') as f:
         for line in f.readlines():
-            words = line.strip().replace('β', 'beta').split('\t')
+            words = line.strip().split('\t')
             if len(words) != 2:
                 continue
             cluster_head, cluster_member = words

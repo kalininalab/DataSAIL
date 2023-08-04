@@ -7,7 +7,7 @@ import numpy as np
 from datasail.cluster.utils import cluster_param_binary_search
 from datasail.parsers import parse_cdhit_args
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, UNK_LOCATION
 
 
 def run_cdhit(
@@ -33,11 +33,11 @@ def run_cdhit(
     vals = (args["c"], args["n"])
 
     if not os.path.exists(dataset.location):
-        with open(dataset.location + ".fasta" if dataset.location.endswith("unknown") else "", "w") as out:
+        with open(dataset.location + ".fasta" if dataset.location.endswith(UNK_LOCATION) else "", "w") as out:
             for idx, seq in dataset.data.items():
                 print(">" + idx, file=out)
                 print(seq, file=out)
-        dataset.location = dataset.location + ".fasta" if dataset.location.endswith("unknown") else ""
+        dataset.location = dataset.location + ".fasta" if dataset.location.endswith(UNK_LOCATION) else ""
 
     return cluster_param_binary_search(
         dataset,

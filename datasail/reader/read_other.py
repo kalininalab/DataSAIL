@@ -3,6 +3,7 @@ from typing import List, Tuple, Dict, Any, Optional, Generator, Callable
 
 from datasail.reader.read_genomes import read_folder
 from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT
+from datasail.settings import O_TYPE, UNK_LOCATION, FORM_OTHER
 
 
 def read_other_data(
@@ -34,7 +35,7 @@ def read_other_data(
     Returns:
         A dataset storing all information on that datatype
     """
-    dataset = DataSet(type="O", location="unknown", format="Other")
+    dataset = DataSet(type=O_TYPE, location=UNK_LOCATION, format=FORM_OTHER)
     match data:
         case str():
             if os.path.exists(data):

@@ -1,13 +1,7 @@
 import argparse
 from typing import Dict
 
-SIM_ALGOS = [
-    "wlk", "mmseqs", "foldseek", "cdhit", "ecfp",
-]
-
-DIST_ALGOS = [
-    "mash",
-]
+from datasail.settings import *
 
 
 def parse_datasail_args(args) -> Dict[str, object]:
@@ -30,7 +24,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "--output",
         type=str,
         required=True,
-        dest="output",
+        dest=KW_OUTDIR,
         help="Output directory to store the splits in.",
     )
     parser.add_argument(
@@ -38,14 +32,14 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "--inter",
         type=str,
         default=None,
-        dest="inter",
+        dest=KW_INTER,
         help="Path to TSV file of interactions between two entities. The first entry in each line has to match an "
              "entry from the e-entity, the second matches one of the f-entity."
     )
     parser.add_argument(
         "--to-sec",
         default=100,
-        dest="max_sec",
+        dest=KW_MAX_SEC,
         type=int,
         help="Maximal time to spend optimizing the objective in seconds. This does not include preparatory work such "
              "as parsing data and cluster the input."
@@ -53,7 +47,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     parser.add_argument(
         "--to-sol",
         default=1000,
-        dest="max_sol",
+        dest=KW_MAX_SOL,
         type=int,
         help="Maximal number of solutions to compute until end of search (in case no optimum was found). This argument "
              "is ignored so far."
@@ -61,7 +55,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     parser.add_argument(
         "--threads",
         default=0,
-        dest="threads",
+        dest=KW_THREADS,
         type=int,
         help="Number of threads to use throughout the computation. This number of threads is also forwarded to "
              "clustering programs used internally. If 0, all available CPUs will be used."
@@ -71,7 +65,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         default="W",
         type=str,
         choices=["C", "F", "E", "W", "I", "D"],
-        dest='verbosity',
+        dest=KW_VERBOSE,
         help="Verbosity level of the program. Choices are: [C]ritical, [F]atal, [E]rror, [W]arning, [I]nfo, [D]ebug",
     )
     parser.add_argument(
@@ -86,12 +80,12 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "--techniques",
         type=str,
         required=True,
-        choices=["R", "ICSe", "ICSf", "ICD", "CCD", "CCSe", "CCSf"],
+        choices=[TEC_R, TEC_ICS + MODE_E, TEC_ICS + MODE_F, TEC_ICD, TEC_CCS + MODE_E, TEC_CCS + MODE_F, TEC_CCD],
         nargs="+",
-        dest="techniques",
-        help="Select the mode to split the data. Choices: R: Random split, ICS: identity-based cold-single split, "
-             "ICD: identity-based cold-double split, CCS: similarity-based cold-single split, "
-             "CCD: similarity-based cold-double split"
+        dest=KW_TECHNIQUES,
+        help=f"Select the mode to split the data. Choices: {TEC_R}: Random split, "
+             f"{TEC_ICS}: identity-based one-dimensional split, {TEC_ICD}: identity-based two-dimensional split, "
+             f"{TEC_CCS}: cluster-based one-dimensional split, {TEC_CCD}: cluster-based two_dimensional split"
     )
     split.add_argument(
         "-s",
@@ -99,14 +93,14 @@ def parse_datasail_args(args) -> Dict[str, object]:
         default=[0.7, 0.2, 0.1],
         nargs="+",
         type=float,
-        dest="splits",
+        dest=KW_SPLITS,
         help="Sizes of the individual splits the program shall produce.",
     )
     split.add_argument(
         "-n",
         "--names",
         default=None,
-        dest="names",
+        dest=KW_NAMES,
         nargs="+",
         type=str,
         help="Names of the splits in order of the -s argument. If left empty, splits will be called Split1, Split2, ..."
@@ -116,7 +110,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "--epsilon",
         default=0.05,
         type=float,
-        dest="epsilon",
+        dest=KW_EPSILON,
         help="Multiplicative factor by how much the limits of the splits can be exceeded.",
     )
     split.add_argument(
@@ -124,15 +118,15 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "--runs",
         default=1,
         type=int,
-        dest="runs",
+        dest=KW_RUNS,
         help="Specify a number of runs to perform per split. This may introduce some variance in the splits."
     )
     split.add_argument(
         "--solver",
         default="MOSEK",
         type=str,
-        choices=["MOSEK", "SCIP"],
-        dest="solver",
+        choices=[SOLVER_MOSEK, SOLVER_SCIP],
+        dest=KW_SOLVER,
         help="Solver to use to solve the BDQCP. Choices are SCIP (free of charge) and MOSEK (licensed and only "
              "applicable if a valid mosek license is stored)."
     )
@@ -140,42 +134,42 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "--scalar",
         default=False,
         action='store_true',
-        dest="vectorized",
+        dest=KW_VECTORIZED,
         help="Flag indicating to run the program in scalar for instead of vectorized formulation."
     )
     split.add_argument(
         "--cache",
         default=False,
         action='store_true',
-        dest="cache",
+        dest=KW_CACHE,
         help="Store clustering matrices in cache."
     )
     split.add_argument(
         "--cache-dir",
         default=None,
-        dest="cache_dir",
+        dest=KW_CACHE_DIR,
         help="Destination of the cache folder. Default is the OS-default cache dir."
     )
     e_ent = parser.add_argument_group("First Input Arguments")
     e_ent.add_argument(
         "--e-type",
         type=str,
-        dest="e_type",
-        choices=["P", "M", "G", "O"],
+        dest=KW_E_TYPE,
+        choices=[P_TYPE, M_TYPE, G_TYPE, O_TYPE],
         default=None,
         help="Type of the first data batch to the program. Choices are: [P]rotein, [M]olecule, [G]enome, [O]ther",
     )
     e_ent.add_argument(
         "--e-data",
         type=str,
-        dest="e_data",
+        dest=KW_E_DATA,
         default=None,
         help="First input to the program. This can either be the filepath a directory containing only data files.",
     )
     e_ent.add_argument(
         "--e-weights",
         type=str,
-        dest="e_weights",
+        dest=KW_E_WEIGHTS,
         default=None,
         help="Custom weights of the first bunch of samples. The file has to have TSV format where every line is of the "
              "form [e_id >tab< weight]. The e_id has to match an entity id from the first input argument.",
@@ -183,7 +177,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     e_ent.add_argument(
         "--e-sim",
         type=str,
-        dest="e_sim",
+        dest=KW_E_SIM,
         default=None,
         help="Provide the name of a method to determine similarity between samples of the first input dataset. This "
              f"can either be {', '.join('[' + x + ']' for x in SIM_ALGOS)}, or a filepath to a file storing the "
@@ -192,7 +186,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     e_ent.add_argument(
         "--e-dist",
         type=str,
-        dest="e_dist",
+        dest=KW_E_DIST,
         default=None,
         help="Provide the name of a method to determine distance between samples of the first input dataset. This can "
              f"be {', '.join('[' + x + ']' for x in DIST_ALGOS)}, or a filepath to a file storing the pairwise "
@@ -201,21 +195,21 @@ def parse_datasail_args(args) -> Dict[str, object]:
     e_ent.add_argument(
         "--e-args",
         type=str,
-        dest="e_args",
+        dest=KW_E_ARGS,
         default="",
         help="Additional arguments for the clustering algorithm used in --e-dist or --e-sim."
     )
     e_ent.add_argument(
         "--e-max-sim",
         type=float,
-        dest="e_max_sim",
+        dest=KW_E_MAX_SIM,
         default=1.0,
         help="Maximum similarity of two samples from the first data in two split."
     )
     e_ent.add_argument(
         "--e-max-dist",
         type=float,
-        dest="e_max_dist",
+        dest=KW_E_MAX_DIST,
         default=1.0,
         help="Maximal distance of two samples from the second data in the same split."
     )
@@ -223,21 +217,21 @@ def parse_datasail_args(args) -> Dict[str, object]:
     f_ent.add_argument(
         "--f-type",
         type=str,
-        dest="f_type",
+        dest=KW_F_TYPE,
         default=None,
         help="Type of the second data batch to the program. Choices are: [P]rotein, [M]olecule, [G]enome, [O]ther",
     )
     f_ent.add_argument(
         "--f-data",
         type=str,
-        dest="f_data",
+        dest=KW_F_DATA,
         default=None,
         help="Second input to the program. This can either be the filepath a directory containing only data files.",
     )
     f_ent.add_argument(
         "--f-weights",
         type=str,
-        dest="f_weights",
+        dest=KW_F_WEIGHTS,
         default=None,
         help="Custom weights of the second bunch of samples. The file has to have TSV format where every line is of "
              "the form [f_id >tab< weight]. The f_id has to match an entity id from the second input argument group.",
@@ -245,7 +239,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     f_ent.add_argument(
         "--f-sim",
         type=str,
-        dest="f_sim",
+        dest=KW_F_SIM,
         default=None,
         help="Provide the name of a method to determine similarity between samples of the second input dataset. This "
              "can either be [WLK], [mmseqs], [FoldSeek], [CDHIT], [ECFP], or a filepath to a file storing the pairwise "
@@ -254,7 +248,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     f_ent.add_argument(
         "--f-dist",
         type=str,
-        dest="f_dist",
+        dest=KW_F_DIST,
         default=None,
         help="Provide the name of a method to determine distance between samples of the second input dataset. This can "
              "be [MASH] or a filepath to a file storing the pairwise distances in TSV."
@@ -262,21 +256,21 @@ def parse_datasail_args(args) -> Dict[str, object]:
     f_ent.add_argument(
         "--f-args",
         type=str,
-        dest="f_args",
+        dest=KW_F_ARGS,
         default="",
         help="Additional arguments for the clustering algorithm used in --f-dist or --f-sim."
     )
     f_ent.add_argument(
         "--f-max-sim",
         type=float,
-        dest="f_max_sim",
+        dest=KW_F_MAX_SIM,
         default=1.0,
         help="Maximum similarity of two samples from the second dataset in two split."
     )
     f_ent.add_argument(
         "--f-max-dist",
         type=float,
-        dest="f_max_dist",
+        dest=KW_F_MAX_DIST,
         default=1.0,
         help="Maximal distance of two samples from the second dataset in the same split."
     )

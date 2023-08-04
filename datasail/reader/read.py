@@ -6,6 +6,9 @@ from datasail.reader.read_molecules import read_molecule_data, remove_molecule_d
 from datasail.reader.read_other import read_other_data, remove_other_duplicates
 from datasail.reader.read_proteins import read_protein_data, remove_protein_duplicates
 from datasail.reader.utils import read_csv, DataSet, get_prefix_args
+from datasail.settings import KW_INTER, KW_E_TYPE, KW_E_DATA, KW_E_WEIGHTS, KW_E_SIM, KW_E_DIST, KW_E_MAX_SIM, \
+    KW_E_MAX_DIST, KW_E_ID_MAP, KW_E_ARGS, KW_F_TYPE, KW_F_DATA, KW_F_WEIGHTS, KW_F_SIM, KW_F_DIST, KW_F_MAX_SIM, \
+    KW_F_MAX_DIST, KW_F_ID_MAP, KW_F_ARGS, KW_OUTDIR, P_TYPE, M_TYPE, G_TYPE, O_TYPE
 
 
 def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]]], Optional[List[Tuple[str, str]]]]:
@@ -19,30 +22,30 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
         Two datasets storing the information on the input entities and a list of interactions between
     """
     # TODO: Semantic checks of arguments
-    match kwargs["inter"]:
+    match kwargs[KW_INTER]:
         case None:
             old_inter = None
         case x if isinstance(x, str):
-            old_inter = list(tuple(x) for x in read_csv(kwargs["inter"]))
+            old_inter = list(tuple(x) for x in read_csv(kwargs[KW_INTER]))
         case x if isinstance(x, list):
-            old_inter = kwargs["inter"]
+            old_inter = kwargs[KW_INTER]
         case x if isinstance(x, Callable):
-            old_inter = kwargs["inter"]()
+            old_inter = kwargs[KW_INTER]()
         case x if isinstance(x, Generator):
-            old_inter = list(kwargs["inter"])
+            old_inter = list(kwargs[KW_INTER])
         case _:
             raise ValueError()
 
-    e_dataset, inter = read_data_type(kwargs["e_type"])(
-        kwargs["e_data"], kwargs["e_weights"], kwargs["e_sim"], kwargs["e_dist"], kwargs["e_max_sim"],
-        kwargs["e_max_dist"], kwargs.get("e_id_map", None), old_inter, 0
+    e_dataset, inter = read_data_type(kwargs[KW_E_TYPE])(
+        kwargs[KW_E_DATA], kwargs[KW_E_WEIGHTS], kwargs[KW_E_SIM], kwargs[KW_E_DIST], kwargs[KW_E_MAX_SIM],
+        kwargs[KW_E_MAX_DIST], kwargs.get(KW_E_ID_MAP, None), old_inter, 0
     )
-    e_dataset.args = kwargs["e_args"]
-    f_dataset, inter = read_data_type(kwargs["f_type"])(
-        kwargs["f_data"], kwargs["f_weights"], kwargs["f_sim"], kwargs["f_dist"], kwargs["f_max_sim"],
-        kwargs["f_max_dist"], kwargs.get("f_id_map", None), inter, 1
+    e_dataset.args = kwargs[KW_E_ARGS]
+    f_dataset, inter = read_data_type(kwargs[KW_F_TYPE])(
+        kwargs[KW_F_DATA], kwargs[KW_F_WEIGHTS], kwargs[KW_F_SIM], kwargs[KW_F_DIST], kwargs[KW_F_MAX_SIM],
+        kwargs[KW_F_MAX_DIST], kwargs.get(KW_F_ID_MAP, None), inter, 1
     )
-    f_dataset.args = kwargs["f_args"]
+    f_dataset.args = kwargs[KW_F_ARGS]
 
     return e_dataset, f_dataset, inter, old_inter
 
@@ -58,17 +61,18 @@ def check_duplicates(**kwargs) -> Dict[str, Any]:
     Returns:
         The updated keyword arguments as data might have been moved
     """
-    os.makedirs(os.path.join(kwargs.get("output", None) or "", "tmp"), exist_ok=True)
+    os.makedirs(os.path.join(kwargs.get(KW_OUTDIR, None) or "", "tmp"), exist_ok=True)
 
     # remove duplicates from first dataset
     kwargs.update(
-        get_remover_fun(kwargs["e_type"])("e_", kwargs.get("output", None) or "", **get_prefix_args("e_", **kwargs))
+        get_remover_fun(kwargs[KW_E_TYPE])("e_", kwargs.get(KW_OUTDIR, None) or "", **get_prefix_args("e_", **kwargs))
     )
 
     # if existent, remove duplicates from second dataset as well
-    if kwargs["f_type"] is not None:
+    if kwargs[KW_F_TYPE] is not None:
         kwargs.update(
-            get_remover_fun(kwargs["f_type"])("f_", kwargs.get("output", None) or "", **get_prefix_args("f_", **kwargs))
+            get_remover_fun(kwargs[KW_F_TYPE])("f_", kwargs.get(KW_OUTDIR, None) or "",
+                                               **get_prefix_args("f_", **kwargs))
         )
 
     return kwargs

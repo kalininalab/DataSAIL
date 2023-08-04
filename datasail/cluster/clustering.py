@@ -15,7 +15,7 @@ from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR
 
 
 def cluster(dataset: DataSet, **kwargs) -> DataSet:
@@ -35,11 +35,11 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
 
     if isinstance(dataset.similarity, str):  # compute the similarity
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity, dataset.cluster_weights = \
-            similarity_clustering(dataset, kwargs["threads"], kwargs["logdir"])
+            similarity_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR])
 
     elif isinstance(dataset.distance, str):  # compute the distance
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_distance, dataset.cluster_weights = \
-            distance_clustering(dataset, kwargs["threads"], kwargs["logdir"])
+            distance_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_THREADS])
 
     # if the similarity/distance is already given, store it
     elif isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
@@ -64,8 +64,8 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
             whatever(dataset.names, dataset.cluster_map, dataset.distance, dataset.similarity)
             metric = dataset.similarity if dataset.similarity is not None else dataset.distance
             form = "similarity" if dataset.similarity is not None else "distance"
-            if kwargs["output"] is not None:
-                heatmap(metric, os.path.join(kwargs["output"], dataset.get_name() + f"_{form}.png"))
+            if kwargs[KW_OUTDIR] is not None:
+                heatmap(metric, os.path.join(kwargs[KW_OUTDIR], dataset.get_name() + f"_{form}.png"))
 
     store_to_cache(dataset, **kwargs)
 

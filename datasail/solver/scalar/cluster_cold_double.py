@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple, Dict, Union
 
 import numpy as np
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, NOT_ASSIGNED
 
 from datasail.solver.scalar.utils import init_variables, init_inter_variables_cluster, cluster_sim_dist_constraint, \
     cluster_sim_dist_objective
@@ -119,5 +119,5 @@ def solve_ccd_bqp(
                 if x_i[i, j, s].value > 0:
                     output[0][(e_clusters[i], f_clusters[j])] = names[s]
             if sum(x_i[i, j, b].value for b in range(len(splits))) == 0:
-                output[0][(e_clusters[i], f_clusters[j])] = "not selected"
+                output[0][(e_clusters[i], f_clusters[j])] = NOT_ASSIGNED
     return output

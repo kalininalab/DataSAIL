@@ -2,7 +2,7 @@ from typing import Optional, Tuple, List, Set, Dict
 
 import cvxpy
 import numpy as np
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, NOT_ASSIGNED
 
 from datasail.solver.utils import solve, inter_mask
 from datasail.solver.vector.utils import interaction_constraints
@@ -84,6 +84,6 @@ def solve_icd_bqp(
                     if x_i[b][i, j].value > 0:
                         output[0][(e, f)] = names[b]
                 if sum(x_i[b][i, j].value for b in range(len(splits))) == 0:
-                    output[0][(e, f)] = "not selected"
+                    output[0][(e, f)] = NOT_ASSIGNED
 
     return output

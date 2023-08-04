@@ -6,7 +6,7 @@ from cvxpy import SolverError
 
 from datasail.cluster.clustering import reverse_clustering, cluster_interactions
 from datasail.reader.utils import DataSet, DictMap
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, MODE_F, TEC_R, TEC_ICS, TEC_CCS, TEC_ICD, TEC_CCD
 from datasail.solver.scalar.id_cold_single import solve_ics_bqp as solve_ics_bqp_scalar
 from datasail.solver.vector.id_cold_single import solve_ics_bqp as solve_ics_bqp_vector
 from datasail.solver.scalar.id_cold_double import solve_icd_bqp as solve_icd_bqp_scalar
@@ -20,14 +20,13 @@ from datasail.solver.utils import sample_categorical
 
 def insert(dictionary: dict, key: str, value):
     """
+    Append a value into a dictionary with the given key. If key is not in dictionary, create an empty list and append
+    the value.
 
     Args:
-        dictionary:
-        key:
-        value:
-
-    Returns:
-
+        dictionary: Dict to insert in
+        key: Key to insert at
+        value: Value to insert
     """
     if key not in dictionary:
         dictionary[key] = []
@@ -71,7 +70,8 @@ def run_solver(
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
         dataset
     """
-    output_inter, output_e_entities, output_f_entities, output_e_clusters, output_f_clusters = dict(), dict(), dict(), dict(), dict()
+    output_inter, output_e_entities, output_f_entities, output_e_clusters, output_f_clusters = \
+        dict(), dict(), dict(), dict(), dict()
 
     LOGGER.info("Define optimization problem")
 
@@ -83,23 +83,25 @@ def run_solver(
             try:
                 LOGGER.info(technique)
                 mode = technique[-1]
-                dataset = f_dataset if mode == "f" else e_dataset
+                dataset = f_dataset if mode == MODE_F else e_dataset
                 log_file = None if log_dir is None else os.path.join(log_dir, f"{dataset.get_name()}_{technique}.log")
 
-                if technique == "R":
+                if technique == TEC_R:
                     solution = sample_categorical(
                         inter=inter,
                         splits=splits,
                         names=split_names,
                     )
                     insert(output_inter, technique, solution)
-                elif technique[:3] == "ICS" or (technique[:3] == "CCS" and isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]):
+                elif technique[:3] == TEC_ICS or (technique[:3] == TEC_CCS and isinstance(dataset.similarity, str) and
+                                                  dataset.similarity.lower() in ["cdhit", "mmseqs"]):
                     if vectorized:
                         fun = solve_ics_bqp_vector
                     else:
                         fun = solve_ics_bqp_scalar
 
-                    if technique[:3] == "CCS" and (isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]):
+                    if technique[:3] == TEC_CCS and (isinstance(dataset.similarity, str) and
+                                                     dataset.similarity.lower() in ["cdhit", "mmseqs"]):
                         names = dataset.cluster_names
                         weights = [dataset.cluster_weights.get(x, 0) for x in dataset.cluster_names]
                     else:
@@ -119,19 +121,23 @@ def run_solver(
                     )
 
                     if solution is not None:
-                        if technique[:3] == "CCS" and isinstance(dataset.similarity, str) and dataset.similarity.lower() in ["cdhit", "mmseqs"]:
-                            if mode == "f":
+                        if technique[:3] == TEC_CCS \
+                                and isinstance(dataset.similarity, str) \
+                                and dataset.similarity.lower() in ["cdhit", "mmseqs"]:
+                            if mode == MODE_F:
                                 insert(output_f_clusters, technique, solution)
-                                insert(output_f_entities, technique, reverse_clustering(solution, f_dataset.cluster_map))
+                                insert(output_f_entities, technique,
+                                       reverse_clustering(solution, f_dataset.cluster_map))
                             else:
                                 insert(output_e_clusters, technique, solution)
-                                insert(output_e_entities, technique, reverse_clustering(solution, e_dataset.cluster_map))
+                                insert(output_e_entities, technique,
+                                       reverse_clustering(solution, e_dataset.cluster_map))
                         else:
-                            if mode == "f":
+                            if mode == MODE_F:
                                 insert(output_f_entities, technique, solution)
                             else:
                                 insert(output_e_entities, technique, solution)
-                elif technique[:3] == "ICD":
+                elif technique[:3] == TEC_ICD:
                     if vectorized:
                         fun = solve_icd_bqp_vector
                     else:
@@ -153,7 +159,7 @@ def run_solver(
                         insert(output_e_entities, technique, solution[1])
                         insert(output_f_entities, technique, solution[2])
                         # output_inter[technique], output_e_entities[technique], output_f_entities[technique] = solution
-                elif technique[:3] == "CCS":
+                elif technique[:3] == TEC_CCS:
                     fun = solve_ccs_bqp_vector if vectorized else solve_ccs_bqp_scalar
 
                     cluster_split = fun(
@@ -171,13 +177,15 @@ def run_solver(
                         log_file=log_file,
                     )
                     if cluster_split is not None:
-                        if mode == "f":
+                        if mode == MODE_F:
                             insert(output_f_clusters, technique, cluster_split)
-                            insert(output_f_entities, technique, reverse_clustering(cluster_split, f_dataset.cluster_map))
+                            insert(output_f_entities, technique,
+                                   reverse_clustering(cluster_split, f_dataset.cluster_map))
                         else:
                             insert(output_e_clusters, technique, cluster_split)
-                            insert(output_e_entities, technique, reverse_clustering(cluster_split, e_dataset.cluster_map))
-                elif technique[:3] == "CCD":
+                            insert(output_e_entities, technique,
+                                   reverse_clustering(cluster_split, e_dataset.cluster_map))
+                elif technique[:3] == TEC_CCD:
                     cluster_inter = cluster_interactions(
                         inter,
                         e_dataset.cluster_map,
@@ -212,8 +220,10 @@ def run_solver(
                         insert(output_e_clusters, technique, cluster_split[1])
                         insert(output_f_clusters, technique, cluster_split[2])
                         # output_inter[technique], output_e_clusters[technique], output_f_clusters[technique] = cluster_split
-                        insert(output_e_entities, technique, reverse_clustering(cluster_split[1], e_dataset.cluster_map))
-                        insert(output_f_entities, technique, reverse_clustering(cluster_split[2], f_dataset.cluster_map))
+                        insert(output_e_entities, technique,
+                               reverse_clustering(cluster_split[1], e_dataset.cluster_map))
+                        insert(output_f_entities, technique,
+                               reverse_clustering(cluster_split[2], f_dataset.cluster_map))
             except SolverError:
                 LOGGER.error(f"Splitting failed for {technique}, try to increase the timelimit or the epsilon value.")
 

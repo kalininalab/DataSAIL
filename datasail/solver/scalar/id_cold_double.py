@@ -1,7 +1,7 @@
 from typing import Optional, Tuple, List, Set, Dict
 
 import cvxpy
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, NOT_ASSIGNED
 
 from datasail.solver.scalar.utils import init_variables, sum_constraint
 from datasail.solver.utils import solve
@@ -94,6 +94,6 @@ def solve_icd_bqp(
                     if x_i[i, j, s].value > 0:
                         output[0][(e, f)] = names[s]
                 if sum(x_i[i, j, b].value for b in range(len(splits))) == 0:
-                    output[0][(e, f)] = "not selected"
+                    output[0][(e, f)] = NOT_ASSIGNED
 
     return output

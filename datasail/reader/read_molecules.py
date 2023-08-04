@@ -4,6 +4,7 @@ from typing import List, Tuple, Dict, Any, Optional, Callable, Generator
 from rdkit.Chem import MolFromSmiles, MolToSmiles
 
 from datasail.reader.utils import read_csv, DataSet, read_data, DATA_INPUT, MATRIX_INPUT
+from datasail.settings import M_TYPE, UNK_LOCATION, FORM_SMILES
 
 
 def read_molecule_data(
@@ -34,7 +35,7 @@ def read_molecule_data(
     Returns:
         A dataset storing all information on that datatype
     """
-    dataset = DataSet(type="M", format="SMILES", location="unknown")
+    dataset = DataSet(type=M_TYPE, format=FORM_SMILES, location=UNK_LOCATION)
     match data:
         case str():
             if data.lower().endswith(".tsv"):

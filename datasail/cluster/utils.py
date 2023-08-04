@@ -57,8 +57,8 @@ def cluster_param_binary_search(
         max_args = init_args
         max_clusters = num_clusters
         max_cluster_names, max_cluster_map, max_cluster_sim = cluster_names, cluster_map, cluster_sim
-        min_cluster_names, min_cluster_map, min_cluster_sim = trial(dataset, args2str(min_args), threads,
-                                                                    args2log(min_args))
+        min_cluster_names, min_cluster_map, min_cluster_sim = \
+            trial(dataset, args2str(min_args), threads, args2log(min_args))
         min_clusters = len(min_cluster_names)
         LOGGER.info(f"Second round of clustering found {min_clusters} clusters for {len(dataset.names)} samples.")
 

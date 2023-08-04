@@ -1,6 +1,7 @@
 from typing import List, Tuple, Dict, Any, Optional, Generator, Callable
 
 from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_folder
+from datasail.settings import G_TYPE, UNK_LOCATION, FORM_FASTA
 
 
 def read_genome_data(
@@ -31,7 +32,7 @@ def read_genome_data(
     Returns:
         A dataset storing all information on that datatype
     """
-    dataset = DataSet(type="G", location="unknown", format="FASTA")
+    dataset = DataSet(type=G_TYPE, location=UNK_LOCATION, format=FORM_FASTA)
     match data:
         case str():
             dataset.data = dict(read_folder(data))
