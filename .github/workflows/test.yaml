@@ -45,6 +45,10 @@ jobs:
         run: |
           cd tests
           pytest -m "not todo and not group and not issue" --cov=../datasail/ --cov-report=xml
+
+      - name: GDB
+        shell: bash -l {0}
+        run: |
           find . \( -name "*.core" -o -name core \) -exec gdb --batch --quiet -ex "thread apply all bt" "$(readlink -f $(which python3))" {} \;
 
       - name: Upload coverage to Codecov
