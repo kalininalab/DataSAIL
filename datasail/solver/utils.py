@@ -59,6 +59,8 @@ class LoggerRedirect:
         for name, logger in logging.root.manager.loggerDict.items():
             if isinstance(logger, logging.Logger) and len(logger.handlers) > 0:
                 for handler in logger.handlers:
+                    if not hasattr(handler, "stream"):
+                        continue
                     if handler.stream.name == "<stdout>":
                         if name not in self.disabled:
                             self.disabled[name] = []

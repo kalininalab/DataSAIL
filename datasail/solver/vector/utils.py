@@ -102,7 +102,7 @@ def cluster_sim_dist_objective(
         hit_matrix = cvxpy.sum([cvxpy.maximum((x[s] @ ones) + cvxpy.transpose(x[s] @ ones) - (ones.T @ ones), 0) for s in range(len(splits))])
         leak_matrix = cvxpy.multiply(hit_matrix, distances)
     else:
-        hit_matrix = cvxpy.sum([((x[s] @ ones) - cvxpy.transpose(x[s] @ ones)) for s in range(len(splits))])
+        hit_matrix = cvxpy.sum([((x[s] @ ones) - cvxpy.transpose(x[s] @ ones)) ** 2 for s in range(len(splits))])
         leak_matrix = cvxpy.multiply(hit_matrix, similarities)
 
     leak_matrix = cvxpy.multiply(leak_matrix, weight_matrix)

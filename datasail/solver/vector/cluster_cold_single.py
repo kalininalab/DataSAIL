@@ -50,7 +50,7 @@ def solve_ccs_bqp(
     e_t = np.full((len(e_clusters), len(e_clusters)), e_threshold)
     min_lim = [int((split - epsilon) * sum(e_weights)) for split in splits]
     max_lim = [int((split + epsilon) * sum(e_weights)) for split in splits]
-
+    
     constraints = [
         cvxpy.sum([a[:, 0] for a in x_e]) == np.ones((len(e_clusters))),
     ]
@@ -72,6 +72,8 @@ def solve_ccs_bqp(
     alpha = 0.5
     problem = solve(alpha * size_loss + e_loss, constraints, max_sec, solver, log_file)
 
-    return dict(
+    tmp = dict(
         (e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_clusters) if x_e[s][i, 0].value > 0.1
     )
+    return tmp
+
