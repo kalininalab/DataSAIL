@@ -99,10 +99,10 @@ def generate_baseline(
     ones = np.ones((1, len(weights)))
 
     if distances is not None:
-        hit_matrix = np.sum([np.maximum((x[:, s].reshape(8, 1) @ ones) + (x[:, s].reshape(8, 1) @ ones).T - (ones.T @ ones), 0) for s in range(len(splits))], axis=0)
+        hit_matrix = np.sum([np.maximum((np.expand_dims(x[:, s], axis=1) @ ones) + (np.expand_dims(x[:, s], axis=1) @ ones).T - (ones.T @ ones), 0) for s in range(len(splits))], axis=0)
         leak_matrix = np.multiply(hit_matrix, distances)
     else:
-        hit_matrix = np.sum([((x[:, s].reshape(8, 1) @ ones) - (x[:, s].reshape(8, 1) @ ones).T) ** 2 for s in range(len(splits))], axis=0) / (len(splits) - 1)
+        hit_matrix = np.sum([((np.expand_dims(x[:, s], axis=1) @ ones) - (np.expand_dims(x[:, s], axis=1) @ ones).T) ** 2 for s in range(len(splits))], axis=0) / (len(splits) - 1)
         leak_matrix = np.multiply(hit_matrix, similarities)
 
     return np.sum(leak_matrix)
