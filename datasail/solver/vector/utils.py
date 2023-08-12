@@ -71,6 +71,43 @@ def cluster_sim_dist_constraint(
     return cvxpy.multiply(((x[s] @ ones) - cvxpy.transpose(x[s] @ ones)) ** 2, similarities) <= threshold
 
 
+def generate_baseline(
+        splits: List[float],
+        weights: Union[np.ndarray, List[float]],
+        similarities: Optional[np.ndarray],
+        distances: Optional[np.ndarray],
+):
+    indices = sorted(list(range(len(weights))), key=lambda i: -weights[i])
+    max_sizes = np.array(splits) * sum(weights)
+    sizes = [0] * len(splits)
+    assignments = [-1] * len(weights)
+    oh_val, oh_idx = float("inf"), -1
+    for idx in indices:
+        for s in range(len(splits)):
+            if sizes[s] + weights[idx] <= max_sizes[s]:
+                assignments[idx] = s
+                sizes[s] += weights[idx]
+                break
+            elif (sizes[s] + weights[idx]) / max_sizes[s] < oh_val:
+                oh_val = (sizes[s] + weights[idx]) / max_sizes[s]
+                oh_idx = s
+        if assignments[idx] == -1:
+            assignments[idx] = oh_idx
+            sizes[oh_idx] += weights[idx]
+    x = np.zeros((len(assignments), max(assignments) + 1))
+    x[np.arange(len(assignments)), assignments] = 1
+    ones = np.ones((1, len(weights)))
+
+    if distances is not None:
+        hit_matrix = np.sum([np.maximum((np.expand_dims(x[:, s], axis=1) @ ones) + (np.expand_dims(x[:, s], axis=1) @ ones).T - (ones.T @ ones), 0) for s in range(len(splits))], axis=0)
+        leak_matrix = np.multiply(hit_matrix, distances)
+    else:
+        hit_matrix = np.sum([((np.expand_dims(x[:, s], axis=1) @ ones) - (np.expand_dims(x[:, s], axis=1) @ ones).T) ** 2 for s in range(len(splits))], axis=0) / (len(splits) - 1)
+        leak_matrix = np.multiply(hit_matrix, similarities)
+
+    return np.sum(leak_matrix)
+
+
 def cluster_sim_dist_objective(
         similarities: Optional[np.ndarray],
         distances: Optional[np.ndarray],
@@ -96,15 +133,17 @@ def cluster_sim_dist_objective(
     if isinstance(weights, List):
         weights = np.array(weights)
 
+    baseline = generate_baseline(splits, weights, similarities, distances)
+
     weight_matrix = weights.T @ weights
 
     if distances is not None:
         hit_matrix = cvxpy.sum([cvxpy.maximum((x[s] @ ones) + cvxpy.transpose(x[s] @ ones) - (ones.T @ ones), 0) for s in range(len(splits))])
         leak_matrix = cvxpy.multiply(hit_matrix, distances)
     else:
-        hit_matrix = cvxpy.sum([((x[s] @ ones) - cvxpy.transpose(x[s] @ ones)) ** 2 for s in range(len(splits))])
+        hit_matrix = cvxpy.sum([((x[s] @ ones) - cvxpy.transpose(x[s] @ ones)) ** 2 for s in range(len(splits))]) / (len(splits) - 1)
         leak_matrix = cvxpy.multiply(hit_matrix, similarities)
 
     leak_matrix = cvxpy.multiply(leak_matrix, weight_matrix)
     # leakage = cvxpy.sum(leak_matrix) / cvxpy.sum(cvxpy.multiply(hit_matrix, weight_matrix))  # accurate computation
-    return cvxpy.sum(leak_matrix)
+    return cvxpy.sum(leak_matrix) / baseline
