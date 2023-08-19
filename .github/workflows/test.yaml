@@ -19,8 +19,8 @@ jobs:
   test:
     strategy:
       matrix:
-        os: 'ubuntu-latest'
-        python-version: '3.10'
+        os: ['ubuntu-latest']
+        python-version: ['3.10']
         include:
           - if: github.ref == 'github/heads/main'
             os: 'macos-latest'
