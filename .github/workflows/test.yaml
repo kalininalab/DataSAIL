@@ -17,9 +17,6 @@ on:
 jobs:
   # This workflow contains a single job called "test"
   test:
-
-    runs-on: ${{ matrix.os }}
-
     strategy:
       matrix:
         os: ['ubuntu-latest']
@@ -31,6 +28,7 @@ jobs:
           - python-version: ['3.7']
             if: github.ref == 'refs/heads/dev'
 
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
       
