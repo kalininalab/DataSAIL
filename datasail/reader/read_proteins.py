@@ -2,6 +2,7 @@ import os
 from typing import Generator, Tuple, Dict, List, Any, Optional, Set, Callable
 
 import numpy as np
+import pandas as pd
 
 from datasail.reader.utils import read_csv, DataSet, read_data, read_folder, DATA_INPUT, MATRIX_INPUT
 from datasail.settings import P_TYPE, UNK_LOCATION, FORM_PDB, FORM_FASTA, KW_DATA, FASTA_FORMATS
@@ -36,25 +37,24 @@ def read_protein_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=P_TYPE, location=UNK_LOCATION)
-    match data:
-        case str():
-            if data.split(".")[-1].lower() in FASTA_FORMATS:
-                dataset.data = parse_fasta(data)
-            elif os.path.isfile(data):
-                dataset.data = dict(read_csv(data))
-            elif os.path.isdir(data):
-                dataset.data = dict(read_folder(data, ".pdb"))
-            else:
-                raise ValueError()
-            dataset.location = data
-        case dict():
-            dataset.data = data
-        case x if isinstance(x, Callable):
-            dataset.data = data()
-        case x if isinstance(x, Generator):
-            dataset.data = dict(data)
-        case _:
+    if isinstance(data, str):
+        if data.split(".")[-1].lower() in FASTA_FORMATS:
+            dataset.data = parse_fasta(data)
+        elif os.path.isfile(data):
+            dataset.data = dict(read_csv(data))
+        elif os.path.isdir(data):
+            dataset.data = dict(read_folder(data, ".pdb"))
+        else:
             raise ValueError()
+        dataset.location = data
+    elif isinstance(data, dict):
+        dataset.data = data
+    elif isinstance(data, Callable):
+        dataset.data = data()
+    elif isinstance(data, Generator):
+        dataset.data = dict(data)
+    else:
+        raise ValueError()
 
     dataset.format = FORM_PDB if os.path.exists(next(iter(dataset.data.values()))) else FORM_FASTA
 
@@ -112,10 +112,10 @@ def remove_protein_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[st
 
     # store the mapping of IDs
     id_map_filename = os.path.join(output_dir, "tmp", prefix + "id_map.tsv")
-    with open(id_map_filename, "w") as out:
-        print("Name\tRepresentative", file=out)
-        for idx, rep_id in id_map.items():
-            print(idx, rep_id, sep="\t", file=out)
+    pd.DataFrame(
+        [(x1, x2) for x1, x2 in id_map.items()],
+        columns=["Name", "Representative"],
+    ).to_csv(id_map_filename, sep="\t", columns=["Name", "Representative"], index=False)
     output_args[prefix + "id_map"] = id_map_filename
 
     return output_args

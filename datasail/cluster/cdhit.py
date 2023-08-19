@@ -140,12 +140,11 @@ def c2n(c: float):
     Returns:
         An according value for n based on c
     """
-    match c:
-        case c if 0.4 <= c < 0.5:
-            return 2
-        case c if 0.5 <= c < 0.6:
-            return 3
-        case c if 0.6 <= c < 0.7:
-            return 4
-        case _:
-            return 5
+    if 0.4 <= c < 0.5:
+        return 2
+    elif 0.5 <= c < 0.6:
+        return 3
+    elif 0.6 <= c < 0.7:
+        return 4
+    else:
+        return 5

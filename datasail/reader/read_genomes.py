@@ -33,18 +33,17 @@ def read_genome_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=G_TYPE, location=UNK_LOCATION, format=FORM_FASTA)
-    match data:
-        case str():
-            dataset.data = dict(read_folder(data))
-            dataset.location = data
-        case dict():
-            dataset.data = data
-        case x if isinstance(x, Callable):
-            dataset.data = data()
-        case x if isinstance(x, Generator):
-            dataset.data = dict(data)
-        case _:
-            raise ValueError()
+    if isinstance(data, str):
+        dataset.data = dict(read_folder(data))
+        dataset.location = data
+    elif isinstance(data, dict):
+        dataset.data = data
+    elif isinstance(data, Callable):
+        dataset.data = data()
+    elif isinstance(data, Generator):
+        dataset.data = dict(data)
+    else:
+        raise ValueError()
 
     dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, dataset)
 

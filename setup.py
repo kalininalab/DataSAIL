@@ -16,10 +16,14 @@ setup(
     license='Apache Commons 2.0',
     author="Roman Joeres",
     maintainer="Roman Joeres",
-
     classifiers=[
         "Development Status :: 4 - Beta",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        # "Programming Language :: Python :: 3.12",
         "Intended Audience :: Science/Research",
         "Natural Language :: English",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
@@ -27,13 +31,8 @@ setup(
     packages=find_packages(),
     setup_requires=['setuptools_scm'],
     include_package_data=True,
-    install_requires=[
-
-    ],
-
-    package_data={
-
-    },
+    install_requires=[],
+    package_data={},
     python_requires=">=3.10, <4.0.0",
     keywords="bioinformatics",
     entry_points={

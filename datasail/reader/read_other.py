@@ -36,21 +36,20 @@ def read_other_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=O_TYPE, location=UNK_LOCATION, format=FORM_OTHER)
-    match data:
-        case str():
-            if os.path.exists(data):
-                dataset.data = read_folder(data)
-                dataset.location = data
-            else:
-                raise ValueError()
-        case dict():
-            dataset.data = data
-        case x if isinstance(x, Callable):
-            dataset.data = data()
-        case x if isinstance(x, Generator):
-            dataset.data = dict(data)
-        case _:
+    if isinstance(data, str):
+        if os.path.exists(data):
+            dataset.data = read_folder(data)
+            dataset.location = data
+        else:
             raise ValueError()
+    elif isinstance(data, dict):
+        dataset.data = data
+    elif isinstance(data, Callable):
+        dataset.data = data()
+    elif isinstance(data, Generator):
+        dataset.data = dict(data)
+    else:
+        raise ValueError()
 
     dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, dataset)
 

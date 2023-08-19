@@ -93,19 +93,18 @@ def similarity_clustering(
           - Symmetric matrix of pairwise similarities between the current clusters
           - Mapping from current clusters to their weights
     """
-    match dataset.similarity.lower():
-        case "wlk":
-            cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
-        case "mmseqs":
-            cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset, threads, log_dir)
-        case "foldseek":
-            cluster_names, cluster_map, cluster_sim = run_foldseek(dataset, threads, log_dir)
-        case "cdhit":
-            cluster_names, cluster_map, cluster_sim = run_cdhit(dataset, threads, log_dir)
-        case "ecfp":
-            cluster_names, cluster_map, cluster_sim = run_ecfp(dataset)
-        case _:
-            raise ValueError(f"Unknown cluster method: {dataset.similarity}")
+    if dataset.similarity.lower() == "wlk":
+        cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
+    elif dataset.similarity.lower() == "mmseqs":
+        cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == "foldseek":
+        cluster_names, cluster_map, cluster_sim = run_foldseek(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == "cdhit":
+        cluster_names, cluster_map, cluster_sim = run_cdhit(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == "ecfp":
+        cluster_names, cluster_map, cluster_sim = run_ecfp(dataset)
+    else:
+        raise ValueError(f"Unknown cluster method: {dataset.similarity}")
 
     # compute the weights for the clusters
     cluster_weights = {}
@@ -222,7 +221,8 @@ def additional_clustering(
     # set up the cluster algorithm for similarity or distance based cluster w/o specifying the number of clusters
     if dataset.cluster_similarity is not None:
         cluster_matrix = np.array(dataset.cluster_similarity, dtype=float)
-        ca = AffinityPropagation(affinity='precomputed', random_state=42, verbose=True, damping=damping, max_iter=max_iter)
+        ca = AffinityPropagation(affinity='precomputed', random_state=42, verbose=True, damping=damping,
+                                 max_iter=max_iter)
     else:
         cluster_matrix = np.array(dataset.cluster_distance, dtype=float)
         ca = AgglomerativeClustering(

@@ -3,6 +3,7 @@ from dataclasses import dataclass, fields
 from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
 
 import numpy as np
+import pandas as pd
 
 from datasail.settings import FORM_FASTA, FORM_SMILES, FORM_PDB
 
@@ -153,13 +154,9 @@ def read_csv(filepath: str) -> Generator[Tuple[str, str], None, None]:
     Yields:
         Pairs of strings from the file
     """
-    with open(filepath, "r") as inter:
-        for line in inter.readlines()[1:]:
-            output = line.strip().split("\t")
-            if len(output) >= 2:
-                yield output[:2]
-            else:
-                yield output[0], output[0]
+    df = pd.read_csv(filepath, sep="\t")
+    for index in df.index:
+        yield df.iloc[index, :2]
 
 
 def read_matrix_input(
@@ -177,23 +174,22 @@ def read_matrix_input(
         Tuple of names of the data samples, a matrix holding their similarities/distances or a string encoding a method
         to compute the fore-mentioned, and the threshold to apply when splitting
     """
-    match in_data:
-        case x if isinstance(x, str):
-            if os.path.isfile(in_data):
-                names, similarity = read_clustering_file(in_data)
-                threshold = max_val
-            else:
-                names = default_names
-                similarity = in_data
-                threshold = max_val
-        case x if isinstance(x, tuple):
-            names, similarity = in_data
+    if isinstance(in_data, str):
+        if os.path.isfile(in_data):
+            names, similarity = read_clustering_file(in_data)
             threshold = max_val
-        case x if isinstance(x, Callable):
-            names, similarity = in_data()
+        else:
+            names = default_names
+            similarity = in_data
             threshold = max_val
-        case _:
-            raise ValueError()
+    elif isinstance(in_data, tuple):
+        names, similarity = in_data
+        threshold = max_val
+    elif isinstance(in_data, Callable):
+        names, similarity = in_data()
+        threshold = max_val
+    else:
+        raise ValueError()
     return names, similarity, threshold
 
 
@@ -227,15 +223,14 @@ def read_data(
     """
     # parse the protein weights
     if weights is not None:
-        match weights:
-            case str():
-                dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
-            case dict():
-                dataset.weights = weights
-            case x if isinstance(x, Callable):
-                dataset.weights = weights()
-            case x if isinstance(x, Generator):
-                dataset.weights = dict(weights)
+        if isinstance(weights, str):
+            dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
+        elif isinstance(weights, dict):
+            dataset.weights = weights
+        elif isinstance(weights, Callable):
+            dataset.weights = weights()
+        elif isinstance(weights, Generator):
+            dataset.weights = dict(weights)
     elif inter is not None:
         dataset.weights = dict(count_inter(inter, index))
     else:
@@ -319,16 +314,15 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
     Returns:
         Tuple of the names of the method to use to compute either the similarity or distance for the input
     """
-    match data_type:
-        case "P":
-            if data_format == FORM_PDB:
-                return "foldseek", None
-            elif data_format == FORM_FASTA:
-                return "cdhit", None
-        case _ if "M" and data_format == FORM_SMILES:
-            return "ecfp", None
-        case _ if "G" and data_format == FORM_FASTA:
-            return None, "mash"
+    if data_type == "P":
+        if data_format == FORM_PDB:
+            return "foldseek", None
+        elif data_format == FORM_FASTA:
+            return "cdhit", None
+    if data_type == "M" and data_format == FORM_SMILES:
+        return "ecfp", None
+    if data_type == "G" and data_format == FORM_FASTA:
+        return None, "mash"
     return None, None
 
 

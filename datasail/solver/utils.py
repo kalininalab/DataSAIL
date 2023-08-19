@@ -1,5 +1,7 @@
+import functools
 import logging
 import math
+import operator
 import sys
 from typing import List, Tuple, Collection, Dict
 
@@ -106,8 +108,8 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: str):
     """
     problem = cvxpy.Problem(cvxpy.Minimize(loss), constraints)
     LOGGER.info(f"Start solving with {solver}")
-    LOGGER.info(f"The problem has {sum([math.prod(v.shape) for v in problem.variables()])} variables "
-                f"and {sum([math.prod(c.shape) for c in problem.constraints])} constraints.")
+    LOGGER.info(f"The problem has {sum([functools.reduce(operator.mul, v.shape, 1) for v in problem.variables()])} variables "
+                f"and {sum([functools.reduce(operator.mul, c.shape, 1) for c in problem.constraints])} constraints.")
 
     if solver == "MOSEK":
         solve_algo = cvxpy.MOSEK
