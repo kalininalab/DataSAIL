@@ -23,7 +23,7 @@ jobs:
         python-version: ['3.10']
         include:
           - if: github.ref == 'github/heads/main'
-            os: 'macos-latest'
+            os: ['macos-latest']
             python-version: ['3.7', '3.8', '3.9', '3.11']
           - if: github.ref == 'github/heads/dev'
             python-version: ['3.7']
