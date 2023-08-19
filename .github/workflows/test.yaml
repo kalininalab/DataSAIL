@@ -7,35 +7,37 @@ on:
   # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches:
-      - '*'
+      - main
+      - dev
   pull_request:
     branches:
-      - '*'
+      - main
+      - dev
   workflow_dispatch:  # make is manually start-able
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "test"
   test:
-    strategy:
-      matrix:
-        os: ['ubuntu-latest']
-        python-version: ['3.10']
-        include:
-          - os: 'macos-latest'
-            python-version: ['3.7', '3.8', '3.9', '3.11']
-            if: github.ref == 'refs/heads/main'
-          - python-version: ['3.7']
-            if: github.ref == 'refs/heads/dev'
+    # strategy:
+    #   matrix:
+    #     os: ['ubuntu-latest']
+    #     python-version: ['3.10']
+    #     include:
+    #       - os: 'macos-latest'
+    #         python-version: ['3.7', '3.8', '3.9', '3.11']
+    #         if: github.ref == 'refs/heads/main'
+    #       - python-version: ['3.7']
+    #         if: github.ref == 'refs/heads/dev'
 
-    runs-on: ${{ matrix.os }}
+    runs-on: 'ubuntu-latest'
     steps:
       - uses: actions/checkout@v3
       
       - name: Setup Mamba
         uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.7'
           miniforge-variant: Mambaforge
           miniforge-version: latest
           activate-environment: datasail
