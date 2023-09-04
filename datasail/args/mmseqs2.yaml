@@ -1,0 +1,517 @@
+seed-sub-mat:
+  description: Substitution matrix file for k-mer generation, pair of fileinputs
+  type: str
+  cardinality: "?"
+  default: "[aa:VTML80.out,nucl:nucleotide.out]"
+  calls: ["--seed-sub-mat"]
+
+s:
+  description: "Sensitivity: 1.0 faster; 4.0 fast; 7.5 sensitive"
+  type: float
+  cardinality: "?"
+  default: 4.0
+  calls: ["-s"]
+
+k:
+  description: "k-mer length (0: automatically set to optimum)"
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["-k"]
+
+k-score:
+  description: k-mer threshold for generating similar k-mer lists, pair of int values
+  type: str
+  cardinality: "?"
+  default: "seq:2147483647,prof:2147483647"
+  calls: ["--k-score"]
+
+alph-size:
+  description: Alphabet size (range 2-21), pair of int values in range 2-21
+  type: str
+  cardinality: "?"
+  default: "aa:21,nucl:5"
+  calls: ["--alph-size"]
+
+max-seqs:
+  description: Maximum results per query sequence allowed to pass the prefilter (affects sensitivity), range positive
+  type: int
+  cardinality: "?"
+  default: 20
+  calls: ["--max-seqs"]
+
+split:
+  description: "Split input into N equally distributed chunks. 0: set the best split automatically, range non-negative"
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--split"]
+
+split-mode:
+  description: "0: split target db; 1: split query db; 2: auto, depending on main memory, range 0-2"
+  type: int
+  cardinality: "?"
+  default: 2
+  calls: ["--split-mode"]
+
+split-memory-limit:
+  description: Set max memory per split. E.g. 800B, 5K, 10M, 1G. Default (0) to all available system memory
+  type: str
+  cardinality: "?"
+  default: "0"
+  calls: ["--split-memory-limit"]
+
+comp-bias-corr:
+  description: Correct for locally biased amino acid composition (range 0-1)
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["--comp-bias-corr"]
+
+comp-bias-corr-scale:
+  description: Correct for locally biased amino acid composition (range 0-1)
+  type: float
+  cardinality: "?"
+  default: 1.0
+  calls: ["--comp-bias-corr-scale"]
+
+diag-score:
+  description: Use ungapped diagonal scoring during prefilter
+  type: bool
+  cardinality: 0
+  default: true
+  calls: ["--diag-score"]
+
+exact-kmer-matching:
+  description: Extract only exact k-mers for matching (range 0-1)
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--exact-kmer-matching"]
+
+mask:
+  description: "Mask sequences in k-mer stage: 0: w/o low complexity masking, 1: with low complexity masking"
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["--mask"]
+
+mask-prob:
+  description: Mask sequences if probability is above threshold, range 0-1
+  type: float
+  cardinality: "?"
+  default: 0.9
+  calls: ["--mask-prob"]
+
+mask-lower-case:
+  description: "Lowercase letters will be excluded from k-mer search 0: include region, 1: exclude region"
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--mask-lower-case"]
+
+min-ungapped-score:
+  description: Accept only matches with ungapped alignment score above threshold
+  type: int
+  cardinality: "?"
+  default: 15
+  calls: ["--min-ungapped-score"]
+
+add-self-matches:
+  description: Artificially add entries of queries with themselves (for clustering)
+  type: bool
+  cardinality: 0
+  default: false
+  calls: ["--add-self-matches"]
+
+spaced-kmer-mode:
+  description: "0: use consecutive positions in k-mers; 1: use spaced k-mers, pseudo-boolean values"
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["--spaced-kmer-mode"]
+
+spaced-kmer-pattern:
+  description: User-specified spaced k-mer pattern
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["--spaced-kmer-pattern"]
+
+# local-tmp:
+#   description: Path where some of the temporary files will be created
+#   type: str
+#   cardinality: "?"
+#   default: ""
+#  calls: ["--local-tmp"]
+
+c:
+  description: List matches above this fraction of aligned (covered) residues (see --cov-mode), range 0-1
+  type: float
+  cardinality: "?"
+  default: 0.8
+  calls: ["-c"]
+
+cov-mode:
+  description: "Coverage mode: 0: query and target, 1: target, 2: query, 3: target length >= x% of query length, 4: query length >= x% of target length, 5: short seq. >= x% of other seq. length, range 0-5"
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--cov-mode"]
+
+# a:
+#   description: Add backtrace string (convert to alignments with mmseqs convertalis module)
+#   type: bool
+#   cardinality: 0
+#   default: false
+#   calls: ["-a"]
+
+alignment-mode:
+  description: "How to compute the alignment: 0: automatic, 1: only score and end_pos, 2: also start_pos and cov, 3: also seq.id, 4: only ungapped alignment, range 0-4"
+  type: int
+  cardinality: "?"
+  default: 3
+  calls: ["--alignment-mode"]
+
+alignment-output-mode:
+  description: "How to compute the alignment output: 0: automatic, 1: only score and end_pos, 2: also start_pos and cov, 3: also seq.id, 4: only ungapped alignment, 5: score only (output) cluster format, range 0-5"
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--alignment-output-mode"]
+
+wrapped-scoring:
+  description: Double the (nucleotide) query sequence during the scoring process to allow wrapped diagonal scoring around end and start
+  type: bool
+  cardinality: 0
+  default: false
+  calls: ["--wrapped-scoring"]
+
+e:
+  description: List matches below this E-value (range 0.0-inf)
+  type: float
+  cardinality: "?"
+  default: 0.001
+  calls: ["-e"]
+
+min-seq-id:
+  description: List matches above this sequence identity (for clustering) (range 0.0-1.0)
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["--min-seq-id"]
+
+min-aln-len:
+  description: Minimum alignment length (range 0-INT_MAX)
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--min-aln-len"]
+
+seq-id-mode:
+  description: "Sequence identity mode: 0: alignment length, 1: shorter sequence, 2: longer sequence"
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--seq-id-mode"]
+
+# alt-ali:
+#   description: Show up to this many alternative alignments
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["--alt-ali"]
+
+max-rejected:
+  description: Maximum rejected alignments before alignment calculation for a query is stopped, range non-negative
+  type: int
+  cardinality: "?"
+  default: 2147483647
+  calls: ["--max-rejected"]
+
+max-accept:
+  description: Maximum accepted alignments before alignment calculation for a query is stopped, range non-negative
+  type: int
+  cardinality: "?"
+  default: 2147483647
+  calls: ["--max-accept"]
+
+score-bias:
+  description: Score bias when computing SW alignment (in bits)
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["--score-bias"]
+
+realign:
+  description: Compute more conservative, shorter alignments (scores and E-values not changed)
+  type: bool
+  cardinality: 0
+  default: false
+  calls: ["--realign"]
+
+realign-score-bias:
+  description: Additional bias when computing realignment, range real
+  type: float
+  cardinality: "?"
+  default: -0.2
+  calls: ["--realign-score-bias"]
+
+realign-max-seqs:
+  description: Maximum number of results to return in realignment, range non-negative
+  type: int
+  cardinality: "?"
+  default: 2147483647
+  calls: ["--realign-max-seqs"]
+
+corr-score-weight:
+  description: Weight of backtrace correlation score added to the alignment score, range real
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["--corr-score-weight"]
+
+gap-open:
+  description: Gap open cost, pair of non-negative values
+  type: str
+  cardinality: "?"
+  default: "aa:11,nucl:5"
+  calls: ["--gap-open"]
+
+gap-extend:
+  description: Gap extension cost, pair of non-negative values
+  type: str
+  cardinality: "?"
+  default: "aa:1,nucl:2"
+  calls: ["--gap-extend"]
+
+zdrop:
+  description: Max allowed difference between score values before alignment is truncated (nucleotide alignment only)
+  type: int
+  cardinality: "?"
+  default: 40
+  calls: ["--zdrop"]
+
+cluster-mode:
+  description: "Cluster mode: 0: Set-Cover (greedy), 1: Connected component (BLASTclust), 2,3: Greedy clustering by sequence length (CDHIT)"
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--cluster-mode"]
+
+max-iterations:
+  description: Maximum depth of breadth first search in connected component clustering, range non-negative
+  type: int
+  cardinality: "?"
+  default: 1000
+  calls: ["--max-iterations"]
+
+similarity-type:
+  description: "Type of score used for clustering. 1: alignment score, 2: sequence identity"
+  type: int
+  cardinality: "?"
+  default: 2
+  calls: ["--similarity-type"]
+
+single-step-clustering:
+  description: Switch from cascaded to simple clustering workflow
+  type: bool
+  cardinality: 0
+  default: false
+  calls: ["--single-step-clustering"]
+
+cluster-steps:
+  description: Cascaded clustering steps from 1 to -s
+  type: int
+  cardinality: "?"
+  default: 3
+  calls: ["--cluster-steps"]
+
+cluster-reassign:
+  description: Cascaded clustering can cluster sequence that do not fulfill the clustering criteria. Cluster reassignment corrects these errors
+  type: bool
+  cardinality: 0
+  default: false
+  calls: ["--cluster-reassign"]
+
+kmer-per-seq:
+  description: k-mers per sequence
+  type: int
+  cardinality: "?"
+  default: 21
+  calls: ["--kmer-per-seq"]
+
+kmer-per-seq-scale:
+  description: Scale k-mer per sequence based on sequence length as kmer-per-seq val + scale x seqlen
+  type: str
+  cardinality: "?"
+  default: "aa:0.000,nucl:0.200"
+  calls: ["--kmer-per-seq-scale"]
+
+adjust-kmer-len:
+  description: Adjust k-mer length based on specificity (only for nucleotides)
+  type: bool
+  cardinality: 0
+  default: false
+  calls: ["--adjust-kmer-len"]
+
+hash-shift:
+  description: Shift k-mer hash initialization
+  type: int
+  cardinality: "?"
+  default: 67
+  calls: ["--hash-shift"]
+
+include-only-extendable:
+  description: Include only extendable
+  type: bool
+  cardinality: 0
+  default: false
+  calls: ["--include-only-extendable"]
+
+ignore-multi-kmer:
+  description: Skip k-mers occurring multiple times (>=2)
+  type: bool
+  cardinality: 0
+  default: false
+  calls: ["--ignore-multi-kmer"]
+
+pca:
+  description: Pseudo count admixture strength
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["--pca"]
+
+pcb:
+  description: "Pseudo counts: Neff at half of maximum admixture (range 0.0-inf)"
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["--pcb"]
+
+taxon-list:
+  description: Taxonomy ID, possibly multiple values separated by ','
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["--taxon-list"]
+
+rescore-mode:
+  description: "Rescore diagonals with: 0: Hamming distance, 1: local alignment (score only), 2: local alignment, 3: global alignment, 4: longest alignment fulfilling window quality criterion"
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--rescore-mode"]
+
+dbtype:
+  description: "Database type 0: auto, 1: amino acid 2: nucleotides"
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--dbtype"]
+
+shuffle:
+  description: Shuffle input database
+  type: bool
+  cardinality: 0
+  default: true
+  calls: ["--shuffle"]
+
+createdb-mode:
+  description: "Createdb mode 0: copy data, 1: soft link data and write new index (works only with single line fasta/q)"
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["--createdb-mode"]
+
+id-offset:
+  description: Numeric ids in index file are offset by this value
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--id-offset"]
+
+sub-mat:
+  description: Substitution matrix file
+  type: str
+  cardinality: "?"
+  default: "aa:blosum62.out,nucl:nucleotide.out"
+  calls: ["--sub-mat"]
+
+max-seq-len:
+  description: Maximum sequence length
+  type: int
+  cardinality: "?"
+  default: 65535
+  calls: ["--max-seq-len"]
+
+db-load-mode:
+  description: "Database preload mode 0: auto, 1: fread, 2: mmap, 3: mmap+touch"
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--db-load-mode"]
+
+threads:
+  description: Number of CPU-cores used (all by default)
+  type: int
+  cardinality: "?"
+  default: 16
+  calls: ["--threads"]
+
+# compressed:
+#   description: Write compressed output
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["--compressed"]
+
+# v:
+#   description: "Verbosity level: 0: quiet, 1: +errors, 2: +warnings, 3: +info"
+#   type: int
+#   cardinality: "?"
+#   default: 3
+#   calls: ["-v"]
+
+# remove-tmp-files:
+#   description: Delete temporary files
+#   type: bool
+#   cardinality: 0
+#   default: true
+#   calls: ["--remove-tmp-files"]
+
+# force-reuse:
+#   description: Reuse tmp files in tmp/latest folder ignoring parameters and version changes
+#   type: bool
+#   cardinality: 0
+#   default: false
+#   calls: ["--force-reuse"]
+
+mpi-runner:
+  description: Use MPI on compute cluster with this MPI command (e.g. "mpirun -np 42")
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["--mpi-runner"]
+
+filter-hits:
+  description: Filter hits by seq.id and coverage
+  type: bool
+  cardinality: 0
+  default: false
+  calls: ["--filter-hits"]
+
+sort-results:
+  description: "Sort results: 0: no sorting, 1: sort by E-value (Alignment) or seq.id. (Hamming)"
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--sort-results"]
+
+# write-lookup:
+#   description: Write .lookup file containing mapping from internal id, fasta id and file number
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["--write-lookup"]

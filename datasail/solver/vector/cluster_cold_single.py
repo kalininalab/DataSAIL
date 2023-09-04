@@ -72,8 +72,8 @@ def solve_ccs_bqp(
     alpha = 0.5
     problem = solve(alpha * size_loss + e_loss, constraints, max_sec, solver, log_file)
 
-    tmp = dict(
-        (e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_clusters) if x_e[s][i, 0].value > 0.1
-    )
-    return tmp
+    if problem is None:
+        return {}
+
+    return {e: names[s] for s in range(len(splits)) for i, e in enumerate(e_clusters) if x_e[s][i, 0].value > 0.1}
 

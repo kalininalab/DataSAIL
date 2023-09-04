@@ -1,6 +1,7 @@
 import time
 from typing import Dict, Tuple
 
+from datasail.argparse_patch import remove_patch
 from datasail.cluster.clustering import cluster
 from datasail.reader.read import read_data, check_duplicates
 from datasail.report import report
@@ -16,6 +17,7 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     Args:
         **kwargs: Parsed commandline arguments to DataSAIL.
     """
+    kwargs = remove_patch(**kwargs)
     start = time.time()
     LOGGER.info("Read data")
 

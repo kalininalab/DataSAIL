@@ -71,6 +71,10 @@ def solve_ccd_bqp(
     x_f = [cvxpy.Variable((len(f_clusters), 1), boolean=True) for _ in range(len(splits))]
     x_i = [cvxpy.Variable((len(e_clusters), len(f_clusters)), boolean=True) for _ in range(len(splits))]
 
+    # check if the cluster relations are uniform
+    e_uniform = e_similarities is not None and e_similarities == np.ones_like(e_similarities) or e_distances is not None and e_distances == np.ones_like(e_distances)
+    f_uniform = e_similarities is not None and e_similarities == np.ones_like(e_similarities) or e_distances is not None and e_distances == np.ones_like(e_distances)
+
     constraints = [
         cvxpy.sum([x[:, 0] for x in x_e]) == np.ones((len(e_clusters))),
         cvxpy.sum([x[:, 0] for x in x_f]) == np.ones((len(f_clusters))),
@@ -81,26 +85,35 @@ def solve_ccd_bqp(
         constraints += [
             min_lim[s] <= cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter, x_i[s]), axis=0), axis=0),
             cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter, x_i[s]), axis=0), axis=0) <= max_lim[s],
-        ] + interaction_constraints(e_clusters, f_clusters, inter, x_e, x_f, x_i, s) + [
-            cluster_sim_dist_constraint(e_similarities, e_distances, e_t, e_ones, x_e, s),
-            cluster_sim_dist_constraint(f_similarities, f_distances, f_t, f_ones, x_f, s),
-        ]
+        ] + interaction_constraints(e_clusters, f_clusters, inter, x_e, x_f, x_i, s)\
+        if not e_uniform:
+            constraints.append(cluster_sim_dist_constraint(e_similarities, e_distances, e_t, e_ones, x_e, s))
+        if not f_uniform:
+            constraints.append(cluster_sim_dist_constraint(f_similarities, f_distances, f_t, f_ones, x_f, s))
 
     inter_loss = cvxpy.sum(
         [cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter_ones - x_i[s], inter), axis=0), axis=0) for s in range(len(splits))]
     )
 
-    e_loss = cluster_sim_dist_objective(e_similarities, e_distances, e_ones, e_weights, x_e, splits)
-    f_loss = cluster_sim_dist_objective(f_similarities, f_distances, f_ones, f_weights, x_f, splits)
+    if not e_uniform:
+        e_loss = cluster_sim_dist_objective(e_similarities, e_distances, e_ones, e_weights, x_e, splits)
+    else:
+        e_loss = 0
+    if not f_uniform:
+        f_loss = cluster_sim_dist_objective(f_similarities, f_distances, f_ones, f_weights, x_f, splits)
+    else:
+        f_loss = 0
 
-    solve(alpha * inter_loss + e_loss + f_loss, constraints, max_sec, solver, log_file)
+    problem = solve(alpha * inter_loss + e_loss + f_loss, constraints, max_sec, solver, log_file)
+    if problem is None:
+        return {}, {}, {}
 
     # report the found solution
-    output = ({}, dict(
-        (e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_clusters) if x_e[s][:, 0][i].value > 0.1
-    ), dict(
-        (f, names[s]) for s in range(len(splits)) for j, f in enumerate(f_clusters) if x_f[s][:, 0][j].value > 0.1
-    ))
+    output = (
+        {},
+        {e: names[s] for s in range(len(splits)) for i, e in enumerate(e_clusters) if x_e[s][:, 0][i].value > 0.1},
+        {f: names[s] for s in range(len(splits)) for j, f in enumerate(f_clusters) if x_f[s][:, 0][j].value > 0.1},
+    )
     for i, e in enumerate(e_clusters):
         for j, f in enumerate(f_clusters):
             for s in range(len(splits)):

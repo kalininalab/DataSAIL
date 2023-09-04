@@ -1,10 +1,7 @@
-import logging
 import os.path
-import sys
-from typing import Dict, List, Tuple, Callable, Iterable, Union, Generator
+from typing import Dict, List, Tuple, Callable, Union, Generator
 
-from datasail.parsers import parse_cdhit_args, parse_mash_args, parse_mmseqs_args, \
-    parse_datasail_args
+from datasail.parsers import parse_datasail_args, MultiYAMLParser
 from datasail.reader.utils import DATA_INPUT, MATRIX_INPUT
 from datasail.run import datasail_main
 from datasail.settings import *
@@ -120,15 +117,9 @@ def validate_args(**kwargs) -> Dict[str, object]:
     if kwargs[KW_E_SIM] is not None and isinstance(kwargs[KW_E_SIM], str):
         if kwargs[KW_E_SIM].lower() not in SIM_ALGOS and not os.path.isfile(kwargs[KW_E_SIM]):
             error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", 9, kwargs[KW_CLI])
-        elif kwargs[KW_E_SIM].lower() == "cdhit":
-            validate_cdhit_args(kwargs[KW_E_ARGS], kwargs[KW_CLI])
-        elif kwargs[KW_E_SIM].lower() == "mmseqs":
-            validate_mmseqs_args(kwargs[KW_E_ARGS], kwargs[KW_CLI])
     if kwargs[KW_E_DIST] is not None and isinstance(kwargs[KW_E_DIST], str):
         if kwargs[KW_E_DIST].lower() not in DIST_ALGOS and not os.path.isfile(kwargs[KW_E_DIST]):
             error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10, kwargs[KW_CLI])
-        elif kwargs[KW_E_DIST].lower() == "mash":
-            validate_mash_args(kwargs[KW_E_ARGS], kwargs[KW_CLI])
     if 1 < kwargs[KW_E_MAX_SIM] < 0:
         error("The maximal similarity value for the E-data has to be a real value in [0,1].", 11, kwargs[KW_CLI])
     if 1 < kwargs[KW_E_MAX_DIST] < 0:
@@ -142,15 +133,9 @@ def validate_args(**kwargs) -> Dict[str, object]:
     if kwargs[KW_F_SIM] is not None and isinstance(kwargs[KW_F_SIM], str):
         if kwargs[KW_F_SIM].lower() not in SIM_ALGOS and not os.path.isfile(kwargs[KW_F_SIM]):
             error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", 15, kwargs[KW_CLI])
-        elif kwargs[KW_F_SIM].lower() == "cdhit":
-            validate_cdhit_args(kwargs[KW_F_ARGS], kwargs[KW_CLI])
-        elif kwargs[KW_F_SIM].lower() == "mmseqs":
-            validate_mmseqs_args(kwargs[KW_F_ARGS], kwargs[KW_CLI])
     if kwargs[KW_F_DIST] is not None and isinstance(kwargs[KW_F_DIST], str):
         if kwargs[KW_F_DIST].lower() not in DIST_ALGOS and not os.path.isfile(kwargs[KW_F_DIST]):
             error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16, kwargs[KW_CLI])
-        elif kwargs[KW_F_DIST].lower() == "mash":
-            validate_mash_args(kwargs[KW_F_ARGS], kwargs[KW_CLI])
     if 1 < kwargs[KW_F_MAX_SIM] < 0:
         error("The maximal similarity value for the F-data has to be a real value in [0,1].", 17, kwargs[KW_CLI])
     if 1 < kwargs[KW_F_MAX_DIST] < 0:
@@ -158,53 +143,6 @@ def validate_args(**kwargs) -> Dict[str, object]:
 
     return kwargs
 
-
-def validate_cdhit_args(cdhit_args: str, cli: bool) -> None:
-    """
-    Validate the custom arguments provided to DataSAIL for executing MASH.
-
-    Args:
-        cdhit_args: String of the arguments that can be set by user
-        cli: boolean flag indicating that this program has been started from commandline
-    """
-    parsed = parse_cdhit_args(cdhit_args)
-    if not ((parsed["n"] == 2 and 0.4 <= parsed["c"] <= 0.5) or
-            (parsed["n"] == 3 and 0.5 <= parsed["c"] <= 0.6) or
-            (parsed["n"] == 4 and 0.6 <= parsed["c"] <= 0.7) or
-            (parsed["n"] == 5 and 0.7 <= parsed["c"] <= 1.0)):
-        error("There are restrictions on the values for n and c in CD-HIT:\n"
-              "n == 5 <=> c in [0.7, 1.0]\n"
-              "n == 4 <=> c in [0.6, 0.7]\n"
-              "n == 3 <=> c in [0.5, 0.6]\n"
-              "n == 2 <=> c in [0.4, 0.5]", 19, cli)
-
-
-def validate_mash_args(mash_args: str, cli: bool) -> None:
-    """
-    Validate the custom arguments provided to DataSAIL for executing MASH.
-
-    Args:
-        mash_args:String of the arguments that can be set by user
-        cli: boolean flag indicating that this program has been started from commandline
-    """
-    parsed = parse_mash_args(mash_args)
-    if parsed["k"] < 1:
-        error("MASH parameter k must be positive.", 20, cli)
-    if parsed["s"] < 1:
-        error("MASH parameter s must be positive.", 21, cli)
-
-
-def validate_mmseqs_args(mmseqs_args, cli) -> None:
-    """
-    Validate the custom arguments provided to DataSAIL for executing MMseqs.
-
-    Args:
-        mmseqs_args: String of the arguments that can be set by user
-        cli: boolean flag indicating that this program has been started from commandline
-    """
-    parsed = parse_mmseqs_args(mmseqs_args)
-    if 1 < parsed["seq_id"] < 0:
-        error("The minimum sequence identity for mmseqs has to be a value between 0 and 1.", 22, cli)
 
 
 def datasail(

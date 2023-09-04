@@ -117,6 +117,7 @@ def individual_report(
 
     # print statistics on how the sizes of the splits are distributed
     split_counts = dict((n, 0) for n in split_names)
+    print(name_split_map[technique])
     for name in dataset.names:
         split_counts[name_split_map[technique][name]] += dataset.weights.get(name, 0)
     print(stats_string(sum(dataset.weights.values()), split_counts))

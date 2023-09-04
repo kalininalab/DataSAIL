@@ -52,8 +52,9 @@ def solve_ics_bqp(
         for b in range(len(splits))
     ) * normalization
 
-    solve(dist_loss, constraints, max_sec, solver, log_file)
+    problem = solve(dist_loss, constraints, max_sec, solver, log_file)
 
-    return dict(
-        (e, names[b]) for b in range(len(splits)) for i, e in enumerate(e_entities) if x_e[i, b].value > 0.1
-    )
+    if problem is None:
+        return {}
+
+    return {e: names[b] for b in range(len(splits)) for i, e in enumerate(e_entities) if x_e[i, b].value > 0.1}

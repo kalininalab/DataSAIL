@@ -1,6 +1,11 @@
 import argparse
-from typing import Dict
+import os
+from pydoc import locate
+from typing import Dict, List, Sequence, Optional
 
+import yaml
+
+from datasail.argparse_patch import insert_patch
 from datasail.settings import *
 
 
@@ -274,52 +279,71 @@ def parse_datasail_args(args) -> Dict[str, object]:
         default=1.0,
         help="Maximal distance of two samples from the second dataset in the same split."
     )
-    print("Parsers\n", args)
+    args = insert_patch(args)
     return vars(parser.parse_args(args))
 
 
-def parse_cdhit_args(cdhit_args):
-    """
-    Check if the provided arguments for CD-HIT are valid.
+class MultiYAMLParser(argparse.ArgumentParser):
+    def __init__(self, algo_name):
+        super().__init__()
+        if algo_name is not None:
+            self.add_yaml_arguments(YAML_FILE_NAMES[algo_name])
 
-    Args:
-        cdhit_args: String of the additional arguments for CD-HIT
+    def parse_args(self, args: Optional[Sequence[str]] = ...) -> argparse.Namespace:
+        # args = args.split(" ") if " " in args else (args if isinstance(args, list) else [args])
+        if isinstance(args, str):
+            if " " in args:
+                args = args.split(" ")
+            elif len(args) > 0:
+                args = [args]
+        return super().parse_args(args)
 
-    Returns:
-        The arguments as keys of a dictionary matching them to their provided values
-    """
-    cdhit_parser = argparse.ArgumentParser()
-    cdhit_parser.add_argument("-c", type=float, default=0.9)
-    cdhit_parser.add_argument("-n", type=int, default=5, choices=[2, 3, 4, 5])
-    return vars(cdhit_parser.parse_args(cdhit_args))
+    def add_yaml_arguments(self, yaml_filepath):
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), yaml_filepath), "r") as data:
+            data = yaml.safe_load(data)
+        for name, values in data.items():
+            kwargs = {"dest": name.replace("-", "_"), "type": locate(values["type"])}
+            if kwargs["type"] == bool:
+                if values["default"] == False:
+                    kwargs.update({"action": "store_true", "default": False})
+                else:
+                    kwargs.update({"action": "store_false", "default": True})
+                del kwargs["type"]
+            else:
+                if values["cardinality"] != 0:
+                    kwargs["nargs"] = values["cardinality"]
+                if values["default"] is not None:
+                    kwargs["default"] = values["default"]
+            super().add_argument(
+                *values["calls"],
+                **kwargs,
+            )
+
+    def get_user_arguments(self, args: argparse.Namespace, ds_args: List[str]):
+        """
+
+        Args:
+            args:
+            ds_args: Arguments that are optimized by DataSAIL and extracted differently.
+
+        Returns:
+
+        """
+        cleaned_args = namespace_diff(args, self.parse_args([]))
+        action_map = {action.dest: action.option_strings[0] for action in self._actions}
+
+        for key in ds_args:
+            if key in cleaned_args:
+                del cleaned_args[key]
+
+        return " ".join([f"{action_map[key]} {value}" for key, value in cleaned_args.items()])
 
 
-def parse_mash_args(mash_args):
-    """
-    Check if the provided arguments for MASH are valid.
-
-    Args:
-        mash_args: String of the additional arguments for MASH
-
-    Returns:
-        The arguments as keys of a dictionary matching them to their provided values
-    """
-    mash_parser = argparse.ArgumentParser()
-    mash_parser.add_argument("-k", type=int, default=21)
-    mash_parser.add_argument("-s", type=int, default=10000)
-    return vars(mash_parser.parse_args(mash_args))
-
-
-def parse_mmseqs_args(mmseqs_args):
-    """
-    Check if the provided arguments for MMseq2 are valid.
-
-    Args:
-        mmseqs_args: String of the additional arguments for MMseqs2
-
-    Returns:
-        The arguments as keys of a dictionary matching them to their provided values
-    """
-    mmseqs_parser = argparse.ArgumentParser()
-    mmseqs_parser.add_argument("--min-seq-id", type=float, default=0, dest="seq_id")
-    return vars(mmseqs_parser.parse_args(mmseqs_args))
+def namespace_diff(a: argparse.Namespace, b: argparse.Namespace) -> dict:
+    output = {}
+    if a is None:
+        return output
+    for key, value in vars(a).items():
+        if not hasattr(b, key) or getattr(b, key) != value:
+            output[key] = value
+    return output

@@ -1,11 +1,13 @@
 import os
+from argparse import Namespace
 from dataclasses import dataclass, fields
 from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
 
 import numpy as np
 import pandas as pd
 
-from datasail.settings import FORM_FASTA, FORM_SMILES, FORM_PDB
+from datasail.settings import FORM_FASTA, FORM_SMILES, FORM_PDB, MMSEQS, INSTALLED, CDHIT, FOLDSEEK, P_TYPE, M_TYPE, \
+    G_TYPE, MMSEQS2, MASH, ECFP
 
 DATA_INPUT = Optional[Union[str, Dict[str, str], Callable[..., Dict[str, str]], Generator[Tuple[str, str], None, None]]]
 MATRIX_INPUT = Optional[Union[str, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
@@ -16,7 +18,7 @@ DictMap = Dict[str, List[Dict[str, str]]]
 class DataSet:
     type: Optional[str] = None
     format: Optional[str] = None
-    args: str = ""
+    args: Optional[Union[Namespace, Tuple[Namespace, Namespace]]] = None
     names: Optional[List[str]] = None
     id_map: Optional[Dict[str, str]] = None
     cluster_names: Optional[List[str]] = None
@@ -314,15 +316,19 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
     Returns:
         Tuple of the names of the method to use to compute either the similarity or distance for the input
     """
-    if data_type == "P":
+    if data_type == P_TYPE:
         if data_format == FORM_PDB:
-            return "foldseek", None
+            return FOLDSEEK, None
         elif data_format == FORM_FASTA:
-            return "cdhit", None
-    if data_type == "M" and data_format == FORM_SMILES:
-        return "ecfp", None
-    if data_type == "G" and data_format == FORM_FASTA:
-        return None, "mash"
+            # Check if cd-hit is installed or neither of cd-hit and mmseqs are
+            if INSTALLED[CDHIT] or not INSTALLED[MMSEQS]:
+                return CDHIT, None
+            else:
+                return MMSEQS2, None
+    if data_type == M_TYPE and data_format == FORM_SMILES:
+        return ECFP, None
+    if data_type == G_TYPE and data_format == FORM_FASTA:
+        return None, MASH
     return None, None
 
 

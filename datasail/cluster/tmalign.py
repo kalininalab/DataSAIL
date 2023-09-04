@@ -5,7 +5,7 @@ from typing import Dict, Tuple, List
 import numpy as np
 
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, INSTALLED, TMALIGN
 
 
 def run_tmalign(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
@@ -21,11 +21,16 @@ def run_tmalign(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    cmd = f"mkdir tmalign && " \
-          f"cd tmalign"
+    if not INSTALLED[TMALIGN]:
+        raise ValueError("TM-align is not installed.")
 
-    if os.path.exists("tmalign"):
-        cmd = "rm -rf tmalign && " + cmd
+    results_folder = "tmalign_results"
+
+    cmd = f"mkdir {results_folder} && " \
+          f"cd {results_folder}"
+
+    if os.path.exists(results_folder):
+        cmd = f"rm -rf {results_folder} && " + cmd
 
     count, total = 0, len(dataset.names) * (len(dataset.names) - 1) / 2
     for i, name1 in enumerate(dataset.names):
@@ -41,8 +46,8 @@ def run_tmalign(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray
     os.system(cmd)
 
     cluster_names, cluster_map, cluster_sim = dataset.names, dict((n, n) for n in dataset.names), \
-        read_tmalign_folder(dataset, "tmalign")
-    shutil.rmtree("tmalign")
+        read_tmalign_folder(dataset, results_folder)
+    shutil.rmtree(results_folder)
 
     return cluster_names, cluster_map, cluster_sim
 

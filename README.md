@@ -44,6 +44,9 @@ pip install grakel
 to install DataSAIL in an already existing environment. Due to dependencies of the clustering algorithms, the latter 
 might lead to package conflicts with the already installed packages and requirements.
 
+DataSAIL is available from Python 3.7 and newer, but tests have shown that the behaviour of SCIP improves with higher 
+python versions. So, we recommend to install DataSAIL in Python 3.8 or newer.
+
 ## Usage
 
 DataSAIL is installed as a commandline tool. So, in the conda environment DataSAIL has been installed to, you can run 

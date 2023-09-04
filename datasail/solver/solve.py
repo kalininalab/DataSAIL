@@ -6,7 +6,7 @@ from cvxpy import SolverError
 
 from datasail.cluster.clustering import reverse_clustering, cluster_interactions
 from datasail.reader.utils import DataSet, DictMap
-from datasail.settings import LOGGER, MODE_F, TEC_R, TEC_ICS, TEC_CCS, TEC_ICD, TEC_CCD
+from datasail.settings import LOGGER, MODE_F, TEC_R, TEC_ICS, TEC_CCS, TEC_ICD, TEC_CCD, MMSEQS, CDHIT, MMSEQS2
 from datasail.solver.scalar.id_cold_single import solve_ics_bqp as solve_ics_bqp_scalar
 from datasail.solver.vector.id_cold_single import solve_ics_bqp as solve_ics_bqp_vector
 from datasail.solver.scalar.id_cold_double import solve_icd_bqp as solve_icd_bqp_scalar
@@ -94,14 +94,14 @@ def run_solver(
                     )
                     insert(output_inter, technique, solution)
                 elif technique[:3] == TEC_ICS or (technique[:3] == TEC_CCS and isinstance(dataset.similarity, str) and
-                                                  dataset.similarity.lower() in ["cdhit", "mmseqs"]):
+                                                  dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]):
                     if vectorized:
                         fun = solve_ics_bqp_vector
                     else:
                         fun = solve_ics_bqp_scalar
 
                     if technique[:3] == TEC_CCS and (isinstance(dataset.similarity, str) and
-                                                     dataset.similarity.lower() in ["cdhit", "mmseqs"]):
+                                                     dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]):
                         names = dataset.cluster_names
                         weights = [dataset.cluster_weights.get(x, 0) for x in dataset.cluster_names]
                     else:
@@ -123,7 +123,7 @@ def run_solver(
                     if solution is not None:
                         if technique[:3] == TEC_CCS \
                                 and isinstance(dataset.similarity, str) \
-                                and dataset.similarity.lower() in ["cdhit", "mmseqs"]:
+                                and dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]:
                             if mode == MODE_F:
                                 insert(output_f_clusters, technique, solution)
                                 insert(output_f_entities, technique,

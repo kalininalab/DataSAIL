@@ -3,6 +3,7 @@ import os
 from typing import Dict, Tuple, List, Union, Optional
 
 import numpy as np
+import sklearn
 from sklearn.cluster import AffinityPropagation, AgglomerativeClustering
 
 from datasail.cluster.caching import load_from_cache, store_to_cache
@@ -39,7 +40,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
 
     elif isinstance(dataset.distance, str):  # compute the distance
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_distance, dataset.cluster_weights = \
-            distance_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_THREADS])
+            distance_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR])
 
     # if the similarity/distance is already given, store it
     elif isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
@@ -66,6 +67,9 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
             form = "similarity" if dataset.similarity is not None else "distance"
             if kwargs[KW_OUTDIR] is not None:
                 heatmap(metric, os.path.join(kwargs[KW_OUTDIR], dataset.get_name() + f"_{form}.png"))
+
+    if len(dataset.cluster_names) > 100:
+        dataset = force_clustering(dataset)
 
     store_to_cache(dataset, **kwargs)
 
@@ -221,28 +225,35 @@ def additional_clustering(
     # set up the cluster algorithm for similarity or distance based cluster w/o specifying the number of clusters
     if dataset.cluster_similarity is not None:
         cluster_matrix = np.array(dataset.cluster_similarity, dtype=float)
-        ca = AffinityPropagation(affinity='precomputed', random_state=42, verbose=True, damping=damping,
-                                 max_iter=max_iter)
+        ca = AffinityPropagation(
+            affinity='precomputed',
+            random_state=42,
+            verbose=True,
+            damping=damping,
+            max_iter=max_iter,
+        )
     else:
         cluster_matrix = np.array(dataset.cluster_distance, dtype=float)
-        ca = AgglomerativeClustering(
-            n_clusters=None,
-            metric='precomputed',
-            linkage='average',
-            distance_threshold=np.average(dataset.cluster_distance) * dist_factor,
-            # verbose=True,
-            # connectivity=np.asarray(cluster_matrix < np.average(cluster_distance) * 0.9, dtype=int),
-        )
+        kwargs = {
+            "n_clusters": None,
+            "metric": 'precomputed',
+            "linkage": 'average',
+            "distance_threshold": np.average(dataset.cluster_distance) * dist_factor,
+            # "verbose": True,
+            # "connectivity": np.asarray(cluster_matrix < np.average(cluster_distance) * 0.9, dtype=int),
+        }
+        ca = AgglomerativeClustering(**kwargs)
         LOGGER.info(
             f"Clustering based on distances. "
             f"Distances above {np.average(dataset.cluster_distance) * 0.9} cannot end up in same cluster."
         )
-        kwargs = {}
-
     # cluster the clusters into new, fewer, and bigger clusters
     labels = ca.fit_predict(cluster_matrix)
     converged = not hasattr(ca, "n_iter_") or ca.n_iter_ < max_iter
+    return labels2clusters(labels, dataset, cluster_matrix, converged)
 
+
+def labels2clusters(labels, dataset, cluster_matrix, converged) -> Tuple[DataSet, bool]:
     # extract the names of the new clusters and compute a mapping from the element names to the clusters
     old_cluster_map = dict((y, x) for x, y in enumerate(dataset.cluster_names))
     new_cluster_names = list(np.unique(labels))
@@ -282,6 +293,30 @@ def additional_clustering(
         dataset.cluster_distance = np.minimum(new_cluster_matrix, 1 - np.eye(len(new_cluster_matrix)))
 
     return dataset, converged
+
+
+def force_clustering(dataset: DataSet) -> DataSet:
+    labels = []
+    sizes = np.zeros(100)
+    fraction = sum(dataset.cluster_weights.values()) / 100
+    for name, weight in sorted(dataset.cluster_weights.items(), key=lambda x: x[1], reverse=True):
+        assigned = False
+        overlap = np.zeros(100)
+        for i in range(100):
+            if sizes[i] + weight < fraction:
+                labels.append(i)
+                sizes[i] += weight
+                assigned = True
+                break
+            else:
+                overlap[i] += weight + sizes[i] - fraction
+        if not assigned:
+            idx = overlap.argmin()
+            labels.append(idx)
+            sizes[idx] += weight
+
+    matrix = dataset.cluster_similarity if dataset.cluster_similarity is not None else dataset.cluster_distance
+    return labels2clusters(labels, dataset, matrix, True)[0]
 
 
 def cluster_interactions(

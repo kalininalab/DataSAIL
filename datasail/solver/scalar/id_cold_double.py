@@ -79,14 +79,17 @@ def solve_icd_bqp(
         for j, f in enumerate(f_entities) if (e, f) in inter
     ) / inter_count
 
-    solve(inter_loss, constraints, max_sec, solver, log_file)
+    problem = solve(inter_loss, constraints, max_sec, solver, log_file)
+
+    if problem is None:
+        return {}, {}, {}
 
     # report the found solution
-    output = ({}, dict(
-        (e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[i, s].value > 0.1
-    ), dict(
-        (f, names[s]) for s in range(len(splits)) for j, f in enumerate(f_entities) if x_f[j, s].value > 0.1
-    ))
+    output = (
+        {},
+        {e: names[s] for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[i, s].value > 0.1},
+        {f: names[s] for s in range(len(splits)) for j, f in enumerate(f_entities) if x_f[j, s].value > 0.1},
+    )
     for i, e in enumerate(e_entities):
         for j, f in enumerate(f_entities):
             if (e, f) in inter:

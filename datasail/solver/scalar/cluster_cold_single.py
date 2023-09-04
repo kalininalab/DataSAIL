@@ -63,6 +63,9 @@ def solve_ccs_bqp(
     )
     e_loss = cluster_sim_dist_objective(e_similarities, e_distances, len(e_clusters), e_weights, x_e, len(splits))
 
-    solve(alpha * size_loss + e_loss, constraints, max_sec, solver, log_file)
+    problem = solve(alpha * size_loss + e_loss, constraints, max_sec, solver, log_file)
 
-    return dict((e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_clusters) if x_e[i, s].value > 0.1)
+    if problem is None:
+        return {}
+
+    return {e: names[s] for s in range(len(splits)) for i, e in enumerate(e_clusters) if x_e[i, s].value > 0.1}

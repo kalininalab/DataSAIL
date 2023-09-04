@@ -118,23 +118,27 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: str):
         solve_algo = cvxpy.SCIP
         kwargs = {"scip_params": {"limits/time": max_sec}}
     with LoggerRedirect(log_file):
-        problem.solve(
-            solver=solve_algo,
-            qcp=True,
-            verbose=True,
-            **kwargs,
-        )
+        try:
+            problem.solve(
+                solver=solve_algo,
+                qcp=True,
+                verbose=True,
+                **kwargs,
+            )
 
-    LOGGER.info(f"{solver} status: {problem.status}")
-    LOGGER.info(f"Solution's score: {problem.value}")
+            LOGGER.info(f"{solver} status: {problem.status}")
+            LOGGER.info(f"Solution's score: {problem.value}")
 
-    if "optimal" not in problem.status:
-        LOGGER.warning(
-            'SCIP cannot solve the problem. Please consider relaxing split restrictions, '
-            'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
-        )
-        return None
-    return problem
+            if "optimal" not in problem.status:
+                LOGGER.warning(
+                    f'{solver} cannot solve the problem. Please consider relaxing split restrictions, '
+                    'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
+                )
+                return None
+            return problem
+        except KeyError:
+            LOGGER.warning(f"Solving failed for {''}. Please use try another solver or update your python version.")
+            return None
 
 
 def sample_categorical(
