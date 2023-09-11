@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, UNK_LOCATION
 
 
 def cluster_param_binary_search(
@@ -21,6 +21,8 @@ def cluster_param_binary_search(
         log_dir: str,
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
+    Perform binary search on the parameter space for clustering algorithms. So far, this is used to find optimal number
+    of clusters for CD-HIT and MMseqs2.
 
     Args:
         dataset: The dataset to cluster on.
@@ -28,14 +30,15 @@ def cluster_param_binary_search(
         min_args: The lower bound for the arguments.
         max_args: The upper bound for the arguments.
         user_args: Additional arguments that the user may have provided.
-        threads:
-        trial:
-        args2str:
-        gen_args:
-        log_dir:
+        threads: Number of threads to be used by the clustering algorithm.
+        trial: Callable method running the actual clustering algorithm.
+        args2str: Convert arguments to string to include them in filenames.
+        gen_args: A callable function that generates a new argument configuration for the binary search. Has to be
+            callable with two old parameter configurations.
+        log_dir: Directory to store the logs.
 
     Returns:
-
+        Return the cluster names, the mapping from names to cluster names, and a similarity or distance matrix
     """
     def args2log(x: Tuple):
         """
@@ -52,7 +55,13 @@ def cluster_param_binary_search(
         )
 
     # cluster with the initial arguments
-    cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(init_args), user_args, threads, args2log(init_args))
+    cluster_names, cluster_map, cluster_sim = trial(
+        dataset,
+        args2str(init_args),
+        user_args,
+        threads,
+        args2log(init_args)
+    )
     num_clusters = len(cluster_names)
     LOGGER.info(f"First round of clustering found {num_clusters} clusters for {len(dataset.names)} samples.")
 
@@ -131,3 +140,18 @@ def heatmap(matrix: np.ndarray, output_file: str) -> None:
     fig.tight_layout()
     plt.savefig(output_file)
     plt.clf()
+
+
+def extract_fasta(dataset: DataSet) -> None:
+    """
+    Extract the protein sequences from the dataset into a FASTA file that serves as input for CD-HIT or MMseqs2.
+
+    Args:
+        dataset: The dataset to extract the amino acid sequences from
+    """
+    if not os.path.exists(dataset.location):
+        dataset.location = dataset.location + (".fasta" if dataset.location.endswith(UNK_LOCATION) else "")
+        with open(dataset.location, "w") as out:
+            for idx, seq in dataset.data.items():
+                print(">" + idx, file=out)
+                print(seq, file=out)

@@ -11,6 +11,11 @@ import numpy as np
 from datasail.settings import LOGGER
 
 
+def compute_limits(epsilon, total, splits):
+    return [int(split * epsilon * total) for split in splits], \
+        [int(split / epsilon * total) for split in splits]
+
+
 def inter_mask(
         e_entities: List[str],
         f_entities: List[str],
@@ -113,7 +118,11 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: str):
 
     if solver == "MOSEK":
         solve_algo = cvxpy.MOSEK
-        kwargs = {"mosek_params": {"MSK_DPAR_OPTIMIZER_MAX_TIME": max_sec}}
+        kwargs = {"mosek_params": {
+            "MSK_DPAR_OPTIMIZER_MAX_TIME": max_sec,
+            "MSK_IPAR_NUM_THREADS": 14,
+            # "MSK_IPAR_OPTIMIZER": "conic",
+        }}
     else:
         solve_algo = cvxpy.SCIP
         kwargs = {"scip_params": {"limits/time": max_sec}}

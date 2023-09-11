@@ -32,6 +32,7 @@ def run_foldseek(
 
     results_folder = "fs_results"
 
+    # TODO: Default alignment-type is 2 and exhaustive search is off ???
     cmd = f"mkdir {results_folder} && " \
           f"cd {results_folder} && " \
           f"foldseek " \
@@ -40,11 +41,10 @@ def run_foldseek(
           f"{os.path.join('..', dataset.location)} " \
           f"aln.m8 tmp " \
           f"--alignment-type 1 " \
-          f"--tmscore-threshold 0.0 " \
           f"--format-output 'query,target,fident' " \
           f"--exhaustive-search 1 " \
           f"-e inf " \
-          f"--threads {threads} "  # TODO: Check when ext. search and when thats too long
+          f"--threads {threads} "  # TODO: Check when ext. search and when that's too long
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"

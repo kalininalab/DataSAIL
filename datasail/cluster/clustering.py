@@ -3,7 +3,6 @@ import os
 from typing import Dict, Tuple, List, Union, Optional
 
 import numpy as np
-import sklearn
 from sklearn.cluster import AffinityPropagation, AgglomerativeClustering
 
 from datasail.cluster.caching import load_from_cache, store_to_cache
@@ -16,7 +15,7 @@ from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS
 
 
 def cluster(dataset: DataSet, **kwargs) -> DataSet:
@@ -57,7 +56,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     if any(isinstance(m, np.ndarray) for m in
            [dataset.similarity, dataset.cluster_similarity, dataset.cluster_distance]):
         num_old_cluster = len(dataset.cluster_names) + 1
-        while 100 < len(dataset.cluster_names) < num_old_cluster:
+        while MAX_CLUSTERS < len(dataset.cluster_names) < num_old_cluster:
             num_old_cluster = len(dataset.cluster_names)
             dataset = stable_additional_clustering(dataset)
 
@@ -68,7 +67,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
             if kwargs[KW_OUTDIR] is not None:
                 heatmap(metric, os.path.join(kwargs[KW_OUTDIR], dataset.get_name() + f"_{form}.png"))
 
-    if len(dataset.cluster_names) > 100:
+    if len(dataset.cluster_names) > MAX_CLUSTERS:
         dataset = force_clustering(dataset)
 
     store_to_cache(dataset, **kwargs)
@@ -190,7 +189,7 @@ def stable_additional_clustering(dataset: DataSet, min_num_clusters: int = 10) -
     else:
         min_f, curr_f, max_f = 0, 0.9, 1
         ds, _ = additional_clustering(ds, dist_factor=curr_f)
-        while len(ds.cluster_names) < min_num_clusters or 100 < len(ds.cluster_names):
+        while len(ds.cluster_names) < min_num_clusters or MAX_CLUSTERS < len(ds.cluster_names):
             if len(ds.cluster_names) < min_num_clusters:
                 max_f = curr_f
             else:
@@ -253,7 +252,25 @@ def additional_clustering(
     return labels2clusters(labels, dataset, cluster_matrix, converged)
 
 
-def labels2clusters(labels, dataset, cluster_matrix, converged) -> Tuple[DataSet, bool]:
+def labels2clusters(
+        labels: Union[List, np.ndarray],
+        dataset: DataSet,
+        cluster_matrix: np.ndarray,
+        converged: bool
+) -> Tuple[DataSet, bool]:
+    """
+    Convert a list of labels to a clustering and insert it into the dataset. This also updates cluster_weights and
+    distance or similarity metrics.
+
+    Args:
+        labels: List of labels
+        dataset: The dataset that is clustered
+        cluster_matrix: Matrix storing distance or similarity values
+        converged: a boolean to forward whether the clustering converged
+
+    Returns:
+        The updated dataset and the converged-flag
+    """
     # extract the names of the new clusters and compute a mapping from the element names to the clusters
     old_cluster_map = dict((y, x) for x, y in enumerate(dataset.cluster_names))
     new_cluster_names = list(np.unique(labels))
@@ -296,25 +313,46 @@ def labels2clusters(labels, dataset, cluster_matrix, converged) -> Tuple[DataSet
 
 
 def force_clustering(dataset: DataSet) -> DataSet:
+    """
+    Enforce a clustering to reduce the number of clusters to a reasonable amount. This is only done if the other
+    clustering algorithms did not detect any reasonable similarity or distance in the dataset. The cluster assignment
+    is fully random and distributes the samples equally into the samples (as far as possible given already detected
+    clusters).
+
+    Args:
+        dataset: The dataset to be clustered
+
+    Returns:
+        The clustered dataset
+    """
+    LOGGER.info(f"Enforce clustering from {len(dataset.cluster_names)} clusters to {MAX_CLUSTERS} clusters")
+
+    # define the list of clusters, the current sizes of the individual clusters, and how big they shall become
     labels = []
-    sizes = np.zeros(100)
-    fraction = sum(dataset.cluster_weights.values()) / 100
+    sizes = np.zeros(MAX_CLUSTERS)
+    fraction = sum(dataset.cluster_weights.values()) / MAX_CLUSTERS
+
     for name, weight in sorted(dataset.cluster_weights.items(), key=lambda x: x[1], reverse=True):
         assigned = False
-        overlap = np.zeros(100)
-        for i in range(100):
+        overlap = np.zeros(MAX_CLUSTERS)
+        for i in range(MAX_CLUSTERS):
+            # if the entity can be assigned to cluster i without exceeding the target size, assign it there, ...
             if sizes[i] + weight < fraction:
                 labels.append(i)
                 sizes[i] += weight
                 assigned = True
                 break
+            # ... otherwise store the absolute overhead
             else:
                 overlap[i] += weight + sizes[i] - fraction
+
+        # if the entity hasn't been assigned, assign to the cluster where it causes the smallest overhead
         if not assigned:
             idx = overlap.argmin()
             labels.append(idx)
             sizes[idx] += weight
 
+    # cluster the dataset based on the list of new clusters and return
     matrix = dataset.cluster_similarity if dataset.cluster_similarity is not None else dataset.cluster_distance
     return labels2clusters(labels, dataset, matrix, True)[0]
 
@@ -360,7 +398,28 @@ def reverse_clustering(cluster_split: Dict[str, str], name_cluster: Dict[str, st
     Returns:
         Assignment of names to splits
     """
-    output = {}
-    for n, c in name_cluster.items():
-        output[n] = cluster_split[c]
-    return output
+    return {n: cluster_split[c] for n, c in name_cluster.items()}
+
+
+def reverse_interaction_clustering(
+        inter_split: Dict[Tuple[str, str], str],
+        e_name_cluster_map: Dict[str, str],
+        f_name_cluster_map: Dict[str, str],
+        inter: List[Tuple[str, str]]
+) -> Dict[str, str]:
+    """
+    Revert the clustering of interactions.
+
+    Args:
+        inter_split: The assignment of each cell of an interaction matrix to a split based on the cluster names.
+        e_name_cluster_map: Mapping from sample names to cluster names for the e-dataset.
+        f_name_cluster_map: Mapping from sample names to cluster names for the f-dataset.
+        inter: List of interactions as pairs of entity names from each dataset.
+
+    Returns:
+
+    """
+    return {
+        (e_name, f_name): inter_split[e_name_cluster_map[e_name], f_name_cluster_map[f_name]]
+        for e_name, f_name in inter
+    }

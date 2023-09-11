@@ -201,12 +201,12 @@ alignment-output-mode:
   cardinality: "?"
   calls: ["--alignment-output-mode"]
 
-e:
-  description: List matches below this E-value, range float
-  type: float
-  default: 10.0
-  cardinality: "?"
-  calls: ["-e"]
+# e:
+#   description: List matches below this E-value, range float
+#   type: float
+#   default: 10.0
+#   cardinality: "?"
+#   calls: ["-e"]
 
 min-aln-len:
   description: Minimum alignment length, range non-negative

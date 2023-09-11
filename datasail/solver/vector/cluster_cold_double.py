@@ -4,7 +4,7 @@ import cvxpy
 import numpy as np
 
 from datasail.settings import NOT_ASSIGNED
-from datasail.solver.utils import solve
+from datasail.solver.utils import solve, compute_limits
 from datasail.solver.vector.utils import interaction_constraints, cluster_sim_dist_constraint, \
     cluster_sim_dist_objective
 
@@ -57,24 +57,24 @@ def solve_ccd_bqp(
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
         dataset
     """
-    alpha = 0.1
+    alpha = 1
+
     inter_count = np.sum(inter)
     e_ones = np.ones((1, len(e_clusters)))
     f_ones = np.ones((1, len(f_clusters)))
     inter_ones = np.ones_like(inter)
     e_t = np.full((len(e_clusters), len(e_clusters)), e_threshold)
     f_t = np.full((len(f_clusters), len(f_clusters)), f_threshold)
-    min_lim = [int((split - epsilon) * inter_count) for split in splits]
-    max_lim = [int((split + epsilon) * inter_count) for split in splits]
+    min_lim, max_lim = compute_limits(epsilon, inter_count, splits)
 
     x_e = [cvxpy.Variable((len(e_clusters), 1), boolean=True) for _ in range(len(splits))]
     x_f = [cvxpy.Variable((len(f_clusters), 1), boolean=True) for _ in range(len(splits))]
     x_i = [cvxpy.Variable((len(e_clusters), len(f_clusters)), boolean=True) for _ in range(len(splits))]
 
     # check if the cluster relations are uniform
-    e_uniform = e_similarities is not None and e_similarities == np.ones_like(e_similarities) or e_distances is not None and e_distances == np.ones_like(e_distances)
-    f_uniform = e_similarities is not None and e_similarities == np.ones_like(e_similarities) or e_distances is not None and e_distances == np.ones_like(e_distances)
-
+    e_uniform = e_similarities is not None and np.allclose(e_similarities, np.ones_like(e_similarities)) or e_distances is not None and np.allclose(e_distances, np.ones_like(e_distances))
+    f_uniform = f_similarities is not None and np.allclose(f_similarities, np.ones_like(f_similarities)) or f_distances is not None and np.allclose(f_distances, np.ones_like(f_distances))
+    # print("\n".join(" ".join(f"{int(v):2d}" for v in row) for row in inter))
     constraints = [
         cvxpy.sum([x[:, 0] for x in x_e]) == np.ones((len(e_clusters))),
         cvxpy.sum([x[:, 0] for x in x_f]) == np.ones((len(f_clusters))),
@@ -85,7 +85,7 @@ def solve_ccd_bqp(
         constraints += [
             min_lim[s] <= cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter, x_i[s]), axis=0), axis=0),
             cvxpy.sum(cvxpy.sum(cvxpy.multiply(inter, x_i[s]), axis=0), axis=0) <= max_lim[s],
-        ] + interaction_constraints(e_clusters, f_clusters, inter, x_e, x_f, x_i, s)\
+        ] + interaction_constraints(e_clusters, f_clusters, inter, x_e, x_f, x_i, s)
         if not e_uniform:
             constraints.append(cluster_sim_dist_constraint(e_similarities, e_distances, e_t, e_ones, x_e, s))
         if not f_uniform:

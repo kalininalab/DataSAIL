@@ -4,10 +4,10 @@ import shutil
 
 import numpy as np
 
-from datasail.cluster.utils import cluster_param_binary_search
+from datasail.cluster.utils import cluster_param_binary_search, extract_fasta
 from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, UNK_LOCATION, MMSEQS2, INSTALLED
+from datasail.settings import LOGGER, MMSEQS2, INSTALLED
 
 
 def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
@@ -30,13 +30,7 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[
 
     user_args = MultiYAMLParser(MMSEQS2).get_user_arguments(dataset.args, ["c"])
     vals = (dataset.args.c,)
-
-    if not os.path.exists(dataset.location):
-        with open(dataset.location + ".fasta" if dataset.location.endswith(UNK_LOCATION) else "", "w") as out:
-            for idx, seq in dataset.data.items():
-                print(">" + idx, file=out)
-                print(seq, file=out)
-        dataset.location = dataset.location + ".fasta" if dataset.location.endswith(UNK_LOCATION) else ""
+    extract_fasta(dataset)
 
     return cluster_param_binary_search(
         dataset,

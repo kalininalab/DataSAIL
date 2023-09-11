@@ -4,10 +4,10 @@ from typing import Tuple, List, Dict, Optional
 
 import numpy as np
 
-from datasail.cluster.utils import cluster_param_binary_search
+from datasail.cluster.utils import cluster_param_binary_search, extract_fasta
 from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, UNK_LOCATION, CDHIT, INSTALLED
+from datasail.settings import LOGGER, CDHIT, INSTALLED
 
 
 def run_cdhit(
@@ -34,13 +34,7 @@ def run_cdhit(
 
     user_args = MultiYAMLParser(CDHIT).get_user_arguments(dataset.args, ["c", "n"])
     vals = (dataset.args.c, dataset.args.n)
-
-    if not os.path.exists(dataset.location):
-        with open(dataset.location + ".fasta" if dataset.location.endswith(UNK_LOCATION) else "", "w") as out:
-            for idx, seq in dataset.data.items():
-                print(">" + idx, file=out)
-                print(seq, file=out)
-        dataset.location = dataset.location + ".fasta" if dataset.location.endswith(UNK_LOCATION) else ""
+    extract_fasta(dataset)
 
     return cluster_param_binary_search(
         dataset,

@@ -4,7 +4,7 @@ from typing import Tuple, Optional, List, Dict, Union
 import numpy as np
 from cvxpy import SolverError
 
-from datasail.cluster.clustering import reverse_clustering, cluster_interactions
+from datasail.cluster.clustering import reverse_clustering, cluster_interactions, reverse_interaction_clustering
 from datasail.reader.utils import DataSet, DictMap
 from datasail.settings import LOGGER, MODE_F, TEC_R, TEC_ICS, TEC_CCS, TEC_ICD, TEC_CCD, MMSEQS, CDHIT, MMSEQS2
 from datasail.solver.scalar.id_cold_single import solve_ics_bqp as solve_ics_bqp_scalar
@@ -216,10 +216,15 @@ def run_solver(
                     )
 
                     if cluster_split is not None:
-                        insert(output_inter, technique, cluster_split[0])
                         insert(output_e_clusters, technique, cluster_split[1])
                         insert(output_f_clusters, technique, cluster_split[2])
                         # output_inter[technique], output_e_clusters[technique], output_f_clusters[technique] = cluster_split
+                        insert(output_inter, technique, reverse_interaction_clustering(
+                            cluster_split[0],
+                            e_dataset.cluster_map,
+                            f_dataset.cluster_map,
+                            inter,
+                        ))
                         insert(output_e_entities, technique,
                                reverse_clustering(cluster_split[1], e_dataset.cluster_map))
                         insert(output_f_entities, technique,

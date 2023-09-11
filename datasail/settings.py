@@ -53,6 +53,7 @@ FORM_OTHER = "Other"
 FORM_PDB = "PDB"
 FORM_SMILES = "SMILES"
 NOT_ASSIGNED = "not selected"
+MAX_CLUSTERS = 50
 
 YAML_FILE_NAMES = {
     MMSEQS: "args/mmseqs2.yaml",

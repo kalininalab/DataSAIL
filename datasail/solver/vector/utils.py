@@ -34,10 +34,12 @@ def interaction_constraints(
     for i, e1 in enumerate(e_data):
         for j, e2 in enumerate(f_data):
             if isinstance(inter, np.ndarray) or (e1, e2) in inter:
-                constraints.append(x_i[s][i, j] >= (x_e[s][:, 0][i] + x_f[s][:, 0][j] - 1.5))
-                constraints.append(x_i[s][i, j] <= (x_e[s][:, 0][i] + x_f[s][:, 0][j]) * 0.5)
-                constraints.append(x_e[s][:, 0][i] >= x_i[s][i, j])
-                constraints.append(x_f[s][:, 0][j] >= x_i[s][i, j])
+                # constraints.append(x_i[s][i, j] >= (x_e[s][:, 0][i] + x_f[s][:, 0][j] - 1.5))
+                # constraints.append(x_i[s][i, j] <= (x_e[s][:, 0][i] + x_f[s][:, 0][j]) * 0.5)
+                # constraints.append(x_e[s][:, 0][i] >= x_i[s][i, j])
+                # constraints.append(x_f[s][:, 0][j] >= x_i[s][i, j])
+                constraints.append(x_i[s][i, j] >= cvxpy.maximum(x_e[s][:, 0][i] + x_f[s][:, 0][j] - 1, 0))
+                constraints.append(x_i[s][i, j] <= 0.75 * (x_e[s][:, 0][i] + x_f[s][:, 0][j]))
     return constraints
 
 
