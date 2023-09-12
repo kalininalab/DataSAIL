@@ -41,8 +41,7 @@ def run_tmalign(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray
                 cmd += f" && echo {count} / {total}"
 
     LOGGER.info("Start TMalign clustering")
-
-    LOGGER.info(cmd[:200])
+    LOGGER.info(cmd[:200] + ("..." if len(cmd) > 200 else ""))
     os.system(cmd)
 
     cluster_names, cluster_map, cluster_sim = dataset.names, dict((n, n) for n in dataset.names), \

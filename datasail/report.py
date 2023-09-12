@@ -59,7 +59,7 @@ def report(
 
             # save mapping of interactions for this split if applicable
             if t in inter_split_map:
-                save_inter_assignment(save_dir, split_names, inter_split_map[t][run])
+                save_inter_assignment(save_dir, inter_split_map[t][run])
 
             # Compile report for first dataset if applies for this split
             if e_dataset.type is not None and ((mode is not None and mode != "f") or t[-1] == "D") and \
@@ -117,23 +117,18 @@ def individual_report(
 
     # print statistics on how the sizes of the splits are distributed
     split_counts = dict((n, 0) for n in split_names)
-    print(name_split_map[technique])
-    for name in dataset.names:
-        split_counts[name_split_map[technique][name]] += dataset.weights.get(name, 0)
-    print(stats_string(sum(dataset.weights.values()), split_counts))
+    # print(name_split_map[technique])
+    # for name in dataset.names:
+    #     split_counts[name_split_map[technique][name]] += dataset.weights.get(name, 0)
+    # print(stats_string(sum(dataset.weights.values()), split_counts))
 
 
-def save_inter_assignment(
-        save_dir: str,
-        split_names: List[str],
-        inter_split_map: Optional[Dict[Tuple[str, str], str]]
-) -> None:
+def save_inter_assignment(save_dir: str, inter_split_map: Optional[Dict[Tuple[str, str], str]]) -> None:
     """
     Save the assignment of interactions to splits in a TSV file.
 
     Args:
         save_dir: Directory to store the file in.
-        split_names: List of the names of splits
         inter_split_map: Mapping from interactions to the splits
     """
     if inter_split_map is None:
@@ -296,7 +291,10 @@ def save_cluster_hist(save_dir: str, dataset: DataSet) -> None:
 
 
 def whatever(
-        names: List[str], clusters: Dict[str, str], distances: Optional[np.ndarray], similarities: Optional[np.ndarray],
+        names: List[str],
+        clusters: Dict[str, str],
+        distances: Optional[np.ndarray],
+        similarities: Optional[np.ndarray],
 ) -> None:
     """
     Compute and print some statistics.

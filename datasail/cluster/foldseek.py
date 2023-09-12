@@ -4,6 +4,7 @@ from typing import Tuple, List, Dict, Optional
 
 import numpy as np
 
+from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, FOLDSEEK, INSTALLED
 
@@ -29,10 +30,10 @@ def run_foldseek(
     """
     if not INSTALLED[FOLDSEEK]:
         raise ValueError("Foldseek is not installed.")
+    user_args = MultiYAMLParser(FOLDSEEK).get_user_arguments(dataset.args, [])
 
     results_folder = "fs_results"
 
-    # TODO: Default alignment-type is 2 and exhaustive search is off ???
     cmd = f"mkdir {results_folder} && " \
           f"cd {results_folder} && " \
           f"foldseek " \
@@ -40,11 +41,10 @@ def run_foldseek(
           f"{os.path.join('..', dataset.location)} " \
           f"{os.path.join('..', dataset.location)} " \
           f"aln.m8 tmp " \
-          f"--alignment-type 1 " \
           f"--format-output 'query,target,fident' " \
-          f"--exhaustive-search 1 " \
           f"-e inf " \
-          f"--threads {threads} "  # TODO: Check when ext. search and when that's too long
+          f"--threads {threads} " \
+          f"{user_args}"
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"
@@ -55,10 +55,8 @@ def run_foldseek(
         cmd = f"rm -rf {results_folder} && " + cmd
 
     LOGGER.info("Start FoldSeek clustering")
-
     LOGGER.info(cmd)
     os.system(cmd)
-    print("\n" + cmd)
 
     if not os.path.isfile(f"{results_folder}/aln.m8"):
         raise ValueError("Something went wrong with foldseek. The output file does not exist.")

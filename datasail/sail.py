@@ -1,7 +1,7 @@
 import os.path
 from typing import Dict, List, Tuple, Callable, Union, Generator
 
-from datasail.parsers import parse_datasail_args, MultiYAMLParser
+from datasail.parsers import parse_datasail_args
 from datasail.reader.utils import DATA_INPUT, MATRIX_INPUT
 from datasail.run import datasail_main
 from datasail.settings import *
@@ -63,7 +63,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
 
     # check splits to be more than 1 and their fractions sum up to 1 and check the names
     if len(kwargs[KW_SPLITS]) < 2:
-        error("Less then two splits required. This is no useful input, please check the input again.", 1, 
+        error("Less then two splits required. This is no useful input, please check the input again.", 1,
               kwargs[KW_CLI])
     if kwargs[KW_NAMES] is None:
         kwargs[KW_NAMES] = [f"Split{x:03d}" for x in range(len(kwargs[KW_SPLITS]))]
@@ -116,10 +116,12 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The filepath to the weights of the E-data is invalid.", 8, kwargs[KW_CLI])
     if kwargs[KW_E_SIM] is not None and isinstance(kwargs[KW_E_SIM], str):
         if kwargs[KW_E_SIM].lower() not in SIM_ALGOS and not os.path.isfile(kwargs[KW_E_SIM]):
-            error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", 9, kwargs[KW_CLI])
+            error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", 9,
+                  kwargs[KW_CLI])
     if kwargs[KW_E_DIST] is not None and isinstance(kwargs[KW_E_DIST], str):
         if kwargs[KW_E_DIST].lower() not in DIST_ALGOS and not os.path.isfile(kwargs[KW_E_DIST]):
-            error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10, kwargs[KW_CLI])
+            error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10,
+                  kwargs[KW_CLI])
     if 1 < kwargs[KW_E_MAX_SIM] < 0:
         error("The maximal similarity value for the E-data has to be a real value in [0,1].", 11, kwargs[KW_CLI])
     if 1 < kwargs[KW_E_MAX_DIST] < 0:
@@ -128,21 +130,23 @@ def validate_args(**kwargs) -> Dict[str, object]:
     # syntactically parse the input data for the F-dataset
     if kwargs[KW_F_DATA] is not None and isinstance(kwargs[KW_F_DATA], str) and not os.path.exists(kwargs[KW_F_DATA]):
         error("The filepath to the F-data is invalid.", 13, kwargs[KW_CLI])
-    if kwargs[KW_F_WEIGHTS] is not None and isinstance(kwargs[KW_F_WEIGHTS], str) and not os.path.isfile(kwargs[KW_F_WEIGHTS]):
+    if kwargs[KW_F_WEIGHTS] is not None and isinstance(kwargs[KW_F_WEIGHTS], str) and not os.path.isfile(
+            kwargs[KW_F_WEIGHTS]):
         error("The filepath to the weights of the F-data is invalid.", 14, kwargs[KW_CLI])
     if kwargs[KW_F_SIM] is not None and isinstance(kwargs[KW_F_SIM], str):
         if kwargs[KW_F_SIM].lower() not in SIM_ALGOS and not os.path.isfile(kwargs[KW_F_SIM]):
-            error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", 15, kwargs[KW_CLI])
+            error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", 15,
+                  kwargs[KW_CLI])
     if kwargs[KW_F_DIST] is not None and isinstance(kwargs[KW_F_DIST], str):
         if kwargs[KW_F_DIST].lower() not in DIST_ALGOS and not os.path.isfile(kwargs[KW_F_DIST]):
-            error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16, kwargs[KW_CLI])
+            error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16,
+                  kwargs[KW_CLI])
     if 1 < kwargs[KW_F_MAX_SIM] < 0:
         error("The maximal similarity value for the F-data has to be a real value in [0,1].", 17, kwargs[KW_CLI])
     if 1 < kwargs[KW_F_MAX_DIST] < 0:
         error("The maximal distance value for the F-data has to be a real value in [0,1].", 18, kwargs[KW_CLI])
 
     return kwargs
-
 
 
 def datasail(
@@ -244,4 +248,3 @@ def sail(args=None, **kwargs) -> None:
 
 if __name__ == '__main__':
     sail()
-

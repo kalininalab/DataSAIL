@@ -1,11 +1,13 @@
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional
 
 import numpy as np
+import rdkit
 from rdkit import Chem, DataStructs, RDLogger
 from rdkit.Chem import AllChem
 from rdkit.Chem.Scaffolds.MurckoScaffold import MakeScaffoldGeneric
 from rdkit.Chem.rdchem import MolSanitizeException
 
+from datasail.cluster.utils import read_molecule_encoding
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER
 
@@ -33,7 +35,7 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
 
     invalid_mols = []
     for name in dataset.names:
-        scaffold = Chem.MolFromSmiles(dataset.data[name])
+        scaffold = read_molecule_encoding(dataset.data[name])
         if scaffold is None:
             bo, bc = "{", "}"
             LOGGER.warning(f"RDKit cannot parse {name} {bo}{dataset.data[name]}{bc}")

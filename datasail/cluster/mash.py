@@ -4,8 +4,9 @@ from typing import Tuple, List, Dict, Optional
 
 import numpy as np
 
+from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, INSTALLED, MASH
+from datasail.settings import LOGGER, INSTALLED, MASH, MASH_DIST, MASH_SKETCH
 
 
 def run_mash(
@@ -29,12 +30,15 @@ def run_mash(
     """
     if not INSTALLED[MASH]:
         raise ValueError("MASH is not installed.")
+    user_args_sketch = MultiYAMLParser(MASH_SKETCH).get_user_arguments(dataset.args[0], [])
+    user_args_dist = MultiYAMLParser(MASH_DIST).get_user_arguments(dataset.args[1], [])
 
     results_folder = "mash_results"
     cmd = f"mkdir {results_folder} && " \
           f"cd mash_results && " \
-          f"mash sketch -s 10000 -p {threads} -o ./cluster {os.path.join('..', dataset.location, '*.fna')} && " \
-          f"mash dist -p {threads} -t cluster.msh cluster.msh > cluster.tsv "
+          f"mash sketch -s 10000 -p {threads} -o ./cluster {os.path.join('..', dataset.location, '*.fna')} " \
+          f"{user_args_sketch} && " \
+          f"mash dist -p {threads} -t cluster.msh cluster.msh > cluster.tsv {user_args_dist}"
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"
@@ -45,7 +49,6 @@ def run_mash(
         cmd = f"rm -rf {results_folder} && " + cmd
 
     LOGGER.info("Start MASH clustering")
-
     LOGGER.info(cmd)
     os.system(cmd)
 

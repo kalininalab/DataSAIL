@@ -1,8 +1,10 @@
 import os
-from typing import Tuple, List, Dict, Callable
+from typing import Tuple, List, Dict, Callable, Optional
 
 import numpy as np
+import rdkit
 from matplotlib import pyplot as plt
+from rdkit import Chem
 
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, UNK_LOCATION
@@ -155,3 +157,19 @@ def extract_fasta(dataset: DataSet) -> None:
             for idx, seq in dataset.data.items():
                 print(">" + idx, file=out)
                 print(seq, file=out)
+
+
+def read_molecule_encoding(encoding: str) -> Optional[rdkit.Chem.rdchem.Mol]:
+    """
+    Detect and read the encoding of a molecule. For FASTA and Sequence input, the user must be able to specify the type
+    of sequence encoded:
+    https://www.rdkit.org/docs/source/rdkit.Chem.rdmolfiles.html#rdkit.Chem.rdmolfiles.MolFromSequence
+
+    Args:
+        encoding: Molecule encoded in some string format
+
+    Returns:
+        The molecule or None if encoding is not readable or mol is invalid.
+    """
+    # TODO: Read FASTA-, HELM-, MOL2-, MOL-, PDB-, PGN-, SVG-, Sequence-, SMARTS-, SMILES-, TPL-, XYZ-strings
+    return Chem.MolFromSmiles(encoding)

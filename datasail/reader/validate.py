@@ -1,12 +1,34 @@
 import os
 from argparse import Namespace
+from typing import Any, Dict, Tuple, Union, Optional
 
 from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import get_default
 from datasail.settings import CDHIT, MMSEQS2, MASH, MASH_SKETCH, MASH_DIST, FOLDSEEK, MMSEQS
 
 
-def validate_user_args(dtype, dformat, kwargs, kw_sim, kw_dist, kw_args):
+def validate_user_args(
+        dtype: str,
+        dformat: str,
+        kwargs: Dict[str, Any],
+        kw_sim: str,
+        kw_dist: str,
+        kw_args: str
+) -> Optional[Union[Namespace, Tuple[Optional[Namespace], Optional[Namespace]]]]:
+    """
+    Validate the arguments from the user for an external clustering program.
+
+    Args:
+        dtype: Type of data to be clustered
+        dformat: Format of the data to be clustered
+        kwargs: full set of keyword arguments from argument parsing
+        kw_sim: Constant to access the similarity keyword argument
+        kw_dist: Constant to access the distance keyword argument
+        kw_args: Constant to access the custom arguments keyword argument
+
+    Returns:
+        The namespace containing the parsed and validated arguments
+    """
     sim_none, dist_none = kwargs[kw_sim] is None, kwargs[kw_dist] is None
     both_none = sim_none and dist_none
     if (not sim_none and kwargs[kw_sim].lower() == CDHIT) or (both_none and get_default(dtype, dformat)[0] == CDHIT):
@@ -112,7 +134,16 @@ def check_cdhit_arguments(args: str = "") -> Namespace:
     return args
 
 
-def check_mmseqs_arguments(args: str = ""):
+def check_mmseqs_arguments(args: str = "") -> Optional[Namespace]:
+    """
+    Validate the custom arguments provided to DataSAIL for executing MMSEQS2.
+
+    Args:
+        args: String of the arguments that can be set by user
+
+    Returns:
+        The namespace containing the parsed and validated arguments.
+    """
     # Reference: https://github.com/soedinglab/MMseqs2/blob/master/src/commons/Parameters.cpp
     args = MultiYAMLParser(MMSEQS2).parse_args(args)
 
@@ -349,7 +380,17 @@ def check_foldseek_arguments(args: str = "") -> Namespace:
     return args
 
 
-def check_mash_arguments(args: str = ""):
+def check_mash_arguments(args: str = "") -> Tuple[Optional[Namespace], Optional[Namespace]]:
+    """
+    Validate the custom arguments provided to DataSAIL for executing MASH.
+
+    Args:
+        args: String of the arguments that can be set by user. This should contain "|" as a separator between sketch
+        and dist arguments.
+
+    Returns:
+        The namespace containing the parsed and validated arguments.
+    """
     if os.path.isfile(args):
         raise NotImplementedError()
     else:
@@ -363,7 +404,16 @@ def check_mash_arguments(args: str = ""):
     return sketch_args, dist_args
 
 
-def check_mash_sketch_arguments(args: str = ""):
+def check_mash_sketch_arguments(args: str = "") -> Namespace:
+    """
+    Validate the custom arguments provided to DataSAIL for executing MASH sketch.
+
+    Args:
+        args: String of the arguments that can be set by user
+
+    Returns:
+        The namespace containing the parsed and validated arguments.
+    """
     # args = args.split(" ") if " " in args else (args if isinstance(args, list) else [args])
     args = MultiYAMLParser(MASH_SKETCH).parse_args(args)
 
@@ -457,6 +507,15 @@ def check_mash_sketch_arguments(args: str = ""):
 
 
 def check_mash_dist_arguments(args: str = ""):
+    """
+    Validate the custom arguments provided to DataSAIL for executing MASH dist.
+
+    Args:
+        args: String of the arguments that can be set by user
+
+    Returns:
+        The namespace containing the parsed and validated arguments.
+    """
     # args = args.split(" ") if " " in args else (args if isinstance(args, list) else [args])
     args = MultiYAMLParser(MASH_DIST).parse_args(args)
 

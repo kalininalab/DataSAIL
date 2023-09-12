@@ -285,11 +285,27 @@ def parse_datasail_args(args) -> Dict[str, object]:
 
 class MultiYAMLParser(argparse.ArgumentParser):
     def __init__(self, algo_name):
+        """
+        Initialize the argument parser for DataSAIL. This is a wrapper around the standard argparse.ArgumentParser.
+
+        Args:
+            algo_name: Name of the algorithm to parse arguments for.
+        """
         super().__init__()
         if algo_name is not None:
             self.add_yaml_arguments(YAML_FILE_NAMES[algo_name])
 
     def parse_args(self, args: Optional[Sequence[str]] = ...) -> argparse.Namespace:
+        """
+        Parse the arguments provided by the user. This prepends some preprocessing to the arguments before sending them
+        to the actual parsing.
+
+        Args:
+            args: Arguments provided by the user.
+
+        Returns:
+            Namespace of the parsed arguments.
+        """
         # args = args.split(" ") if " " in args else (args if isinstance(args, list) else [args])
         if isinstance(args, str):
             if " " in args:
@@ -298,7 +314,13 @@ class MultiYAMLParser(argparse.ArgumentParser):
                 args = [args]
         return super().parse_args(args)
 
-    def add_yaml_arguments(self, yaml_filepath):
+    def add_yaml_arguments(self, yaml_filepath) -> None:
+        """
+        Add arguments to the parser based on a YAML file.
+
+        Args:
+            yaml_filepath: Path to the YAML file to read the arguments from.
+        """
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), yaml_filepath), "r") as data:
             data = yaml.safe_load(data)
         for name, values in data.items():
@@ -319,15 +341,16 @@ class MultiYAMLParser(argparse.ArgumentParser):
                 **kwargs,
             )
 
-    def get_user_arguments(self, args: argparse.Namespace, ds_args: List[str]):
+    def get_user_arguments(self, args: argparse.Namespace, ds_args: List[str]) -> str:
         """
+        Get the arguments that the user provided to the program that differ from default values.
 
         Args:
-            args:
+            args: Arguments provided by the user.
             ds_args: Arguments that are optimized by DataSAIL and extracted differently.
 
         Returns:
-
+            String representation of the arguments that the user provided for the program to be passed to subprograms.
         """
         cleaned_args = namespace_diff(args, self.parse_args([]))
         action_map = {action.dest: action.option_strings[0] for action in self._actions}
@@ -340,6 +363,16 @@ class MultiYAMLParser(argparse.ArgumentParser):
 
 
 def namespace_diff(a: argparse.Namespace, b: argparse.Namespace) -> dict:
+    """
+    Get the difference between two namespaces.
+
+    Args:
+        a: First namespace to compare.
+        b: Second namespace to compare.
+
+    Returns:
+        Dictionary of all attributes that are different between the two namespaces.
+    """
     output = {}
     if a is None:
         return output

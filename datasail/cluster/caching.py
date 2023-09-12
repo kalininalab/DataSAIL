@@ -16,7 +16,7 @@ def load_from_cache(dataset: DataSet, **kwargs) -> Optional[DataSet]:
         **kwargs: Further arguments to the program regarding caching.
 
     Returns:
-
+        The dataset if it could be loaded from cache, else none
     """
     if kwargs.get("cache", False):
         name = f"{hex(hash(dataset))[2:34]}.pkl"

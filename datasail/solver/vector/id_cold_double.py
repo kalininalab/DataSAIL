@@ -2,7 +2,7 @@ from typing import Optional, Tuple, List, Set, Dict
 
 import cvxpy
 import numpy as np
-from datasail.settings import LOGGER, NOT_ASSIGNED
+from datasail.settings import NOT_ASSIGNED
 
 from datasail.solver.utils import solve, inter_mask
 from datasail.solver.vector.utils import interaction_constraints

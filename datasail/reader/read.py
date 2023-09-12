@@ -68,10 +68,8 @@ def check_duplicates(**kwargs) -> Dict[str, Any]:
 
     # if existent, remove duplicates from second dataset as well
     if kwargs[KW_F_TYPE] is not None:
-        kwargs.update(
-            get_remover_fun(kwargs[KW_F_TYPE])("f_", kwargs.get(KW_OUTDIR, None) or "",
-                                               **get_prefix_args("f_", **kwargs))
-        )
+        kwargs.update(get_remover_fun(kwargs[KW_F_TYPE])
+                      ("f_", kwargs.get(KW_OUTDIR, None) or "", **get_prefix_args("f_", **kwargs)))
 
     return kwargs
 

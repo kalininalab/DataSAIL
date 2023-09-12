@@ -3,7 +3,6 @@ from typing import List, Union, Optional, Dict
 import cvxpy
 import numpy as np
 
-from datasail.settings import LOGGER
 from datasail.solver.utils import solve
 from datasail.solver.vector.utils import cluster_sim_dist_constraint, cluster_sim_dist_objective
 
@@ -42,7 +41,6 @@ def solve_ccs_bqp(
     Returns:
         Mapping from clusters to splits optimizing the objective function
     """
-    LOGGER.info(f"Clustering {len(e_clusters)} clusters into {len(splits)} splits.")
     ones = np.ones((1, len(e_clusters)))
 
     x_e = [cvxpy.Variable((len(e_clusters), 1), boolean=True) for _ in range(len(splits))]

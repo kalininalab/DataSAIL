@@ -128,8 +128,19 @@ def get_mmseqs_map(cluster_file: str) -> Dict[str, str]:
 
 
 def get_mmseqs_map_old(cluster_file: str) -> Dict[str, str]:
+    """
+    This is a helper method for get_mmseqs_map that is necessary when DataSAIL is run on Windows and in a Python3.8
+    build. In this case, MMseqs struggles with different linebreaks of Linux and Windows.
+
+    Args:
+        cluster_file (str): Filepath of file containing the mapping information
+
+    Returns:
+        Map from cluster--members to cluster-representatives (cluster-names)
+    """
     mapping = {}
     rep = ""
+    # The file is basically contains \n\t-separated values
     with open(cluster_file, "r") as f:
         for line in f.readlines():
             if rep == "":

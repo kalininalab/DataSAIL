@@ -1,9 +1,8 @@
 import functools
 import logging
-import math
 import operator
 import sys
-from typing import List, Tuple, Collection, Dict
+from typing import List, Tuple, Collection, Dict, Optional
 
 import cvxpy
 import numpy as np
@@ -11,9 +10,20 @@ import numpy as np
 from datasail.settings import LOGGER
 
 
-def compute_limits(epsilon, total, splits):
-    return [int(split * epsilon * total) for split in splits], \
-        [int(split / epsilon * total) for split in splits]
+def compute_limits(epsilon: float, total: int, splits: List[float]) -> Tuple[List[float], List[float]]:
+    """
+    Compute the lower and upper limits for the splits based on the total number of interactions and the epsilon.
+
+    Args:
+        epsilon: epsilon to use
+        total: total number of interactions
+        splits: list of splits
+
+    Returns:
+        lower and upper limits for the splits
+    """
+    return [int(split * (1 + epsilon) * total) for split in splits], \
+        [int(split * (1 - epsilon) * total) for split in splits]
 
 
 def inter_mask(
@@ -97,7 +107,7 @@ class LoggerRedirect:
         sys.stdout = self.old_stdout
 
 
-def solve(loss, constraints: List, max_sec: int, solver: str, log_file: str):
+def solve(loss, constraints: List, max_sec: int, solver: str, log_file: str) -> Optional[cvxpy.Problem]:
     """
     Minimize the loss function based on the constraints with the timelimit specified by max_sec.
 
@@ -109,7 +119,7 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: str):
         log_file: File to store the detailed log from the solver to
 
     Returns:
-
+        The problem object after solving. None if the problem could not be solved.
     """
     problem = cvxpy.Problem(cvxpy.Minimize(loss), constraints)
     LOGGER.info(f"Start solving with {solver}")
