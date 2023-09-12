@@ -7,6 +7,12 @@ The code for Data Splitting Against Information Leakage, short DataSAIL, is avai
 `conda <https://anaconda.org/kalininalab/datasail>`_ using
 `mamba <https://mamba.readthedocs.io/en/latest/installation.html#existing-conda-install>`_.
 
+GCB 2023
+========
+DataSAIL is presented as **poster 24 at GCB 2023** at DESY in Hamburg.
+
+.. image:: /imgs/DataSAIL_GCB-1.png
+
 Quick Start
 ===========
 
