@@ -293,8 +293,8 @@ def check_foldseek_arguments(args: str = "") -> Namespace:
     if not (0 <= args.alignment_output_mode <= 5):
         raise ValueError("Invalid value for alignment_output_mode. It should be between 0 and 5.")
 
-    if not (0.0 <= args.e <= float("inf")):
-        raise ValueError("Invalid value for e. It should be between 0.0 and infinity.")
+    # if not (0.0 <= args.e <= float("inf")):
+    #     raise ValueError("Invalid value for e. It should be between 0.0 and infinity.")
 
     if not (0 <= args.min_aln_len <= 2147483647):
         raise ValueError("Invalid value for min_aln_len. It should be between 0 and 2147483647.")

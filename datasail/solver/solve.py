@@ -7,14 +7,10 @@ from cvxpy import SolverError
 from datasail.cluster.clustering import reverse_clustering, cluster_interactions, reverse_interaction_clustering
 from datasail.reader.utils import DataSet, DictMap
 from datasail.settings import LOGGER, MODE_F, TEC_R, TEC_ICS, TEC_CCS, TEC_ICD, TEC_CCD, MMSEQS, CDHIT, MMSEQS2
-from datasail.solver.scalar.id_cold_single import solve_ics_bqp as solve_ics_bqp_scalar
-from datasail.solver.vector.id_cold_single import solve_ics_bqp as solve_ics_bqp_vector
-from datasail.solver.scalar.id_cold_double import solve_icd_bqp as solve_icd_bqp_scalar
-from datasail.solver.vector.id_cold_double import solve_icd_bqp as solve_icd_bqp_vector
-from datasail.solver.scalar.cluster_cold_single import solve_ccs_bqp as solve_ccs_bqp_scalar
-from datasail.solver.vector.cluster_cold_single import solve_ccs_bqp as solve_ccs_bqp_vector
-from datasail.solver.scalar.cluster_cold_double import solve_ccd_bqp as solve_ccd_bqp_scalar
-from datasail.solver.vector.cluster_cold_double import solve_ccd_bqp as solve_ccd_bqp_vector
+from datasail.solver.id_cold_single import solve_ics_bqp
+from datasail.solver.id_cold_double import solve_icd_bqp
+from datasail.solver.cluster_cold_single import solve_ccs_bqp
+from datasail.solver.cluster_cold_double import solve_ccd_bqp
 from datasail.solver.utils import sample_categorical
 
 
@@ -38,7 +34,6 @@ def run_solver(
         e_dataset: DataSet,
         f_dataset: DataSet,
         inter: Optional[Union[np.ndarray, List[Tuple[str, str]]]],
-        vectorized: bool,
         epsilon: float,
         runs: int,
         splits: List[float],
@@ -56,7 +51,6 @@ def run_solver(
         e_dataset: First dataset
         f_dataset: Second dataset
         inter: Interactions of elements or clusters of the two datasets
-        vectorized: Boolean flag indicating to run it in vectorized form
         epsilon: Additive bound for exceeding the requested split size
         runs:
         splits: List of split sizes
@@ -95,11 +89,6 @@ def run_solver(
                     insert(output_inter, technique, solution)
                 elif technique[:3] == TEC_ICS or (technique[:3] == TEC_CCS and isinstance(dataset.similarity, str) and
                                                   dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]):
-                    if vectorized:
-                        fun = solve_ics_bqp_vector
-                    else:
-                        fun = solve_ics_bqp_scalar
-
                     if technique[:3] == TEC_CCS and (isinstance(dataset.similarity, str) and
                                                      dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]):
                         names = dataset.cluster_names
@@ -108,9 +97,9 @@ def run_solver(
                         names = dataset.names
                         weights = [dataset.weights.get(x, 0) for x in dataset.names]
 
-                    solution = fun(
-                        e_entities=names,
-                        e_weights=weights,
+                    solution = solve_ics_bqp(
+                        entities=names,
+                        weights=weights,
                         epsilon=epsilon,
                         splits=splits,
                         names=split_names,
@@ -138,11 +127,7 @@ def run_solver(
                             else:
                                 insert(output_e_entities, technique, solution)
                 elif technique[:3] == TEC_ICD:
-                    if vectorized:
-                        fun = solve_icd_bqp_vector
-                    else:
-                        fun = solve_icd_bqp_scalar
-                    solution = fun(
+                    solution = solve_icd_bqp(
                         e_entities=e_dataset.names,
                         f_entities=f_dataset.names,
                         inter=set(inter),
@@ -160,14 +145,12 @@ def run_solver(
                         insert(output_f_entities, technique, solution[2])
                         # output_inter[technique], output_e_entities[technique], output_f_entities[technique] = solution
                 elif technique[:3] == TEC_CCS:
-                    fun = solve_ccs_bqp_vector if vectorized else solve_ccs_bqp_scalar
-
-                    cluster_split = fun(
-                        e_clusters=dataset.cluster_names,
-                        e_weights=[dataset.cluster_weights.get(c, 0) for c in dataset.cluster_names],
-                        e_similarities=dataset.cluster_similarity,
-                        e_distances=dataset.cluster_distance,
-                        e_threshold=dataset.threshold,
+                    cluster_split = solve_ccs_bqp(
+                        clusters=dataset.cluster_names,
+                        weights=[dataset.cluster_weights.get(c, 0) for c in dataset.cluster_names],
+                        similarities=dataset.cluster_similarity,
+                        distances=dataset.cluster_distance,
+                        threshold=dataset.threshold,
                         epsilon=epsilon,
                         splits=splits,
                         names=split_names,
@@ -193,8 +176,7 @@ def run_solver(
                         f_dataset.cluster_map,
                         f_dataset.cluster_names,
                     )
-                    fun = solve_ccd_bqp_vector if vectorized else solve_ccd_bqp_scalar
-                    cluster_split = fun(
+                    cluster_split = solve_ccd_bqp(
                         e_clusters=e_dataset.cluster_names,
                         e_weights=[e_dataset.cluster_weights.get(c, 0) for c in e_dataset.cluster_names],
                         e_similarities=e_dataset.cluster_similarity,

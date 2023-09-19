@@ -102,7 +102,6 @@ KW_SOLVER = "solver"
 KW_SPLITS = "splits"
 KW_TECHNIQUES = "techniques"
 KW_THREADS = "threads"
-KW_VECTORIZED = "vectorized"
 KW_VERBOSE = "verbosity"
 
 SOLVER_MOSEK = "MOSEK"

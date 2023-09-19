@@ -6,7 +6,7 @@ from datasail.cluster.clustering import cluster
 from datasail.reader.read import read_data, check_duplicates
 from datasail.reader.utils import DataSet
 from datasail.report import report
-from datasail.settings import LOGGER, KW_TECHNIQUES, KW_VECTORIZED, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
+from datasail.settings import LOGGER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
     KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F
 from datasail.solver.solve import run_solver, insert
 
@@ -53,7 +53,6 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     # split the data into dictionaries mapping interactions, e-entities, and f-entities into the splits
     inter_split_map, e_name_split_map, f_name_split_map, e_cluster_split_map, f_cluster_split_map = run_solver(
         techniques=kwargs[KW_TECHNIQUES],
-        vectorized=kwargs[KW_VECTORIZED],
         e_dataset=e_dataset,
         f_dataset=f_dataset,
         inter=inter,

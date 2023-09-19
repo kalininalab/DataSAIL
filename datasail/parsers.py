@@ -136,13 +136,6 @@ def parse_datasail_args(args) -> Dict[str, object]:
              "applicable if a valid mosek license is stored)."
     )
     split.add_argument(
-        "--scalar",
-        default=False,
-        action='store_true',
-        dest=KW_VECTORIZED,
-        help="Flag indicating to run the program in scalar for instead of vectorized formulation."
-    )
-    split.add_argument(
         "--cache",
         default=False,
         action='store_true',

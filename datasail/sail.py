@@ -34,7 +34,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
         **kwargs: Arguments in kwargs-format
 
     Returns:
-        The kwargs in case something has been adjusted, e.g. splits have to transformed into sum=1-vector or naming
+        The kwargs in case something has been adjusted, e.g. splits normalization or naming
     """
 
     # create output directory
@@ -74,9 +74,6 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("At least two splits will have the same name. Please check the naming of the splits again to have unique "
               "names", 24, kwargs[KW_CLI])
     kwargs[KW_SPLITS] = [x / sum(kwargs[KW_SPLITS]) for x in kwargs[KW_SPLITS]]
-
-    # convert vectorized from the input question to the flag used in the code
-    kwargs[KW_VECTORIZED] = not kwargs[KW_VECTORIZED]
 
     # check search termination criteria
     if kwargs[KW_MAX_SEC] < 1:
@@ -160,7 +157,6 @@ def datasail(
         epsilon: float = 0.05,
         runs: int = 1,
         solver: str = SOLVER_SCIP,
-        scalar: bool = False,
         cache: bool = False,
         cache_dir: str = None,
         e_type: str = None,
@@ -195,7 +191,6 @@ def datasail(
         epsilon: Fraction by how much the provided split sizes may be exceeded
         runs: Number of runs to perform per split. This may introduce some variance in the splits.
         solver: Solving algorithm to use.
-        scalar: Boolean flag indicating to use the scalar formulation of the problems (deprecated).
         cache: Boolean flag indicating to store or load results from cache.
         cache_dir: Directory to store the cache in if not the default location.
         e_type: Data format of the first batch of data
@@ -225,7 +220,7 @@ def datasail(
         splits = [0.7, 0.2, 0.1]
     kwargs = validate_args(
         output=None, techniques=techniques, inter=inter, max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
-        splits=splits, names=names, epsilon=epsilon, runs=runs, solver=solver, vectorized=scalar, cache=cache,
+        splits=splits, names=names, epsilon=epsilon, runs=runs, solver=solver, cache=cache,
         cache_dir=cache_dir, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=e_dist,
         e_args=e_args, e_max_sim=e_max_sim, e_max_dist=e_max_dist, f_type=f_type, f_data=f_data, f_weights=f_weights,
         f_sim=f_sim, f_dist=f_dist, f_args=f_args, f_max_sim=f_max_sim, f_max_dist=f_max_dist, threads=threads,

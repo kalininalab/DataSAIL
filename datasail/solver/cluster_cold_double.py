@@ -4,8 +4,7 @@ import cvxpy
 import numpy as np
 
 from datasail.settings import NOT_ASSIGNED
-from datasail.solver.utils import solve, compute_limits
-from datasail.solver.vector.utils import interaction_constraints, cluster_sim_dist_constraint, \
+from datasail.solver.utils import solve, compute_limits, interaction_constraints, cluster_sim_dist_constraint, \
     cluster_sim_dist_objective
 
 
@@ -65,7 +64,7 @@ def solve_ccd_bqp(
     inter_ones = np.ones_like(inter)
     e_t = np.full((len(e_clusters), len(e_clusters)), e_threshold)
     f_t = np.full((len(f_clusters), len(f_clusters)), f_threshold)
-    min_lim, max_lim = compute_limits(epsilon, inter_count, splits)
+    max_lim, min_lim = compute_limits(epsilon, inter_count, splits)
 
     x_e = [cvxpy.Variable((len(e_clusters), 1), boolean=True) for _ in range(len(splits))]
     x_f = [cvxpy.Variable((len(f_clusters), 1), boolean=True) for _ in range(len(splits))]
@@ -106,7 +105,7 @@ def solve_ccd_bqp(
 
     problem = solve(alpha * inter_loss + e_loss + f_loss, constraints, max_sec, solver, log_file)
     if problem is None:
-        return {}, {}, {}
+        return None
 
     # report the found solution
     output = (

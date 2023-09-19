@@ -185,8 +185,9 @@ def test_tmalign_protein():
 
 
 @pytest.mark.nowin
-def test_wlkernel_protein(protein_pdb_data):
-    check_clustering(*run_wlk(protein_pdb_data), dataset=protein_pdb_data)
+def test_wlkernel_protein():
+    protein_data = protein_pdb_data(FOLDSEEK)
+    check_clustering(*run_wlk(protein_data), dataset=protein_data)
 
 
 def test_wlkernel_molecule(molecule_data):

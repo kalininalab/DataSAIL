@@ -4,8 +4,7 @@ import cvxpy
 import numpy as np
 from datasail.settings import NOT_ASSIGNED
 
-from datasail.solver.utils import solve, inter_mask
-from datasail.solver.vector.utils import interaction_constraints
+from datasail.solver.utils import solve, inter_mask, compute_limits, interaction_constraints
 
 
 def solve_icd_bqp(
@@ -42,8 +41,7 @@ def solve_icd_bqp(
     """
     inter_count = len(inter)
     inter_ones = inter_mask(e_entities, f_entities, inter)
-    min_lim = [int((split - epsilon) * inter_count) for split in splits]
-    max_lim = [int((split + epsilon) * inter_count) for split in splits]
+    max_lim, min_lim = compute_limits(epsilon, inter_count, splits)
 
     x_e = [cvxpy.Variable((len(e_entities), 1), boolean=True) for _ in range(len(splits))]
     x_f = [cvxpy.Variable((len(f_entities), 1), boolean=True) for _ in range(len(splits))]
@@ -67,7 +65,7 @@ def solve_icd_bqp(
     problem = solve(inter_loss, constraints, max_sec, solver, log_file)
 
     if problem is None:
-        return {}, {}, {}
+        return None
 
     # report the found solution
     output = (
