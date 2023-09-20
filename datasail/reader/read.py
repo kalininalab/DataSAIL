@@ -121,4 +121,4 @@ def read_none_data(*_) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     Returns:
         An empty dataset according to a type of input data that cannot be read
     """
-    return DataSet(), _[-2]
+    return DataSet(), _[-3]
