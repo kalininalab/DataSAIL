@@ -1,6 +1,35 @@
 import logging
 import shutil
 import sys
+from typing import Tuple, Optional
+
+
+def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Return the default clustering method for a specific type of data and a specific format.
+
+    Args:
+        data_type: Type of data as string representation
+        data_format: Format encoded as string
+
+    Returns:
+        Tuple of the names of the method to use to compute either the similarity or distance for the input
+    """
+    if data_type == P_TYPE:
+        if data_format == FORM_PDB:
+            return FOLDSEEK, None
+        elif data_format == FORM_FASTA:
+            # Check if cd-hit is installed or neither of cd-hit and mmseqs are
+            if INSTALLED[CDHIT] or not INSTALLED[MMSEQS]:
+                return CDHIT, None
+            else:
+                return MMSEQS2, None
+    if data_type == M_TYPE and data_format == FORM_SMILES:
+        return ECFP, None
+    if data_type == G_TYPE and data_format == FORM_FASTA:
+        return None, MASH
+    return None, None
+
 
 VERB_MAP = {
     "C": logging.CRITICAL,

@@ -6,8 +6,9 @@ from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
 import numpy as np
 import pandas as pd
 
+from datasail.reader.validate import validate_user_args
 from datasail.settings import FORM_FASTA, FORM_SMILES, FORM_PDB, MMSEQS, INSTALLED, CDHIT, FOLDSEEK, P_TYPE, M_TYPE, \
-    G_TYPE, MMSEQS2, MASH, ECFP
+    G_TYPE, MMSEQS2, MASH, ECFP, get_default
 
 DATA_INPUT = Optional[Union[str, Dict[str, str], Callable[..., Dict[str, str]], Generator[Tuple[str, str], None, None]]]
 MATRIX_INPUT = Optional[Union[str, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
@@ -204,6 +205,7 @@ def read_data(
         id_map: Optional[str],
         inter: Optional[List[Tuple[str, str]]],
         index: Optional[int],
+        tool_args: str,
         dataset: DataSet,
 ) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     """
@@ -218,6 +220,7 @@ def read_data(
         id_map: Mapping of ids in case of duplicates in the dataset
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
+        tool_args: Additional arguments for the tool
         dataset: A dataset object storing information on the read
 
     Returns:
@@ -257,6 +260,8 @@ def read_data(
             dataset.distance = dist
             dataset.threshold = max_dist
         dataset.names = list(dataset.data.keys())
+
+    dataset.args = validate_user_args(dataset.type, dataset.format, sim, dist, tool_args)
 
     # parse mapping of duplicates
     if id_map is None:
@@ -303,33 +308,6 @@ def read_folder(folder_path: str, file_extension: Optional[str] = None) -> Gener
     for filename in os.listdir(folder_path):
         if file_extension is None or filename.endswith(file_extension):
             yield ".".join(filename.split(".")[:-1]), os.path.abspath(os.path.join(folder_path, filename))
-
-
-def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Optional[str]]:
-    """
-    Return the default clustering method for a specific type of data and a specific format.
-
-    Args:
-        data_type: Type of data as string representation
-        data_format: Format encoded as string
-
-    Returns:
-        Tuple of the names of the method to use to compute either the similarity or distance for the input
-    """
-    if data_type == P_TYPE:
-        if data_format == FORM_PDB:
-            return FOLDSEEK, None
-        elif data_format == FORM_FASTA:
-            # Check if cd-hit is installed or neither of cd-hit and mmseqs are
-            if INSTALLED[CDHIT] or not INSTALLED[MMSEQS]:
-                return CDHIT, None
-            else:
-                return MMSEQS2, None
-    if data_type == M_TYPE and data_format == FORM_SMILES:
-        return ECFP, None
-    if data_type == G_TYPE and data_format == FORM_FASTA:
-        return None, MASH
-    return None, None
 
 
 def get_prefix_args(prefix, **kwargs) -> Dict[str, Any]:

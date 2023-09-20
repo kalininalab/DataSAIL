@@ -1,19 +1,17 @@
 import os
 from argparse import Namespace
-from typing import Any, Dict, Tuple, Union, Optional
+from typing import Tuple, Union, Optional
 
 from datasail.parsers import MultiYAMLParser
-from datasail.reader.utils import get_default
-from datasail.settings import CDHIT, MMSEQS2, MASH, MASH_SKETCH, MASH_DIST, FOLDSEEK, MMSEQS
+from datasail.settings import CDHIT, MMSEQS2, MASH, MASH_SKETCH, MASH_DIST, FOLDSEEK, MMSEQS, get_default
 
 
 def validate_user_args(
         dtype: str,
         dformat: str,
-        kwargs: Dict[str, Any],
-        kw_sim: str,
-        kw_dist: str,
-        kw_args: str
+        similarity: str,
+        distance: str,
+        tool_args: str,
 ) -> Optional[Union[Namespace, Tuple[Optional[Namespace], Optional[Namespace]]]]:
     """
     Validate the arguments from the user for an external clustering program.
@@ -21,26 +19,25 @@ def validate_user_args(
     Args:
         dtype: Type of data to be clustered
         dformat: Format of the data to be clustered
-        kwargs: full set of keyword arguments from argument parsing
-        kw_sim: Constant to access the similarity keyword argument
-        kw_dist: Constant to access the distance keyword argument
-        kw_args: Constant to access the custom arguments keyword argument
+        similarity: similarity to be used for clustering
+        distance: distance to be used for clustering
+        tool_args: Arguments to be passed to the external clustering program
 
     Returns:
         The namespace containing the parsed and validated arguments
     """
-    sim_none, dist_none = kwargs[kw_sim] is None, kwargs[kw_dist] is None
+    sim_none, dist_none = similarity is None, distance is None
     both_none = sim_none and dist_none
-    if (not sim_none and kwargs[kw_sim].lower() == CDHIT) or (both_none and get_default(dtype, dformat)[0] == CDHIT):
-        return check_cdhit_arguments(kwargs[kw_args])
-    elif (not sim_none and kwargs[kw_sim].lower()[:6] == MMSEQS) or (
+    if (not sim_none and similarity.lower() == CDHIT) or (both_none and get_default(dtype, dformat)[0] == CDHIT):
+        return check_cdhit_arguments(tool_args)
+    elif (not sim_none and similarity.lower()[:6] == MMSEQS) or (
             both_none and get_default(dtype, dformat)[0] == MMSEQS2):
-        return check_mmseqs_arguments(kwargs[kw_args])
-    elif (not sim_none and kwargs[kw_sim].lower() == FOLDSEEK) or (
+        return check_mmseqs_arguments(tool_args)
+    elif (not sim_none and similarity.lower() == FOLDSEEK) or (
             both_none and get_default(dtype, dformat)[0] == FOLDSEEK):
-        return check_mash_arguments(kwargs[kw_args])
-    elif (not dist_none and kwargs[kw_dist].lower() == MASH) or (both_none and get_default(dtype, dformat)[1] == MASH):
-        return check_mash_arguments(kwargs[kw_args])
+        return check_mash_arguments(tool_args)
+    elif (not dist_none and distance.lower() == MASH) or (both_none and get_default(dtype, dformat)[1] == MASH):
+        return check_mash_arguments(tool_args)
     else:
         return None
 

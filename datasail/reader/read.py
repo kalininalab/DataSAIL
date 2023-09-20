@@ -6,7 +6,6 @@ from datasail.reader.read_molecules import read_molecule_data, remove_molecule_d
 from datasail.reader.read_other import read_other_data, remove_other_duplicates
 from datasail.reader.read_proteins import read_protein_data, remove_protein_duplicates
 from datasail.reader.utils import read_csv, DataSet, get_prefix_args
-from datasail.reader.validate import validate_user_args
 from datasail.settings import *
 
 
@@ -36,14 +35,12 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
 
     e_dataset, inter = read_data_type(kwargs[KW_E_TYPE])(
         kwargs[KW_E_DATA], kwargs[KW_E_WEIGHTS], kwargs[KW_E_SIM], kwargs[KW_E_DIST], kwargs[KW_E_MAX_SIM],
-        kwargs[KW_E_MAX_DIST], kwargs.get(KW_E_ID_MAP, None), old_inter, 0
+        kwargs[KW_E_MAX_DIST], kwargs.get(KW_E_ID_MAP, None), old_inter, 0, kwargs[KW_E_ARGS],
     )
-    e_dataset.args = validate_user_args(e_dataset.type, e_dataset.format, kwargs, KW_E_SIM, KW_E_DIST, KW_E_ARGS)
     f_dataset, inter = read_data_type(kwargs[KW_F_TYPE])(
         kwargs[KW_F_DATA], kwargs[KW_F_WEIGHTS], kwargs[KW_F_SIM], kwargs[KW_F_DIST], kwargs[KW_F_MAX_SIM],
-        kwargs[KW_F_MAX_DIST], kwargs.get(KW_F_ID_MAP, None), inter, 1
+        kwargs[KW_F_MAX_DIST], kwargs.get(KW_F_ID_MAP, None), inter, 1, kwargs[KW_F_ARGS],
     )
-    f_dataset.args = validate_user_args(f_dataset.type, f_dataset.format, kwargs, KW_F_SIM, KW_F_DIST, KW_F_ARGS)
 
     return e_dataset, f_dataset, inter, old_inter
 

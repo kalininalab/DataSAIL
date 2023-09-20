@@ -22,6 +22,7 @@ def test_perf_bin_2(root_dir, mode):
         f_type="P",
         f_data=f"{root_dir}/prot.tsv",
         solver="SCIP",
+        max_sec=500,
     )
 
     check_folder(f"{root_dir}/{mode[1]}/{mode[0]}", 0.25, None, None, "Molecule_lig_splits.tsv", "Protein_prot_splits.tsv")

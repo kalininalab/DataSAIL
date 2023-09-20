@@ -32,6 +32,7 @@ def read_molecule_data(
         id_map: Optional[str] = None,
         inter: Optional[List[Tuple[str, str]]] = None,
         index: Optional[int] = None,
+        tool_args: str = "",
 ) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     """
     Read in molecular data, compute the weights, and distances or similarities of every entity.
@@ -46,6 +47,7 @@ def read_molecule_data(
         id_map: Mapping of ids in case of duplicates in the dataset
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
+        tool_args: Additional arguments for the tool
 
     Returns:
         A dataset storing all information on that datatype
@@ -76,7 +78,7 @@ def read_molecule_data(
     else:
         raise ValueError()
 
-    dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, dataset)
+    dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, tool_args, dataset)
 
     return dataset, inter
 
