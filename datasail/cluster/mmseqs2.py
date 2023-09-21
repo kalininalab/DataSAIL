@@ -1,13 +1,13 @@
 import os
-import shutil
 from typing import Dict, Tuple, List, Optional
+import shutil
 
 import numpy as np
 
-from datasail.cluster.utils import cluster_param_binary_search
-from datasail.parsers import parse_mmseqs_args
+from datasail.cluster.utils import cluster_param_binary_search, extract_fasta
+from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, UNK_LOCATION
+from datasail.settings import LOGGER, MMSEQS2, INSTALLED
 
 
 def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
@@ -25,25 +25,22 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    args = parse_mmseqs_args(dataset.args)
-    vals = (args["seq_id"],)
-    LOGGER.info("Starting MMseqs clustering")
+    if not INSTALLED[MMSEQS2]:
+        raise ValueError("MMseqs is not installed.")
 
-    if not os.path.exists(dataset.location):
-        with open(dataset.location + ".fasta" if dataset.location.endswith(UNK_LOCATION) else "", "w") as out:
-            for idx, seq in dataset.data.items():
-                print(">" + idx, file=out)
-                print(seq, file=out)
-        dataset.location = dataset.location + ".fasta" if dataset.location.endswith(UNK_LOCATION) else ""
+    user_args = MultiYAMLParser(MMSEQS2).get_user_arguments(dataset.args, ["c"])
+    vals = (dataset.args.c,)
+    extract_fasta(dataset)
 
     return cluster_param_binary_search(
         dataset,
         vals,
-        threads,
-        (0,),
+        (0.1,),
         (1,),
+        user_args,
+        threads,
         mmseqs_trial,
-        lambda x: f"--min-seq-id {x[0]}",
+        lambda x: f"-c {x[0]}",
         lambda x, y: ((x[0] + y[0]) / 2,),
         log_dir,
     )
@@ -51,7 +48,8 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[
 
 def mmseqs_trial(
         dataset: DataSet,
-        add_args: str,
+        tune_args: Tuple,
+        user_args: str,
         threads: int = 1,
         log_file: Optional[str] = None
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
@@ -60,7 +58,8 @@ def mmseqs_trial(
 
     Args:
         dataset: Dataset to run the clustering for
-        add_args: Additional arguments specifying the sequence similarity parameter
+        tune_args:
+        user_args: Additional arguments specifying the sequence similarity parameter
         threads: number of threads to use for one CD-HIT run
         log_file: Filepath to log the output to
 
@@ -77,11 +76,9 @@ def mmseqs_trial(
           f"{os.path.join('..', dataset.location)} " \
           f"mmseqs_out " \
           f"mmseqs_tmp " \
-          f"--similarity-type 2 " \
-          f"--cov-mode 0 " \
-          f"-c 0.8 " \
           f"--threads {threads} " \
-          f"{add_args} "
+          f"{tune_args} " \
+          f"{user_args} "
 
     if log_file is None:
         cmd += "> /dev/null 2>&1"
@@ -94,10 +91,12 @@ def mmseqs_trial(
     LOGGER.info(cmd)
     os.system(cmd)
 
+    if not os.path.isfile("mmseqs_results/mmseqs_out_cluster.tsv"):
+        raise ValueError("Something went wrong with mmseqs. The output file does not exist.")
+
     cluster_map = get_mmseqs_map("mmseqs_results/mmseqs_out_cluster.tsv")
     cluster_names = list(set(cluster_map.values()))
     cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
-    LOGGER.info(f"MMseqs2 clustered {len(cluster_map)} sequences into {len(cluster_names)} clusters")
 
     shutil.rmtree("mmseqs_results")
 
@@ -116,10 +115,37 @@ def get_mmseqs_map(cluster_file: str) -> Dict[str, str]:
     """
     mapping = {}
     with open(cluster_file, 'r') as f:
-        for line in f.readlines():
+        for i, line in enumerate(f.readlines()):
+            if i == 0 and "\t" not in line:
+                return get_mmseqs_map_old(cluster_file)
+
             words = line.strip().split('\t')
             if len(words) != 2:
                 continue
             cluster_head, cluster_member = words
             mapping[cluster_member] = cluster_head
+    return mapping
+
+
+def get_mmseqs_map_old(cluster_file: str) -> Dict[str, str]:
+    """
+    This is a helper method for get_mmseqs_map that is necessary when DataSAIL is run on Windows and in a Python3.8
+    build. In this case, MMseqs struggles with different linebreaks of Linux and Windows.
+
+    Args:
+        cluster_file (str): Filepath of file containing the mapping information
+
+    Returns:
+        Map from cluster--members to cluster-representatives (cluster-names)
+    """
+    mapping = {}
+    rep = ""
+    # The file is basically contains \n\t-separated values
+    with open(cluster_file, "r") as f:
+        for line in f.readlines():
+            if rep == "":
+                rep = line.strip()
+            else:
+                mapping[rep] = line.strip()
+                rep = ""
     return mapping

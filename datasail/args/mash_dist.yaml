@@ -1,0 +1,146 @@
+# h:
+#   description: Help
+#   type: bool
+#   cardinality: 0
+#   default: null
+#   calls: ["-h"]
+
+p:
+  description: Parallelism. This many threads will be spawned for processing.
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["-p"]
+
+# l:
+#   description: List input. Lines in each <query> specify paths to sequence files, one per line. The reference file is not affected.
+#   type: bool
+#   cardinality: 0
+#   default: null
+#   calls: ["-l"]
+
+# t:
+#   description: Table output (will not report p-values, but fields will be blank if they do not meet the p-value threshold).
+#   type: bool
+#   cardinality: 0
+#   default: False
+#   calls: ["-t"]
+
+v:
+  description: Maximum p-value to report. (0-1)
+  type: float
+  cardinality: "?"
+  default: 1.0
+  calls: ["-v"]
+
+d:
+  description: Maximum distance to report. (0-1)
+  type: float
+  cardinality: "?"
+  default: 1.0
+  calls: ["-d"]
+
+# C:
+#   description: Show comment fields with reference/query names (denoted with ':'). (0-1)
+#   type: float
+#   cardinality: "?"
+#   default: 1.0
+#   calls: ["-C"]
+
+k:
+  description: K-mer size. Hashes will be based on strings of this many nucleotides. Canonical nucleotides are used by default (see Alphabet options below). (1-32)
+  type: int
+  cardinality: "?"
+  default: 21
+  calls: ["-k"]
+
+s:
+  description: Sketch size. Each sketch will have at most this many non-redundant min-hashes.
+  type: int
+  cardinality: "?"
+  default: 1000
+  calls: ["-s"]
+
+i:
+  description: Sketch individual sequences, rather than whole files, e.g. for multi-fastas of single-chromosome genomes or pair-wise gene comparisons.
+  type: bool
+  cardinality: 0
+  default: False
+  calls: ["-i"]
+
+S:
+  description: Seed to provide to the hash function. (0-4294967296)
+  type: int
+  cardinality: "?"
+  default: 42
+  calls: ["-S"]
+
+w:
+  description: Probability threshold for warning about low k-mer size. (0-1)
+  type: float
+  cardinality: "?"
+  default: 0.01
+  calls: ["-w"]
+
+r:
+  description: Input is a read set. See Reads options below. Incompatible with -i.
+  type: bool
+  cardinality: 0
+  default: False
+  calls: ["-r"]
+
+b:
+  description: Use a Bloom filter of this size (raw bytes or with K/M/G/T) to filter out unique k-mers. This is useful if exact filtering with -m uses too much memory. However, some unique k-mers may pass erroneously, and copies cannot be counted beyond 2. Implies -r.
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["-b"]
+
+m:
+  description: Minimum copies of each k-mer required to pass noise filter for reads. Implies -r.
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["-m"]
+
+c:
+  description: Target coverage. Sketching will conclude if this coverage is reached before the end of the input file (estimated by average k-mer multiplicity). Implies -r.
+  type: float
+  cardinality: "?"
+  default: 1.0
+  calls: ["-c"]
+
+g:
+  description: Genome size (raw bases or with K/M/G/T). If specified, will be used for p-value calculation instead of an estimated size from k-mer content. Implies -r.
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["-g"]
+
+n:
+  description: Preserve strand (by default, strand is ignored by using canonical DNA k-mers, which are alphabetical minima of forward-reverse pairs). Implied if an alphabet is specified with -a or -z.
+  type: bool
+  cardinality: 0
+  default: False
+  calls: ["-n"]
+
+a:
+  description: Use amino acid alphabet (A-Z, except BJOUXZ). Implies -n, -k 9.
+  type: bool
+  cardinality: 0
+  default: False
+  calls: ["-a"]
+
+z:
+  description: Alphabet to base hashes on (case ignored by default; see -Z). K-mers with other characters will be ignored. Implies -n.
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["-z"]
+
+Z:
+  description: Preserve case in k-mers and alphabet (case is ignored by default). Sequence letters whose case is not in the current alphabet will be skipped when sketching.
+  type: bool
+  cardinality: 0
+  default: False
+  calls: ["-Z"]

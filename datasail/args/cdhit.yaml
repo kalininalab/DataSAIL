@@ -1,0 +1,166 @@
+# This argument cannot be changed because DataSAIL needs to set it
+# i:
+#   description: Input filename in fasta format, required, can be in .gz format
+#   type: str
+#   cardinality: "?"
+#   default: null
+#   calls: ["-i"]
+# This argument cannot be changed because DataSAIL needs to set it
+# o:
+#   description: Output filename, required
+#   type: str
+#   cardinality: "?"
+#   default: null
+#   calls: ["-o"]
+c:
+  description: Sequence identity threshold, default 0.9, range 0-1
+  type: float
+  cardinality: "?"
+  default: 0.9
+  calls: ["-c"]
+G:
+  description: Use global sequence identity, default 1, pseudo-boolean value
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["-G"]
+b:
+  description: Band width of alignment, default 20, range positive
+  type: int
+  cardinality: "?"
+  default: 20
+  calls: ["-b"]
+M:
+  description: Memory limit (MB) for the program; 0 for unlimited, range non-negative
+  type: int
+  cardinality: "?"
+  default: 800
+  calls: ["-M"]
+T:
+  description: Number of threads, default 1; with 0, all CPUs will be used, range non-negative
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["-T"]
+n:
+  description: Word length, default 5, see user's guide for choosing it, range [2;5], dependence on c
+  type: int
+  cardinality: "?"
+  default: 5
+  calls: ["-n"]
+# This argument cannot be changed because DataSAIL needs to set it
+# l:
+#   description: Length of throw-away sequences, default 10
+#   type: int
+#   cardinality: "?"
+#   default: "?"0
+#   calls: ["-l"]
+t:
+  description: Tolerance for redundancy, default 2, range positive
+  type: int
+  cardinality: "?"
+  default: 2
+  calls: ["-t"]
+# DataSAIL needs to set this
+# d:
+#   description: Length of description in .clstr file, default 20
+#   type: int
+#   cardinality: "?"
+#   default: 20
+#   calls: ["-d"]
+s:
+  description: Length difference cutoff, default 0.0, range 0-1
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["-s"]
+S:
+  description: Length difference cutoff in amino acid, default 999999, range positive
+  type: int
+  cardinality: "?"
+  default: 999999
+  calls: ["-S"]
+aL:
+  description: Alignment coverage for the longer sequence, default 0.0, range 0-1
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["-aL"]
+AL:
+  description: Alignment coverage control for the longer sequence, default 99999999, range non-negative
+  type: int
+  cardinality: "?"
+  default: 99999999
+  calls: ["-AL"]
+aS:
+  description: Alignment coverage for the shorter sequence, default 0.0, range 0-1
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["-aS"]
+AS:
+  description: Alignment coverage control for the shorter sequence, default 99999999, range non-negative
+  type: int
+  cardinality: "?"
+  default: 99999999
+  calls: ["-AS"]
+A:
+  description: Minimal alignment coverage control, default 0, range non-negative
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["-A"]
+uL:
+  description: Maximum unmatched percentage for the longer sequence, default 1.0, range 0-1
+  type: float
+  cardinality: "?"
+  default: 1.0
+  calls: ["-uL"]
+uS:
+  description: Maximum unmatched percentage for the shorter sequence, default 1.0, range 0-1
+  type: float
+  cardinality: "?"
+  default: 1.0
+  calls: ["-uS"]
+U:
+  description: Maximum unmatched length, range non-negative
+  type: int
+  cardinality: "?"
+  default: 99999999
+  calls: ["-U"]
+# B:
+#   description: Store sequences on hard drive
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["-B"]
+# p:
+#   description: Print alignment overlap
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["-p"]
+g:
+  description: Accurate clustering mode, pseudo-boolean value
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["-g"]
+# sc:
+#   description: Sort clusters by size
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["-sc"]
+# sf:
+#   description: Sort fasta/fastq by cluster size
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["-sf"]
+# bak:
+#   description: Write backup cluster file
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["-bak"]

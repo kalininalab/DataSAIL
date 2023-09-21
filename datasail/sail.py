@@ -1,10 +1,7 @@
-import logging
 import os.path
-import sys
-from typing import Dict, List, Tuple, Callable, Iterable, Union, Generator
+from typing import Dict, List, Tuple, Callable, Union, Generator
 
-from datasail.parsers import parse_cdhit_args, parse_mash_args, parse_mmseqs_args, \
-    parse_datasail_args
+from datasail.parsers import parse_datasail_args
 from datasail.reader.utils import DATA_INPUT, MATRIX_INPUT
 from datasail.run import datasail_main
 from datasail.settings import *
@@ -37,7 +34,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
         **kwargs: Arguments in kwargs-format
 
     Returns:
-        The kwargs in case something has been adjusted, e.g. splits have to transformed into sum=1-vector or naming
+        The kwargs in case something has been adjusted, e.g. splits normalization or naming
     """
 
     # create output directory
@@ -66,7 +63,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
 
     # check splits to be more than 1 and their fractions sum up to 1 and check the names
     if len(kwargs[KW_SPLITS]) < 2:
-        error("Less then two splits required. This is no useful input, please check the input again.", 1, 
+        error("Less then two splits required. This is no useful input, please check the input again.", 1,
               kwargs[KW_CLI])
     if kwargs[KW_NAMES] is None:
         kwargs[KW_NAMES] = [f"Split{x:03d}" for x in range(len(kwargs[KW_SPLITS]))]
@@ -77,9 +74,6 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("At least two splits will have the same name. Please check the naming of the splits again to have unique "
               "names", 24, kwargs[KW_CLI])
     kwargs[KW_SPLITS] = [x / sum(kwargs[KW_SPLITS]) for x in kwargs[KW_SPLITS]]
-
-    # convert vectorized from the input question to the flag used in the code
-    kwargs[KW_VECTORIZED] = not kwargs[KW_VECTORIZED]
 
     # check search termination criteria
     if kwargs[KW_MAX_SEC] < 1:
@@ -119,16 +113,12 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The filepath to the weights of the E-data is invalid.", 8, kwargs[KW_CLI])
     if kwargs[KW_E_SIM] is not None and isinstance(kwargs[KW_E_SIM], str):
         if kwargs[KW_E_SIM].lower() not in SIM_ALGOS and not os.path.isfile(kwargs[KW_E_SIM]):
-            error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", 9, kwargs[KW_CLI])
-        elif kwargs[KW_E_SIM].lower() == "cdhit":
-            validate_cdhit_args(kwargs[KW_E_ARGS], kwargs[KW_CLI])
-        elif kwargs[KW_E_SIM].lower() == "mmseqs":
-            validate_mmseqs_args(kwargs[KW_E_ARGS], kwargs[KW_CLI])
+            error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", 9,
+                  kwargs[KW_CLI])
     if kwargs[KW_E_DIST] is not None and isinstance(kwargs[KW_E_DIST], str):
         if kwargs[KW_E_DIST].lower() not in DIST_ALGOS and not os.path.isfile(kwargs[KW_E_DIST]):
-            error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10, kwargs[KW_CLI])
-        elif kwargs[KW_E_DIST].lower() == "mash":
-            validate_mash_args(kwargs[KW_E_ARGS], kwargs[KW_CLI])
+            error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10,
+                  kwargs[KW_CLI])
     if 1 < kwargs[KW_E_MAX_SIM] < 0:
         error("The maximal similarity value for the E-data has to be a real value in [0,1].", 11, kwargs[KW_CLI])
     if 1 < kwargs[KW_E_MAX_DIST] < 0:
@@ -137,74 +127,23 @@ def validate_args(**kwargs) -> Dict[str, object]:
     # syntactically parse the input data for the F-dataset
     if kwargs[KW_F_DATA] is not None and isinstance(kwargs[KW_F_DATA], str) and not os.path.exists(kwargs[KW_F_DATA]):
         error("The filepath to the F-data is invalid.", 13, kwargs[KW_CLI])
-    if kwargs[KW_F_WEIGHTS] is not None and isinstance(kwargs[KW_F_WEIGHTS], str) and not os.path.isfile(kwargs[KW_F_WEIGHTS]):
+    if kwargs[KW_F_WEIGHTS] is not None and isinstance(kwargs[KW_F_WEIGHTS], str) and not os.path.isfile(
+            kwargs[KW_F_WEIGHTS]):
         error("The filepath to the weights of the F-data is invalid.", 14, kwargs[KW_CLI])
     if kwargs[KW_F_SIM] is not None and isinstance(kwargs[KW_F_SIM], str):
         if kwargs[KW_F_SIM].lower() not in SIM_ALGOS and not os.path.isfile(kwargs[KW_F_SIM]):
-            error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", 15, kwargs[KW_CLI])
-        elif kwargs[KW_F_SIM].lower() == "cdhit":
-            validate_cdhit_args(kwargs[KW_F_ARGS], kwargs[KW_CLI])
-        elif kwargs[KW_F_SIM].lower() == "mmseqs":
-            validate_mmseqs_args(kwargs[KW_F_ARGS], kwargs[KW_CLI])
+            error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", 15,
+                  kwargs[KW_CLI])
     if kwargs[KW_F_DIST] is not None and isinstance(kwargs[KW_F_DIST], str):
         if kwargs[KW_F_DIST].lower() not in DIST_ALGOS and not os.path.isfile(kwargs[KW_F_DIST]):
-            error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16, kwargs[KW_CLI])
-        elif kwargs[KW_F_DIST].lower() == "mash":
-            validate_mash_args(kwargs[KW_F_ARGS], kwargs[KW_CLI])
+            error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16,
+                  kwargs[KW_CLI])
     if 1 < kwargs[KW_F_MAX_SIM] < 0:
         error("The maximal similarity value for the F-data has to be a real value in [0,1].", 17, kwargs[KW_CLI])
     if 1 < kwargs[KW_F_MAX_DIST] < 0:
         error("The maximal distance value for the F-data has to be a real value in [0,1].", 18, kwargs[KW_CLI])
 
     return kwargs
-
-
-def validate_cdhit_args(cdhit_args: str, cli: bool) -> None:
-    """
-    Validate the custom arguments provided to DataSAIL for executing MASH.
-
-    Args:
-        cdhit_args: String of the arguments that can be set by user
-        cli: boolean flag indicating that this program has been started from commandline
-    """
-    parsed = parse_cdhit_args(cdhit_args)
-    if not ((parsed["n"] == 2 and 0.4 <= parsed["c"] <= 0.5) or
-            (parsed["n"] == 3 and 0.5 <= parsed["c"] <= 0.6) or
-            (parsed["n"] == 4 and 0.6 <= parsed["c"] <= 0.7) or
-            (parsed["n"] == 5 and 0.7 <= parsed["c"] <= 1.0)):
-        error("There are restrictions on the values for n and c in CD-HIT:\n"
-              "n == 5 <=> c in [0.7, 1.0]\n"
-              "n == 4 <=> c in [0.6, 0.7]\n"
-              "n == 3 <=> c in [0.5, 0.6]\n"
-              "n == 2 <=> c in [0.4, 0.5]", 19, cli)
-
-
-def validate_mash_args(mash_args: str, cli: bool) -> None:
-    """
-    Validate the custom arguments provided to DataSAIL for executing MASH.
-
-    Args:
-        mash_args:String of the arguments that can be set by user
-        cli: boolean flag indicating that this program has been started from commandline
-    """
-    parsed = parse_mash_args(mash_args)
-    if parsed["k"] < 1:
-        error("MASH parameter k must be positive.", 20, cli)
-    if parsed["s"] < 1:
-        error("MASH parameter s must be positive.", 21, cli)
-
-
-def validate_mmseqs_args(mmseqs_args, cli) -> None:
-    """
-    Validate the custom arguments provided to DataSAIL for executing MMseqs.
-
-    Args:
-        mmseqs_args: String of the arguments that can be set by user
-        cli: boolean flag indicating that this program has been started from commandline
-    """
-    parsed = parse_mmseqs_args(mmseqs_args)
-    if 1 < parsed["seq_id"] < 0:
-        error("The minimum sequence identity for mmseqs has to be a value between 0 and 1.", 22, cli)
 
 
 def datasail(
@@ -218,7 +157,6 @@ def datasail(
         epsilon: float = 0.05,
         runs: int = 1,
         solver: str = SOLVER_SCIP,
-        scalar: bool = False,
         cache: bool = False,
         cache_dir: str = None,
         e_type: str = None,
@@ -253,7 +191,6 @@ def datasail(
         epsilon: Fraction by how much the provided split sizes may be exceeded
         runs: Number of runs to perform per split. This may introduce some variance in the splits.
         solver: Solving algorithm to use.
-        scalar: Boolean flag indicating to use the scalar formulation of the problems (deprecated).
         cache: Boolean flag indicating to store or load results from cache.
         cache_dir: Directory to store the cache in if not the default location.
         e_type: Data format of the first batch of data
@@ -283,7 +220,7 @@ def datasail(
         splits = [0.7, 0.2, 0.1]
     kwargs = validate_args(
         output=None, techniques=techniques, inter=inter, max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
-        splits=splits, names=names, epsilon=epsilon, runs=runs, solver=solver, vectorized=scalar, cache=cache,
+        splits=splits, names=names, epsilon=epsilon, runs=runs, solver=solver, cache=cache,
         cache_dir=cache_dir, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=e_dist,
         e_args=e_args, e_max_sim=e_max_sim, e_max_dist=e_max_dist, f_type=f_type, f_data=f_data, f_weights=f_weights,
         f_sim=f_sim, f_dist=f_dist, f_args=f_args, f_max_sim=f_max_sim, f_max_dist=f_max_dist, threads=threads,
@@ -306,4 +243,3 @@ def sail(args=None, **kwargs) -> None:
 
 if __name__ == '__main__':
     sail()
-

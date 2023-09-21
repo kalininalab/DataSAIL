@@ -1,6 +1,11 @@
 import argparse
-from typing import Dict
+import os
+from pydoc import locate
+from typing import Dict, List, Sequence, Optional
 
+import yaml
+
+from datasail.argparse_patch import insert_patch
 from datasail.settings import *
 
 
@@ -129,13 +134,6 @@ def parse_datasail_args(args) -> Dict[str, object]:
         dest=KW_SOLVER,
         help="Solver to use to solve the BDQCP. Choices are SCIP (free of charge) and MOSEK (licensed and only "
              "applicable if a valid mosek license is stored)."
-    )
-    split.add_argument(
-        "--scalar",
-        default=False,
-        action='store_true',
-        dest=KW_VECTORIZED,
-        help="Flag indicating to run the program in scalar for instead of vectorized formulation."
     )
     split.add_argument(
         "--cache",
@@ -274,52 +272,104 @@ def parse_datasail_args(args) -> Dict[str, object]:
         default=1.0,
         help="Maximal distance of two samples from the second dataset in the same split."
     )
-    print("Parsers\n", args)
+    args = insert_patch(args)
     return vars(parser.parse_args(args))
 
 
-def parse_cdhit_args(cdhit_args):
+class MultiYAMLParser(argparse.ArgumentParser):
+    def __init__(self, algo_name):
+        """
+        Initialize the argument parser for DataSAIL. This is a wrapper around the standard argparse.ArgumentParser.
+
+        Args:
+            algo_name: Name of the algorithm to parse arguments for.
+        """
+        super().__init__()
+        if algo_name is not None:
+            self.add_yaml_arguments(YAML_FILE_NAMES[algo_name])
+
+    def parse_args(self, args: Optional[Sequence[str]] = ...) -> argparse.Namespace:
+        """
+        Parse the arguments provided by the user. This prepends some preprocessing to the arguments before sending them
+        to the actual parsing.
+
+        Args:
+            args: Arguments provided by the user.
+
+        Returns:
+            Namespace of the parsed arguments.
+        """
+        # args = args.split(" ") if " " in args else (args if isinstance(args, list) else [args])
+        if isinstance(args, str):
+            if " " in args:
+                args = args.split(" ")
+            elif len(args) > 0:
+                args = [args]
+        return super().parse_args(args)
+
+    def add_yaml_arguments(self, yaml_filepath) -> None:
+        """
+        Add arguments to the parser based on a YAML file.
+
+        Args:
+            yaml_filepath: Path to the YAML file to read the arguments from.
+        """
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), yaml_filepath), "r") as data:
+            data = yaml.safe_load(data)
+        for name, values in data.items():
+            kwargs = {"dest": name.replace("-", "_"), "type": locate(values["type"])}
+            if kwargs["type"] == bool:
+                if values["default"] == False:
+                    kwargs.update({"action": "store_true", "default": False})
+                else:
+                    kwargs.update({"action": "store_false", "default": True})
+                del kwargs["type"]
+            else:
+                if values["cardinality"] != 0:
+                    kwargs["nargs"] = values["cardinality"]
+                if values["default"] is not None:
+                    kwargs["default"] = values["default"]
+            super().add_argument(
+                *values["calls"],
+                **kwargs,
+            )
+
+    def get_user_arguments(self, args: argparse.Namespace, ds_args: List[str]) -> str:
+        """
+        Get the arguments that the user provided to the program that differ from default values.
+
+        Args:
+            args: Arguments provided by the user.
+            ds_args: Arguments that are optimized by DataSAIL and extracted differently.
+
+        Returns:
+            String representation of the arguments that the user provided for the program to be passed to subprograms.
+        """
+        cleaned_args = namespace_diff(args, self.parse_args([]))
+        action_map = {action.dest: action.option_strings[0] for action in self._actions}
+
+        for key in ds_args:
+            if key in cleaned_args:
+                del cleaned_args[key]
+
+        return " ".join([f"{action_map[key]} {value}" for key, value in cleaned_args.items()])
+
+
+def namespace_diff(a: argparse.Namespace, b: argparse.Namespace) -> dict:
     """
-    Check if the provided arguments for CD-HIT are valid.
+    Get the difference between two namespaces.
 
     Args:
-        cdhit_args: String of the additional arguments for CD-HIT
+        a: First namespace to compare.
+        b: Second namespace to compare.
 
     Returns:
-        The arguments as keys of a dictionary matching them to their provided values
+        Dictionary of all attributes that are different between the two namespaces.
     """
-    cdhit_parser = argparse.ArgumentParser()
-    cdhit_parser.add_argument("-c", type=float, default=0.9)
-    cdhit_parser.add_argument("-n", type=int, default=5, choices=[2, 3, 4, 5])
-    return vars(cdhit_parser.parse_args(cdhit_args))
-
-
-def parse_mash_args(mash_args):
-    """
-    Check if the provided arguments for MASH are valid.
-
-    Args:
-        mash_args: String of the additional arguments for MASH
-
-    Returns:
-        The arguments as keys of a dictionary matching them to their provided values
-    """
-    mash_parser = argparse.ArgumentParser()
-    mash_parser.add_argument("-k", type=int, default=21)
-    mash_parser.add_argument("-s", type=int, default=10000)
-    return vars(mash_parser.parse_args(mash_args))
-
-
-def parse_mmseqs_args(mmseqs_args):
-    """
-    Check if the provided arguments for MMseq2 are valid.
-
-    Args:
-        mmseqs_args: String of the additional arguments for MMseqs2
-
-    Returns:
-        The arguments as keys of a dictionary matching them to their provided values
-    """
-    mmseqs_parser = argparse.ArgumentParser()
-    mmseqs_parser.add_argument("--min-seq-id", type=float, default=0, dest="seq_id")
-    return vars(mmseqs_parser.parse_args(mmseqs_args))
+    output = {}
+    if a is None:
+        return output
+    for key, value in vars(a).items():
+        if not hasattr(b, key) or getattr(b, key) != value:
+            output[key] = value
+    return output

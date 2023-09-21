@@ -15,7 +15,7 @@ from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS
 
 
 def cluster(dataset: DataSet, **kwargs) -> DataSet:
@@ -39,7 +39,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
 
     elif isinstance(dataset.distance, str):  # compute the distance
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_distance, dataset.cluster_weights = \
-            distance_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_THREADS])
+            distance_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR])
 
     # if the similarity/distance is already given, store it
     elif isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
@@ -56,7 +56,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     if any(isinstance(m, np.ndarray) for m in
            [dataset.similarity, dataset.cluster_similarity, dataset.cluster_distance]):
         num_old_cluster = len(dataset.cluster_names) + 1
-        while 100 < len(dataset.cluster_names) < num_old_cluster:
+        while MAX_CLUSTERS < len(dataset.cluster_names) < num_old_cluster:
             num_old_cluster = len(dataset.cluster_names)
             dataset = stable_additional_clustering(dataset)
 
@@ -66,6 +66,9 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
             form = "similarity" if dataset.similarity is not None else "distance"
             if kwargs[KW_OUTDIR] is not None:
                 heatmap(metric, os.path.join(kwargs[KW_OUTDIR], dataset.get_name() + f"_{form}.png"))
+
+    if len(dataset.cluster_names) > MAX_CLUSTERS:
+        dataset = force_clustering(dataset)
 
     store_to_cache(dataset, **kwargs)
 
@@ -93,19 +96,18 @@ def similarity_clustering(
           - Symmetric matrix of pairwise similarities between the current clusters
           - Mapping from current clusters to their weights
     """
-    match dataset.similarity.lower():
-        case "wlk":
-            cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
-        case "mmseqs":
-            cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset, threads, log_dir)
-        case "foldseek":
-            cluster_names, cluster_map, cluster_sim = run_foldseek(dataset, threads, log_dir)
-        case "cdhit":
-            cluster_names, cluster_map, cluster_sim = run_cdhit(dataset, threads, log_dir)
-        case "ecfp":
-            cluster_names, cluster_map, cluster_sim = run_ecfp(dataset)
-        case _:
-            raise ValueError(f"Unknown cluster method: {dataset.similarity}")
+    if dataset.similarity.lower() == "wlk":
+        cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
+    elif dataset.similarity.lower() == "mmseqs":
+        cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == "foldseek":
+        cluster_names, cluster_map, cluster_sim = run_foldseek(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == "cdhit":
+        cluster_names, cluster_map, cluster_sim = run_cdhit(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == "ecfp":
+        cluster_names, cluster_map, cluster_sim = run_ecfp(dataset)
+    else:
+        raise ValueError(f"Unknown cluster method: {dataset.similarity}")
 
     # compute the weights for the clusters
     cluster_weights = {}
@@ -187,7 +189,7 @@ def stable_additional_clustering(dataset: DataSet, min_num_clusters: int = 10) -
     else:
         min_f, curr_f, max_f = 0, 0.9, 1
         ds, _ = additional_clustering(ds, dist_factor=curr_f)
-        while len(ds.cluster_names) < min_num_clusters or 100 < len(ds.cluster_names):
+        while len(ds.cluster_names) < min_num_clusters or MAX_CLUSTERS < len(ds.cluster_names):
             if len(ds.cluster_names) < min_num_clusters:
                 max_f = curr_f
             else:
@@ -222,27 +224,53 @@ def additional_clustering(
     # set up the cluster algorithm for similarity or distance based cluster w/o specifying the number of clusters
     if dataset.cluster_similarity is not None:
         cluster_matrix = np.array(dataset.cluster_similarity, dtype=float)
-        ca = AffinityPropagation(affinity='precomputed', random_state=42, verbose=True, damping=damping, max_iter=max_iter)
+        ca = AffinityPropagation(
+            affinity='precomputed',
+            random_state=42,
+            verbose=True,
+            damping=damping,
+            max_iter=max_iter,
+        )
     else:
         cluster_matrix = np.array(dataset.cluster_distance, dtype=float)
-        ca = AgglomerativeClustering(
-            n_clusters=None,
-            metric='precomputed',
-            linkage='average',
-            distance_threshold=np.average(dataset.cluster_distance) * dist_factor,
-            # verbose=True,
-            # connectivity=np.asarray(cluster_matrix < np.average(cluster_distance) * 0.9, dtype=int),
-        )
+        kwargs = {
+            "n_clusters": None,
+            "metric": 'precomputed',
+            "linkage": 'average',
+            "distance_threshold": np.average(dataset.cluster_distance) * dist_factor,
+            # "verbose": True,
+            # "connectivity": np.asarray(cluster_matrix < np.average(cluster_distance) * 0.9, dtype=int),
+        }
+        ca = AgglomerativeClustering(**kwargs)
         LOGGER.info(
             f"Clustering based on distances. "
             f"Distances above {np.average(dataset.cluster_distance) * 0.9} cannot end up in same cluster."
         )
-        kwargs = {}
-
     # cluster the clusters into new, fewer, and bigger clusters
     labels = ca.fit_predict(cluster_matrix)
     converged = not hasattr(ca, "n_iter_") or ca.n_iter_ < max_iter
+    return labels2clusters(labels, dataset, cluster_matrix, converged)
 
+
+def labels2clusters(
+        labels: Union[List, np.ndarray],
+        dataset: DataSet,
+        cluster_matrix: np.ndarray,
+        converged: bool
+) -> Tuple[DataSet, bool]:
+    """
+    Convert a list of labels to a clustering and insert it into the dataset. This also updates cluster_weights and
+    distance or similarity metrics.
+
+    Args:
+        labels: List of labels
+        dataset: The dataset that is clustered
+        cluster_matrix: Matrix storing distance or similarity values
+        converged: a boolean to forward whether the clustering converged
+
+    Returns:
+        The updated dataset and the converged-flag
+    """
     # extract the names of the new clusters and compute a mapping from the element names to the clusters
     old_cluster_map = dict((y, x) for x, y in enumerate(dataset.cluster_names))
     new_cluster_names = list(np.unique(labels))
@@ -282,6 +310,51 @@ def additional_clustering(
         dataset.cluster_distance = np.minimum(new_cluster_matrix, 1 - np.eye(len(new_cluster_matrix)))
 
     return dataset, converged
+
+
+def force_clustering(dataset: DataSet) -> DataSet:
+    """
+    Enforce a clustering to reduce the number of clusters to a reasonable amount. This is only done if the other
+    clustering algorithms did not detect any reasonable similarity or distance in the dataset. The cluster assignment
+    is fully random and distributes the samples equally into the samples (as far as possible given already detected
+    clusters).
+
+    Args:
+        dataset: The dataset to be clustered
+
+    Returns:
+        The clustered dataset
+    """
+    LOGGER.info(f"Enforce clustering from {len(dataset.cluster_names)} clusters to {MAX_CLUSTERS} clusters")
+
+    # define the list of clusters, the current sizes of the individual clusters, and how big they shall become
+    labels = []
+    sizes = np.zeros(MAX_CLUSTERS)
+    fraction = sum(dataset.cluster_weights.values()) / MAX_CLUSTERS
+
+    for name, weight in sorted(dataset.cluster_weights.items(), key=lambda x: x[1], reverse=True):
+        assigned = False
+        overlap = np.zeros(MAX_CLUSTERS)
+        for i in range(MAX_CLUSTERS):
+            # if the entity can be assigned to cluster i without exceeding the target size, assign it there, ...
+            if sizes[i] + weight < fraction:
+                labels.append(i)
+                sizes[i] += weight
+                assigned = True
+                break
+            # ... otherwise store the absolute overhead
+            else:
+                overlap[i] += weight + sizes[i] - fraction
+
+        # if the entity hasn't been assigned, assign to the cluster where it causes the smallest overhead
+        if not assigned:
+            idx = overlap.argmin()
+            labels.append(idx)
+            sizes[idx] += weight
+
+    # cluster the dataset based on the list of new clusters and return
+    matrix = dataset.cluster_similarity if dataset.cluster_similarity is not None else dataset.cluster_distance
+    return labels2clusters(labels, dataset, matrix, True)[0]
 
 
 def cluster_interactions(
@@ -325,7 +398,28 @@ def reverse_clustering(cluster_split: Dict[str, str], name_cluster: Dict[str, st
     Returns:
         Assignment of names to splits
     """
-    output = {}
-    for n, c in name_cluster.items():
-        output[n] = cluster_split[c]
-    return output
+    return {n: cluster_split[c] for n, c in name_cluster.items()}
+
+
+def reverse_interaction_clustering(
+        inter_split: Dict[Tuple[str, str], str],
+        e_name_cluster_map: Dict[str, str],
+        f_name_cluster_map: Dict[str, str],
+        inter: List[Tuple[str, str]]
+) -> Dict[str, str]:
+    """
+    Revert the clustering of interactions.
+
+    Args:
+        inter_split: The assignment of each cell of an interaction matrix to a split based on the cluster names.
+        e_name_cluster_map: Mapping from sample names to cluster names for the e-dataset.
+        f_name_cluster_map: Mapping from sample names to cluster names for the f-dataset.
+        inter: List of interactions as pairs of entity names from each dataset.
+
+    Returns:
+
+    """
+    return {
+        (e_name, f_name): inter_split[e_name_cluster_map[e_name], f_name_cluster_map[f_name]]
+        for e_name, f_name in inter
+    }

@@ -2,10 +2,9 @@ from typing import Optional, Tuple, List, Set, Dict
 
 import cvxpy
 import numpy as np
-from datasail.settings import LOGGER, NOT_ASSIGNED
+from datasail.settings import NOT_ASSIGNED
 
-from datasail.solver.utils import solve, inter_mask
-from datasail.solver.vector.utils import interaction_constraints
+from datasail.solver.utils import solve, inter_mask, compute_limits, interaction_constraints
 
 
 def solve_icd_bqp(
@@ -42,8 +41,7 @@ def solve_icd_bqp(
     """
     inter_count = len(inter)
     inter_ones = inter_mask(e_entities, f_entities, inter)
-    min_lim = [int((split - epsilon) * inter_count) for split in splits]
-    max_lim = [int((split + epsilon) * inter_count) for split in splits]
+    max_lim, min_lim = compute_limits(epsilon, inter_count, splits)
 
     x_e = [cvxpy.Variable((len(e_entities), 1), boolean=True) for _ in range(len(splits))]
     x_f = [cvxpy.Variable((len(f_entities), 1), boolean=True) for _ in range(len(splits))]
@@ -64,19 +62,17 @@ def solve_icd_bqp(
         ] + interaction_constraints(e_entities, f_entities, inter, x_e, x_f, x_i, s)
 
     inter_loss = cvxpy.sum(cvxpy.sum(inter_ones - cvxpy.sum([x for x in x_i]), axis=0), axis=0) / inter_count
-    LOGGER.info(f"#E: {len(e_entities)}")
-    LOGGER.info(f"#F: {len(f_entities)}")
-    LOGGER.info(f"#I: {len(inter)}")
-    LOGGER.info(f"#S: {len(splits)}")
-    LOGGER.info(f"#C: {len(constraints)}")
     problem = solve(inter_loss, constraints, max_sec, solver, log_file)
 
+    if problem is None:
+        return None
+
     # report the found solution
-    output = ({}, dict(
-        (e, names[s]) for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[s][:, 0][i].value > 0.1
-    ), dict(
-        (f, names[s]) for s in range(len(splits)) for j, f in enumerate(f_entities) if x_f[s][:, 0][j].value > 0.1
-    ))
+    output = (
+        {},
+        {e: names[s] for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[s][:, 0][i].value > 0.1},
+        {f: names[s] for s in range(len(splits)) for j, f in enumerate(f_entities) if x_f[s][:, 0][j].value > 0.1},
+    )
     for i, e in enumerate(e_entities):
         for j, f in enumerate(f_entities):
             if (e, f) in inter:

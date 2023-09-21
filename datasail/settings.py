@@ -1,5 +1,35 @@
 import logging
+import shutil
 import sys
+from typing import Tuple, Optional
+
+
+def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Return the default clustering method for a specific type of data and a specific format.
+
+    Args:
+        data_type: Type of data as string representation
+        data_format: Format encoded as string
+
+    Returns:
+        Tuple of the names of the method to use to compute either the similarity or distance for the input
+    """
+    if data_type == P_TYPE:
+        if data_format == FORM_PDB:
+            return FOLDSEEK, None
+        elif data_format == FORM_FASTA:
+            # Check if cd-hit is installed or neither of cd-hit and mmseqs are
+            if INSTALLED[CDHIT] or not INSTALLED[MMSEQS]:
+                return CDHIT, None
+            else:
+                return MMSEQS2, None
+    if data_type == M_TYPE and data_format == FORM_SMILES:
+        return ECFP, None
+    if data_type == G_TYPE and data_format == FORM_FASTA:
+        return None, MASH
+    return None, None
+
 
 VERB_MAP = {
     "C": logging.CRITICAL,
@@ -9,7 +39,6 @@ VERB_MAP = {
     "I": logging.INFO,
     "D": logging.DEBUG,
 }
-
 
 LOGGER = logging.getLogger("DataSAIL")
 
@@ -21,8 +50,27 @@ _stdout_handler.setLevel(logging.INFO)
 LOGGER.addHandler(_stdout_handler)
 
 # Define static values here, e.g. integer constants or string keys
-SIM_ALGOS = ["wlk", "mmseqs", "foldseek", "cdhit", "ecfp",]
-DIST_ALGOS = ["mash",]
+WLK = "wlk"
+MMSEQS = "mmseqs"
+MMSEQS2 = "mmseqs2"
+FOLDSEEK = "foldseek"
+CDHIT = "cdhit"
+ECFP = "ecfp"
+MASH = "mash"
+MASH_SKETCH = "mash_sketch"
+MASH_DIST = "mash"
+TMALIGN = "tmalign"
+SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, FOLDSEEK, CDHIT, ECFP, ]
+DIST_ALGOS = [MASH, ]
+INSTALLED = {
+    CDHIT: shutil.which("cd-hit") is not None,
+    MMSEQS: shutil.which("mmseqs") is not None,
+    MMSEQS2: shutil.which("mmseqs") is not None,
+    MASH: shutil.which("mash") is not None,
+    FOLDSEEK: shutil.which("foldseek") is not None,
+    TMALIGN: shutil.which("TMalign") is not None,
+}
+
 UNK_LOCATION = "unknown"
 P_TYPE = "P"
 M_TYPE = "M"
@@ -34,6 +82,17 @@ FORM_OTHER = "Other"
 FORM_PDB = "PDB"
 FORM_SMILES = "SMILES"
 NOT_ASSIGNED = "not selected"
+MAX_CLUSTERS = 50
+
+YAML_FILE_NAMES = {
+    MMSEQS: "args/mmseqs2.yaml",
+    MMSEQS2: "args/mmseqs2.yaml",
+    CDHIT: "args/cdhit.yaml",
+    FOLDSEEK: "args/foldseek.yaml",
+    ECFP: "args/.yaml",
+    MASH_SKETCH: "args/mash_sketch.yaml",
+    MASH_DIST: "args/mash_dist.yaml",
+}
 
 KW_CACHE = "cache"
 KW_CACHE_DIR = "cache_dir"
@@ -72,7 +131,6 @@ KW_SOLVER = "solver"
 KW_SPLITS = "splits"
 KW_TECHNIQUES = "techniques"
 KW_THREADS = "threads"
-KW_VECTORIZED = "vectorized"
 KW_VERBOSE = "verbosity"
 
 SOLVER_MOSEK = "MOSEK"

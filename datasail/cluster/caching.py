@@ -16,7 +16,7 @@ def load_from_cache(dataset: DataSet, **kwargs) -> Optional[DataSet]:
         **kwargs: Further arguments to the program regarding caching.
 
     Returns:
-
+        The dataset if it could be loaded from cache, else none
     """
     if kwargs.get("cache", False):
         name = f"{hex(hash(dataset))[2:34]}.pkl"
@@ -37,5 +37,4 @@ def store_to_cache(dataset: DataSet, **kwargs) -> None:
         name = f"{hex(hash(dataset))[2:34]}.pkl"
         cache_dir = kwargs.get(KW_CACHE_DIR, user_cache_dir("DataSAIL"))
         os.makedirs(cache_dir, exist_ok=True)
-        print(os.path.join(cache_dir, name))
         pickle.dump(dataset, open(os.path.join(cache_dir, name), "wb"))

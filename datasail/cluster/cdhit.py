@@ -4,10 +4,10 @@ from typing import Tuple, List, Dict, Optional
 
 import numpy as np
 
-from datasail.cluster.utils import cluster_param_binary_search
-from datasail.parsers import parse_cdhit_args
+from datasail.cluster.utils import cluster_param_binary_search, extract_fasta
+from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, UNK_LOCATION
+from datasail.settings import LOGGER, CDHIT, INSTALLED
 
 
 def run_cdhit(
@@ -29,22 +29,20 @@ def run_cdhit(
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    args = parse_cdhit_args(dataset.args)
-    vals = (args["c"], args["n"])
+    if not INSTALLED[CDHIT]:
+        raise ValueError("CD-HIT is not installed.")
 
-    if not os.path.exists(dataset.location):
-        with open(dataset.location + ".fasta" if dataset.location.endswith(UNK_LOCATION) else "", "w") as out:
-            for idx, seq in dataset.data.items():
-                print(">" + idx, file=out)
-                print(seq, file=out)
-        dataset.location = dataset.location + ".fasta" if dataset.location.endswith(UNK_LOCATION) else ""
+    user_args = MultiYAMLParser(CDHIT).get_user_arguments(dataset.args, ["c", "n"])
+    vals = (dataset.args.c, dataset.args.n)
+    extract_fasta(dataset)
 
     return cluster_param_binary_search(
         dataset,
         vals,
-        threads,
         (0.4, 2),
         (1, 5),
+        user_args,
+        threads,
         cdhit_trial,
         lambda x: f"-c {x[0]} -n {x[1]} -l {x[1] - 1}",
         lambda x, y: ((x[0] + y[0]) / 2, c2n((x[0] + y[0]) / 2)),
@@ -54,7 +52,8 @@ def run_cdhit(
 
 def cdhit_trial(
         dataset: DataSet,
-        add_args: Tuple,
+        tune_args: Tuple,
+        user_args: str,
         threads: int = 1,
         log_file: Optional[str] = None
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
@@ -63,7 +62,8 @@ def cdhit_trial(
 
     Args:
         dataset: Dataset to run the clustering for
-        add_args: Additional arguments specifying the sequence similarity parameter
+        tune_args: Tune-able arguments that are set by DataSAIL while finding the optimal clustering.
+        user_args: Additional arguments specifying the sequence similarity parameter, those can be set by the user
         threads: number of threads to use for one CD-HIT run
         log_file: Filepath to log the output to
 
@@ -73,26 +73,36 @@ def cdhit_trial(
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    cmd = f"mkdir cdhit && " \
-          f"cd cdhit && " \
-          f"cd-hit -i {os.path.join('..', dataset.location)} -o clusters -g 1 {add_args} -d 0 -T {threads} "
+    results_folder = "cdhit_results"
+    cmd = f"mkdir {results_folder} && " \
+          f"cd {results_folder} && " \
+          f"cd-hit " \
+          f"-i {os.path.join('..', dataset.location)} " \
+          f"-o clusters " \
+          f"-d 0 " \
+          f"-T {threads} " \
+          f"{tune_args} " \
+          f"{user_args} "
 
     if log_file is None:
         cmd += "> /dev/null 2>&1"
     else:
         cmd += f"> {log_file}"
 
-    if os.path.exists("cdhit"):
-        cmd = "rm -rf cdhit && " + cmd
+    if os.path.exists(results_folder):
+        cmd = f"rm -rf {results_folder} && " + cmd
 
     LOGGER.info(cmd)
     os.system(cmd)
 
-    cluster_map = get_cdhit_map("cdhit/clusters.clstr")
+    if not os.path.isfile(f"{results_folder}/clusters.clstr"):
+        raise ValueError("Something went wrong with cd-hit. The output file does not exist.")
+
+    cluster_map = get_cdhit_map(f"{results_folder}/clusters.clstr")
     cluster_names = list(set(cluster_map.values()))
     cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
 
-    shutil.rmtree("cdhit")
+    shutil.rmtree(results_folder)
 
     return cluster_names, cluster_map, cluster_sim
 
@@ -140,12 +150,11 @@ def c2n(c: float):
     Returns:
         An according value for n based on c
     """
-    match c:
-        case c if 0.4 <= c < 0.5:
-            return 2
-        case c if 0.5 <= c < 0.6:
-            return 3
-        case c if 0.6 <= c < 0.7:
-            return 4
-        case _:
-            return 5
+    if 0.4 <= c < 0.5:
+        return 2
+    elif 0.5 <= c < 0.6:
+        return 3
+    elif 0.6 <= c < 0.7:
+        return 4
+    else:
+        return 5

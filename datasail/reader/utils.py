@@ -1,10 +1,14 @@
 import os
+from argparse import Namespace
 from dataclasses import dataclass, fields
 from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
 
 import numpy as np
+import pandas as pd
 
-from datasail.settings import FORM_FASTA, FORM_SMILES, FORM_PDB
+from datasail.reader.validate import validate_user_args
+from datasail.settings import FORM_FASTA, FORM_SMILES, FORM_PDB, MMSEQS, INSTALLED, CDHIT, FOLDSEEK, P_TYPE, M_TYPE, \
+    G_TYPE, MMSEQS2, MASH, ECFP, get_default
 
 DATA_INPUT = Optional[Union[str, Dict[str, str], Callable[..., Dict[str, str]], Generator[Tuple[str, str], None, None]]]
 MATRIX_INPUT = Optional[Union[str, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
@@ -15,7 +19,7 @@ DictMap = Dict[str, List[Dict[str, str]]]
 class DataSet:
     type: Optional[str] = None
     format: Optional[str] = None
-    args: str = ""
+    args: Optional[Union[Namespace, Tuple[Namespace, Namespace]]] = None
     names: Optional[List[str]] = None
     id_map: Optional[Dict[str, str]] = None
     cluster_names: Optional[List[str]] = None
@@ -49,6 +53,8 @@ class DataSet:
                 hv = hash(tuple(obj))
             elif isinstance(obj, np.ndarray):
                 hv = 0  # hash(str(obj.data))
+            elif isinstance(obj, Namespace):
+                hv = hash(tuple(obj.__dict__.items()))
             else:
                 hv = hash(obj)
             hash_val ^= hv
@@ -153,13 +159,9 @@ def read_csv(filepath: str) -> Generator[Tuple[str, str], None, None]:
     Yields:
         Pairs of strings from the file
     """
-    with open(filepath, "r") as inter:
-        for line in inter.readlines()[1:]:
-            output = line.strip().split("\t")
-            if len(output) >= 2:
-                yield output[:2]
-            else:
-                yield output[0], output[0]
+    df = pd.read_csv(filepath, sep="\t")
+    for index in df.index:
+        yield df.iloc[index, :2]
 
 
 def read_matrix_input(
@@ -177,23 +179,22 @@ def read_matrix_input(
         Tuple of names of the data samples, a matrix holding their similarities/distances or a string encoding a method
         to compute the fore-mentioned, and the threshold to apply when splitting
     """
-    match in_data:
-        case x if isinstance(x, str):
-            if os.path.isfile(in_data):
-                names, similarity = read_clustering_file(in_data)
-                threshold = max_val
-            else:
-                names = default_names
-                similarity = in_data
-                threshold = max_val
-        case x if isinstance(x, tuple):
-            names, similarity = in_data
+    if isinstance(in_data, str):
+        if os.path.isfile(in_data):
+            names, similarity = read_clustering_file(in_data)
             threshold = max_val
-        case x if isinstance(x, Callable):
-            names, similarity = in_data()
+        else:
+            names = default_names
+            similarity = in_data
             threshold = max_val
-        case _:
-            raise ValueError()
+    elif isinstance(in_data, tuple):
+        names, similarity = in_data
+        threshold = max_val
+    elif isinstance(in_data, Callable):
+        names, similarity = in_data()
+        threshold = max_val
+    else:
+        raise ValueError()
     return names, similarity, threshold
 
 
@@ -206,6 +207,7 @@ def read_data(
         id_map: Optional[str],
         inter: Optional[List[Tuple[str, str]]],
         index: Optional[int],
+        tool_args: str,
         dataset: DataSet,
 ) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     """
@@ -220,6 +222,7 @@ def read_data(
         id_map: Mapping of ids in case of duplicates in the dataset
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
+        tool_args: Additional arguments for the tool
         dataset: A dataset object storing information on the read
 
     Returns:
@@ -227,15 +230,14 @@ def read_data(
     """
     # parse the protein weights
     if weights is not None:
-        match weights:
-            case str():
-                dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
-            case dict():
-                dataset.weights = weights
-            case x if isinstance(x, Callable):
-                dataset.weights = weights()
-            case x if isinstance(x, Generator):
-                dataset.weights = dict(weights)
+        if isinstance(weights, str):
+            dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
+        elif isinstance(weights, dict):
+            dataset.weights = weights
+        elif isinstance(weights, Callable):
+            dataset.weights = weights()
+        elif isinstance(weights, Generator):
+            dataset.weights = dict(weights)
     elif inter is not None:
         dataset.weights = dict(count_inter(inter, index))
     else:
@@ -260,6 +262,8 @@ def read_data(
             dataset.distance = dist
             dataset.threshold = max_dist
         dataset.names = list(dataset.data.keys())
+
+    dataset.args = validate_user_args(dataset.type, dataset.format, sim, dist, tool_args)
 
     # parse mapping of duplicates
     if id_map is None:
@@ -306,30 +310,6 @@ def read_folder(folder_path: str, file_extension: Optional[str] = None) -> Gener
     for filename in os.listdir(folder_path):
         if file_extension is None or filename.endswith(file_extension):
             yield ".".join(filename.split(".")[:-1]), os.path.abspath(os.path.join(folder_path, filename))
-
-
-def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Optional[str]]:
-    """
-    Return the default clustering method for a specific type of data and a specific format.
-
-    Args:
-        data_type: Type of data as string representation
-        data_format: Format encoded as string
-
-    Returns:
-        Tuple of the names of the method to use to compute either the similarity or distance for the input
-    """
-    match data_type:
-        case "P":
-            if data_format == FORM_PDB:
-                return "foldseek", None
-            elif data_format == FORM_FASTA:
-                return "cdhit", None
-        case _ if "M" and data_format == FORM_SMILES:
-            return "ecfp", None
-        case _ if "G" and data_format == FORM_FASTA:
-            return None, "mash"
-    return None, None
 
 
 def get_prefix_args(prefix, **kwargs) -> Dict[str, Any]:

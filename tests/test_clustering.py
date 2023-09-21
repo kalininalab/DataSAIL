@@ -1,8 +1,10 @@
+import platform
+
 import numpy as np
 import pytest
 
 from datasail.cluster.cdhit import run_cdhit
-from datasail.cluster.clustering import stable_additional_clustering
+from datasail.cluster.clustering import stable_additional_clustering, cluster
 from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
@@ -11,6 +13,9 @@ from datasail.cluster.tmalign import run_tmalign
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.read_proteins import parse_fasta, read_folder
 from datasail.reader.utils import DataSet, read_csv
+from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
+    check_mash_arguments
+from datasail.settings import P_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN
 
 
 def test_additional_clustering():
@@ -82,72 +87,126 @@ def test_additional_clustering():
     assert [d_dataset.cluster_weights[i] for i in d_dataset.cluster_names] == [16, 36]
 
 
-@pytest.fixture
-def protein_fasta_data():
+def protein_fasta_data(algo):
     data = parse_fasta("data/pipeline/seqs.fasta")
-    return DataSet(type="M", data=data, names=list(sorted(data.keys())), location="data/pipeline/seqs.fasta")
+    return DataSet(
+        type="M",
+        data=data,
+        names=list(sorted(data.keys())),
+        location="data/pipeline/seqs.fasta",
+        args=check_cdhit_arguments("") if algo == CDHIT else check_mmseqs_arguments()
+    )
 
 
-@pytest.fixture
-def protein_pdb_data():
+def protein_pdb_data(algo):
     data = dict((k, v) for k, v in read_folder("data/pipeline/pdbs", ".pdb"))
-    return DataSet(type="M", data=data, names=list(sorted(data.keys())), location="data/pipeline/pdbs/")
+    return DataSet(
+        type="M",
+        data=data,
+        names=list(sorted(data.keys())),
+        location="data/pipeline/pdbs/",
+        args=check_foldseek_arguments() if algo == FOLDSEEK else None,
+    )
 
 
 @pytest.fixture
 def molecule_data():
     data = dict((k, v) for k, v in read_csv("data/pipeline/drugs.tsv"))
-    return DataSet(type="M", data=data, names=list(sorted(data.keys())), location="data/pipeline/drugs.tsv")
+    return DataSet(
+        type="M",
+        data=data,
+        names=list(sorted(data.keys())),
+        location="data/pipeline/drugs.tsv",
+    )
 
 
 @pytest.fixture
 def genome_fasta_data():
     data = dict((k, v) for k, v in read_folder("data/genomes", ".fna"))
-    return DataSet(type="M", data=data, names=list(sorted(data.keys())), location="data/genomes/")
+    return DataSet(
+        type="M",
+        data=data,
+        names=list(sorted(data.keys())),
+        location="data/genomes/",
+        args=check_mash_arguments(""),
+    )
 
 
 @pytest.mark.nowin
-def test_cdhit_protein(protein_fasta_data):
-    check_clustering(*run_cdhit(protein_fasta_data, 1, "./"), protein_fasta_data)
+def test_cdhit_protein():
+    data = protein_fasta_data(CDHIT)
+    if platform.system() == "Windows":
+        pytest.skip("CD-HIT is not supported on Windows")
+    check_clustering(*run_cdhit(data, 1, "./"), dataset=data)
 
 
 @pytest.mark.todo
 @pytest.mark.nowin
 def test_cdhit_genome(genome_fasta_data):
-    check_clustering(*run_cdhit(genome_fasta_data, 1, "./"), genome_fasta_data)
+    if platform.system() == "Windows":
+        pytest.skip("CD-HIT is not supported on Windows")
+    output = run_cdhit(genome_fasta_data, 1, "./")
+    check_clustering(*output, dataset=genome_fasta_data)
 
 
 def test_ecfp_molecule(molecule_data):
-    check_clustering(*run_ecfp(molecule_data), molecule_data)
+    check_clustering(*run_ecfp(molecule_data), dataset=molecule_data)
 
 
 @pytest.mark.nowin
-def test_foldseek_protein(protein_pdb_data):
-    check_clustering(*run_foldseek(protein_pdb_data, 1, "./"), protein_pdb_data)
+def test_foldseek_protein():
+    data = protein_pdb_data(FOLDSEEK)
+    if platform.system() == "Windows":
+        pytest.skip("Foldseek is not supported on Windows")
+    check_clustering(*run_foldseek(data, 1, "./"), dataset=data)
 
 
 @pytest.mark.nowin
 def test_mash_genomic(genome_fasta_data):
-    check_clustering(*run_mash(genome_fasta_data, 1, "./"), genome_fasta_data)
+    if platform.system() == "Windows":
+        pytest.skip("MASH is not supported on Windows")
+    check_clustering(*run_mash(genome_fasta_data, 1, "./"), dataset=genome_fasta_data)
 
 
 @pytest.mark.nowin
-def test_mmseqs2_protein(protein_fasta_data):
-    check_clustering(*run_mmseqs(protein_fasta_data, 1, "./"), protein_fasta_data)
+def test_mmseqs2_protein():
+    data = protein_fasta_data(MMSEQS)
+    if platform.system() == "Windows":
+        pytest.skip("MMseqs2 is not supported on Windows")
+    check_clustering(*run_mmseqs(data, 1, "./"), dataset=data)
 
 
 @pytest.mark.nowin
-def test_tmalign_protein(protein_pdb_data):
-    check_clustering(*run_tmalign(protein_pdb_data), protein_pdb_data)
+def test_tmalign_protein():
+    data = protein_pdb_data(TMALIGN)
+    if platform.system() == "Windows":
+        pytest.skip("TM-align is not supported on Windows")
+    check_clustering(*run_tmalign(data), dataset=data)
 
 
 @pytest.mark.nowin
-def test_wlkernel_protein(protein_pdb_data):
-    check_clustering(*run_wlk(protein_pdb_data), protein_pdb_data)
+def test_wlkernel_protein():
+    protein_data = protein_pdb_data(FOLDSEEK)
+    check_clustering(*run_wlk(protein_data), dataset=protein_data)
 
 
 def test_wlkernel_molecule(molecule_data):
-    check_clustering(*run_wlk(molecule_data), molecule_data)
+    check_clustering(*run_wlk(molecule_data), dataset=molecule_data)
+
+
+@pytest.mark.parametrize("algo", [CDHIT, MMSEQS])
+def test_force_clustering(algo):
+    print()
+    dataset = cluster(DataSet(
+        type=P_TYPE,
+        format=FORM_FASTA,
+        names=[f"Seq{i + 1:04d}" for i in range(len(open("data/rw_data/pdbbind_clean.fasta", "r").readlines()))],
+        location="data/rw_data/pdbbind_clean.fasta",
+        similarity=algo,
+        args=check_cdhit_arguments("") if algo == CDHIT else check_mmseqs_arguments(""),
+
+    ), **{KW_THREADS: 1, KW_LOGDIR: "./"})
+    assert len(dataset.cluster_names) <= 100
 
 
 def check_clustering(names, mapping, matrix, dataset):

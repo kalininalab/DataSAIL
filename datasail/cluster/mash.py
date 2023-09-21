@@ -4,8 +4,9 @@ from typing import Tuple, List, Dict, Optional
 
 import numpy as np
 
+from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, INSTALLED, MASH, MASH_DIST, MASH_SKETCH
 
 
 def run_mash(
@@ -27,30 +28,39 @@ def run_mash(
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    cmd = f"mkdir mash_results && " \
+    if not INSTALLED[MASH]:
+        raise ValueError("MASH is not installed.")
+    user_args_sketch = MultiYAMLParser(MASH_SKETCH).get_user_arguments(dataset.args[0], [])
+    user_args_dist = MultiYAMLParser(MASH_DIST).get_user_arguments(dataset.args[1], [])
+
+    results_folder = "mash_results"
+    cmd = f"mkdir {results_folder} && " \
           f"cd mash_results && " \
-          f"mash sketch -s 10000 -p {threads} -o ./cluster {os.path.join('..', dataset.location, '*.fna')} && " \
-          f"mash dist -p {threads} -t cluster.msh cluster.msh > cluster.tsv "
+          f"mash sketch -s 10000 -p {threads} -o ./cluster {os.path.join('..', dataset.location, '*.fna')} " \
+          f"{user_args_sketch} && " \
+          f"mash dist -p {threads} -t cluster.msh cluster.msh > cluster.tsv {user_args_dist}"
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"
     else:
         cmd += f"> {os.path.join(log_dir, f'{dataset.get_name()}_mash.log')}"
 
-    if os.path.exists("mash_results"):
-        cmd = "rm -rf mash_results && " + cmd
+    if os.path.exists(results_folder):
+        cmd = f"rm -rf {results_folder} && " + cmd
 
     LOGGER.info("Start MASH clustering")
-
     LOGGER.info(cmd)
     os.system(cmd)
 
+    if not os.path.isfile(f"{results_folder}/cluster.tsv"):
+        raise ValueError("Something went wrong with MASH. The output file does not exist.")
+
     names = dataset.names
     cluster_map = dict((n, n) for n in names)
-    cluster_dist = read_mash_tsv("mash_results/cluster.tsv", len(names))
+    cluster_dist = read_mash_tsv(f"{results_folder}/cluster.tsv", len(names))
     cluster_names = names
 
-    shutil.rmtree("mash_results")
+    shutil.rmtree(results_folder)
 
     return cluster_names, cluster_map, cluster_dist
 

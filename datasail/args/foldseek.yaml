@@ -1,0 +1,461 @@
+comp-bias-corr:
+  description: Correct for locally biased amino acid composition (range 0-1)
+  type: int
+  default: 1
+  cardinality: "?"
+  calls: ["--comp-bias-corr"]
+
+comp-bias-corr-scale:
+  description: Correct for locally biased amino acid composition (range 0-1)
+  type: float
+  default: 1.0
+  cardinality: "?"
+  calls: ["--comp-bias-corr-scale"]
+
+seed-sub-mat:
+  description: Substitution matrix file for k-mer generation, file input
+  type: str
+  default: "aa:3di.out,nucl:3di.out"
+  cardinality: "?"
+  calls: ["--seed-sub-mat"]
+
+s:
+  description: "Sensitivity: 1.0 faster; 4.0 fast; 7.5 sensitive, range [0,7.5]"
+  type: float
+  default: 7.5
+  cardinality: "?"
+  calls: ["-s"]
+
+k:
+  description: "k-mer length (0: automatically set to optimum), range integer"
+  type: int
+  default: 6
+  cardinality: "?"
+  calls: ["-k"]
+
+k-score:
+  description: k-mer threshold for generating similar k-mer lists, string input, both value ranges positive
+  type: str
+  default: "seq:2147483647,prof:2147483647"
+  cardinality: "?"
+  calls: ["--k-score"]
+
+max-seqs:
+  description: Maximum results per query sequence allowed to pass the prefilter (affects sensitivity)
+  type: int
+  default: 1000
+  cardinality: "?"
+  calls: ["--max-seqs"]
+
+split:
+  description: "Split input into N equally distributed chunks. 0: set the best split automatically"
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--split"]
+
+split-mode:
+  description: Split mode for input databases
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--split-mode"]
+
+split-memory-limit:
+  description: Set max memory per split, byte input
+  type: str
+  default: "0"
+  cardinality: "?"
+  calls: ["--split-memory-limit"]
+
+diag-score:
+  description: Use ungapped diagonal scoring during prefilter
+  type: bool
+  default: true
+  cardinality: 0
+  calls: ["--diag-score"]
+
+exact-kmer-matching:
+  description: Extract only exact k-mers for matching (range 0-1)
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--exact-kmer-matching"]
+
+mask:
+  description: Mask sequences in k-mer stage, pseudo-boolean value
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--mask"]
+
+mask-prob:
+  description: Mask sequences if probability is above threshold
+  type: float
+  default: 1.0
+  cardinality: "?"
+  calls: ["--mask-prob"]
+
+mask-lower-case:
+  description: Exclude lowercase letters from k-mer search, pseudo-boolean value
+  type: int
+  default: 1
+  cardinality: "?"
+  calls: ["--mask-lower-case"]
+
+min-ungapped-score:
+  description: Accept only matches with ungapped alignment score above threshold, range non-negative
+  type: int
+  default: 30
+  cardinality: "?"
+  calls: ["--min-ungapped-score"]
+
+spaced-kmer-mode:
+  description: Spaced k-mer mode, psedo-boolean value
+  type: int
+  default: 1
+  cardinality: "?"
+  calls: ["--spaced-kmer-mode"]
+
+spaced-kmer-pattern:
+  description: User-specified spaced k-mer pattern
+  type: str
+  default: ""
+  cardinality: "?"
+  calls: ["--spaced-kmer-pattern"]
+
+# local-tmp:
+#   description: Path for temporary files
+#   type: str
+#   default: ""
+#   cardinality: "?"
+# https://mamba.readthedocs.io/en/latest/mamba-installation.html  calls: ["--local-tmp"]
+
+exhaustive-search:
+  description: Turn on exhaustive all vs all search, pseudo-boolean value
+  type: bool
+  default: false
+  cardinality: 0
+  calls: ["--exhaustive-search"]
+
+min-seq-id:
+  description: List matches above this sequence identity (for clustering), range 0-1
+  type: float
+  default: 0.0
+  cardinality: "?"
+  calls: ["--min-seq-id"]
+
+c:
+  description: List matches above this fraction of aligned (covered) residues, range 0-1
+  type: float
+  default: 0.0
+  cardinality: "?"
+  calls: ["-c"]
+
+cov-mode:
+  description: Coverage mode, int range 0-5
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--cov-mode"]
+
+max-rejected:
+  description: Maximum rejected alignments before calculation stops, range non-negative
+  type: int
+  default: 2147483647
+  cardinality: "?"
+  calls: ["--max-rejected"]
+
+max-accept:
+  description: Maximum accepted alignments before calculation stops, range non-negative
+  type: int
+  default: 2147483647
+  cardinality: "?"
+  calls: ["--max-accept"]
+
+# a:
+#   description: Add backtrace string
+#   type: bool
+#   default: false
+#   cardinality: 0
+#   calls: ["-a"]
+
+sort-by-structure-bits:
+  description: Sort by structure bits
+  type: int
+  default: 1
+  cardinality: "?"
+  calls: ["--sort-by-structure-bits"]
+
+alignment-mode:
+  description: Alignment mode, int range 0-3
+  type: int
+  default: 3
+  cardinality: "?"
+  calls: ["--alignment-mode"]
+
+alignment-output-mode:
+  description: Alignment output mode, int range 0-5
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--alignment-output-mode"]
+
+# e:
+#   description: List matches below this E-value, range float
+#   type: float
+#   default: 10.0
+#   cardinality: "?"
+#   calls: ["-e"]
+
+min-aln-len:
+  description: Minimum alignment length, range non-negative
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--min-aln-len"]
+
+seq-id-mode:
+  description: Sequence identity mode, range 0-2
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--seq-id-mode"]
+
+# alt-ali:
+#   description: Show up to this many alternative alignments, range non-negative
+#   type: int
+#   default: 0
+#   cardinality: "?"
+#   calls: ["--alt-ali"]
+
+gap-open:
+  description: Gap open cost, string with int-range values
+  type: twin
+  default: "aa:10,nucl:10"
+  cardinality: "?"
+  calls: ["--gap-open"]
+
+gap-extend:
+  description: Gap extension cost, string with int-range values
+  type: twin
+  default: "aa:1,nucl:1"
+  cardinality: "?"
+  calls: ["--gap-extend"]
+
+cluster-mode:
+  description: Clustering algorithm to use, range 0-3
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--cluster-mode"]
+
+num-iterations:
+  description: Number of iterative profile search iterations, range positive
+  type: int
+  default: 1
+  cardinality: "?"
+  calls: ["--num-iterations"]
+
+tmscore-threshold:
+  description: Accept alignments with a TM-score above threshold, range 0-1
+  type: float
+  default: 0.0
+  cardinality: "?"
+  calls: ["--tmscore-threshold"]
+
+tmalign-hit-order:
+  description: Order hits for TM-align, range 0-4
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--tmalign-hit-order"]
+
+tmalign-fast:
+  description: Turn on fast search in TM-align, pseudo-boolean value
+  type: int
+  default: 1
+  cardinality: "?"
+  calls: ["--tmalign-fast"]
+
+lddt-threshold:
+  description: Accept alignments with an lddt above threshold, range 0-1
+  type: float
+  default: 0.0
+  cardinality: "?"
+  calls: ["--lddt-threshold"]
+
+prefilter-mode:
+  description: Prefilter mode, value 0-2
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--prefilter-mode"]
+
+alignment-type:
+  description: Alignment type, value 0-3
+  type: int
+  default: 2
+  cardinality: "?"
+  calls: ["--alignment-type"]
+
+cluster-search:
+  description: Cluster search mode, pseudo-boolean value
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--cluster-search"]
+
+mask-bfactor-threshold:
+  description: Mask residues for seeding if b-factor < threshold, range 0-1
+  type: float
+  default: 0.0
+  cardinality: "?"
+  calls: ["--mask-bfactor-threshold"]
+
+# format-mode:
+#   description: Output format mode
+#   type: int
+#   default: 0
+#   cardinality: "?"
+#   calls: ["--format-mode"]
+
+# format-output:
+#   description: Choose comma-separated list of output columns
+#   type: str
+#   default: "query,target,fident,alnlen,mismatch,gapopen,qstart,qend,tstart,tend,evalue,bits"
+#   cardinality: "?"
+#   calls: ["--format-output"]
+
+greedy-best-hits:
+  description: Choose the best hits greedily to cover the query
+  type: bool
+  default: false
+  cardinality: 0
+  calls: ["--greedy-best-hits"]
+
+db-load-mode:
+  description: Database preload mode, range 0-3
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--db-load-mode"]
+
+threads:
+  description: Number of CPU cores used, range positive
+  type: int
+  default: 16
+  cardinality: "?"
+  calls: ["--threads"]
+
+# v:
+#   description: Verbosity level
+#   type: int
+#   default: 3
+#   cardinality: "?"
+#   calls: ["-v"]
+
+sub-mat:
+  description: Substitution matrix file
+  type: twin
+  default: "aa:3di.out,nucl:3di.out"
+  cardinality: "?"
+  calls: ["--sub-mat"]
+
+max-seq-len:
+  description: Maximum sequence length, range positive
+  type: int
+  default: 65535
+  cardinality: "?"
+  calls: ["--max-seq-len"]
+
+# compressed:
+#   description: Write compressed output
+#   type: int
+#   default: 0
+#   cardinality: "?"
+#   calls: ["--compressed"]
+
+# remove-tmp-files:
+#   description: Delete temporary files
+#   type: bool
+#   default: true
+#   cardinality: 0
+#   calls: ["--remove-tmp-files"]
+
+mpi-runner:
+  description: Use MPI on compute cluster with this MPI command
+  type: str
+  default: ""
+  cardinality: "?"
+  calls: ["--mpi-runner"]
+
+# force-reuse:
+#   description: Reuse tmp files in tmp/latest folder ignoring parameters and version changes
+#   type: bool
+#   default: false
+#   cardinality: 0
+#   calls: ["--force-reuse"]
+
+zdrop:
+  description: Max allowed difference between score values before alignment is truncated
+  type: int
+  default: 40
+  cardinality: "?"
+  calls: ["--zdrop"]
+
+taxon-list:
+  description: Taxonomy ID, possibly multiple values separated by ','
+  type: str
+  default: ""
+  cardinality: "?"
+  calls: ["--taxon-list"]
+
+chain-name-mode:
+  description: Add chain to name
+  type: int
+  default: 0
+  cardinality: "?"
+  calls: ["--chain-name-mode"]
+
+# write-mapping:
+#   description: Write _mapping file containing mapping from internal id to taxonomic identifier
+#   type: int
+#   default: 0
+#   cardinality: "?"
+#   calls: ["--write-mapping"]
+
+coord-store-mode:
+  description: Coordinate storage mode, range 1-2
+  type: int
+  default: 2
+  cardinality: "?"
+  calls: ["--coord-store-mode"]
+
+write-lookup:
+  description: Write .lookup file containing mapping from internal id, fasta id and file number
+  type: int
+  default: 1
+  cardinality: "?"
+  calls: ["--write-lookup"]
+
+tar-include:
+  description: Include file names based on this regex
+  type: str
+  default: ".*"
+  cardinality: "?"
+  calls: ["--tar-include"]
+
+tar-exclude:
+  description: Exclude file names based on this regex
+  type: str
+  default: "^$"
+  cardinality: "?"
+  calls: ["--tar-exclude"]
+
+# db-output:
+#   description: Return a result DB instead of a text file
+#   type: bool
+#   default: false
+#   cardinality: 0
+#   calls: ["--db-output"]

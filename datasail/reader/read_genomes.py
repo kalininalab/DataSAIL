@@ -14,6 +14,7 @@ def read_genome_data(
         id_map: Optional[str] = None,
         inter: Optional[List[Tuple[str, str]]] = None,
         index: Optional[int] = None,
+        tool_args: str = "",
 ) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     """
     Read in genomic data, compute the weights, and distances or similarities of every entity.
@@ -28,25 +29,25 @@ def read_genome_data(
         id_map: Mapping of ids in case of duplicates in the dataset
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
+        tool_args: Additional arguments for the tool
 
     Returns:
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=G_TYPE, location=UNK_LOCATION, format=FORM_FASTA)
-    match data:
-        case str():
-            dataset.data = dict(read_folder(data))
-            dataset.location = data
-        case dict():
-            dataset.data = data
-        case x if isinstance(x, Callable):
-            dataset.data = data()
-        case x if isinstance(x, Generator):
-            dataset.data = dict(data)
-        case _:
-            raise ValueError()
+    if isinstance(data, str):
+        dataset.data = dict(read_folder(data))
+        dataset.location = data
+    elif isinstance(data, dict):
+        dataset.data = data
+    elif isinstance(data, Callable):
+        dataset.data = data()
+    elif isinstance(data, Generator):
+        dataset.data = dict(data)
+    else:
+        raise ValueError()
 
-    dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, dataset)
+    dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, tool_args, dataset)
 
     return dataset, inter
 

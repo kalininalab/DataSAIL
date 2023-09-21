@@ -1,11 +1,13 @@
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional
 
 import numpy as np
-from rdkit import Chem, DataStructs
+import rdkit
+from rdkit import Chem, DataStructs, RDLogger
 from rdkit.Chem import AllChem
 from rdkit.Chem.Scaffolds.MurckoScaffold import MakeScaffoldGeneric
 from rdkit.Chem.rdchem import MolSanitizeException
 
+from datasail.cluster.utils import read_molecule_encoding
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER
 
@@ -23,6 +25,8 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
+    lg = RDLogger.logger()
+    lg.setLevel(RDLogger.CRITICAL)
     if dataset.type != "M":
         raise ValueError("ECFP with Tanimoto-scores can only be applied to molecular data.")
 
@@ -31,9 +35,10 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
 
     invalid_mols = []
     for name in dataset.names:
-        scaffold = Chem.MolFromSmiles(dataset.data[name])
+        scaffold = read_molecule_encoding(dataset.data[name])
         if scaffold is None:
-            LOGGER.warning(f"RDKit cannot parse {name} ({dataset.data[name]})")
+            bo, bc = "{", "}"
+            LOGGER.warning(f"RDKit cannot parse {name} {bo}{dataset.data[name]}{bc}")
             invalid_mols.append(name)
             continue
         try:
@@ -59,8 +64,8 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     count = len(cluster_names)
     sim_matrix = np.zeros((count, count))
     for i in range(count):
-        if i % 100 == 0:
-            print(f"\r{i + 1} / {count}", end="")
+        # if i % 100 == 0:
+        #     print(f"\r{i + 1} / {count}", end="")
         sim_matrix[i, i] = 1
         sim_matrix[i, :i] = DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])
         sim_matrix[:i, i] = sim_matrix[i, :i]

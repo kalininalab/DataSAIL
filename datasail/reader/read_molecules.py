@@ -1,10 +1,25 @@
 import os
 from typing import List, Tuple, Dict, Any, Optional, Callable, Generator
 
-from rdkit.Chem import MolFromSmiles, MolToSmiles
+import pandas as pd
+from rdkit import Chem
+from rdkit.Chem import MolToSmiles, MolFromMol2File, MolFromMolFile, MolFromPDBFile, MolFromPNGFile, \
+    MolFromTPLFile, MolFromXYZFile
 
+from datasail.cluster.utils import read_molecule_encoding
 from datasail.reader.utils import read_csv, DataSet, read_data, DATA_INPUT, MATRIX_INPUT
 from datasail.settings import M_TYPE, UNK_LOCATION, FORM_SMILES
+
+
+mol_reader = {
+    "mol2": MolFromMol2File,
+    "mol": MolFromMolFile,
+    # "sdf": MolFromMol2File,
+    "pdb": MolFromPDBFile,
+    "png": MolFromPNGFile,
+    "tpl": MolFromTPLFile,
+    "xyz": MolFromXYZFile,
+}
 
 
 def read_molecule_data(
@@ -17,6 +32,7 @@ def read_molecule_data(
         id_map: Optional[str] = None,
         inter: Optional[List[Tuple[str, str]]] = None,
         index: Optional[int] = None,
+        tool_args: str = "",
 ) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     """
     Read in molecular data, compute the weights, and distances or similarities of every entity.
@@ -31,30 +47,38 @@ def read_molecule_data(
         id_map: Mapping of ids in case of duplicates in the dataset
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
+        tool_args: Additional arguments for the tool
 
     Returns:
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=M_TYPE, format=FORM_SMILES, location=UNK_LOCATION)
-    match data:
-        case str():
-            if data.lower().endswith(".tsv"):
-                dataset.data = dict(read_csv(data))
-            elif os.path.isdir(data):
-                pass
-            else:
-                raise ValueError()
-            dataset.location = data
-        case dict():
-            dataset.data = data
-        case x if isinstance(x, Callable):
-            dataset.data = data()
-        case x if isinstance(x, Generator):
-            dataset.data = dict(data)
-        case _:
+    if isinstance(data, str):
+        if data.lower().endswith(".tsv"):
+            dataset.data = dict(read_csv(data))
+        elif os.path.isdir(data):
+            dataset.data = {}
+            for file in os.listdir(data):
+                ending = file.split(".")[-1]
+                if ending != "sdf":
+                    dataset.data[os.path.basename(file)] = mol_reader[ending](os.path.join(data, file))
+                else:
+                    suppl = Chem.SDMolSupplier(os.path.join(data, file))
+                    for i, mol in enumerate(suppl):
+                        dataset.data[f"{os.path.basename(file)}_{i}"] = mol
+        else:
             raise ValueError()
+        dataset.location = data
+    elif isinstance(data, dict):
+        dataset.data = data
+    elif isinstance(data, Callable):
+        dataset.data = data()
+    elif isinstance(data, Generator):
+        dataset.data = dict(data)
+    else:
+        raise ValueError()
 
-    dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, dataset)
+    dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, tool_args, dataset)
 
     return dataset, inter
 
@@ -78,7 +102,7 @@ def remove_molecule_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[s
     # TODO: turn off rdkit errors and warnings
     else:
         input_data = dict(read_csv(kwargs["data"]))
-        molecules = {k: MolFromSmiles(v) for k, v in input_data.items()}
+        molecules = {k: read_molecule_encoding(v) for k, v in input_data.items()}
 
     # Extract invalid molecules
     non_mols = []
@@ -112,18 +136,16 @@ def remove_molecule_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[s
 
     # store the new SMILES TSV file
     smiles_filename = os.path.abspath(os.path.join(output_dir, "tmp", prefix + "smiles.tsv"))
-    with open(smiles_filename, "w") as out:
-        print("Representative\tSMILES", file=out)
-        for idx in id_list:
-            print(idx, valid_mols[idx], sep="\t", file=out)
+    pd.DataFrame(
+        [(idx, valid_mols[idx]) for idx in id_list], columns=["Representatives", "SMILES"]
+    ).to_csv(smiles_filename, sep="\t", columns=["Representatives", "SMILES"], index=False)
     output_args[prefix + "data"] = smiles_filename
 
     # store the mapping of IDs
     id_map_filename = os.path.join(output_dir, "tmp", prefix + "id_map.tsv")
-    with open(id_map_filename, "w") as out:
-        print("Name\tRepresentative", file=out)
-        for idx, rep_id in id_map.items():
-            print(idx, rep_id, sep="\t", file=out)
+    pd.DataFrame(
+        [(x1, id_map.get(x2, "")) for x1, x2 in id_map.items()], columns=["ID", "Cluster_ID"],
+    ).to_csv(id_map_filename, sep="\t", columns=["ID", "Cluster_ID"], index=False)
     output_args[prefix + "id_map"] = id_map_filename
 
     return output_args

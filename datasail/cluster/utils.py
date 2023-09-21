@@ -1,24 +1,47 @@
 import os
-from typing import Tuple, List, Dict, Callable
+from typing import Tuple, List, Dict, Callable, Optional
 
 import numpy as np
+import rdkit
 from matplotlib import pyplot as plt
+from rdkit import Chem
 
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, UNK_LOCATION
 
 
 def cluster_param_binary_search(
         dataset: DataSet,
         init_args: Tuple,
-        threads: int,
         min_args: Tuple,
         max_args: Tuple,
+        user_args: str,
+        threads: int,
         trial: Callable,
         args2str: Callable,
         gen_args: Callable,
         log_dir: str,
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+    """
+    Perform binary search on the parameter space for clustering algorithms. So far, this is used to find optimal number
+    of clusters for CD-HIT and MMseqs2.
+
+    Args:
+        dataset: The dataset to cluster on.
+        init_args: initial arguments for optimization.
+        min_args: The lower bound for the arguments.
+        max_args: The upper bound for the arguments.
+        user_args: Additional arguments that the user may have provided.
+        threads: Number of threads to be used by the clustering algorithm.
+        trial: Callable method running the actual clustering algorithm.
+        args2str: Convert arguments to string to include them in filenames.
+        gen_args: A callable function that generates a new argument configuration for the binary search. Has to be
+            callable with two old parameter configurations.
+        log_dir: Directory to store the logs.
+
+    Returns:
+        Return the cluster names, the mapping from names to cluster names, and a similarity or distance matrix
+    """
     def args2log(x: Tuple):
         """
         Compute the name of the log file based on the provided arguments.
@@ -34,7 +57,13 @@ def cluster_param_binary_search(
         )
 
     # cluster with the initial arguments
-    cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(init_args), threads, args2log(init_args))
+    cluster_names, cluster_map, cluster_sim = trial(
+        dataset,
+        args2str(init_args),
+        user_args,
+        threads,
+        args2log(init_args)
+    )
     num_clusters = len(cluster_names)
     LOGGER.info(f"First round of clustering found {num_clusters} clusters for {len(dataset.names)} samples.")
 
@@ -58,7 +87,7 @@ def cluster_param_binary_search(
         max_clusters = num_clusters
         max_cluster_names, max_cluster_map, max_cluster_sim = cluster_names, cluster_map, cluster_sim
         min_cluster_names, min_cluster_map, min_cluster_sim = \
-            trial(dataset, args2str(min_args), threads, args2log(min_args))
+            trial(dataset, args2str(min_args), user_args, threads, args2log(min_args))
         min_clusters = len(min_cluster_names)
         LOGGER.info(f"Second round of clustering found {min_clusters} clusters for {len(dataset.names)} samples.")
 
@@ -87,7 +116,7 @@ def cluster_param_binary_search(
     while True:
         iteration_count += 1
         args = gen_args(min_args, max_args)
-        cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(args), threads, args2log(args))
+        cluster_names, cluster_map, cluster_sim = trial(dataset, args2str(args), user_args, threads, args2log(args))
         num_clusters = len(cluster_names)
         LOGGER.info(f"Next round of clustering ({iteration_count + 2}.) "
                     f"found {num_clusters} clusters for {len(dataset.names)} samples.")
@@ -113,3 +142,34 @@ def heatmap(matrix: np.ndarray, output_file: str) -> None:
     fig.tight_layout()
     plt.savefig(output_file)
     plt.clf()
+
+
+def extract_fasta(dataset: DataSet) -> None:
+    """
+    Extract the protein sequences from the dataset into a FASTA file that serves as input for CD-HIT or MMseqs2.
+
+    Args:
+        dataset: The dataset to extract the amino acid sequences from
+    """
+    if not os.path.exists(dataset.location):
+        dataset.location = dataset.location + (".fasta" if dataset.location.endswith(UNK_LOCATION) else "")
+        with open(dataset.location, "w") as out:
+            for idx, seq in dataset.data.items():
+                print(">" + idx, file=out)
+                print(seq, file=out)
+
+
+def read_molecule_encoding(encoding: str) -> Optional[rdkit.Chem.rdchem.Mol]:
+    """
+    Detect and read the encoding of a molecule. For FASTA and Sequence input, the user must be able to specify the type
+    of sequence encoded:
+    https://www.rdkit.org/docs/source/rdkit.Chem.rdmolfiles.html#rdkit.Chem.rdmolfiles.MolFromSequence
+
+    Args:
+        encoding: Molecule encoded in some string format
+
+    Returns:
+        The molecule or None if encoding is not readable or mol is invalid.
+    """
+    # TODO: Read FASTA-, HELM-, MOL2-, MOL-, PDB-, PGN-, SVG-, Sequence-, SMARTS-, SMILES-, TPL-, XYZ-strings
+    return Chem.MolFromSmiles(encoding)
