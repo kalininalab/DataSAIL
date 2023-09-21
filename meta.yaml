@@ -3,8 +3,9 @@ package:
   version: "0.1.0"
 
 source:
-  git_url: https://github.com/kalininalab/DataSAIL.git
-  git_rev: main
+  # git_url: https://github.com/kalininalab/DataSAIL.git
+  # git_rev: main
+  path: .
 
 build:
   entry_points:
@@ -12,18 +13,18 @@ build:
   preserve_egg_dir: True
 
 requirements:
-  host:
-    - python>=3.7
-    - setuptools
-    - setuptools_scm
-    - pip
+  # host:
+  #   - python   # >=3.8
+  #   - setuptools
+  #   - setuptools_scm
+  #   - pip
   build:
-    - python>=3.7
+    - python  # >=3.8
     - setuptools
     - setuptools_scm
     - pip
   run:
-    - python>=3.7
+    - python  # >=3.8
     - numpy
     - pandas
     - networkx
