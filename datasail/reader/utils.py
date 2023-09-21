@@ -53,6 +53,8 @@ class DataSet:
                 hv = hash(tuple(obj))
             elif isinstance(obj, np.ndarray):
                 hv = 0  # hash(str(obj.data))
+            elif isinstance(obj, Namespace):
+                hv = hash(tuple(obj.__dict__.items()))
             else:
                 hv = hash(obj)
             hash_val ^= hv
