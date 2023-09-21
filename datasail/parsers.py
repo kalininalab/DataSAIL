@@ -77,7 +77,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "-v",
         "--version",
         action='version',
-        version=f"%(prog)s v0.0.19.alpha.1"
+        version=f"%(prog)s v0.1.0"
     )
     split = parser.add_argument_group("Splitting Arguments")
     split.add_argument(
