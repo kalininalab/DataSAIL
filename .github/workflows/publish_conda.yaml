@@ -7,9 +7,9 @@ on:
     
 jobs:
   publish:
-    strategy:
-      matrix:
-        py: ['3.8', '3.9', '3.10']
+    # strategy:
+    #   matrix:
+    #     py: ['3.8', '3.9', '3.10']
     runs-on: 'ubuntu-latest'
     steps:
     - uses: actions/checkout@v1
@@ -18,4 +18,4 @@ jobs:
       with:
         AnacondaToken: ${{ secrets.DATASAIL_ANACONDA_TOKEN }}
         Channels: "mosek"
-        Versions: ${{ matrix.version }}
+        Versions: "3.8,3.9,3.10"  # ${{ matrix.version }}
