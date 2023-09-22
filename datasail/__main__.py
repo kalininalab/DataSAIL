@@ -1,4 +1,4 @@
-from datasail.sail import sail
+from datasail import sail
 
 
 if __name__ == '__main__':

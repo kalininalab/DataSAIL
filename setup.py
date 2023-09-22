@@ -1,15 +1,14 @@
 from setuptools import setup, find_packages
+from datasail.version import __version__
 
 
 with open("README.md", "r") as desc_file:
     long_description = desc_file.read()
 
-with open("recipe/meta.yaml") as meta_file:
-    version = meta_file.readlines()[2].split("\"")[1]
 
 setup(
     name="DataSAIL",
-    version=version,
+    version=__version__,
     description="Data Splitting Against Information Leaking",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -32,7 +31,4 @@ setup(
     package_data={},
     python_requires=">=3.8, <4.0.0",
     keywords="bioinformatics",
-    entry_points={
-        "console_scripts": ["datasail = datasail.__main__:main"],
-    },
 )
