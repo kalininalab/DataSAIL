@@ -16,3 +16,4 @@ jobs:
         AnacondaToken: ${{ secrets.DATASAIL_ANACONDA_TOKEN }}
         Channels: "mosek"
         Versions: "3.8,3.9,3.10"
+        Folder: "recipe"
