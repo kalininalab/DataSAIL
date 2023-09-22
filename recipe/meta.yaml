@@ -5,26 +5,22 @@ package:
 source:
   # git_url: https://github.com/kalininalab/DataSAIL.git
   # git_rev: main
-  path: .
+  path: ./..
 
 build:
   entry_points:
-    - datasail = datasail.sail:sail
-  preserve_egg_dir: True
+    - datasail = datasail.__main__:main
+  script: python setup.py install
+  # preserve_egg_dir: True
 
 requirements:
-  # host:
-  #   - python   # >=3.8
-  #   - setuptools
-  #   - setuptools_scm
-  #   - pip
   build:
-    - python  # >=3.8
+    - python
     - setuptools
     - setuptools_scm
     - pip
   run:
-    - python  # >=3.8
+    - python
     - numpy
     - pandas
     - networkx
@@ -41,8 +37,9 @@ requirements:
     - mosek
     - cvxpy
     - pytest-cov
-    - rdkit
+    - rdkit>=2023.03.3
     - pytest-cases
+    - pyyaml
 
 about:
   home: https://github.com/kalininalab/DataSAIL

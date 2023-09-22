@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as desc_file:
     long_description = desc_file.read()
 
-with open("meta.yaml") as meta_file:
+with open("recipe/meta.yaml") as meta_file:
     version = meta_file.readlines()[2].split("\"")[1]
 
 setup(
@@ -33,6 +33,6 @@ setup(
     python_requires=">=3.8, <4.0.0",
     keywords="bioinformatics",
     entry_points={
-        "console_scripts": ["datasail = datasail.sail:sail"],
+        "console_scripts": ["datasail = datasail.__main__:main"],
     },
 )
