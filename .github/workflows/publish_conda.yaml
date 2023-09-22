@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: publish-to-conda
-      uses: Old-Shatterhand/publish-conda-multichannel-action@v0.0.7
+      uses: Old-Shatterhand/publish-conda-multichannel-action@v0.0.8
       with:
         AnacondaToken: ${{ secrets.DATASAIL_ANACONDA_TOKEN }}
         Channels: "mosek"
