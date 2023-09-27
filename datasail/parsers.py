@@ -128,12 +128,12 @@ def parse_datasail_args(args) -> Dict[str, object]:
     )
     split.add_argument(
         "--solver",
-        default="MOSEK",
+        default=SOLVER_GLPK,
         type=str,
-        choices=[SOLVER_MOSEK, SOLVER_SCIP],
+        choices=[SOLVER_GLPK, SOLVER_SCIP, SOLVER_CPLEX, SOLVER_GUROBI, SOLVER_MOSEK, SOLVER_XPRESS],
         dest=KW_SOLVER,
-        help="Solver to use to solve the BDQCP. Choices are SCIP (free of charge) and MOSEK (licensed and only "
-             "applicable if a valid mosek license is stored)."
+        help="Solver to use to solve the BLP. Free options are GLPK_MI anc SCIP. CPLEX, GUROBI, MOSEK, and XPRESS are "
+             "also supported, but commercial and need to be installed separately. Check the docu for more information."
     )
     split.add_argument(
         "--cache",

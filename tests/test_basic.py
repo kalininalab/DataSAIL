@@ -1,10 +1,9 @@
 import numpy as np
-import pytest
 
-from datasail.solver.id_cold_single import solve_ics_bqp
-from datasail.solver.id_cold_double import solve_icd_bqp
-from datasail.solver.cluster_cold_single import solve_ccs_bqp
-from datasail.solver.cluster_cold_double import solve_ccd_bqp
+from datasail.solver.bqp.id_cold_single import solve_ics_bqp
+from datasail.solver.bqp.id_cold_double import solve_icd_bqp
+from datasail.solver.bqp.cluster_cold_single import solve_ccs_bqp
+from datasail.solver.bqp.cluster_cold_double import solve_ccd_bqp
 
 
 def test_ics():
@@ -16,7 +15,7 @@ def test_ics():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
-        solver="SCIP",
+        solver="GLPK_MI",
         log_file="./solver.log",
     )
 
@@ -37,7 +36,7 @@ def test_icd():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
-        solver="SCIP",
+        solver="GLPK_MI",
         log_file="./solver.log",
     )
 
@@ -72,7 +71,7 @@ def test_ccd():
         ["train", "test"],
         10,
         0,
-        solver="SCIP",
+        solver="GLPK_MI",
         log_file="./solver.log",
     ) is not None
 
@@ -95,7 +94,7 @@ def test_ccs_sim():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
-        solver="SCIP",
+        solver="GLPK_MI",
         log_file="./solver.log",
     ) is not None
 
@@ -118,7 +117,7 @@ def test_ccs_sim_3c():
         names=["train", "val", "test"],
         max_sec=10,
         max_sol=0,
-        solver="SCIP",
+        solver="GLPK_MI",
         log_file="./solver.log",
     ) is not None
 
@@ -141,6 +140,6 @@ def test_ccs_dist():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
-        solver="SCIP",
+        solver="GLPK_MI",
         log_file="./solver.log",
     ) is not None

@@ -36,6 +36,6 @@ setup(
     python_requires=">=3.10, <4.0.0",
     keywords="bioinformatics",
     entry_points={
-        "console_scripts": ["datasail = datasail.sail:sail"],
+        "console_scripts": ["MPP = MPP.sail:sail"],
     },
 )

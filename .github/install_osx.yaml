@@ -38,7 +38,7 @@ jobs:
           python-version: "3.10"
           miniforge-variant: Mambaforge
           miniforge-version: latest
-          activate-environment: datasail
+          activate-environment: MPP
           use-mamba: true
 
       - name: Install DataSAIL
@@ -49,4 +49,4 @@ jobs:
 
       - name: Test installation
         shell: bash -l {0}
-        run: datasail -h
+        run: MPP -h

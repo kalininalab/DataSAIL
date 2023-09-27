@@ -58,7 +58,7 @@ def test_full_single_colds(ligand_data, ligand_weights, protein_data, protein_we
         f_type=None if protein_data is None else "P",
         f_data=protein_data,
         f_weights=protein_weights,
-        solver="SCIP",
+        solver="GLPK_MI",
         threads=1
     )
 

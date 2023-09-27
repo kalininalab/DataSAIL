@@ -29,7 +29,7 @@ DataSAIL is installable from [conda](https://anaconda.org/kalininalab/datasail) 
 using
 
 ````shell
-conda create -n sail -c conda-forge -c kalininalab -c mosek -c bioconda datasail
+conda create -n sail -c conda-forge -c kalininalab -c bioconda MPP
 conda activate sail
 pip install grakel
 ````
@@ -37,15 +37,14 @@ pip install grakel
 to install it into a new empty environment or
 
 ````shell
-conda install -c conda-forge -c kalininalab -c mosek -c bioconda datasail
+conda install -c conda-forge -c kalininalab -c bioconda MPP
 pip install grakel
 ````
 
 to install DataSAIL in an already existing environment. Due to dependencies of the clustering algorithms, the latter 
 might lead to package conflicts with the already installed packages and requirements.
 
-DataSAIL is available from Python 3.7 and newer, but tests have shown that the behaviour of SCIP improves with higher 
-python versions. So, we recommend to install DataSAIL in Python 3.8 or newer.
+DataSAIL is available from Python 3.8 and newer.
 
 ## Usage
 

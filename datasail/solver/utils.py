@@ -10,7 +10,8 @@ from cvxpy import Variable, Expression
 from cvxpy.constraints.constraint import Constraint
 import numpy as np
 
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, SOLVER_CPLEX, SOLVER_GLPK, SOLVER_XPRESS, SOLVER_SCIP, SOLVER_MOSEK, \
+    SOLVER_GUROBI, SOLVERS
 
 
 def compute_limits(epsilon: float, total: int, splits: List[float]) -> Tuple[List[float], List[float]]:
@@ -130,20 +131,27 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: str) -> 
         f"The problem has {sum([functools.reduce(operator.mul, v.shape, 1) for v in problem.variables()])} variables "
         f"and {sum([functools.reduce(operator.mul, c.shape, 1) for c in problem.constraints])} constraints.")
 
-    if solver == "MOSEK":
-        solve_algo = cvxpy.MOSEK
+    if solver == SOLVER_GLPK:
+        kwargs = {"glpk_mi_params": {"tm_lim": max_sec}}
+    elif solver == SOLVER_SCIP:
+        kwargs = {"scip_params": {"limits/time": max_sec}}
+    elif solver == SOLVER_CPLEX:
+        kwargs = {"cplex_params": {}}
+    elif solver == SOLVER_GUROBI:
+        kwargs = {"gurobi_params": {}}
+    elif solver == SOLVER_MOSEK:
         kwargs = {"mosek_params": {
             "MSK_DPAR_OPTIMIZER_MAX_TIME": max_sec,
             "MSK_IPAR_NUM_THREADS": 14,
-            # "MSK_IPAR_OPTIMIZER": "conic",
         }}
+    elif solver == SOLVER_XPRESS:
+        kwargs = {"xpress_params": {}}
     else:
-        solve_algo = cvxpy.SCIP
-        kwargs = {"scip_params": {"limits/time": max_sec}}
+        raise ValueError("Unknown solver error")
     with LoggerRedirect(log_file):
         try:
             problem.solve(
-                solver=solve_algo,
+                solver=SOLVERS[solver],
                 qcp=True,
                 verbose=True,
                 **kwargs,

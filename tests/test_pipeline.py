@@ -60,7 +60,7 @@ def test_pipeline(data):
         f_args="",
         cache=False,
         cache_dir=None,
-        solver="SCIP",
+        solver="GLPK_MI",
         threads=1,
     )
 
@@ -91,7 +91,7 @@ def test_report():
         f_type="P",
         f_data="data/perf_7_3/prot.fasta",
         f_sim="data/perf_7_3/prot_sim.tsv",
-        solver="SCIP",
+        solver="GLPK_MI",
     )
 
     assert os.path.isfile("data/perf_7_3/out/lig_similarity.png")
@@ -167,7 +167,7 @@ def test_report_ICD():
         f_type="P",
         f_data="data/perf_7_3/prot.fasta",
         f_sim="data/perf_7_3/prot_sim.tsv",
-        solver="SCIP",
+        solver="GLPK_MI",
     )
     assert os.path.isdir("data/perf_7_3/out/ICD")
     assert len(os.listdir("data/perf_7_3/out/ICD")) == 3
@@ -194,7 +194,7 @@ def test_report_repeat():
         f_type="P",
         f_data="data/perf_7_3/prot.fasta",
         f_sim="data/perf_7_3/prot_sim.tsv",
-        solver="SCIP",
+        solver="GLPK_MI",
         runs=3,
     )
 
@@ -252,7 +252,7 @@ def test_genomes():
         f_dist=None,
         f_max_sim=1,
         f_max_dist=1,
-        solver="SCIP",
+        solver="GLPK_MI",
         cache=False,
         cache_dir=None,
     )

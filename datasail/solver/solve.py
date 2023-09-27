@@ -7,10 +7,10 @@ from cvxpy import SolverError
 from datasail.cluster.clustering import reverse_clustering, cluster_interactions, reverse_interaction_clustering
 from datasail.reader.utils import DataSet, DictMap
 from datasail.settings import LOGGER, MODE_F, TEC_R, TEC_ICS, TEC_CCS, TEC_ICD, TEC_CCD, MMSEQS, CDHIT, MMSEQS2
-from datasail.solver.id_cold_single import solve_ics_bqp
-from datasail.solver.id_cold_double import solve_icd_bqp
-from datasail.solver.cluster_cold_single import solve_ccs_bqp
-from datasail.solver.cluster_cold_double import solve_ccd_bqp
+from datasail.solver.blp.id_cold_single import solve_ics_blp as solve_ics_bqp
+from datasail.solver.blp.id_cold_double import solve_icd_blp as solve_icd_bqp
+from datasail.solver.blp.cluster_cold_single import solve_ccs_blp as solve_ccs_bqp
+from datasail.solver.blp.cluster_cold_double import solve_ccd_blp as solve_ccd_bqp
 from datasail.solver.utils import sample_categorical
 
 

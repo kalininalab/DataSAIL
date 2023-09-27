@@ -1,4 +1,4 @@
-name: datasail
+name: MPP
 
 channels:
   - conda-forge
