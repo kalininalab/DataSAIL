@@ -15,7 +15,7 @@ def test_ics():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
-        solver="GLPK_MI",
+        solver="SCIP",
         log_file="./solver.log",
     )
 
@@ -36,7 +36,7 @@ def test_icd():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
-        solver="GLPK_MI",
+        solver="SCIP",
         log_file="./solver.log",
     )
 
@@ -71,7 +71,7 @@ def test_ccd():
         ["train", "test"],
         10,
         0,
-        solver="GLPK_MI",
+        solver="SCIP",
         log_file="./solver.log",
     ) is not None
 
@@ -94,7 +94,7 @@ def test_ccs_sim():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
-        solver="GLPK_MI",
+        solver="SCIP",
         log_file="./solver.log",
     ) is not None
 
@@ -117,7 +117,7 @@ def test_ccs_sim_3c():
         names=["train", "val", "test"],
         max_sec=10,
         max_sol=0,
-        solver="GLPK_MI",
+        solver="SCIP",
         log_file="./solver.log",
     ) is not None
 
@@ -140,6 +140,6 @@ def test_ccs_dist():
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
-        solver="GLPK_MI",
+        solver="SCIP",
         log_file="./solver.log",
     ) is not None

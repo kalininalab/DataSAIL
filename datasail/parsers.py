@@ -132,7 +132,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         type=str,
         choices=[SOLVER_GLPK, SOLVER_SCIP, SOLVER_CPLEX, SOLVER_GUROBI, SOLVER_MOSEK, SOLVER_XPRESS],
         dest=KW_SOLVER,
-        help="Solver to use to solve the BLP. Free options are GLPK_MI anc SCIP. CPLEX, GUROBI, MOSEK, and XPRESS are "
+        help="Solver to use to solve the BLP. The free options is SCIP. CPLEX, GUROBI, MOSEK, and XPRESS are "
              "also supported, but commercial and need to be installed separately. Check the docu for more information."
     )
     split.add_argument(

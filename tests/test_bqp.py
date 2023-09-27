@@ -21,7 +21,7 @@ def test_perf_bin_2(root_dir, mode):
         e_data=f"{root_dir}/lig.tsv",
         f_type="P",
         f_data=f"{root_dir}/prot.tsv",
-        solver="GLPK_MI",
+        solver="SCIP",
         max_sec=500,
     )
 

@@ -15,7 +15,7 @@ def read_tsv(filepath):
 
 def run_sail(
         inter=None, output: str = "", max_sec: int = 100, max_sol: int = 1000, verbosity: str = "I",
-        splits: List[float] = None, names: List[str] = None, epsilon: float = 0.05, runs: int = 1, solver: str = "GLPK_MI",
+        splits: List[float] = None, names: List[str] = None, epsilon: float = 0.05, runs: int = 1, solver: str = "SCIP",
         techniques: List[str] = None, cache: bool = False, cache_dir: str = None,
         e_type: str = None, e_data=None, e_weights=None, e_sim=None, e_dist=None, e_args: str = "",
         e_max_sim: float = 1.0, e_max_dist: float = 1.0, f_type: str = None, f_data=None, f_weights=None, f_sim=None,

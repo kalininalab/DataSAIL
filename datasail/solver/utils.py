@@ -131,9 +131,9 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: str) -> 
         f"The problem has {sum([functools.reduce(operator.mul, v.shape, 1) for v in problem.variables()])} variables "
         f"and {sum([functools.reduce(operator.mul, c.shape, 1) for c in problem.constraints])} constraints.")
 
-    if solver == SOLVER_GLPK:
-        kwargs = {"glpk_mi_params": {"tm_lim": max_sec}}
-    elif solver == SOLVER_SCIP:
+    # if solver == SOLVER_GLPK:
+    #     kwargs = {"glpk_mi_params": {"tm_lim": max_sec}}
+    if solver == SOLVER_SCIP:
         kwargs = {"scip_params": {"limits/time": max_sec}}
     elif solver == SOLVER_CPLEX:
         kwargs = {"cplex_params": {}}

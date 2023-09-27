@@ -48,7 +48,7 @@ def test_pipeline(data):
         f_weights="data/pipeline/prot_weights.tsv" if prot_weights else None,
         f_sim=prot_sim,
         f_dist=prot_dist,
-        solver="GLPK_MI",
+        solver="SCIP",
     )
 
     assert any(mode in x for x in [e_name_split_map, f_name_split_map, inter_split_map])
@@ -124,7 +124,7 @@ def test_report():
         f_type="P",
         f_data="data/perf_7_3/prot.fasta",
         f_sim="data/perf_7_3/prot_sim.tsv",
-        solver="GLPK_MI",
+        solver="SCIP",
     )
 
     assert "ICSe" in e_name_split_map
@@ -157,7 +157,7 @@ def test_genomes():
         f_type="P",
         f_data="data/perf_7_3/prot.fasta",
         f_sim="data/perf_7_3/prot_sim.tsv",
-        solver="GLPK_MI",
+        solver="SCIP",
     )
 
     assert "ICSe" in e_name_split_map

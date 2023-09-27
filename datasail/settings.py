@@ -135,7 +135,6 @@ KW_TECHNIQUES = "techniques"
 KW_THREADS = "threads"
 KW_VERBOSE = "verbosity"
 
-SOLVER_GLPK = "GLPK_MI"
 SOLVER_SCIP = "SCIP"
 SOLVER_CPLEX = "CPLEX"
 SOLVER_GUROBI = "GUROBI"
@@ -157,7 +156,7 @@ MODE_F = "f"
 SOLVERS = {
     # "CBC": cvxpy.CBC,  # extra: CBC
     # "COPT": cvxpy.COPT,
-    SOLVER_GLPK: cvxpy.GLPK_MI,
+    # SOLVER_GLPK: cvxpy.GLPK_MI,  # not powerful enough
     SOLVER_SCIP: cvxpy.SCIP,
     SOLVER_CPLEX: cvxpy.CPLEX,
     SOLVER_GUROBI: cvxpy.GUROBI,

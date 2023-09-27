@@ -2,7 +2,7 @@
 Supported Solvers
 #################
 
-With the default installation settings, DataSAIL supports SCIP and GLPK_MI. Both solvers are free to use. Additional
+With the default installation settings, DataSAIL supports SCIP. SCIP is free to use. Additional
 solvers are supported if the user installs them. All installation steps shall be executed in the conda-environment that
 also contains DataSAIL.
 
