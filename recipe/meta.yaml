@@ -38,6 +38,8 @@ requirements:
     - rdkit>=2023.03.3
     - pytest-cases
     - pyyaml
+    - cvxopt
+    - glpk
 
 about:
   home: https://github.com/kalininalab/DataSAIL
