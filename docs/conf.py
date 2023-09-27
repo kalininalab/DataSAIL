@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath("./.."))
 
 import datasail
 
-with open("../meta.yaml") as meta_file:
+with open("../recipe/meta.yaml") as meta_file:
     version = meta_file.readlines()[2].split("\"")[1]
 
 extensions = [

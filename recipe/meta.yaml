@@ -1,29 +1,24 @@
 package:
-  name: "MPP"
-  version: "0.0.19.alpha.1"
+
+  name: "datasail"
+  version: '0.2.0'
 
 source:
-  git_url: https://github.com/kalininalab/DataSAIL.git
-  git_rev: main
+  path: ..
 
 build:
   entry_points:
-    - MPP = MPP.sail:sail
-  preserve_egg_dir: True
+    - datasail = datasail.sail:sail
+  script: python setup.py install
 
 requirements:
-  host:
-    - python>=3.7
-    - setuptools
-    - setuptools_scm
-    - pip
   build:
-    - python>=3.7
+    - python
     - setuptools
     - setuptools_scm
     - pip
   run:
-    - python>=3.7
+    - python
     - numpy
     - pandas
     - networkx
@@ -40,8 +35,9 @@ requirements:
     - mosek
     - cvxpy
     - pytest-cov
-    - rdkit
+    - rdkit>=2023.03.3
     - pytest-cases
+    - pyyaml
 
 about:
   home: https://github.com/kalininalab/DataSAIL

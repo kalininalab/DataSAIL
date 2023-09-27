@@ -1,15 +1,14 @@
 from setuptools import setup, find_packages
+from datasail.version import __version__
 
 
 with open("README.md", "r") as desc_file:
     long_description = desc_file.read()
 
-with open("meta.yaml") as meta_file:
-    version = meta_file.readlines()[2].split("\"")[1]
 
 setup(
     name="DataSAIL",
-    version=version,
+    version=__version__,
     description="Data Splitting Against Information Leaking",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -18,12 +17,9 @@ setup(
     maintainer="Roman Joeres",
     classifiers=[
         "Development Status :: 4 - Beta",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        # "Programming Language :: Python :: 3.12",
         "Intended Audience :: Science/Research",
         "Natural Language :: English",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
@@ -33,9 +29,12 @@ setup(
     include_package_data=True,
     install_requires=[],
     package_data={},
-    python_requires=">=3.10, <4.0.0",
+    python_requires=">=3.8, <4.0.0",
     keywords="bioinformatics",
+<<<<<<< HEAD
     entry_points={
         "console_scripts": ["MPP = MPP.sail:sail"],
     },
+=======
+>>>>>>> 22f7964eba6828c891e90b2ccd33e177fe49ea80
 )

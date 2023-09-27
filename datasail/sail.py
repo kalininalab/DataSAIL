@@ -3,7 +3,7 @@ from typing import Dict, List, Tuple, Callable, Union, Generator
 
 from datasail.parsers import parse_datasail_args
 from datasail.reader.utils import DATA_INPUT, MATRIX_INPUT
-from datasail.run import datasail_main
+from datasail.routine import datasail_main
 from datasail.settings import *
 
 
@@ -239,7 +239,3 @@ def sail(args=None, **kwargs) -> None:
     kwargs[KW_CLI] = True
     kwargs = validate_args(**kwargs)
     datasail_main(**kwargs)
-
-
-if __name__ == '__main__':
-    sail()
