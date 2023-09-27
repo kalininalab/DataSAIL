@@ -31,10 +31,4 @@ setup(
     package_data={},
     python_requires=">=3.8, <4.0.0",
     keywords="bioinformatics",
-<<<<<<< HEAD
-    entry_points={
-        "console_scripts": ["MPP = MPP.sail:sail"],
-    },
-=======
->>>>>>> 22f7964eba6828c891e90b2ccd33e177fe49ea80
 )
