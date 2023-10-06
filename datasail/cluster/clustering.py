@@ -3,7 +3,7 @@ import os
 from typing import Dict, Tuple, List, Union, Optional
 
 import numpy as np
-from sklearn.cluster import AffinityPropagation, AgglomerativeClustering
+from sklearn.cluster import AffinityPropagation, AgglomerativeClustering, SpectralClustering
 
 from datasail.cluster.caching import load_from_cache, store_to_cache
 from datasail.cluster.cdhit import run_cdhit
@@ -15,7 +15,7 @@ from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, N_CLUSTERS
 
 
 def cluster(dataset: DataSet, **kwargs) -> DataSet:
@@ -204,7 +204,8 @@ def additional_clustering(
         dataset: DataSet,
         damping: float = 0.5,
         max_iter: int = 1000,
-        dist_factor: float = 0.9
+        dist_factor: float = 0.9,
+        n_clusters: int = MAX_CLUSTERS,
 ) -> Tuple[DataSet, bool]:
     """
     Perform additional cluster based on a distance or similarity matrix. This is done to reduce the number of
@@ -215,6 +216,7 @@ def additional_clustering(
         damping: damping factor for affinity propagation
         max_iter: maximal number of iterations for affinity propagation
         dist_factor: factor to multiply the average distance with in agglomerate clustering
+        n_clusters:
 
     Returns:
         The dataset with updated clusters and a bool flag indicating convergence of the used clustering algorithm
@@ -224,12 +226,17 @@ def additional_clustering(
     # set up the cluster algorithm for similarity or distance based cluster w/o specifying the number of clusters
     if dataset.cluster_similarity is not None:
         cluster_matrix = np.array(dataset.cluster_similarity, dtype=float)
-        ca = AffinityPropagation(
-            affinity='precomputed',
+        # ca = AffinityPropagation(
+        #     affinity='precomputed',
+        #     random_state=42,
+        #     verbose=True,
+        #     damping=damping,
+        #     max_iter=max_iter,
+        # )
+        ca = SpectralClustering(
+            n_clusters=n_clusters,
+            affinity="precomputed",
             random_state=42,
-            verbose=True,
-            damping=damping,
-            max_iter=max_iter,
         )
     else:
         cluster_matrix = np.array(dataset.cluster_distance, dtype=float)

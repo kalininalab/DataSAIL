@@ -61,7 +61,8 @@ def solve_ccd_blp(
 
     x_e = [cvxpy.Variable((len(e_clusters), 1), boolean=True) for _ in range(len(splits))]
     x_f = [cvxpy.Variable((len(f_clusters), 1), boolean=True) for _ in range(len(splits))]
-    x_i = {(e, f): cvxpy.Variable(len(splits), boolean=True) for e in range(len(e_clusters)) for f in range(len(f_clusters)) if inter[e, f] != 0}
+    x_i = {(e, f): cvxpy.Variable(len(splits), boolean=True) for e in range(len(e_clusters)) for f in
+           range(len(f_clusters)) if inter[e, f] != 0}
     y_e = [[cvxpy.Variable(1, boolean=True) for _ in range(e)] for e in range(len(e_clusters))]
     y_f = [[cvxpy.Variable(1, boolean=True) for _ in range(f)] for f in range(len(f_clusters))]
 
@@ -82,17 +83,20 @@ def solve_ccd_blp(
         for i in range(len(e_clusters)):
             for j in range(len(f_clusters)):
                 if (i, j) in x_i:
-                    constraints.append(x_i[i, j][s] >= cvxpy.maximum(x_e[s][i, 0] + x_f[s][j, 0] - 1, 0))
-                    constraints.append(x_i[i, j][s] <= 0.75 * (x_e[s][i, 0] + x_f[s][j, 0]))
+                    # constraints.append(x_i[i, j][s] >= cvxpy.maximum(x_e[s][i, 0] + x_f[s][j, 0] - 1, 0))
+                    # constraints.append(x_i[i, j][s] <= 0.75 * (x_e[s][i, 0] + x_f[s][j, 0]))
+                    constraints.append(x_i[i, j][s] >= x_e[s][i, 0] - x_f[s][j, 0])
 
     if not e_uniform:
         for e1 in range(len(e_clusters)):
-           for e2 in range(e1):
-                constraints.append(y_e[e1][e2] == 1 / 2 * cvxpy.sum([x_e[s][e1, 0] + x_e[s][e2, 0] for s in range(len(splits))]))
+            for e2 in range(e1):
+                constraints.append(y_e[e1][e2] >= cvxpy.max(cvxpy.vstack([x_e[s][e1, 0] - x_e[s][e2, 0] for s in range(len(splits))])))
+                # constraints.append(y_e[e1][e2] == 1 / 2 * cvxpy.sum([x_e[s][e1, 0] + x_e[s][e2, 0] for s in range(len(splits))]))
     if not f_uniform:
         for f1 in range(len(f_clusters)):
             for f2 in range(f1):
-                constraints.append(y_f[f1][f2] == 1 / 2 * cvxpy.sum([x_f[s][f1, 0] + x_f[s][f2, 0] for s in range(len(splits))]))
+                constraints.append(y_f[f1][f2] >= cvxpy.max(cvxpy.vstack([x_f[s][f1, 0] - x_f[s][f2, 0] for s in range(len(splits))])))
+                # constraints.append(y_f[f1][f2] == 1 / 2 * cvxpy.sum([x_f[s][f1, 0] + x_f[s][f2, 0] for s in range(len(splits))]))
 
     inter_loss = (np.sum(inter) - sum(cvxpy.sum(x) for x in x_i.values())) / np.sum(inter)
     if e_uniform:
