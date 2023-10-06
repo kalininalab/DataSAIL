@@ -149,6 +149,7 @@ TEC_CCD = "CCD"
 MODE_E = "e"
 MODE_F = "f"
 
+N_CLUSTERS = 10
 
 # 0 Problem is mixed-integer ?!
 # 1 Working

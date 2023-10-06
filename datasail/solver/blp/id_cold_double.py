@@ -56,8 +56,9 @@ def solve_icd_blp(
         for i, e1 in enumerate(e_entities):
             for j, e2 in enumerate(f_entities):
                 if (e1, e2) in x_i:
-                    constraints.append(x_i[e1, e2][s] >= cvxpy.maximum(x_e[s][:, 0][i] + x_f[s][:, 0][j] - 1, 0))
-                    constraints.append(x_i[e1, e2][s] <= 0.75 * (x_e[s][:, 0][i] + x_f[s][:, 0][j]))
+                    # constraints.append(x_i[e1, e2][s] >= cvxpy.maximum(x_e[s][:, 0][i] + x_f[s][:, 0][j] - 1, 0))
+                    # constraints.append(x_i[e1, e2][s] <= 0.75 * (x_e[s][:, 0][i] + x_f[s][:, 0][j]))
+                    constraints.append(x_i[e1, e2][s] >= x_e[s][:, 0][i] - x_f[s][:, 0][j])
 
     inter_loss = (inter_count - sum(cvxpy.sum(x) for x in x_i.values())) / inter_count
     problem = solve(inter_loss, constraints, max_sec, solver, log_file)

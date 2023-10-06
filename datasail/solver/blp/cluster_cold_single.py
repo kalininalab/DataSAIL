@@ -52,7 +52,7 @@ def solve_ccs_blp(
 
     for e1 in range(len(clusters)):
         for e2 in range(e1):
-            constraints.append(y[e1][e2] == 1 / 2 * cvxpy.sum([x[s][e1, 0] + x[s][e2, 0] for s in range(len(splits))]))
+            constraints.append(y[e1][e2] >= cvxpy.max(cvxpy.vstack([x[s][e1, 0] - x[s][e2, 0] for s in range(len(splits))])))
 
     intra_weights = similarities if similarities is not None else distances
     tmp = [[intra_weights[e1, e2] * y[e1][e2] for e2 in range(e1)] for e1 in range(len(clusters))]
