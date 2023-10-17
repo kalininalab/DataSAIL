@@ -30,7 +30,7 @@ def validate_user_args(
     both_none = sim_none and dist_none
     if (not sim_none and similarity.lower() == CDHIT) or (both_none and get_default(dtype, dformat)[0] == CDHIT):
         return check_cdhit_arguments(tool_args)
-    elif (not sim_none and similarity.lower()[:6] == MMSEQS) or (
+    elif (not sim_none and similarity.lower().startswith(MMSEQS)) or (
             both_none and get_default(dtype, dformat)[0] in [MMSEQS, MMSEQS2]):
         return check_mmseqs_arguments(tool_args)
     elif (not sim_none and similarity.lower() == FOLDSEEK) or (
