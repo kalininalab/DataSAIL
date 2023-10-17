@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 
 from datasail.reader.utils import DataSet, DictMap
-from datasail.settings import LOGGER, NOT_ASSIGNED
+from datasail.settings import LOGGER, NOT_ASSIGNED, DIM_2, MODE_F, MODE_E, SRC_CL
 
 
 def report(
@@ -62,7 +62,7 @@ def report(
                 save_inter_assignment(save_dir, inter_split_map[t][run])
 
             # Compile report for first dataset if applies for this split
-            if e_dataset.type is not None and ((mode is not None and mode != "f") or t[-1] == "D") and \
+            if e_dataset.type is not None and ((mode is not None and mode == MODE_E) or t[-1] == DIM_2) and \
                     t in e_name_split_map:
                 individual_report(
                     save_dir,
@@ -74,7 +74,7 @@ def report(
                 )
 
             # Compile report for second dataset if applies for this split
-            if f_dataset.type is not None and ((mode is not None and mode != "e") or t[-1] == "D") \
+            if f_dataset.type is not None and ((mode is not None and mode == MODE_F) or t[-1] == DIM_2) \
                     and t in f_name_split_map:
                 individual_report(
                     save_dir,
@@ -109,7 +109,7 @@ def individual_report(
     save_assignment(save_dir, dataset, name_split_map.get(technique, None))
 
     # Save clustering-related reports
-    if technique[0] == "C":
+    if technique[0] == SRC_CL:
         save_clusters(save_dir, dataset)
         save_t_sne(save_dir, dataset, name_split_map.get(technique, None), cluster_split_map.get(technique, None),
                    split_names)

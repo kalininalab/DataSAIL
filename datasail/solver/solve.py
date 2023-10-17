@@ -6,7 +6,7 @@ from cvxpy import SolverError
 
 from datasail.cluster.clustering import reverse_clustering, cluster_interactions, reverse_interaction_clustering
 from datasail.reader.utils import DataSet, DictMap
-from datasail.settings import LOGGER, MODE_F, TEC_R, TEC_ICS, TEC_CCS, TEC_ICD, TEC_CCD, MMSEQS, CDHIT, MMSEQS2
+from datasail.settings import LOGGER, MODE_F, TEC_R, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MMSEQS, CDHIT, MMSEQS2
 from datasail.solver.blp.id_cold_single import solve_ics_blp
 from datasail.solver.blp.id_cold_double import solve_icd_blp
 from datasail.solver.blp.cluster_cold_single import solve_ccs_blp
@@ -87,10 +87,11 @@ def run_solver(
                         names=split_names,
                     )
                     insert(output_inter, technique, solution)
-                elif technique[:3] == TEC_ICS or (technique[:3] == TEC_CCS and isinstance(dataset.similarity, str) and
-                                                  dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]):
-                    if technique[:3] == TEC_CCS and (isinstance(dataset.similarity, str) and
-                                                     dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]):
+                elif technique.startswith(TEC_I1) or \
+                        (technique.startswith(TEC_C1) and isinstance(dataset.similarity, str) and
+                         dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]):
+                    if technique.startswith(TEC_C1) and (isinstance(dataset.similarity, str) and
+                                                         dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]):
                         names = dataset.cluster_names
                         weights = [dataset.cluster_weights.get(x, 0) for x in dataset.cluster_names]
                     else:
@@ -110,9 +111,9 @@ def run_solver(
                     )
 
                     if solution is not None:
-                        if technique[:3] == TEC_CCS \
-                                and isinstance(dataset.similarity, str) \
-                                and dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]:
+                        if technique.startswith(TEC_C1) and \
+                                isinstance(dataset.similarity, str) and \
+                                dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]:
                             if mode == MODE_F:
                                 insert(output_f_clusters, technique, solution)
                                 insert(output_f_entities, technique,
@@ -126,7 +127,7 @@ def run_solver(
                                 insert(output_f_entities, technique, solution)
                             else:
                                 insert(output_e_entities, technique, solution)
-                elif technique[:3] == TEC_ICD:
+                elif technique.startswith(TEC_I2):
                     solution = solve_icd_blp(
                         e_entities=e_dataset.names,
                         f_entities=f_dataset.names,
@@ -143,8 +144,7 @@ def run_solver(
                         insert(output_inter, technique, solution[0])
                         insert(output_e_entities, technique, solution[1])
                         insert(output_f_entities, technique, solution[2])
-                        # output_inter[technique], output_e_entities[technique], output_f_entities[technique] = solution
-                elif technique[:3] == TEC_CCS:
+                elif technique.startswith(TEC_C1):
                     cluster_split = solve_ccs_blp(
                         clusters=dataset.cluster_names,
                         weights=[dataset.cluster_weights.get(c, 0) for c in dataset.cluster_names],
@@ -167,7 +167,7 @@ def run_solver(
                             insert(output_e_clusters, technique, cluster_split)
                             insert(output_e_entities, technique,
                                    reverse_clustering(cluster_split, e_dataset.cluster_map))
-                elif technique[:3] == TEC_CCD:
+                elif technique.startswith(TEC_C2):
                     cluster_inter = cluster_interactions(inter, e_dataset, f_dataset)
                     cluster_split = solve_ccd_blp(
                         e_clusters=e_dataset.cluster_names,

@@ -85,12 +85,12 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "--techniques",
         type=str,
         required=True,
-        choices=[TEC_R, TEC_ICS + MODE_E, TEC_ICS + MODE_F, TEC_ICD, TEC_CCS + MODE_E, TEC_CCS + MODE_F, TEC_CCD],
+        choices=[TEC_R, TEC_I1 + MODE_E, TEC_I1 + MODE_F, TEC_I2, TEC_C1 + MODE_E, TEC_C1 + MODE_F, TEC_C2],
         nargs="+",
         dest=KW_TECHNIQUES,
         help=f"Select the mode to split the data. Choices: {TEC_R}: Random split, "
-             f"{TEC_ICS}: identity-based one-dimensional split, {TEC_ICD}: identity-based two-dimensional split, "
-             f"{TEC_CCS}: cluster-based one-dimensional split, {TEC_CCD}: cluster-based two_dimensional split"
+             f"{TEC_I1}: identity-based one-dimensional split, {TEC_I2}: identity-based two-dimensional split, "
+             f"{TEC_C1}: cluster-based one-dimensional split, {TEC_C2}: cluster-based two_dimensional split"
     )
     split.add_argument(
         "-s",
