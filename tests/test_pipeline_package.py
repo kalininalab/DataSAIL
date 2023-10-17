@@ -2,7 +2,7 @@ from typing import Tuple, Optional, List
 
 from pytest_cases import lazy_value
 
-from datasail.reader.read import read_data, check_duplicates
+from datasail.reader.read import read_data
 from datasail.reader.utils import DataSet
 from datasail.sail import datasail
 from tests.pipeline_package_fixtures import *
@@ -55,31 +55,38 @@ def test_pipeline(data):
 
 
 @pytest.mark.parametrize(
-    "ligand_type,ligand_data,ligand_weights,ligand_sim,protein_type,protein_data,protein_weights,protein_sim,interactions,combo", [
+    "ligand_type,ligand_data,ligand_weights,ligand_sim,protein_type,protein_data,protein_weights,protein_sim,interactions,combo",
+    [
         ("M", lazy_value(mibig_dict), None, None, None, None, None, None, None, "e|mibig|_|_"),
         (None, None, None, None, "M", lazy_value(mibig_returner), None, None, None, "_|_|f|mibig"),
         ("M", lazy_value(mibig_generator), None, None, None, None, None, None, None, "e|mibig|_|_"),
-        ("P", lazy_value(mave_dict), lazy_value(mave_weights_returner), None, None, None, None, None, None, "e|mave|_|_"),
-        (None, None, None, None, "P", lazy_value(mave_returner), lazy_value(mave_weights_generator), None, None, "_|_|f|mave"),
-        ("P", lazy_value(mave_generator), lazy_value(mave_weights_dict), None, None, None, None, None, None, "e|mave|_|_"),
-        ("P", lazy_value(sabdab_ag_dict), None, None, "P", lazy_value(sabdab_vh_returner), None, None, lazy_value(sabdab_inter_generator), "e|sabdab_ag|f|sabdab_vh"),
-        ("P", lazy_value(sabdab_ag_returner), None, None, "P", lazy_value(sabdab_vh_generator), None, None, lazy_value(sabdab_inter_list), "e|sabdab_ag|f|sabdab_vh"),
-        ("P", lazy_value(sabdab_ag_generator), None, None, "P", lazy_value(sabdab_vh_dict), None, None, lazy_value(sabdab_inter_returner), "e|sabdab_ag|f|sabdab_vh"),
+        ("P", lazy_value(mave_dict), lazy_value(mave_weights_returner), None, None, None, None, None, None,
+         "e|mave|_|_"),
+        (None, None, None, None, "P", lazy_value(mave_returner), lazy_value(mave_weights_generator), None, None,
+         "_|_|f|mave"),
+        ("P", lazy_value(mave_generator), lazy_value(mave_weights_dict), None, None, None, None, None, None,
+         "e|mave|_|_"),
+        ("P", lazy_value(sabdab_ag_dict), None, None, "P", lazy_value(sabdab_vh_returner), None, None,
+         lazy_value(sabdab_inter_generator), "e|sabdab_ag|f|sabdab_vh"),
+        ("P", lazy_value(sabdab_ag_returner), None, None, "P", lazy_value(sabdab_vh_generator), None, None,
+         lazy_value(sabdab_inter_list), "e|sabdab_ag|f|sabdab_vh"),
+        ("P", lazy_value(sabdab_ag_generator), None, None, "P", lazy_value(sabdab_vh_dict), None, None,
+         lazy_value(sabdab_inter_returner), "e|sabdab_ag|f|sabdab_vh"),
     ])
 def test_pipeline_inputs(
-        ligand_type, ligand_data, ligand_weights, ligand_sim, protein_type, protein_data, protein_weights, protein_sim, interactions, combo,
+        ligand_type, ligand_data, ligand_weights, ligand_sim, protein_type, protein_data, protein_weights, protein_sim,
+        interactions, combo,
         mave_dataset, mibig_dataset, sabdab_ag_dataset, sabdab_vh_dataset,
 ):
     def read_data_sub(
             inter=None, e_type=None, e_data=None, e_weights=None, e_sim=None, f_type=None, f_data=None,
             f_weights=None, f_sim=None,
-    ) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]]], Optional[List[Tuple[str, str]]]]:
-        kwargs = check_duplicates(
+    ) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]]]]:
+        kwargs = dict(
             inter=inter, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=None, e_max_sim=1,
             e_max_dist=1, e_args="", f_type=f_type, f_data=f_data, f_weights=f_weights, f_sim=f_sim, f_dist=None,
             f_max_sim=1, f_max_dist=1, f_args="",
         )
-
         # read e-entities and f-entities
         return read_data(**kwargs)
 
@@ -90,7 +97,7 @@ def test_pipeline_inputs(
             return mibig_dataset
         return sabdab_ag_dataset if name == "sabdab_ag" else sabdab_vh_dataset
 
-    e_dataset, f_dataset, interactions, old_inter = read_data_sub(
+    e_dataset, f_dataset, interactions = read_data_sub(
         inter=interactions, e_type=ligand_type, e_data=ligand_data, e_weights=ligand_weights, e_sim=ligand_sim,
         f_type=protein_type, f_data=protein_data, f_weights=protein_weights, f_sim=protein_sim,
     )

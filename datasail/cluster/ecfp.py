@@ -1,7 +1,6 @@
-from typing import Tuple, List, Dict, Optional
+from typing import Tuple, List, Dict
 
 import numpy as np
-import rdkit
 from rdkit import Chem, DataStructs, RDLogger
 from rdkit.Chem import AllChem
 from rdkit.Chem.Scaffolds.MurckoScaffold import MakeScaffoldGeneric
@@ -47,10 +46,15 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
             LOGGER.warning(f"RDKit cannot parse {name} ({dataset.data[name]})")
             invalid_mols.append(name)
             continue
-    for invalid_name in invalid_mols:
+    for invalid_name in invalid_mols:  # obsolete code?
         dataset.names.remove(invalid_name)
         dataset.data.pop(invalid_name)
-        dataset.id_map.pop(invalid_name)
+        poppable = []
+        for key, value in dataset.id_map.items():
+            if value == invalid_name:
+                poppable.append(key)
+        for pop in poppable:
+            dataset.id_map.pop(pop)
 
     fps = []
     cluster_names = list(set(Chem.MolToSmiles(s) for s in list(scaffolds.values())))

@@ -1,5 +1,5 @@
 import os.path
-from typing import Dict, List, Tuple, Callable, Union, Generator
+from typing import Dict, List, Callable, Union, Generator
 
 from datasail.parsers import parse_datasail_args
 from datasail.reader.utils import DATA_INPUT, MATRIX_INPUT
@@ -36,7 +36,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
     Returns:
         The kwargs in case something has been adjusted, e.g. splits normalization or naming
     """
-
+    print("Hell yeah, parsing args")
     # create output directory
     output_created = False
     if kwargs[KW_OUTDIR] is not None and not os.path.isdir(kwargs[KW_OUTDIR]):

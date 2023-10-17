@@ -366,30 +366,28 @@ def force_clustering(dataset: DataSet) -> DataSet:
 
 def cluster_interactions(
         inter: List[Tuple[str, str]],
-        e_cluster_map: Dict[str, Union[str, int]],
-        e_cluster_names: List[Union[str, int]],
-        f_cluster_map: Dict[str, Union[str, int]],
-        f_cluster_names: List[Union[str, int]],
+        e_dataset: DataSet,
+        f_dataset: DataSet,
 ) -> np.ndarray:
     """
     Based on cluster information, count interactions in an interaction matrix between the individual clusters.
 
     Args:
         inter: List of pairs representing interactions
-        e_cluster_map: Mapping from entity names to their cluster names
-        e_cluster_names: List of custer names
-        f_cluster_map: Mapping from entity names to their cluster names
-        f_cluster_names: List of custer names
+        e_dataset: Dataset of the e-dataset
+        f_dataset: Dataset of the f-dataset
 
     Returns:
         Numpy array of matrix of interactions between two clusters
     """
-    e_mapping = dict((y, x) for x, y in enumerate(e_cluster_names))
-    f_mapping = dict((y, x) for x, y in enumerate(f_cluster_names))
+    e_mapping = dict((y, x) for x, y in enumerate(e_dataset.cluster_names))
+    f_mapping = dict((y, x) for x, y in enumerate(f_dataset.cluster_names))
 
-    output = np.zeros((len(e_cluster_names), len(f_cluster_names)))
+    output = np.zeros((len(e_dataset.cluster_names), len(f_dataset.cluster_names)))
     for e, f in inter:
-        output[e_mapping[e_cluster_map[e]]][f_mapping[f_cluster_map[f]]] += 1
+        e_key = e_mapping[e_dataset.cluster_map[e_dataset.id_map[e]]]
+        f_key = f_mapping[f_dataset.cluster_map[f_dataset.id_map[f]]]
+        output[e_key][f_key] += 1
 
     return output
 

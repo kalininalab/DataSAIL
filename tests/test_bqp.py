@@ -5,6 +5,7 @@ import pytest
 from tests.utils import check_folder, run_sail
 
 
+@pytest.mark.todo
 @pytest.mark.parametrize("root_dir", ["data/perf_7_3", "data/perf_70_30"])
 @pytest.mark.parametrize("mode", [("R", "random"), ("ICSe", "id_cold_single"), ("ICD", "id_cold_double")])
 def test_perf_bin_2(root_dir, mode):

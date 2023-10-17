@@ -139,7 +139,7 @@ spaced-kmer-pattern:
   calls: ["--spaced-kmer-pattern"]
 
 # local-tmp:
-#   description: Path where some of the temporary files will be created
+#   description: Path where some temporary files will be created
 #   type: str
 #   cardinality: "?"
 #   default: ""

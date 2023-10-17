@@ -22,10 +22,10 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
             return FOLDSEEK, None
         elif data_format == FORM_FASTA:
             # Check if cd-hit is installed or neither of cd-hit and mmseqs are
-            if INSTALLED[CDHIT] or not INSTALLED[MMSEQS]:
-                return CDHIT, None
+            if INSTALLED[MMSEQS] or not INSTALLED[CDHIT]:
+                return MMSEQS, None
             else:
-                return MMSEQS2, None
+                return CDHIT, None
     if data_type == M_TYPE and data_format == FORM_SMILES:
         return ECFP, None
     if data_type == G_TYPE and data_format == FORM_FASTA:
