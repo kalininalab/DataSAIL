@@ -7,8 +7,7 @@ import numpy as np
 import pandas as pd
 
 from datasail.reader.validate import validate_user_args
-from datasail.settings import FORM_FASTA, FORM_SMILES, FORM_PDB, MMSEQS, INSTALLED, CDHIT, FOLDSEEK, P_TYPE, M_TYPE, \
-    G_TYPE, MMSEQS2, MASH, ECFP, get_default
+from datasail.settings import get_default
 
 DATA_INPUT = Optional[Union[str, Dict[str, str], Callable[..., Dict[str, str]], Generator[Tuple[str, str], None, None]]]
 MATRIX_INPUT = Optional[Union[str, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
@@ -91,24 +90,24 @@ class DataSet:
         """
         if self.type is None:
             return
-        permutation = np.random.permutation(len(self.names))
-        self.names = [self.names[x] for x in permutation]
-        if isinstance(self.similarity, np.ndarray):
-            self.similarity = self.similarity[permutation, :]
-            self.similarity = self.similarity[:, permutation]
-        if isinstance(self.distance, np.ndarray):
-            self.distance = self.distance[permutation, :]
-            self.distance = self.distance[:, permutation]
+
+        self.names, self.similarity, self.distance = permute(self.names, self.similarity, self.distance)
 
         if self.cluster_names is not None:
-            cluster_permutation = np.random.permutation(len(self.cluster_names))
-            self.cluster_names = [self.cluster_names[x] for x in cluster_permutation]
-            if isinstance(self.cluster_similarity, np.ndarray):
-                self.cluster_similarity = self.cluster_similarity[cluster_permutation, :]
-                self.cluster_similarity = self.cluster_similarity[:, cluster_permutation]
-            if isinstance(self.cluster_distance, np.ndarray):
-                self.cluster_distance = self.cluster_distance[cluster_permutation, :]
-                self.cluster_distance = self.cluster_distance[:, cluster_permutation]
+            self.cluster_names, self.cluster_similarity, self.cluster_distance = \
+                permute(self.cluster_names, self.cluster_similarity, self.cluster_distance)
+
+
+def permute(names, similarity=None, distance=None):
+    permutation = np.random.permutation(len(names))
+    names = [names[x] for x in permutation]
+    if isinstance(similarity, np.ndarray):
+        similarity = similarity[permutation, :]
+        similarity = similarity[:, permutation]
+    if isinstance(distance, np.ndarray):
+        distance = distance[permutation, :]
+        distance = distance[:, permutation]
+    return names, similarity, distance
 
 
 def count_inter(inter: List[Tuple[str, str]], mode: int) -> Generator[Tuple[str, int], None, None]:
@@ -204,12 +203,11 @@ def read_data(
         dist: MATRIX_INPUT,
         max_sim: float,
         max_dist: float,
-        id_map: Optional[str],
         inter: Optional[List[Tuple[str, str]]],
         index: Optional[int],
         tool_args: str,
         dataset: DataSet,
-) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
+) -> DataSet:
     """
     Compute the weight and distances or similarities of every entity.
 
@@ -219,7 +217,6 @@ def read_data(
         dist: Distance file or metric
         max_sim: Maximal similarity between entities in two splits
         max_dist: Maximal similarity between entities in one split
-        id_map: Mapping of ids in case of duplicates in the dataset
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
         tool_args: Additional arguments for the tool
@@ -265,35 +262,7 @@ def read_data(
 
     dataset.args = validate_user_args(dataset.type, dataset.format, sim, dist, tool_args)
 
-    # parse mapping of duplicates
-    if id_map is None:
-        dataset.id_map = {k: k for k in dataset.names}
-        print("No duplicates found.")
-        return dataset, inter
-
-    dataset.id_map = dict(read_csv(id_map))
-
-    if inter is not None:
-        new_inter = []
-        for a, b in inter:
-            if index == 0 and a in dataset.id_map:
-                new_inter.append((dataset.id_map[a], b))
-            elif index == 1 and b in dataset.id_map:
-                new_inter.append((a, dataset.id_map[b]))
-        inter = new_inter
-
-    # update weights
-    new_weights = dict()
-    for name, weight in dataset.weights.items():
-        if name not in dataset.id_map:
-            continue
-        new_name = dataset.id_map[name]
-        if new_name not in new_weights:
-            new_weights[new_name] = 0
-        new_weights[new_name] += weight
-    dataset.weights = new_weights
-
-    return dataset, inter
+    return dataset
 
 
 def read_folder(folder_path: str, file_extension: Optional[str] = None) -> Generator[Tuple[str, str], None, None]:

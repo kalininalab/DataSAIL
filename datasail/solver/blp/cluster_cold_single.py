@@ -3,7 +3,7 @@ from typing import List, Union, Optional, Dict
 import cvxpy
 import numpy as np
 
-from datasail.solver.utils import solve, compute_limits, cluster_sim_dist_constraint, cluster_sim_dist_objective
+from datasail.solver.utils import solve, cluster_y_constraints, compute_limits
 
 
 def solve_ccs_blp(
@@ -11,7 +11,6 @@ def solve_ccs_blp(
         weights: List[float],
         similarities: Optional[np.ndarray],
         distances: Optional[np.ndarray],
-        threshold: float,
         epsilon: float,
         splits: List[float],
         names: List[str],
@@ -27,8 +26,7 @@ def solve_ccs_blp(
         clusters: List of cluster names to split
         weights: Weights of the clusters in the order of their names in e_clusters
         similarities: Pairwise similarity matrix of clusters in the order of their names
-        distances: Pairwise distance matrix of clusters in the order of their names
-        threshold: Threshold to not undergo when optimizing
+        distances: Pairwise distance matrix of clusters in the order of their names.
         epsilon: Additive bound for exceeding the requested split size
         splits: List of split sizes
         names: List of names of the splits in the order of the splits argument
@@ -40,19 +38,17 @@ def solve_ccs_blp(
     Returns:
         Mapping from clusters to splits optimizing the objective function
     """
-    min_lim = [int(split * (1 - epsilon) * sum(weights)) for split in splits]
+    min_lim = compute_limits(epsilon, sum(weights), splits)
 
-    x = [cvxpy.Variable((len(clusters), 1), boolean=True) for _ in range(len(splits))]
+    x = cvxpy.Variable((len(splits), len(clusters)), boolean=True)
     y = [[cvxpy.Variable(1, boolean=True) for _ in range(e)] for e in range(len(clusters))]
     
-    constraints = [cvxpy.sum([a[:, 0] for a in x]) == np.ones((len(clusters)))]
+    constraints = [cvxpy.sum(x, axis=0) == np.ones((len(clusters)))]
 
     for s, split in enumerate(splits):
-        constraints.append(min_lim[s] <= cvxpy.sum(cvxpy.multiply(x[s][:, 0], weights)))
+        constraints.append(min_lim[s] <= cvxpy.sum(cvxpy.multiply(x[s], weights)))
 
-    for e1 in range(len(clusters)):
-        for e2 in range(e1):
-            constraints.append(y[e1][e2] >= cvxpy.max(cvxpy.vstack([x[s][e1, 0] - x[s][e2, 0] for s in range(len(splits))])))
+    constraints += cluster_y_constraints(False, clusters, y, x, splits)
 
     intra_weights = similarities if similarities is not None else distances
     tmp = [[intra_weights[e1, e2] * y[e1][e2] for e2 in range(e1)] for e1 in range(len(clusters))]
@@ -62,6 +58,6 @@ def solve_ccs_blp(
     problem = solve(loss, constraints, max_sec, solver, log_file)
 
     return None if problem is None else {
-        e: names[s] for s in range(len(splits)) for i, e in enumerate(clusters) if x[s][i, 0].value > 0.1
+        e: names[s] for s in range(len(splits)) for i, e in enumerate(clusters) if x[s, i].value > 0.1
     }
 

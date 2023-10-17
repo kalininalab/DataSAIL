@@ -1,7 +1,7 @@
 import argparse
 import os
 from pydoc import locate
-from typing import Dict, List, Sequence, Optional
+from typing import Dict, List, Sequence
 
 import yaml
 
@@ -132,7 +132,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         type=str,
         choices=[SOLVER_GLPK, SOLVER_SCIP, SOLVER_CPLEX, SOLVER_GUROBI, SOLVER_MOSEK, SOLVER_XPRESS],
         dest=KW_SOLVER,
-        help="Solver to use to solve the BLP. Free options are GLPK_MI anc SCIP. CPLEX, GUROBI, MOSEK, and XPRESS are "
+        help="Solver to use to solve the BLP. Free options are GLPK_MI and SCIP. CPLEX, GUROBI, MOSEK, and XPRESS are "
              "also supported, but commercial and need to be installed separately. Check the docu for more information."
     )
     split.add_argument(
@@ -319,7 +319,7 @@ class MultiYAMLParser(argparse.ArgumentParser):
         for name, values in data.items():
             kwargs = {"dest": name.replace("-", "_"), "type": locate(values["type"])}
             if kwargs["type"] == bool:
-                if values["default"] == False:
+                if not values["default"]:
                     kwargs.update({"action": "store_true", "default": False})
                 else:
                     kwargs.update({"action": "store_false", "default": True})

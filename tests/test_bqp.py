@@ -5,6 +5,7 @@ import pytest
 from tests.utils import check_folder, run_sail
 
 
+@pytest.mark.todo
 @pytest.mark.parametrize("root_dir", ["data/perf_7_3", "data/perf_70_30"])
 @pytest.mark.parametrize("mode", [("R", "random"), ("ICSe", "id_cold_single"), ("ICD", "id_cold_double")])
 def test_perf_bin_2(root_dir, mode):
@@ -21,7 +22,7 @@ def test_perf_bin_2(root_dir, mode):
         e_data=f"{root_dir}/lig.tsv",
         f_type="P",
         f_data=f"{root_dir}/prot.tsv",
-        solver="GLPK_MI",
+        solver="SCIP",
         max_sec=500,
     )
 

@@ -98,12 +98,12 @@ def individual_report(
     Create all the report files for one dataset and one technique.
 
     Args:
-        save_dir: Directory to store the files in
-        dataset: Dataset to store the results from
-        name_split_map: Mapping of sample ids to splits
-        cluster_split_map: Mapping from cluster names to splits
-        technique: Technique to treat here
-        split_names: Names of the splits
+        save_dir: Directory to store the files in.
+        dataset: Dataset to store the results from.
+        name_split_map: Mapping of sample ids to splits.
+        cluster_split_map: Mapping from cluster names to splits.
+        technique: Technique to treat here.
+        split_names: Names of the splits.
     """
     # Save assignment of names to splits
     save_assignment(save_dir, dataset, name_split_map.get(technique, None))

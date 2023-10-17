@@ -2,9 +2,8 @@ from typing import Optional, Tuple, List, Set, Dict
 
 import cvxpy
 import numpy as np
-from datasail.settings import NOT_ASSIGNED
 
-from datasail.solver.utils import solve, inter_mask, compute_limits, interaction_constraints
+from datasail.solver.utils import solve, interaction_contraints, collect_results_2d, compute_limits
 
 
 def solve_icd_blp(
@@ -40,45 +39,23 @@ def solve_icd_blp(
         dataset
     """
     inter_count = len(inter)
-    max_lim, min_lim = compute_limits(epsilon, inter_count, splits)
+    min_lim = compute_limits(epsilon, len(inter), splits)
 
-    x_e = [cvxpy.Variable((len(e_entities), 1), boolean=True) for _ in range(len(splits))]
-    x_f = [cvxpy.Variable((len(f_entities), 1), boolean=True) for _ in range(len(splits))]
+    x_e = cvxpy.Variable((len(splits), len(e_entities)), boolean=True)
+    x_f = cvxpy.Variable((len(splits), len(f_entities)), boolean=True)
     x_i = {(e, f): cvxpy.Variable(len(splits), boolean=True) for (e, f) in inter}
 
+    def index(x, y):
+        return (e_entities[x], f_entities[y]) if (e_entities[x], f_entities[y]) in x_i else None
+
     constraints = [
-        cvxpy.sum([x[:, 0] for x in x_e]) == np.ones((len(e_entities))),
-        cvxpy.sum([x[:, 0] for x in x_f]) == np.ones((len(f_entities))),
+        cvxpy.sum(x_e, axis=0) == np.ones((len(e_entities))),
+        cvxpy.sum(x_f, axis=0) == np.ones((len(f_entities))),
     ]
 
-    for s, split in enumerate(splits):
-        constraints.append(min_lim[s] <= cvxpy.sum([x_i[key][s] for key in x_i]))
-        for i, e1 in enumerate(e_entities):
-            for j, e2 in enumerate(f_entities):
-                if (e1, e2) in x_i:
-                    # constraints.append(x_i[e1, e2][s] >= cvxpy.maximum(x_e[s][:, 0][i] + x_f[s][:, 0][j] - 1, 0))
-                    # constraints.append(x_i[e1, e2][s] <= 0.75 * (x_e[s][:, 0][i] + x_f[s][:, 0][j]))
-                    constraints.append(x_i[e1, e2][s] >= x_e[s][:, 0][i] - x_f[s][:, 0][j])
+    interaction_contraints(e_entities, f_entities, x_i, constraints, splits, x_e, x_f, min_lim, lambda key: 1, index)
 
     inter_loss = (inter_count - sum(cvxpy.sum(x) for x in x_i.values())) / inter_count
     problem = solve(inter_loss, constraints, max_sec, solver, log_file)
 
-    if problem is None:
-        return None
-
-    # report the found solution
-    output = (
-        {},
-        {e: names[s] for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[s][:, 0][i].value > 0.1},
-        {f: names[s] for s in range(len(splits)) for j, f in enumerate(f_entities) if x_f[s][:, 0][j].value > 0.1},
-    )
-    for i, e in enumerate(e_entities):
-        for j, f in enumerate(f_entities):
-            if (e, f) in inter:
-                for b in range(len(splits)):
-                    if x_i[e, f][b].value > 0:
-                        output[0][(e, f)] = names[b]
-                if sum(x_i[e, f][b].value for b in range(len(splits))) == 0:
-                    output[0][(e, f)] = NOT_ASSIGNED
-
-    return output
+    return collect_results_2d(problem, names, splits, e_entities, f_entities, x_e, x_f, x_i, index)
