@@ -8,7 +8,7 @@ from datasail.reader.read import read_data
 from datasail.reader.utils import DataSet
 from datasail.report import report
 from datasail.settings import LOGGER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
-    KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F
+    KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL
 from datasail.solver.solve import run_solver, insert
 
 
@@ -29,9 +29,9 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     e_dataset, f_dataset, inter = read_data(**kwargs)
 
     # if required, cluster the input otherwise define the cluster-maps to be None
-    clusters = list(filter(lambda x: x[0] == "C", kwargs[KW_TECHNIQUES]))
-    cluster_e = len(clusters) != 0 and any(c[-1] in {"D", MODE_E} for c in clusters)
-    cluster_f = len(clusters) != 0 and any(c[-1] in {"D", MODE_F} for c in clusters)
+    clusters = list(filter(lambda x: x[0].startswith(SRC_CL), kwargs[KW_TECHNIQUES]))
+    cluster_e = len(clusters) != 0 and any(c[-1] in {DIM_2, MODE_E} for c in clusters)
+    cluster_f = len(clusters) != 0 and any(c[-1] in {DIM_2, MODE_F} for c in clusters)
 
     if cluster_e:
         LOGGER.info("Cluster first set of entities.")
@@ -42,7 +42,7 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
 
     if inter is not None:
         if e_dataset.type is not None and f_dataset.type is not None:
-            new_inter = [(e_dataset.id_map[x[0]], f_dataset.id_map[x[0]])
+            new_inter = [(e_dataset.id_map[x[0]], f_dataset.id_map[x[1]])
                          for x in filter(lambda x: x[0] in e_dataset.id_map and x[1] in f_dataset.id_map, inter)]
         elif e_dataset.type is not None:
             new_inter = [(e_dataset.id_map[x[0]], x[1]) for x in filter(lambda x: x[0] in e_dataset.id_map, inter)]
