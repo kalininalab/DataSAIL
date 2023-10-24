@@ -1,7 +1,7 @@
 import argparse
 import os
 from pydoc import locate
-from typing import Dict, List, Sequence, Optional
+from typing import Dict, List, Sequence
 
 import yaml
 
