@@ -1,5 +1,5 @@
 import os
-from typing import List, Tuple, Optional, Callable, Generator
+from typing import List, Tuple, Optional, Callable, Generator, Union, Iterable
 
 import numpy as np
 from rdkit import Chem
@@ -66,6 +66,8 @@ def read_molecule_data(
         else:
             raise ValueError()
         dataset.location = data
+    elif isinstance(data, Union[list, tuple]) and isinstance(data[0], Iterable) and len(data[0]) == 2:
+        dataset.data = dict(data)
     elif isinstance(data, dict):
         dataset.data = data
     elif isinstance(data, Callable):

@@ -8,7 +8,7 @@ First, we need state what we consider to be one-dimensional data and two-dimensi
 names become clear in the depictions below.
 
 One-Dimensional Data
---------------------
+====================
 
 We consider one-dimension data to be data where the task is to predict one or more features of one input system.
 Examples are protein classification or molecular property prediction. The input system refers to proteins or molecules
@@ -20,7 +20,7 @@ anymore.
     :alt: Exemplary protein feature prediction dataset
 
 Two-Dimensional Data
---------------------
+====================
 
 This is data with two input systems. Examples are interaction datasets such as protein-protein or drug-target
 interaction prediction datasets. Here, the two input systems are two sets of proteins or drugs and their targets. The
@@ -39,8 +39,8 @@ made up and chosen by their shape. Interaction with any of the ligands are rando
 visualize all these techniques, we will use the interaction-dataset visualized above. Furthermore, we will always split
 into 3 splits (green, yellow, and red). All non-colored fields are interactions that are lost from the full dataset.
 
-Random Split
-------------
+Random Split (R)
+----------------
 
 This is the most simple split and the most widely used one. Here, datapoints are randomly assigned to splits.
 Therefore, the amount of leaked data is the biggest here.
@@ -48,8 +48,8 @@ Therefore, the amount of leaked data is the biggest here.
 .. image:: ../imgs/PLI_random.png
     :width: 600
 
-Identity-based single-cold split
---------------------------------
+Identity-based single-cold split (I1)
+-------------------------------------
 
 The easiest step in reducing information leaks is to make sure that all samples associated with one ID is one dimension
 end up in the same split. Therefore, a model cannot memorize this ID between training, validation, and test. In this
@@ -58,8 +58,8 @@ case DataSAIL only optimizes the sizes of the splits towards the request by the 
 .. image:: ../imgs/PLI_ics.png
     :width: 600
 
-Identity-based double-cold split
---------------------------------
+Identity-based double-cold split (I2)
+-------------------------------------
 
 This can be enforced to both dimensions in case of a two-dimensional dataset. But, because all samples belong to one ID
 from wither either dimension, there are samples having their IDs in different splits. These samples cannot be assigned
@@ -69,8 +69,8 @@ sizes of the splits close to what the user requested.
 .. image:: ../imgs/PLI_icd.png
     :width: 600
 
-Cluster-based single-cold split
--------------------------------
+Cluster-based single-cold split (C1)
+------------------------------------
 
 The next step is to cluster IDs before splitting. This is useful as samples of one dimension might be similar to each
 other. By making sure all datapoints of similar IDs remain in the same split, the model cannot memorize similarities of
@@ -80,8 +80,8 @@ size of the splits to be similar to what has been requested.
 .. image:: ../imgs/PLI_ccs.png
     :width: 600
 
-Cluster-based double-cold split
--------------------------------
+Cluster-based double-cold split (C2)
+------------------------------------
 
 Lastly, this cluster-based splitting can be enforced on both dimensions of a two-dimensional dataset to reduce
 information leaks further more. Here, DataSAIL extends the objective from above with a penalty for lost samples.

@@ -7,21 +7,21 @@ import numpy as np
 from datasail.cluster.utils import cluster_param_binary_search, extract_fasta
 from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, CDHIT, INSTALLED, CDHIT_EST
+from datasail.settings import LOGGER, INSTALLED, CDHIT_EST, CDHIT
 
 
-def run_cdhit(
+def run_cdhit_est(
         dataset: DataSet,
         threads: int = 1,
         log_dir: Optional[str] = None
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
-    Run the CD-HIT tool for protein input.
+    Run the CD-HIT-EST tool for DNA or RNA input.
 
     Args:
         dataset: DataSet holding all information on the dta to be clustered
         log_dir: Absolute path to the directory to store all the logs in
-        threads: number of threads to use for one CD-HIT run
+        threads: number of threads to use for one CD-HIT-EST run
 
     Returns:
         A tuple containing
@@ -29,28 +29,28 @@ def run_cdhit(
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    if not INSTALLED[CDHIT]:
-        raise ValueError("CD-HIT is not installed.")
+    if not INSTALLED[CDHIT_EST]:
+        raise ValueError("CD-HIT-EST is not installed.")
 
-    user_args = MultiYAMLParser(CDHIT).get_user_arguments(dataset.args, ["c", "n"])
+    user_args = MultiYAMLParser(CDHIT_EST).get_user_arguments(dataset.args, ["c", "n"])
     vals = (dataset.args.c, dataset.args.n)
     extract_fasta(dataset)
 
     return cluster_param_binary_search(
         dataset,
         vals,
-        (0.4, 2),
-        (1, 5),
+        (0.8, 5),
+        (1, 10),
         user_args,
         threads,
-        cdhit_trial,
+        cdhit_est_trial,
         lambda x: f"-c {x[0]} -n {x[1]} -l {x[1] - 1}",
         lambda x, y: ((x[0] + y[0]) / 2, c2n((x[0] + y[0]) / 2)),
         log_dir,
     )
 
 
-def cdhit_trial(
+def cdhit_est_trial(
         dataset: DataSet,
         tune_args: Tuple,
         user_args: str,
@@ -73,10 +73,10 @@ def cdhit_trial(
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    results_folder = "cdhit_results"
+    results_folder = "cdhit_est_results"
     cmd = f"mkdir {results_folder} && " \
           f"cd {results_folder} && " \
-          f"cd-hit " \
+          f"cd-hit-est " \
           f"-i {os.path.join('..', dataset.location)} " \
           f"-o clusters " \
           f"-d 0 " \
@@ -102,7 +102,7 @@ def cdhit_trial(
     cluster_names = list(set(cluster_map.values()))
     cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
 
-    shutil.rmtree(results_folder)
+    # shutil.rmtree(results_folder)
 
     return cluster_names, cluster_map, cluster_sim
 
@@ -150,11 +150,14 @@ def c2n(c: float):
     Returns:
         An according value for n based on c
     """
-    if 0.4 <= c < 0.5:
-        return 2
-    elif 0.5 <= c < 0.6:
-        return 3
-    elif 0.6 <= c < 0.7:
-        return 4
-    else:
+    if 0.8 <= c < 0.85:
         return 5
+    elif 0.85 <= c < 0.88:
+        return 6
+    elif 0.88 <= c < 0.90:
+        return 7
+    elif 0.9 <= c < 0.93:
+        return 8
+    elif 0.93 <= c < 0.97:
+        return 9
+    return 10

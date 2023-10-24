@@ -7,6 +7,7 @@ from sklearn.cluster import AffinityPropagation, AgglomerativeClustering, Spectr
 
 from datasail.cluster.caching import load_from_cache, store_to_cache
 from datasail.cluster.cdhit import run_cdhit
+from datasail.cluster.cdhit_est import run_cdhit_est
 from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
@@ -104,6 +105,8 @@ def similarity_clustering(
         cluster_names, cluster_map, cluster_sim = run_foldseek(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "cdhit":
         cluster_names, cluster_map, cluster_sim = run_cdhit(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == "cdhit_est":
+        cluster_names, cluster_map, cluster_sim = run_cdhit_est(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "ecfp":
         cluster_names, cluster_map, cluster_sim = run_ecfp(dataset)
     else:

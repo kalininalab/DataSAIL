@@ -1,5 +1,5 @@
 import os
-from typing import Generator, Tuple, Dict, List, Optional, Set, Callable
+from typing import Generator, Tuple, Dict, List, Optional, Set, Callable, Union, Iterable
 
 import numpy as np
 
@@ -47,6 +47,8 @@ def read_protein_data(
         else:
             raise ValueError()
         dataset.location = data
+    elif isinstance(data, Union[list, tuple]) and isinstance(data[0], Iterable) and len(data[0]) == 2:
+        dataset.data = dict(data)
     elif isinstance(data, dict):
         dataset.data = data
     elif isinstance(data, Callable):
@@ -82,7 +84,7 @@ def parse_fasta(path: str = None) -> Dict[str, str]:
             if len(line) == 0:
                 continue
             if line[0] == '>':
-                entry_id = line[1:].replace(" ", "_")
+                entry_id = line[1:]  # .replace(" ", "_")
                 seq_map[entry_id] = ''
             else:
                 seq_map[entry_id] += line

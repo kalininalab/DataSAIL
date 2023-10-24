@@ -3,7 +3,8 @@ from typing import List, Tuple, Optional, Dict, Union
 import cvxpy
 import numpy as np
 
-from datasail.solver.utils import solve, interaction_contraints, cluster_y_constraints, collect_results_2d, leakage_loss
+from datasail.solver.utils import solve, interaction_contraints, cluster_y_constraints, collect_results_2d, \
+    leakage_loss, compute_limits
 
 
 def solve_ccd_blp(
@@ -46,7 +47,7 @@ def solve_ccd_blp(
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
         dataset
     """
-    min_lim = [8000, 2000]  # compute_limits(epsilon, int(np.sum(inter)), splits)  # [8000, 2000]
+    min_lim = compute_limits(epsilon, int(np.sum(inter)) // 2, splits)
     x_e = cvxpy.Variable((len(splits), len(e_clusters)), boolean=True)
     x_f = cvxpy.Variable((len(splits), len(f_clusters)), boolean=True)
     x_i = {(e, f): cvxpy.Variable(len(splits), boolean=True) for e in range(len(e_clusters)) for f in

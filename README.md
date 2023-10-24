@@ -51,7 +51,7 @@ DataSAIL is available from Python 3.8 and newer.
 DataSAIL is installed as a commandline tool. So, in the conda environment DataSAIL has been installed to, you can run 
 
 ````shell
-sail --e-type P --e-data <path_to_fasta> --e-sim mmseqs --output <path_to_output_path> --technique CCS
+sail --e-type P --e-data <path_to_fasta> --e-sim mmseqs --output <path_to_output_path> --technique C1e
 ````
 
 to split a set of proteins that have been clustered using mmseqs. For a full list of arguments run `sail -h` and 
@@ -68,36 +68,3 @@ One can distinguish two main ways to train a machine learning model on biologica
 DataSAIL is created to compute complex splits of the data by separating data based on similarities. This creates 
 complex data-splits for the first scenario. Therefore, use DataSAIL when your model is applied to data that is 
 different from your training data but not if the data in application is more or less the same as in the training.
-
-## Splitting techniques
-
-DataSAIL allows to split multiple types of data in different ways minimizing various sources of data leakage.
-
-### `--technique R`: Random split
-
-Randomly splitting a list of interactions into different splits. This option is for completeness. It does not account 
-for any type of data leakage.
-
-### `--technique ICS`: Identity-based single-cold split
-
-Split a dataset based on the IDs of the datapoints. This ensures that every datapoint is present in exactly one split. 
-This is especially useful together with weighting of the datapoints. Then, the splits are optimized towards the 
-requested sizes taking the weights into account.
-
-### `--technique ICD`: Identity-based double-cold split
-
-Split a dataset of pairwise interactions based on the IDs of both sets of datapoints. This ensures any 
-datapoints of neither of the two interacting datasets is present in more than one split.
-
-### `--technique CCS`: Cluster-based single-cold split
-
-Split a dataset based on clusters of datapoints. This further reduces the information leakage between two splits but 
-not only ensuring that the same protein is not present in more than one split but also to ensure that no two datapoints 
-with pairwise similarity above a certain threshold are present in the same split. For example, consider a dataset 
-containing proteins from different families, all proteins from one family are similar in their sequence and structure. 
-Therefore, they should be in the same split to prevent information leakage.
-
-### `--technique CCD`: Cluster-based double-cold split
-
-Split a dataset of pairwise interactions based on clusters in both sets of datapoints. This is the combination of ICD 
-and CCS combining both advantages and features.

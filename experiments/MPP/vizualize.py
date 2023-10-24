@@ -8,10 +8,9 @@ from sklearn.manifold import TSNE
 from umap import UMAP
 import matplotlib.transforms as mtransforms
 
-from experiments.PDBBind.visualize import embed_smiles, get_bounds
-from experiments.utils import USE_UMAP
+from experiments.utils import USE_UMAP, embed_smiles, get_bounds
 
-SPLITS = ["ICSe", "CCSe", "Butina", "Fingerprint", "MinMax", "Scaffold", "Weight"]
+SPLITS = ["I1e", "C1e", "Butina", "Fingerprint", "MinMax", "Scaffold", "Weight"]
 DATASETS = ["QM7", "QM8", "QM9", "ESOL", "FreeSolv", "Lipophilicity", "BACE", "BBBP", "Tox21", "ToxCast", "SIDER",
             "ClinTox"]
 METRICS = ["MAE ↓"] * 3 + ["RMSE ↓"] * 3 + ["ROC-AUC ↑"] * 6

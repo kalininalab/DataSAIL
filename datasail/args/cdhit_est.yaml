@@ -1,0 +1,234 @@
+# This argument cannot be changed because DataSAIL needs to set it
+# i:
+#   description: Input filename in fasta format, required, can be in .gz format
+#   type: str
+#   cardinality: "?"
+#   default: null
+#   calls: ["-i"]
+# This argument cannot be changed because DataSAIL needs to set it
+# j:
+#   description: Input filename in fasta/fastq format for R2 reads
+#   type: str
+#   cardinality: "?"
+#   default: null
+#   calls: ["-j"]
+# This argument cannot be changed because DataSAIL needs to set it
+# o:
+#   description: Output filename, required
+#   type: str
+#   cardinality: "?"
+#   default: null
+#   calls: ["-o"]
+# This argument cannot be changed because DataSAIL needs to set it
+# op:
+#   description: Output filename for R2 reads,
+#   type: str
+#   cardinality: "?"
+#   default: null
+#   calls: ["-op"]
+c:
+  description: Sequence identity threshold, default 0.9, range 0-1
+  type: float
+  cardinality: "?"
+  default: 0.9
+  calls: ["-c"]
+G:
+  description: Use global sequence identity, default 1, pseudo-boolean value
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["-G"]
+b:
+  description: Band width of alignment, default 20, range positive
+  type: int
+  cardinality: "?"
+  default: 20
+  calls: ["-b"]
+M:
+  description: Memory limit (MB) for the program; 0 for unlimited, range non-negative
+  type: int
+  cardinality: "?"
+  default: 800
+  calls: ["-M"]
+T:
+  description: Number of threads, default 1; with 0, all CPUs will be used, range non-negative
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["-T"]
+n:
+  description: Word length, see user's guide for choosing it, range [5;10], dependence on c
+  type: int
+  cardinality: "?"
+  default: 10
+  calls: ["-n"]
+# This argument cannot be changed because DataSAIL needs to set it
+# l:
+#   description: Length of throw-away sequences, default 10
+#   type: int
+#   cardinality: "?"
+#   default: 10
+#   calls: ["-l"]
+# DataSAIL needs to set this
+# d:
+#   description: Length of description in .clstr file, default 20
+#   type: int
+#   cardinality: "?"
+#   default: 20
+#   calls: ["-d"]
+s:
+  description: Length difference cutoff, default 0.0, range 0-1
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["-s"]
+S:
+  description: Length difference cutoff in amino acid, default 999999, range positive
+  type: int
+  cardinality: "?"
+  default: 999999
+  calls: ["-S"]
+aL:
+  description: Alignment coverage for the longer sequence, default 0.0, range 0-1
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["-aL"]
+AL:
+  description: Alignment coverage control for the longer sequence, default 99999999, range non-negative
+  type: int
+  cardinality: "?"
+  default: 99999999
+  calls: ["-AL"]
+aS:
+  description: Alignment coverage for the shorter sequence, default 0.0, range 0-1
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["-aS"]
+AS:
+  description: Alignment coverage control for the shorter sequence, default 99999999, range non-negative
+  type: int
+  cardinality: "?"
+  default: 99999999
+  calls: ["-AS"]
+A:
+  description: Minimal alignment coverage control, default 0, range non-negative
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["-A"]
+uL:
+  description: Maximum unmatched percentage for the longer sequence, default 1.0, range 0-1
+  type: float
+  cardinality: "?"
+  default: 1.0
+  calls: ["-uL"]
+uS:
+  description: Maximum unmatched percentage for the shorter sequence, default 1.0, range 0-1
+  type: float
+  cardinality: "?"
+  default: 1.0
+  calls: ["-uS"]
+U:
+  description: Maximum unmatched length, range non-negative
+  type: int
+  cardinality: "?"
+  default: 99999999
+  calls: ["-U"]
+# B:
+#   description: Store sequences on hard drive
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["-B"]
+# P:
+#   description: input paired end (PE) reads, if set, please use -i R1 -j R2 to input both PE files
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["-P"]
+cx:
+  description: length to keep after trimming the tail of sequence, default 0, not trimming
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["-cx"]
+# cy:
+#   description: length to keep after trimming the tail of R2 sequence, default 0, not trimming
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["-cy"]
+ap:
+  description: alignment position constrains, default 0, no constrain
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["-ap"]
+# p:
+#   description: Print alignment overlap
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["-p"]
+g:
+  description: Accurate clustering mode, pseudo-boolean value
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["-g"]
+r:
+  description: 1 or 0, default 1, by default do both +/+ & +/- alignments
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["-r"]
+mask:
+  description: masking letters (e.g. -mask NX, to mask out both 'N' and 'X')
+  type: str
+  cardinality: "?"
+  default: null
+  calls: ["-mask"]
+match:
+  description: matching score, default 2 (1 for T-U and N-N)
+  type: int
+  cardinality: "?"
+  default: 2
+  calls: ["-match"]
+mismatch:
+  description: mismatching score, default -2
+  type: int
+  cardinality: "?"
+  default: -2
+  calls: ["-mismatch"]
+gap:
+  description: gap opening score, default -6
+  type: int
+  cardinality: "?"
+  default: -6
+  calls: ["-gap"]
+gap_ext:
+  description: gap extension score, default -1
+  type: int
+  cardinality: "?"
+  default: -1
+  calls: ["-gap-ext"]
+# sc:
+#   description: Sort clusters by size
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["-sc"]
+# sf:
+#   description: Sort fasta/fastq by cluster size
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["-sf"]
+# bak:
+#   description: Write backup cluster file
+#   type: int
+#   cardinality: "?"
+#   default: 0
+#   calls: ["-bak"]
