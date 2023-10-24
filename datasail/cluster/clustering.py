@@ -3,10 +3,11 @@ import os
 from typing import Dict, Tuple, List, Union, Optional
 
 import numpy as np
-from sklearn.cluster import AffinityPropagation, AgglomerativeClustering
+from sklearn.cluster import AffinityPropagation, AgglomerativeClustering, SpectralClustering
 
 from datasail.cluster.caching import load_from_cache, store_to_cache
 from datasail.cluster.cdhit import run_cdhit
+from datasail.cluster.cdhit_est import run_cdhit_est
 from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
@@ -15,7 +16,7 @@ from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, N_CLUSTERS
 
 
 def cluster(dataset: DataSet, **kwargs) -> DataSet:
@@ -104,6 +105,8 @@ def similarity_clustering(
         cluster_names, cluster_map, cluster_sim = run_foldseek(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "cdhit":
         cluster_names, cluster_map, cluster_sim = run_cdhit(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == "cdhit_est":
+        cluster_names, cluster_map, cluster_sim = run_cdhit_est(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "ecfp":
         cluster_names, cluster_map, cluster_sim = run_ecfp(dataset)
     else:
@@ -204,7 +207,8 @@ def additional_clustering(
         dataset: DataSet,
         damping: float = 0.5,
         max_iter: int = 1000,
-        dist_factor: float = 0.9
+        dist_factor: float = 0.9,
+        n_clusters: int = MAX_CLUSTERS,
 ) -> Tuple[DataSet, bool]:
     """
     Perform additional cluster based on a distance or similarity matrix. This is done to reduce the number of
@@ -215,6 +219,7 @@ def additional_clustering(
         damping: damping factor for affinity propagation
         max_iter: maximal number of iterations for affinity propagation
         dist_factor: factor to multiply the average distance with in agglomerate clustering
+        n_clusters:
 
     Returns:
         The dataset with updated clusters and a bool flag indicating convergence of the used clustering algorithm
@@ -224,12 +229,17 @@ def additional_clustering(
     # set up the cluster algorithm for similarity or distance based cluster w/o specifying the number of clusters
     if dataset.cluster_similarity is not None:
         cluster_matrix = np.array(dataset.cluster_similarity, dtype=float)
-        ca = AffinityPropagation(
-            affinity='precomputed',
+        # ca = AffinityPropagation(
+        #     affinity='precomputed',
+        #     random_state=42,
+        #     verbose=True,
+        #     damping=damping,
+        #     max_iter=max_iter,
+        # )
+        ca = SpectralClustering(
+            n_clusters=n_clusters,
+            affinity="precomputed",
             random_state=42,
-            verbose=True,
-            damping=damping,
-            max_iter=max_iter,
         )
     else:
         cluster_matrix = np.array(dataset.cluster_distance, dtype=float)
@@ -359,30 +369,28 @@ def force_clustering(dataset: DataSet) -> DataSet:
 
 def cluster_interactions(
         inter: List[Tuple[str, str]],
-        e_cluster_map: Dict[str, Union[str, int]],
-        e_cluster_names: List[Union[str, int]],
-        f_cluster_map: Dict[str, Union[str, int]],
-        f_cluster_names: List[Union[str, int]],
+        e_dataset: DataSet,
+        f_dataset: DataSet,
 ) -> np.ndarray:
     """
     Based on cluster information, count interactions in an interaction matrix between the individual clusters.
 
     Args:
         inter: List of pairs representing interactions
-        e_cluster_map: Mapping from entity names to their cluster names
-        e_cluster_names: List of custer names
-        f_cluster_map: Mapping from entity names to their cluster names
-        f_cluster_names: List of custer names
+        e_dataset: Dataset of the e-dataset
+        f_dataset: Dataset of the f-dataset
 
     Returns:
         Numpy array of matrix of interactions between two clusters
     """
-    e_mapping = dict((y, x) for x, y in enumerate(e_cluster_names))
-    f_mapping = dict((y, x) for x, y in enumerate(f_cluster_names))
+    e_mapping = dict((y, x) for x, y in enumerate(e_dataset.cluster_names))
+    f_mapping = dict((y, x) for x, y in enumerate(f_dataset.cluster_names))
 
-    output = np.zeros((len(e_cluster_names), len(f_cluster_names)))
+    output = np.zeros((len(e_dataset.cluster_names), len(f_dataset.cluster_names)))
     for e, f in inter:
-        output[e_mapping[e_cluster_map[e]]][f_mapping[f_cluster_map[f]]] += 1
+        e_key = e_mapping[e_dataset.cluster_map[e_dataset.id_map[e]]]
+        f_key = f_mapping[f_dataset.cluster_map[f_dataset.id_map[f]]]
+        output[e_key][f_key] += 1
 
     return output
 

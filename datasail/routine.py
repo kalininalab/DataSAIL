@@ -3,11 +3,11 @@ from typing import Dict, Tuple
 
 from datasail.argparse_patch import remove_patch
 from datasail.cluster.clustering import cluster
-from datasail.reader.read import read_data, check_duplicates
+from datasail.reader.read import read_data
 from datasail.reader.utils import DataSet
 from datasail.report import report
 from datasail.settings import LOGGER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
-    KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F
+    KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL
 from datasail.solver.solve import run_solver, insert
 
 
@@ -22,15 +22,15 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     start = time.time()
     LOGGER.info("Read data")
 
-    kwargs = check_duplicates(**kwargs)
+    # kwargs = check_duplicates(**kwargs)
 
     # read e-entities and f-entities
-    e_dataset, f_dataset, inter, old_inter = read_data(**kwargs)
+    e_dataset, f_dataset, inter = read_data(**kwargs)
 
     # if required, cluster the input otherwise define the cluster-maps to be None
-    clusters = list(filter(lambda x: x[0] == "C", kwargs[KW_TECHNIQUES]))
-    cluster_e = len(clusters) != 0 and any(c[-1] in {"D", MODE_E} for c in clusters)
-    cluster_f = len(clusters) != 0 and any(c[-1] in {"D", MODE_F} for c in clusters)
+    clusters = list(filter(lambda x: x[0].startswith(SRC_CL), kwargs[KW_TECHNIQUES]))
+    cluster_e = len(clusters) != 0 and any(c[-1] in {DIM_2, MODE_E} for c in clusters)
+    cluster_f = len(clusters) != 0 and any(c[-1] in {DIM_2, MODE_F} for c in clusters)
 
     if cluster_e:
         LOGGER.info("Cluster first set of entities.")
@@ -41,21 +41,25 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
 
     if inter is not None:
         if e_dataset.type is not None and f_dataset.type is not None:
-            inter = list(filter(lambda x: x[0] in e_dataset.names and x[1] in f_dataset.names, inter))
+            new_inter = [(e_dataset.id_map[x[0]], f_dataset.id_map[x[1]])
+                         for x in filter(lambda x: x[0] in e_dataset.id_map and x[1] in f_dataset.id_map, inter)]
         elif e_dataset.type is not None:
-            inter = list(filter(lambda x: x[0] in e_dataset.names, inter))
+            new_inter = [(e_dataset.id_map[x[0]], x[1]) for x in filter(lambda x: x[0] in e_dataset.id_map, inter)]
         elif f_dataset.type is not None:
-            inter = list(filter(lambda x: x[1] in f_dataset.names, inter))
+            new_inter = [(x[0], f_dataset.id_map[x[1]]) for x in filter(lambda x: x[1] in f_dataset.id_map, inter)]
         else:
             raise ValueError()
+    else:
+        new_inter = None
 
     LOGGER.info("Split data")
+
     # split the data into dictionaries mapping interactions, e-entities, and f-entities into the splits
     inter_split_map, e_name_split_map, f_name_split_map, e_cluster_split_map, f_cluster_split_map = run_solver(
         techniques=kwargs[KW_TECHNIQUES],
         e_dataset=e_dataset,
         f_dataset=f_dataset,
-        inter=inter,
+        inter=new_inter,
         epsilon=kwargs[KW_EPSILON],
         runs=kwargs[KW_RUNS],
         splits=kwargs[KW_SPLITS],
@@ -69,25 +73,24 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     LOGGER.info("Store results")
 
     # infer interaction assignment from entity assignment if necessary and possible
-    if old_inter is not None:
+    output_inter_split_map = dict()
+    if new_inter is not None:
         for technique in kwargs[KW_TECHNIQUES]:
-            if len(inter_split_map.get(technique, [])) < kwargs[KW_RUNS]:
-                for run in range(kwargs[KW_RUNS]):
-                    # How to deal with duplicates in ?CD-splits when interactions are already assigned in the splitting process
-                    # TODO: Detect the duplicates in old_inter and assign them based on an id_map
-
-                    if e_name_split_map.get(technique, None) is not None:
-                        insert(
-                            inter_split_map,
-                            technique,
-                            {(e, f): e_name_split_map[technique][run].get(e, NOT_ASSIGNED) for e, f in old_inter}
-                        )
-                    if f_name_split_map.get(technique, None) is not None:
-                        insert(
-                            inter_split_map,
-                            technique,
-                            {(e, f): f_name_split_map[technique][run].get(f, NOT_ASSIGNED) for e, f in old_inter},
-                        )
+            output_inter_split_map[technique] = []
+            for run in range(kwargs[KW_RUNS]):
+                output_inter_split_map[technique].append(dict())
+                for e, f in inter:
+                    if technique.endswith(DIM_2) or technique == "R":
+                        output_inter_split_map[technique][-1][(e, f)] = inter_split_map[technique][run].get(
+                            (e_dataset.id_map.get(e, ""), f_dataset.id_map.get(f, "")), NOT_ASSIGNED)
+                    elif technique in e_name_split_map:
+                        output_inter_split_map[technique][-1][(e, f)] = e_name_split_map[technique][run].get(
+                            e_dataset.id_map.get(e, ""), NOT_ASSIGNED)
+                    elif technique in f_name_split_map:
+                        output_inter_split_map[technique][-1][(e, f)] = f_name_split_map[technique][run].get(
+                            f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
+                    else:
+                        raise ValueError()
 
     LOGGER.info("BQP splitting finished and results stored.")
     LOGGER.info(f"Total runtime: {time.time() - start:.5f}s")
@@ -101,7 +104,7 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
             f_name_split_map=f_name_split_map,
             e_cluster_split_map=e_cluster_split_map,
             f_cluster_split_map=f_cluster_split_map,
-            inter_split_map=inter_split_map,
+            inter_split_map=output_inter_split_map,
             runs=kwargs[KW_RUNS],
             output_dir=kwargs[KW_OUTDIR],
             split_names=kwargs[KW_NAMES],
@@ -109,7 +112,7 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     else:
         full_e_name_split_map = fill_split_maps(e_dataset, e_name_split_map)
         full_f_name_split_map = fill_split_maps(f_dataset, f_name_split_map)
-        return full_e_name_split_map, full_f_name_split_map, inter_split_map
+        return full_e_name_split_map, full_f_name_split_map, output_inter_split_map
 
 
 def fill_split_maps(dataset: DataSet, name_split_map: Dict) -> Dict:

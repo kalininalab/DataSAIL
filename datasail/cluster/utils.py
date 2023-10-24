@@ -155,8 +155,7 @@ def extract_fasta(dataset: DataSet) -> None:
         dataset.location = dataset.location + (".fasta" if dataset.location.endswith(UNK_LOCATION) else "")
         with open(dataset.location, "w") as out:
             for idx, seq in dataset.data.items():
-                print(">" + idx, file=out)
-                print(seq, file=out)
+                print(f">{idx}\n{seq}", file=out)
 
 
 def read_molecule_encoding(encoding: str) -> Optional[rdkit.Chem.rdchem.Mol]:

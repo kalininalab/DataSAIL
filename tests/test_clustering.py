@@ -18,6 +18,7 @@ from datasail.reader.validate import check_cdhit_arguments, check_foldseek_argum
 from datasail.settings import P_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN
 
 
+@pytest.mark.todo
 def test_additional_clustering():
     names = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
     base_map = dict((n, n) for n in names)
@@ -196,7 +197,6 @@ def test_wlkernel_molecule(molecule_data):
 
 @pytest.mark.parametrize("algo", [CDHIT, MMSEQS])
 def test_force_clustering(algo):
-    print()
     dataset = cluster(DataSet(
         type=P_TYPE,
         format=FORM_FASTA,

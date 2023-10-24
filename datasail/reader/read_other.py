@@ -1,7 +1,8 @@
 import os
-from typing import List, Tuple, Dict, Any, Optional, Generator, Callable
+from typing import List, Tuple, Optional, Generator, Callable
 
 from datasail.reader.read_genomes import read_folder
+from datasail.reader.read_molecules import remove_duplicate_values
 from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT
 from datasail.settings import O_TYPE, UNK_LOCATION, FORM_OTHER
 
@@ -53,22 +54,7 @@ def read_other_data(
     else:
         raise ValueError()
 
-    dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, tool_args, dataset)
+    dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, inter, index, tool_args, dataset)
+    dataset = remove_duplicate_values(dataset, dataset.data)
 
     return dataset, inter
-
-
-def remove_other_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[str, Any]:
-    """
-    Remove duplicates in other data input. Currently, this is not implemented and will return the input arguments.
-
-    Args:
-        prefix: Prefix of the data. This is either 'e_' or 'f_'
-        output_dir: Directory to store data to in case of detected duplicates
-        **kwargs: Arguments for this data input
-
-    Returns:
-        Update arguments as teh location of the data might change and an ID-Map file might be added.
-    """
-    output_args = {prefix + k: v for k, v in kwargs.items()}
-    return output_args

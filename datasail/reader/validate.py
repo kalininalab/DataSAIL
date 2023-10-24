@@ -3,7 +3,7 @@ from argparse import Namespace
 from typing import Tuple, Union, Optional
 
 from datasail.parsers import MultiYAMLParser
-from datasail.settings import CDHIT, MMSEQS2, MASH, MASH_SKETCH, MASH_DIST, FOLDSEEK, MMSEQS, get_default
+from datasail.settings import CDHIT, MMSEQS2, MASH, MASH_SKETCH, MASH_DIST, FOLDSEEK, MMSEQS, get_default, CDHIT_EST
 
 
 def validate_user_args(
@@ -26,20 +26,95 @@ def validate_user_args(
     Returns:
         The namespace containing the parsed and validated arguments
     """
-    sim_none, dist_none = similarity is None, distance is None
-    both_none = sim_none and dist_none
-    if (not sim_none and similarity.lower() == CDHIT) or (both_none and get_default(dtype, dformat)[0] == CDHIT):
+    sim_on, dist_on = isinstance(similarity, str), isinstance(distance, str)
+    both_none = not sim_on and not dist_on
+    if (sim_on and similarity.lower().startswith(CDHIT)) or (both_none and get_default(dtype, dformat)[0] == CDHIT):
         return check_cdhit_arguments(tool_args)
-    elif (not sim_none and similarity.lower()[:6] == MMSEQS) or (
-            both_none and get_default(dtype, dformat)[0] == MMSEQS2):
+    if (sim_on and similarity.lower().startswith(CDHIT_EST)) or (both_none and get_default(dtype, dformat)[0] == CDHIT_EST):
+        return check_cdhit_est_arguments(tool_args)
+    elif (sim_on and similarity.lower().startswith(MMSEQS)) or (both_none and get_default(dtype, dformat)[0] in [MMSEQS, MMSEQS2]):
         return check_mmseqs_arguments(tool_args)
-    elif (not sim_none and similarity.lower() == FOLDSEEK) or (
-            both_none and get_default(dtype, dformat)[0] == FOLDSEEK):
-        return check_mash_arguments(tool_args)
-    elif (not dist_none and distance.lower() == MASH) or (both_none and get_default(dtype, dformat)[1] == MASH):
+    elif (sim_on and similarity.lower().startswith(FOLDSEEK)) or (both_none and get_default(dtype, dformat)[0] == FOLDSEEK):
+        return check_foldseek_arguments(tool_args)
+    elif (dist_on and distance.lower().startswith(MASH)) or (both_none and get_default(dtype, dformat)[1] == MASH):
         return check_mash_arguments(tool_args)
     else:
         return None
+
+
+def check_cdhit_est_arguments(args: str = "") -> Namespace:
+    """
+    Validate the custom arguments provided to DataSAIL for executing CD-HIT-EST.
+
+    Args:
+        args: String of the arguments that can be set by user
+    """
+    # args = args.split(" ") if " " in args else (args if isinstance(args, list) else [args])
+    args = MultiYAMLParser(CDHIT_EST).parse_args(args)
+    # Check if -c, -s, -aL, -aS, -uL, -uS values are within the valid range
+    if not (0 <= args.c <= 1):
+        raise ValueError("Invalid value for -c. It should be between 0 and 1.")
+    if not (0 <= args.s <= 1):
+        raise ValueError("Invalid value for -s. It should be between 0 and 1.")
+    if not (0 <= args.aL <= 1):
+        raise ValueError("Invalid value for -aL. It should be between 0 and 1.")
+    if not (0 <= args.aS <= 1):
+        raise ValueError("Invalid value for -aS. It should be between 0 and 1.")
+    if not (0 <= args.uL <= 1):
+        raise ValueError("Invalid value for -uL. It should be between 0 and 1.")
+    if not (0 <= args.uS <= 1):
+        raise ValueError("Invalid value for -uS. It should be between 0 and 1.")
+
+    # Check if -G, -p, -g, -sc, -sf, -bak values are either 0 or 1
+    if args.G not in [0, 1]:
+        raise ValueError("Invalid value for -G. It should be either 0 or 1.")
+    if args.g not in [0, 1]:
+        raise ValueError("Invalid value for -g. It should be either 0 or 1.")
+    # if not ((args.n == 5 and 0.8 <= args.c < 0.85) or
+    #         (args.n == 6 and 0.85 <= args.c < 0.88) or
+    #         (args.n == 7 and 0.88 <= args.c < 0.9) or
+    #         (args.n in [8, 9, 10] and 0.9 <= args.c <= 1.0)):
+    #     raise ValueError("There are restrictions on the values for n and c in CD-HIT:\n"
+    #                      "n == 5 <=> c in [0.8, 0.85]\n"
+    #                      "n == 6 <=> c in [0.85, 0.88]\n"
+    #                      "n == 5 <=> c in [0.88, 0.9]\n"
+    #                      "n in [8, 9, 10] <=> c in [0.9, 1.0]")
+
+    # Check other values are within the valid range
+    if not (1 <= args.b <= 32):
+        raise ValueError("Invalid value for -b. It should be between 1 and 32.")
+    if not (0 <= args.M):
+        raise ValueError("Invalid value for -M. It should be greater than or equal to 0.")
+    if not (0 <= args.T):
+        raise ValueError("Invalid value for -T. It should be greater than or equal to 0.")
+    if not (0 <= args.n):
+        raise ValueError("Invalid value for -n. It should be greater than or equal to 0.")
+    if not (0 <= args.S <= 4294967296):
+        raise ValueError("Invalid value for -S. It should be between 0 and 4294967296.")
+    if not (0 <= args.AL):
+        raise ValueError("Invalid value for -AL. It should be greater than or equal to 0.")
+    if not (0 <= args.AS):
+        raise ValueError("Invalid value for -AS. It should be greater than or equal to 0.")
+    if not (0 <= args.A):
+        raise ValueError("Invalid value for -A. It should be greater than or equal to 0.")
+    if not (0 <= args.U):
+        raise ValueError("Invalid value for -U. It should be greater than or equal to 0.")
+
+    if args.G == 0 and (args.aL != 0.0 or args.AL != 99999999):
+        raise ValueError("Options -G 0 is incompatible with -aL and -AL.")
+    if args.s != 0.0 and args.S != 999999:
+        raise ValueError("Options -s and -S are incompatible.")
+    if args.aL != 0.0 and args.AL != 99999999:
+        raise ValueError("Options -aL and -AL are incompatible.")
+    if args.aS != 0.0 and args.AS != 99999999:
+        raise ValueError("Options -aS and -AS are incompatible.")
+    if args.uL != 1.0 and (args.uS != 1.0 or args.U != 99999999):
+        raise ValueError("Option -uL is incompatible with -uS and -U.")
+    if args.A != 0 and (args.aL != 0.0 or args.AL != 99999999):
+        raise ValueError("Option -A is incompatible with -aL and -AL.")
+    if args.A != 0 and (args.aS != 0.0 or args.AS != 99999999):
+        raise ValueError("Option -A is incompatible with -aS and -AS.")
+    return args
 
 
 def check_cdhit_arguments(args: str = "") -> Namespace:

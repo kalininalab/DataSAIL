@@ -12,7 +12,7 @@ from datasail.reader.utils import read_csv
 @pytest.mark.parametrize("size", ["perf_7_3", "perf_70_30"])
 def test_caching(size):
     os.makedirs(f"data/{size}/splits/", exist_ok=True)
-    dataset, _ = read_molecule_data(
+    dataset = read_molecule_data(
         data="data/perf_7_3/lig.tsv",
         sim="data/perf_7_3/lig_sim.tsv",
         inter=list(read_csv("data/perf_7_3/inter.tsv")),
@@ -29,7 +29,7 @@ def test_caching(size):
 @pytest.mark.parametrize("size", ["perf_7_3", "perf_70_30"])
 def test_shuffling(size):
     os.makedirs(f"data/{size}/splits/", exist_ok=True)
-    original_dataset, _ = read_molecule_data(
+    original_dataset = read_molecule_data(
         data="data/perf_7_3/lig.tsv",
         sim="data/perf_7_3/lig_sim.tsv",
         inter=list(read_csv("data/perf_7_3/inter.tsv")),

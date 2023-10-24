@@ -1,7 +1,7 @@
 import argparse
 import os
 from pydoc import locate
-from typing import Dict, List, Sequence, Optional
+from typing import Dict, List, Sequence
 
 import yaml
 
@@ -85,12 +85,12 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "--techniques",
         type=str,
         required=True,
-        choices=[TEC_R, TEC_ICS + MODE_E, TEC_ICS + MODE_F, TEC_ICD, TEC_CCS + MODE_E, TEC_CCS + MODE_F, TEC_CCD],
+        choices=[TEC_R, TEC_I1 + MODE_E, TEC_I1 + MODE_F, TEC_I2, TEC_C1 + MODE_E, TEC_C1 + MODE_F, TEC_C2],
         nargs="+",
         dest=KW_TECHNIQUES,
         help=f"Select the mode to split the data. Choices: {TEC_R}: Random split, "
-             f"{TEC_ICS}: identity-based one-dimensional split, {TEC_ICD}: identity-based two-dimensional split, "
-             f"{TEC_CCS}: cluster-based one-dimensional split, {TEC_CCD}: cluster-based two_dimensional split"
+             f"{TEC_I1}: identity-based one-dimensional split, {TEC_I2}: identity-based two-dimensional split, "
+             f"{TEC_C1}: cluster-based one-dimensional split, {TEC_C2}: cluster-based two_dimensional split"
     )
     split.add_argument(
         "-s",
@@ -132,7 +132,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         type=str,
         choices=[SOLVER_GLPK, SOLVER_SCIP, SOLVER_CPLEX, SOLVER_GUROBI, SOLVER_MOSEK, SOLVER_XPRESS],
         dest=KW_SOLVER,
-        help="Solver to use to solve the BLP. The free options is SCIP. CPLEX, GUROBI, MOSEK, and XPRESS are "
+        help="Solver to use to solve the BLP. Free options are GLPK_MI and SCIP. CPLEX, GUROBI, MOSEK, and XPRESS are "
              "also supported, but commercial and need to be installed separately. Check the docu for more information."
     )
     split.add_argument(
@@ -319,7 +319,7 @@ class MultiYAMLParser(argparse.ArgumentParser):
         for name, values in data.items():
             kwargs = {"dest": name.replace("-", "_"), "type": locate(values["type"])}
             if kwargs["type"] == bool:
-                if values["default"] == False:
+                if not values["default"]:
                     kwargs.update({"action": "store_true", "default": False})
                 else:
                     kwargs.update({"action": "store_false", "default": True})

@@ -3,18 +3,18 @@ import logging
 import operator
 import sys
 
-from typing import List, Optional, Union, Tuple, Set, Collection, Dict
+from typing import List, Optional, Union, Tuple, Collection, Dict, Callable
 
 import cvxpy
-from cvxpy import Variable, Expression
+from cvxpy import Variable
 from cvxpy.constraints.constraint import Constraint
 import numpy as np
 
 from datasail.settings import LOGGER, SOLVER_CPLEX, SOLVER_GLPK, SOLVER_XPRESS, SOLVER_SCIP, SOLVER_MOSEK, \
-    SOLVER_GUROBI, SOLVERS
+    SOLVER_GUROBI, SOLVERS, NOT_ASSIGNED
 
 
-def compute_limits(epsilon: float, total: int, splits: List[float]) -> Tuple[List[float], List[float]]:
+def compute_limits(epsilon: float, total: int, splits: List[float]) -> List[float]:
     """
     Compute the lower and upper limits for the splits based on the total number of interactions and the epsilon.
 
@@ -26,8 +26,7 @@ def compute_limits(epsilon: float, total: int, splits: List[float]) -> Tuple[Lis
     Returns:
         lower and upper limits for the splits
     """
-    return [int(split * (1 + epsilon) * total) for split in splits], \
-        [int(split * (1 - epsilon) * total) for split in splits]
+    return [int((split - epsilon) * total) for split in splits]
 
 
 def inter_mask(
@@ -201,79 +200,24 @@ def sample_categorical(
     return output
 
 
-def interaction_constraints(
-        e_data: List[str],
-        f_data: List[str],
-        inter: Union[Set[Tuple[str, str]], np.ndarray],
-        x_e: List[Variable],
-        x_f: List[Variable],
-        x_i: List[Variable],
-        s: int
-) -> List[Constraint]:
-    """
-    Define the constraints that two clusters are in the same split iff their interaction (if exists) is in that split.
-
-    Args:
-        e_data: Names of datapoints in the e-dataset
-        f_data: Names of datapoints in the f-dataset
-        inter: a set of interactions between pairs of entities
-        x_e: List of variables for the e-dataset
-        x_f: List of variables for the f-dataset
-        x_i: List of variables for the interactions
-        s: Current split to consider
-
-    Returns:
-        A list of cvxpy constraints
-    """
-    constraints = []
-    for i, e1 in enumerate(e_data):
-        for j, e2 in enumerate(f_data):
-            if isinstance(inter, np.ndarray) or (e1, e2) in inter:
-                # constraints.append(x_i[s][i, j] >= (x_e[s][:, 0][i] + x_f[s][:, 0][j] - 1.5))
-                # constraints.append(x_i[s][i, j] <= (x_e[s][:, 0][i] + x_f[s][:, 0][j]) * 0.5)
-                # constraints.append(x_e[s][:, 0][i] >= x_i[s][i, j])
-                # constraints.append(x_f[s][:, 0][j] >= x_i[s][i, j])
-                constraints.append(x_i[s][i, j] >= cvxpy.maximum(x_e[s][:, 0][i] + x_f[s][:, 0][j] - 1, 0))
-                constraints.append(x_i[s][i, j] <= 0.75 * (x_e[s][:, 0][i] + x_f[s][:, 0][j]))
-    return constraints
-
-
-def cluster_sim_dist_constraint(
-        similarities: Optional[np.ndarray],
-        distances: Optional[np.ndarray],
-        threshold: np.ndarray,
-        ones: np.ndarray,
-        x: List[Variable],
-        s: int
-) -> List[Constraint]:
-    """
-    Define the constraints on similarities between samples in difference splits or distances of samples in the same
-    split.
-
-    Args:
-        similarities: Similarity matrix of the data
-        distances: Distance matrix of the data
-        threshold: Threshold to apply
-        ones: Vector to help in the computations
-        x: List of variables for the dataset
-        s: Split to consider
-
-    Returns:
-        A list of cvxpy constraints
-    """
-    if distances is not None:
-        return cvxpy.multiply(
-            cvxpy.maximum((x[s] @ ones) + cvxpy.transpose(x[s] @ ones) - (ones.T @ ones), 0), distances
-        ) <= threshold
-    return cvxpy.multiply(((x[s] @ ones) - cvxpy.transpose(x[s] @ ones)) ** 2, similarities) <= threshold
-
-
 def generate_baseline(
         splits: List[float],
         weights: Union[np.ndarray, List[float]],
         similarities: Optional[np.ndarray],
         distances: Optional[np.ndarray],
-):
+) -> float:
+    """
+    Generate a baseline solution for the double-cold splitting problem.
+
+    Args:
+        splits: List of relative sizes of the splits
+        weights: List of weights of the entities
+        similarities: Pairwise similarity matrix of entities in the order of their names
+        distances: Pairwise distance matrix of entities in the order of their names
+
+    Returns:
+        The amount of information leakage in a random double-cold splitting
+    """
     indices = sorted(list(range(len(weights))), key=lambda i: -weights[i])
     max_sizes = np.array(splits) * sum(weights)
     sizes = [0] * len(splits)
@@ -306,48 +250,146 @@ def generate_baseline(
              range(len(splits))], axis=0) / (len(splits) - 1)
         leak_matrix = np.multiply(hit_matrix, similarities)
 
-    return np.sum(leak_matrix)
+    return float(np.sum(leak_matrix))
 
 
-def cluster_sim_dist_objective(
-        similarities: Optional[np.ndarray],
-        distances: Optional[np.ndarray],
-        ones: np.ndarray,
-        weights: Union[np.ndarray, List[float]],
-        x: List[Variable],
-        splits: List[float]
-) -> Expression:
+def interaction_contraints(
+        e_entities: List[str],
+        f_entities: List[str],
+        x_i: Dict[Tuple[str, str], Variable],
+        constraints: List,
+        splits: List[float],
+        x_e: Variable,
+        x_f: Variable,
+        min_lim: List[float],
+        weighting: Callable,
+        is_valid: Callable
+) -> None:
     """
-    Construct an objective function of the variables based on a similarity or distance matrix.
+    Generate constraints for the interactions in the cluster-based double-cold splitting.
 
     Args:
-        similarities: Similarity matrix of the dataset
-        distances: Distance matrix of the dataset
-        ones: Vector to help in the computations
-        weights: weights of the entities
-        x: Dictionary of indices and variables for the e-dataset
-        splits: Splits as list of their relative size
+        e_entities: List of names of the entities in the e-dataset
+        f_entities: List of names of the entities in the f-dataset
+        x_i: Optimization variables for the interactions
+        constraints: List of constraints
+        splits: List of splits
+        x_e: Optimization variables for the e-dataset
+        x_f: Optimization variables for the f-dataset
+        min_lim: List of lower limits for the split sizes
+        weighting: Function to compute the weight of an interaction
+        is_valid: Function to check if an interaction is valid
+    """
+    for s, split in enumerate(splits):
+        constraints.append(min_lim[s] <= cvxpy.sum([x_i[key][s] * weighting(key) for key in x_i]))
+        for i in range(len(e_entities)):
+            for j in range(len(f_entities)):
+                index = is_valid(i, j)
+                if index is not None:
+                    constraints.append(x_i[index][s] >= cvxpy.maximum(x_e[s][i] + x_f[s][j] - 1, 0))
+                    constraints.append(x_i[index][s] <= 0.75 * (x_e[s][i] + x_f[s][j]))
+
+
+def cluster_y_constraints(
+        uniform: bool,
+        clusters: List[str],
+        y: List[List[Variable]],
+        x: Variable,
+        splits: List[float],
+) -> List[Constraint]:
+    """
+    Generate constraints for the helper variables y in the cluster-based double-cold splitting.
+
+    Args:
+        uniform: Boolean flag if the cluster metric is uniform
+        clusters: List of cluster names
+        y: List of helper variables
+        x: Optimization variables
+        splits: List of splits
 
     Returns:
-        An objective function to minimize
+        List of constraints for the helper variables y
     """
-    if isinstance(weights, List):
-        weights = np.array(weights)
+    if uniform:
+        return []
+    return [y[c1][c2] >= cvxpy.max(cvxpy.vstack([x[s, c1] - x[s, c2] for s in range(len(splits))]))
+            for c1 in range(len(clusters)) for c2 in range(c1)]
 
-    baseline = generate_baseline(splits, weights, similarities, distances)
 
-    weight_matrix = weights.T @ weights
+def collect_results_2d(
+        problem: cvxpy.Problem,
+        names: List[str],
+        splits: List[float],
+        e_entities: List[str],
+        f_entities: List[str],
+        x_e: Variable,
+        x_f: Variable,
+        x_i: Dict[Tuple[str, str], Variable],
+        is_valid: Callable,
+) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[object, str], Dict[object, str]]]:
+    """
+    Report the found solution for two-dimensional splits.
 
-    if distances is not None:
-        hit_matrix = cvxpy.sum(
-            [cvxpy.maximum((x[s] @ ones) + cvxpy.transpose(x[s] @ ones) - (ones.T @ ones), 0) for s in
-             range(len(splits))])
-        leak_matrix = cvxpy.multiply(hit_matrix, distances)
+    Args:
+        problem: Problem object after solving.
+        names: List of names of the splits.
+        splits: List of the relative sizes of the splits.
+        e_entities: List of names of entities in the e-dataset.
+        f_entities: List of names of entities in the f-dataset.
+        x_e: Optimization variables for the e-dataset.
+        x_f: Optimization variables for the f-dataset.
+        x_i: Optimization variables for the interactions.
+        is_valid: Function to check if an interaction is valid.
+
+    Returns:
+        A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
+    """
+    if problem is None:
+        return None
+
+    # report the found solution
+    output = (
+        {},
+        {e: names[s] for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[s, i].value > 0.1},
+        {f: names[s] for s in range(len(splits)) for j, f in enumerate(f_entities) if x_f[s, j].value > 0.1},
+    )
+    for i, e in enumerate(e_entities):
+        for j, f in enumerate(f_entities):
+            index = is_valid(i, j)
+            if index is not None:
+                for b in range(len(splits)):
+                    if x_i[index][b].value > 0:
+                        output[0][e, f] = names[b]
+                if sum(x_i[index][b].value for b in range(len(splits))) == 0:
+                    output[0][e, f] = NOT_ASSIGNED
+
+    return output
+
+
+def leakage_loss(
+        uniform: bool,
+        intra_weights,
+        y,
+        clusters,
+        similarities
+):
+    """
+    Compute the leakage loss for the cluster-based double-cold splitting.
+
+    Args:
+        uniform: Boolean flag if the cluster metric is uniform
+        intra_weights: Weights of the intra-cluster edges
+        y: Helper variables
+        clusters: List of cluster names
+        similarities: Pairwise similarity matrix of clusters in the order of their names
+
+    Returns:
+        Loss describing the leakage between clusters
+    """
+    if uniform:
+        return 0
     else:
-        hit_matrix = cvxpy.sum([((x[s] @ ones) - cvxpy.transpose(x[s] @ ones)) ** 2 for s in range(len(splits))]) / (
-                    len(splits) - 1)
-        leak_matrix = cvxpy.multiply(hit_matrix, similarities)
-
-    leak_matrix = cvxpy.multiply(leak_matrix, weight_matrix)
-    # leakage = cvxpy.sum(leak_matrix) / cvxpy.sum(cvxpy.multiply(hit_matrix, weight_matrix))  # accurate computation
-    return cvxpy.sum(leak_matrix) / baseline
+        tmp = [intra_weights[c1, c2] * y[c1][c2] for c1 in range(len(clusters)) for c2 in range(c1)]
+        e_loss = cvxpy.sum(tmp)
+        if similarities is None:
+            return -e_loss

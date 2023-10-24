@@ -1,12 +1,11 @@
 import os
-from typing import List, Tuple, Dict, Any, Optional, Callable, Generator
+from typing import List, Tuple, Optional, Callable, Generator, Union, Iterable
 
-import pandas as pd
+import numpy as np
 from rdkit import Chem
-from rdkit.Chem import MolToSmiles, MolFromMol2File, MolFromMolFile, MolFromPDBFile, MolFromPNGFile, \
+from rdkit.Chem import MolFromMol2File, MolFromMolFile, MolFromPDBFile, MolFromPNGFile, \
     MolFromTPLFile, MolFromXYZFile
 
-from datasail.cluster.utils import read_molecule_encoding
 from datasail.reader.utils import read_csv, DataSet, read_data, DATA_INPUT, MATRIX_INPUT
 from datasail.settings import M_TYPE, UNK_LOCATION, FORM_SMILES
 
@@ -29,11 +28,10 @@ def read_molecule_data(
         dist: MATRIX_INPUT = None,
         max_sim: float = 1.0,
         max_dist: float = 1.0,
-        id_map: Optional[str] = None,
         inter: Optional[List[Tuple[str, str]]] = None,
         index: Optional[int] = None,
         tool_args: str = "",
-) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
+) -> DataSet:
     """
     Read in molecular data, compute the weights, and distances or similarities of every entity.
 
@@ -44,7 +42,6 @@ def read_molecule_data(
         dist: Distance file or metric
         max_sim: Maximal similarity between entities in two splits
         max_dist: Maximal similarity between entities in one split
-        id_map: Mapping of ids in case of duplicates in the dataset
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
         tool_args: Additional arguments for the tool
@@ -69,6 +66,8 @@ def read_molecule_data(
         else:
             raise ValueError()
         dataset.location = data
+    elif isinstance(data, Union[list, tuple]) and isinstance(data[0], Iterable) and len(data[0]) == 2:
+        dataset.data = dict(data)
     elif isinstance(data, dict):
         dataset.data = data
     elif isinstance(data, Callable):
@@ -78,74 +77,69 @@ def read_molecule_data(
     else:
         raise ValueError()
 
-    dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, tool_args, dataset)
+    dataset = read_data(weights, sim, dist, max_sim, max_dist, inter, index, tool_args, dataset)
+    dataset = remove_molecule_duplicates(dataset)
 
-    return dataset, inter
+    return dataset
 
 
-def remove_molecule_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[str, Any]:
+def remove_molecule_duplicates(dataset: DataSet) -> DataSet:
     """
     Remove duplicates from molecular input data by checking if the input molecules are the same. If a molecule cannot
     be read by RDKit, it will be considered unique and survive the check.
 
     Args:
-        prefix: Prefix of the data. This is either 'e_' or 'f_'
-        output_dir: Directory to store data to in case of detected duplicates
-        **kwargs: Arguments for this data input
+        dataset: The dataset to remove duplicates from
 
     Returns:
         Update arguments as teh location of the data might change and an ID-Map file might be added.
     """
-    output_args = {prefix + k: v for k, v in kwargs.items()}
-    if not isinstance(kwargs["data"], str) or not kwargs["data"].lower().endswith(".tsv"):
-        return output_args
-    # TODO: turn off rdkit errors and warnings
-    else:
-        input_data = dict(read_csv(kwargs["data"]))
-        molecules = {k: read_molecule_encoding(v) for k, v in input_data.items()}
 
     # Extract invalid molecules
     non_mols = []
     valid_mols = dict()
-    for k, mol in molecules.items():
-        if mol is None:
+    for k, mol in dataset.data.items():
+        molecule = Chem.MolFromSmiles(mol)
+        if molecule is None:
             non_mols.append(k)
         else:
-            valid_mols[k] = MolToSmiles(mol)
+            valid_mols[k] = Chem.MolToInchi(molecule)
 
-    id_list = []  # unique ids
-    id_map = {}  # mapping of all ids to their representative
-    duplicate_found = False
-    for idx, seq in valid_mols.items():
-        for q_id in id_list:
-            if seq == valid_mols[q_id]:
-                id_map[idx] = q_id
-                duplicate_found = True
-        if idx not in id_map:
-            id_list.append(idx)
-            id_map[idx] = idx
-
-    # no duplicates found, no further action necessary
-    if not duplicate_found:
-        return output_args
+    return remove_duplicate_values(dataset, valid_mols)
 
     # update the lists and maps with the "invalid" molecules
-    valid_mols.update({k: input_data[k] for k in non_mols})
-    id_list += non_mols
-    id_map.update({k: k for k in non_mols})
+    # valid_mols.update({k: input_data[k] for k in non_mols})
+    # id_list += non_mols
+    # id_map.update({k: k for k in non_mols})
 
-    # store the new SMILES TSV file
-    smiles_filename = os.path.abspath(os.path.join(output_dir, "tmp", prefix + "smiles.tsv"))
-    pd.DataFrame(
-        [(idx, valid_mols[idx]) for idx in id_list], columns=["Representatives", "SMILES"]
-    ).to_csv(smiles_filename, sep="\t", columns=["Representatives", "SMILES"], index=False)
-    output_args[prefix + "data"] = smiles_filename
+    # return id_map
 
-    # store the mapping of IDs
-    id_map_filename = os.path.join(output_dir, "tmp", prefix + "id_map.tsv")
-    pd.DataFrame(
-        [(x1, id_map.get(x2, "")) for x1, x2 in id_map.items()], columns=["ID", "Cluster_ID"],
-    ).to_csv(id_map_filename, sep="\t", columns=["ID", "Cluster_ID"], index=False)
-    output_args[prefix + "id_map"] = id_map_filename
 
-    return output_args
+def remove_duplicate_values(dataset, data) -> DataSet:
+    tmp = dict()
+    for idx, mol in data.items():
+        if mol not in tmp:
+            tmp[mol] = []
+        tmp[mol].append(idx)
+    dataset.id_map = {idx: ids[0] for ids in tmp.values() for idx in ids}
+
+    ids = set()
+    for i, name in enumerate(dataset.names):
+        if name not in dataset.id_map:
+            ids.add(i)
+            continue
+        if dataset.id_map[name] != name:
+            dataset.weights[dataset.id_map[name]] += dataset.weights[name]
+            del dataset.data[name]
+            del dataset.weights[name]
+            ids.add(i)
+    dataset.names = [name for i, name in enumerate(dataset.names) if i not in ids]
+    ids = list(ids)
+    if isinstance(dataset.similarity, np.ndarray):
+        dataset.similarity = np.delete(dataset.similarity, ids, axis=0)
+        dataset.similarity = np.delete(dataset.similarity, ids, axis=1)
+    if isinstance(dataset.distance, np.ndarray):
+        dataset.distance = np.delete(dataset.distance, ids, axis=0)
+        dataset.distance = np.delete(dataset.distance, ids, axis=1)
+
+    return dataset

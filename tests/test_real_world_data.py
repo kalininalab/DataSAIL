@@ -1,10 +1,13 @@
 import os
+import shutil
 from os.path import isdir, isfile, join
 
+import pandas as pd
 import pytest
 
 from datasail.reader.read_proteins import parse_fasta
 from datasail.reader.utils import read_csv
+from datasail.settings import NOT_ASSIGNED
 from tests.utils import run_sail
 
 
@@ -41,9 +44,9 @@ from tests.utils import run_sail
 def test_full_single_colds(ligand_data, ligand_weights, protein_data, protein_weights, interactions, output):
     techniques = []
     if ligand_data is not None:
-        techniques += ["ICSe", "CCSe"]
+        techniques += ["I1e", "C1e"]
     if protein_data is not None:
-        techniques += ["ICSf", "CCSf"]
+        techniques += ["I1f", "C1f"]
 
     run_sail(
         inter=interactions,
@@ -64,45 +67,89 @@ def test_full_single_colds(ligand_data, ligand_weights, protein_data, protein_we
 
     if ligand_data is not None:
         name_prefix = "Protein_e_seqs" if "sabdab" in ligand_data else "Molecule_e_smiles"
-        assert isdir(join(output, "ICSe"))
+        assert isdir(join(output, "I1e"))
         if interactions is not None:
-            assert isfile(join(output, "ICSe", "inter.tsv"))
-            assert check_inter_completeness(interactions, join(output, "ICSe", "inter.tsv"), ["train", "test"])
-        assert isfile(join(output, "ICSe", name_prefix + "_splits.tsv"))
-        assert check_split_completeness(ligand_data, join(output, "ICSe", name_prefix + "_splits.tsv"), ["train", "test"])
+            assert isfile(join(output, "I1e", "inter.tsv"))
+            assert check_inter_completeness(interactions, join(output, "I1e", "inter.tsv"), ["train", "test"])
+        assert isfile(join(output, "I1e", name_prefix + "_splits.tsv"))
+        assert check_split_completeness(ligand_data, join(output, "I1e", name_prefix + "_splits.tsv"), ["train", "test"])
 
-        assert isdir(join(output, "CCSe"))
+        assert isdir(join(output, "C1e"))
         if interactions is not None:
-            assert isfile(join(output, "CCSe", "inter.tsv"))
-            assert check_inter_completeness(interactions, join(output, "CCSe", "inter.tsv"), ["train", "test"])
-        assert isfile(join(output, "CCSe", name_prefix + "_cluster_hist.png"))
-        assert isfile(join(output, "CCSe", name_prefix + "_clusters.png"))
-        assert isfile(join(output, "CCSe", name_prefix + "_clusters.tsv"))
-        assert isfile(join(output, "CCSe", name_prefix + "_splits.tsv"))
-        assert check_split_completeness(ligand_data, join(output, "CCSe", name_prefix + "_splits.tsv"), ["train", "test"])
+            assert isfile(join(output, "C1e", "inter.tsv"))
+            assert check_inter_completeness(interactions, join(output, "C1e", "inter.tsv"), ["train", "test"])
+        assert isfile(join(output, "C1e", name_prefix + "_cluster_hist.png"))
+        assert isfile(join(output, "C1e", name_prefix + "_clusters.png"))
+        assert isfile(join(output, "C1e", name_prefix + "_clusters.tsv"))
+        assert isfile(join(output, "C1e", name_prefix + "_splits.tsv"))
+        assert check_split_completeness(ligand_data, join(output, "C1e", name_prefix + "_splits.tsv"), ["train", "test"])
 
     if protein_data is not None:
-        assert isdir(join(output, "ICSf"))
+        assert isdir(join(output, "I1f"))
         if interactions is not None:
-            assert isfile(join(output, "ICSf", "inter.tsv"))
-            assert check_inter_completeness(interactions, join(output, "ICSf", "inter.tsv"), ["train", "test"])
-        assert isfile(join(output, "ICSf", "Protein_f_seqs_splits.tsv"))
-        assert check_split_completeness(protein_data, join(output, "ICSf", "Protein_f_seqs_splits.tsv"), ["train", "test"])
+            assert isfile(join(output, "I1f", "inter.tsv"))
+            assert check_inter_completeness(interactions, join(output, "I1f", "inter.tsv"), ["train", "test"])
+        assert isfile(join(output, "I1f", "Protein_f_seqs_splits.tsv"))
+        assert check_split_completeness(protein_data, join(output, "I1f", "Protein_f_seqs_splits.tsv"), ["train", "test"])
 
-        assert isdir(join(output, "CCSf"))
+        assert isdir(join(output, "C1f"))
         if interactions is not None:
-            assert isfile(join(output, "CCSf", "inter.tsv"))
-            assert check_inter_completeness(interactions, join(output, "CCSf", "inter.tsv"), ["train", "test"])
-        assert isfile(join(output, "CCSf", "Protein_f_seqs_cluster_hist.png"))
-        assert isfile(join(output, "CCSf", "Protein_f_seqs_clusters.png"))
-        assert isfile(join(output, "CCSf", "Protein_f_seqs_clusters.tsv"))
-        assert isfile(join(output, "CCSf", "Protein_f_seqs_splits.tsv"))
-        assert check_split_completeness(protein_data, join(output, "CCSf", "Protein_f_seqs_splits.tsv"), ["train", "test"])
+            assert isfile(join(output, "C1f", "inter.tsv"))
+            assert check_inter_completeness(interactions, join(output, "C1f", "inter.tsv"), ["train", "test"])
+        assert isfile(join(output, "C1f", "Protein_f_seqs_cluster_hist.png"))
+        assert isfile(join(output, "C1f", "Protein_f_seqs_clusters.png"))
+        assert isfile(join(output, "C1f", "Protein_f_seqs_clusters.tsv"))
+        assert isfile(join(output, "C1f", "Protein_f_seqs_splits.tsv"))
+        assert check_split_completeness(protein_data, join(output, "C1f", "Protein_f_seqs_splits.tsv"), ["train", "test"])
 
     assert isdir(join(output, "logs"))
     assert isdir(join(output, "tmp"))
 
-    # shutil.rmtree(output)
+    shutil.rmtree(output)
+
+
+def test_all_pdbbind_splits():
+    df = pd.read_csv("data/rw_data/LP_PDBBind.csv")  # .iloc[:1000, :]
+    run_sail(
+        inter=[(x[0], x[0]) for x in df[["ids"]].values.tolist()],
+        output="data/rw_data/pdbbind_splits",
+        techniques=["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"],
+        splits=[0.8, 0.2],
+        names=["train", "test"],
+        epsilon=0.1,
+        e_type="M",
+        e_data=df[["ids", "Ligand"]].values.tolist(),
+        f_type="P",
+        f_data=df[["ids", "Target"]].values.tolist(),
+        solver="SCIP",
+        threads=1
+    )
+
+    assert isdir("data/rw_data/pdbbind_splits")
+    assert isdir("data/rw_data/pdbbind_splits/R")
+    assert isdir("data/rw_data/pdbbind_splits/I1e")
+    assert isdir("data/rw_data/pdbbind_splits/I1f")
+    assert isdir("data/rw_data/pdbbind_splits/I2")
+    assert isdir("data/rw_data/pdbbind_splits/C1e")
+    assert isdir("data/rw_data/pdbbind_splits/C1f")
+    assert isdir("data/rw_data/pdbbind_splits/C2")
+
+    assert isfile("data/rw_data/pdbbind_splits/R/inter.tsv")
+    assert isfile("data/rw_data/pdbbind_splits/I1e/inter.tsv")
+    assert isfile("data/rw_data/pdbbind_splits/I1f/inter.tsv")
+    assert isfile("data/rw_data/pdbbind_splits/I2/inter.tsv")
+    assert isfile("data/rw_data/pdbbind_splits/C1e/inter.tsv")
+    assert isfile("data/rw_data/pdbbind_splits/C1f/inter.tsv")
+    assert isfile("data/rw_data/pdbbind_splits/C2/inter.tsv")
+
+    for technique in ["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"]:
+        df = pd.read_csv(f"data/rw_data/pdbbind_splits/{technique}/inter.tsv", sep="\t")
+        assert df.shape == [19122, 3]
+        assert set(df.columns).issubset({"E_ID", "F_ID", "Split"})
+        assert set(df["Split"].unique()).issubset({"train", "test", NOT_ASSIGNED})
+        vc = df["Split"].value_counts().to_dict()
+        assert vc["train"] / (vc["train"] + vc["test"]) > 0.69
+        assert vc["test"] > 10
 
 
 def check_inter_completeness(input_inter_filename, split_inter_filename, split_names):

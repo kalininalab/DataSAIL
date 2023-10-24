@@ -2,31 +2,31 @@ from typing import Tuple, Optional, List
 
 from pytest_cases import lazy_value
 
-from datasail.reader.read import read_data, check_duplicates
+from datasail.reader.read import read_data
 from datasail.reader.utils import DataSet
 from datasail.sail import datasail
 from tests.pipeline_package_fixtures import *
 
 
 @pytest.mark.parametrize("data", [
-    (True, False, None, None, None, False, None, None, False, "ICSf"),
-    (True, False, "wlk", None, None, False, None, None, False, "ICSf"),
-    (False, False, None, None, None, False, None, None, False, "ICSf"),
-    (False, False, "mmseqs", None, None, False, None, None, False, "ICSf"),
-    (False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "ICSf"),
-    (False, False, None, "data/pipeline/prot_dist.tsv", None, False, None, None, False, "ICSf"),
-    (False, True, None, None, None, False, None, None, False, "ICSf"),
-    (None, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "ICSe"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "ICSe"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", True, None, None, False, "ICSe"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, "data/pipeline/drug_sim.tsv", None, False, "ICSe"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", True, "wlk", None, False, "ICSe"),  # <-- 10/11
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "ICSe"),
-    (True, False, "wlk", None, "data/pipeline/drugs.tsv", False, "wlk", None, True, "ICSf"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "CCSe"),
+    (True, False, None, None, None, False, None, None, False, "I1f"),
+    (True, False, "wlk", None, None, False, None, None, False, "I1f"),
+    (False, False, None, None, None, False, None, None, False, "I1f"),
+    (False, False, "mmseqs", None, None, False, None, None, False, "I1f"),
+    (False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "I1f"),
+    (False, False, None, "data/pipeline/prot_dist.tsv", None, False, None, None, False, "I1f"),
+    (False, True, None, None, None, False, None, None, False, "I1f"),
+    (None, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "I1e"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "I1e"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", True, None, None, False, "I1e"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, "data/pipeline/drug_sim.tsv", None, False, "I1e"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", True, "wlk", None, False, "I1e"),  # <-- 10/11
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "I1e"),
+    (True, False, "wlk", None, "data/pipeline/drugs.tsv", False, "wlk", None, True, "I1f"),
+    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "C1e"),
     # (False, False, "data/pipeline/prot_sim.tsv", None, "data/pipeline/drugs.tsv", False, None,
-    #  "data/pipeline/drug_dist.tsv", False, "CCSf"),
-    # (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "CCSe"),
+    #  "data/pipeline/drug_dist.tsv", False, "C1f"),
+    # (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "C1e"),
 ])
 def test_pipeline(data):
     pdb, prot_weights, prot_sim, prot_dist, drugs, drug_weights, drug_sim, drug_dist, inter, mode = data
@@ -55,31 +55,38 @@ def test_pipeline(data):
 
 
 @pytest.mark.parametrize(
-    "ligand_type,ligand_data,ligand_weights,ligand_sim,protein_type,protein_data,protein_weights,protein_sim,interactions,combo", [
+    "ligand_type,ligand_data,ligand_weights,ligand_sim,protein_type,protein_data,protein_weights,protein_sim,interactions,combo",
+    [
         ("M", lazy_value(mibig_dict), None, None, None, None, None, None, None, "e|mibig|_|_"),
         (None, None, None, None, "M", lazy_value(mibig_returner), None, None, None, "_|_|f|mibig"),
         ("M", lazy_value(mibig_generator), None, None, None, None, None, None, None, "e|mibig|_|_"),
-        ("P", lazy_value(mave_dict), lazy_value(mave_weights_returner), None, None, None, None, None, None, "e|mave|_|_"),
-        (None, None, None, None, "P", lazy_value(mave_returner), lazy_value(mave_weights_generator), None, None, "_|_|f|mave"),
-        ("P", lazy_value(mave_generator), lazy_value(mave_weights_dict), None, None, None, None, None, None, "e|mave|_|_"),
-        ("P", lazy_value(sabdab_ag_dict), None, None, "P", lazy_value(sabdab_vh_returner), None, None, lazy_value(sabdab_inter_generator), "e|sabdab_ag|f|sabdab_vh"),
-        ("P", lazy_value(sabdab_ag_returner), None, None, "P", lazy_value(sabdab_vh_generator), None, None, lazy_value(sabdab_inter_list), "e|sabdab_ag|f|sabdab_vh"),
-        ("P", lazy_value(sabdab_ag_generator), None, None, "P", lazy_value(sabdab_vh_dict), None, None, lazy_value(sabdab_inter_returner), "e|sabdab_ag|f|sabdab_vh"),
+        ("P", lazy_value(mave_dict), lazy_value(mave_weights_returner), None, None, None, None, None, None,
+         "e|mave|_|_"),
+        (None, None, None, None, "P", lazy_value(mave_returner), lazy_value(mave_weights_generator), None, None,
+         "_|_|f|mave"),
+        ("P", lazy_value(mave_generator), lazy_value(mave_weights_dict), None, None, None, None, None, None,
+         "e|mave|_|_"),
+        ("P", lazy_value(sabdab_ag_dict), None, None, "P", lazy_value(sabdab_vh_returner), None, None,
+         lazy_value(sabdab_inter_generator), "e|sabdab_ag|f|sabdab_vh"),
+        ("P", lazy_value(sabdab_ag_returner), None, None, "P", lazy_value(sabdab_vh_generator), None, None,
+         lazy_value(sabdab_inter_list), "e|sabdab_ag|f|sabdab_vh"),
+        ("P", lazy_value(sabdab_ag_generator), None, None, "P", lazy_value(sabdab_vh_dict), None, None,
+         lazy_value(sabdab_inter_returner), "e|sabdab_ag|f|sabdab_vh"),
     ])
 def test_pipeline_inputs(
-        ligand_type, ligand_data, ligand_weights, ligand_sim, protein_type, protein_data, protein_weights, protein_sim, interactions, combo,
+        ligand_type, ligand_data, ligand_weights, ligand_sim, protein_type, protein_data, protein_weights, protein_sim,
+        interactions, combo,
         mave_dataset, mibig_dataset, sabdab_ag_dataset, sabdab_vh_dataset,
 ):
     def read_data_sub(
             inter=None, e_type=None, e_data=None, e_weights=None, e_sim=None, f_type=None, f_data=None,
             f_weights=None, f_sim=None,
-    ) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]]], Optional[List[Tuple[str, str]]]]:
-        kwargs = check_duplicates(
+    ) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]]]]:
+        kwargs = dict(
             inter=inter, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=None, e_max_sim=1,
             e_max_dist=1, e_args="", f_type=f_type, f_data=f_data, f_weights=f_weights, f_sim=f_sim, f_dist=None,
             f_max_sim=1, f_max_dist=1, f_args="",
         )
-
         # read e-entities and f-entities
         return read_data(**kwargs)
 
@@ -90,7 +97,7 @@ def test_pipeline_inputs(
             return mibig_dataset
         return sabdab_ag_dataset if name == "sabdab_ag" else sabdab_vh_dataset
 
-    e_dataset, f_dataset, interactions, old_inter = read_data_sub(
+    e_dataset, f_dataset, interactions = read_data_sub(
         inter=interactions, e_type=ligand_type, e_data=ligand_data, e_weights=ligand_weights, e_sim=ligand_sim,
         f_type=protein_type, f_data=protein_data, f_weights=protein_weights, f_sim=protein_sim,
     )
@@ -114,7 +121,7 @@ def test_report():
     e_name_split_map, f_name_split_map, inter_split_map = datasail(
         inter="data/perf_7_3/inter.tsv",
         max_sec=100,
-        techniques=["R", "ICSe", "ICSf", "ICD", "CCSe", "CCSf", "CCD"],
+        techniques=["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"],
         splits=[0.7, 0.3],
         names=["train", "test"],
         epsilon=0.25,
@@ -127,27 +134,27 @@ def test_report():
         solver="SCIP",
     )
 
-    assert "ICSe" in e_name_split_map
-    assert "ICSf" in f_name_split_map
-    assert "ICSe" in inter_split_map
-    assert "ICSf" in inter_split_map
-    assert "ICD" in e_name_split_map
-    assert "ICD" in f_name_split_map
-    assert "ICD" in inter_split_map
-    assert "CCSe" in e_name_split_map
-    assert "CCSf" in f_name_split_map
-    assert "CCSe" in inter_split_map
-    assert "CCSf" in inter_split_map
-    assert "CCD" in e_name_split_map
-    assert "CCD" in f_name_split_map
-    assert "CCD" in inter_split_map
+    assert "I1e" in e_name_split_map
+    assert "I1f" in f_name_split_map
+    assert "I1e" in inter_split_map
+    assert "I1f" in inter_split_map
+    assert "I2" in e_name_split_map
+    assert "I2" in f_name_split_map
+    assert "I2" in inter_split_map
+    assert "C1e" in e_name_split_map
+    assert "C1f" in f_name_split_map
+    assert "C1e" in inter_split_map
+    assert "C1f" in inter_split_map
+    assert "C2" in e_name_split_map
+    assert "C2" in f_name_split_map
+    assert "C2" in inter_split_map
 
 
 @pytest.mark.todo
 def test_genomes():
     e_name_split_map, f_name_split_map, inter_split_map = datasail(
         max_sec=100,
-        techniques=["ICSe", "CCSe"],
+        techniques=["I1e", "C1e"],
         splits=[0.7, 0.3],
         names=["train", "test"],
         epsilon=0.25,
@@ -160,8 +167,8 @@ def test_genomes():
         solver="SCIP",
     )
 
-    assert "ICSe" in e_name_split_map
-    assert "CCSe" in e_name_split_map
+    assert "I1e" in e_name_split_map
+    assert "C1e" in e_name_split_map
     assert len(f_name_split_map) == 0
     assert len(inter_split_map) == 0
 

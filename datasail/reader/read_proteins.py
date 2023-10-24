@@ -1,11 +1,11 @@
 import os
-from typing import Generator, Tuple, Dict, List, Any, Optional, Set, Callable
+from typing import Generator, Tuple, Dict, List, Optional, Set, Callable, Union, Iterable
 
 import numpy as np
-import pandas as pd
 
+from datasail.reader.read_molecules import remove_duplicate_values
 from datasail.reader.utils import read_csv, DataSet, read_data, read_folder, DATA_INPUT, MATRIX_INPUT
-from datasail.settings import P_TYPE, UNK_LOCATION, FORM_PDB, FORM_FASTA, KW_DATA, FASTA_FORMATS
+from datasail.settings import P_TYPE, UNK_LOCATION, FORM_PDB, FORM_FASTA, FASTA_FORMATS
 
 
 def read_protein_data(
@@ -15,11 +15,10 @@ def read_protein_data(
         dist: MATRIX_INPUT = None,
         max_sim: float = 1.0,
         max_dist: float = 1.0,
-        id_map: Optional[str] = None,
         inter: Optional[List[Tuple[str, str]]] = None,
         index: Optional[int] = None,
         tool_args: str = "",
-) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
+) -> DataSet:
     """
     Read in protein data, compute the weights, and distances or similarities of every entity.
 
@@ -30,7 +29,6 @@ def read_protein_data(
         dist: Distance file or metric
         max_sim: Maximal similarity between entities in two splits
         max_dist: Maximal similarity between entities in one split
-        id_map: Mapping of ids in case of duplicates in the dataset
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
         tool_args: Additional arguments for the tool
@@ -49,6 +47,8 @@ def read_protein_data(
         else:
             raise ValueError()
         dataset.location = data
+    elif isinstance(data, Union[list, tuple]) and isinstance(data[0], Iterable) and len(data[0]) == 2:
+        dataset.data = dict(data)
     elif isinstance(data, dict):
         dataset.data = data
     elif isinstance(data, Callable):
@@ -60,67 +60,10 @@ def read_protein_data(
 
     dataset.format = FORM_PDB if os.path.exists(next(iter(dataset.data.values()))) else FORM_FASTA
 
-    dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, id_map, inter, index, tool_args, dataset)
+    dataset = read_data(weights, sim, dist, max_sim, max_dist, inter, index, tool_args, dataset)
+    dataset = remove_duplicate_values(dataset, dataset.data)
 
-    return dataset, inter
-
-
-def remove_protein_duplicates(prefix: str, output_dir: str, **kwargs) -> Dict[str, Any]:
-    """
-    Remove duplicates in protein input. This is done for FASTA input as well as for PDB input.
-
-    Args:
-       prefix: Prefix of the data. This is either 'e_' or 'f_'
-       output_dir: Directory to store data to in case of detected duplicates
-        **kwargs: Arguments for this data input
-
-    Returns:
-        Update arguments as teh location of the data might change and an ID-Map file might be added.
-    """
-    # read the data
-    output_args = {prefix + k: v for k, v in kwargs.items()}
-    if not isinstance(kwargs[KW_DATA], str):
-        return output_args
-    if kwargs[KW_DATA].split(".")[-1].lower() in FASTA_FORMATS:
-        sequences = parse_fasta(kwargs[KW_DATA])
-    elif os.path.isfile(kwargs[KW_DATA]):
-        sequences = dict(read_csv(kwargs[KW_DATA]))
-    else:
-        # input is PDB data. TODO: Identity detection with PDB files
-        return output_args
-
-    id_list = []  # unique ids
-    id_map = {}  # mapping of all ids to their representative
-    duplicate_found = False
-    for idx, seq in sequences.items():
-        for q_id in id_list:
-            if seq == sequences[q_id]:
-                id_map[idx] = q_id
-                duplicate_found = True
-        if idx not in id_map:
-            id_list.append(idx)
-            id_map[idx] = idx
-
-    # no duplicates found, no further action necessary
-    if not duplicate_found:
-        return output_args
-
-    # store the new FASTA file
-    fasta_filename = os.path.abspath(os.path.join(output_dir, "tmp", prefix + "seqs.fasta"))
-    with open(fasta_filename, "w") as out:
-        for idx in id_list:
-            print(f">{idx}\n{sequences[idx]}", file=out)
-    output_args[prefix + "data"] = fasta_filename
-
-    # store the mapping of IDs
-    id_map_filename = os.path.join(output_dir, "tmp", prefix + "id_map.tsv")
-    pd.DataFrame(
-        [(x1, x2) for x1, x2 in id_map.items()],
-        columns=["Name", "Representative"],
-    ).to_csv(id_map_filename, sep="\t", columns=["Name", "Representative"], index=False)
-    output_args[prefix + "id_map"] = id_map_filename
-
-    return output_args
+    return dataset
 
 
 def parse_fasta(path: str = None) -> Dict[str, str]:
@@ -141,7 +84,7 @@ def parse_fasta(path: str = None) -> Dict[str, str]:
             if len(line) == 0:
                 continue
             if line[0] == '>':
-                entry_id = line[1:].replace(" ", "_")
+                entry_id = line[1:]  # .replace(" ", "_")
                 seq_map[entry_id] = ''
             else:
                 seq_map[entry_id] += line
