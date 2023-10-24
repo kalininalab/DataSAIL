@@ -81,6 +81,9 @@ def run_solver(
                 log_file = None if log_dir is None else os.path.join(log_dir, f"{dataset.get_name()}_{technique}.log")
 
                 if technique == TEC_R:
+                    # losing interactions here: from 19074 to 18810 (round about 1.5%)
+                    # This magically is the number of assignments for the other splits as well
+                    # SOLUTION: new inter contains duplicates?!
                     solution = sample_categorical(
                         inter=inter,
                         splits=splits,

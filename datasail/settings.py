@@ -28,8 +28,11 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
                 return CDHIT, None
     if data_type == M_TYPE and data_format == FORM_SMILES:
         return ECFP, None
-    if data_type == G_TYPE and data_format == FORM_FASTA:
-        return None, MASH
+    if data_type == G_TYPE:
+        if data_format == FORM_FASTA:
+            return CDHIT_EST, None
+        elif data_format == FORM_GENOMES:
+            return None, MASH
     return None, None
 
 
@@ -57,15 +60,17 @@ MMSEQS = "mmseqs"
 MMSEQS2 = "mmseqs2"
 FOLDSEEK = "foldseek"
 CDHIT = "cdhit"
+CDHIT_EST = "cdhit_est"
 ECFP = "ecfp"
 MASH = "mash"
 MASH_SKETCH = "mash_sketch"
 MASH_DIST = "mash"
 TMALIGN = "tmalign"
-SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, FOLDSEEK, CDHIT, ECFP, ]
+SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, ]
 DIST_ALGOS = [MASH, ]
 INSTALLED = {
     CDHIT: shutil.which("cd-hit") is not None,
+    CDHIT_EST: shutil.which("cd-hit-est") is not None,
     MMSEQS: shutil.which("mmseqs") is not None,
     MMSEQS2: shutil.which("mmseqs") is not None,
     MASH: shutil.which("mash") is not None,
@@ -80,6 +85,7 @@ G_TYPE = "G"
 O_TYPE = "O"
 FASTA_FORMATS = {"fasta", "fa", "fna"}
 FORM_FASTA = "FASTA"
+FORM_GENOMES = "Genomes"
 FORM_OTHER = "Other"
 FORM_PDB = "PDB"
 FORM_SMILES = "SMILES"
@@ -90,6 +96,7 @@ YAML_FILE_NAMES = {
     MMSEQS: "args/mmseqs2.yaml",
     MMSEQS2: "args/mmseqs2.yaml",
     CDHIT: "args/cdhit.yaml",
+    CDHIT_EST: "args/cdhit_est.yaml",
     FOLDSEEK: "args/foldseek.yaml",
     ECFP: "args/.yaml",
     MASH_SKETCH: "args/mash_sketch.yaml",

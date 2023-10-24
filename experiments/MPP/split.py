@@ -13,7 +13,7 @@ def split_w_datasail(name):
     dataset = mpp_datasets[name][0](featurizer=dc.feat.DummyFeaturizer(), splitter=None)[1][0]
     df = dc2pd(dataset, name)
 
-    for tech in ["ICSe", "CCSe"]:
+    for tech in ["I1e", "C1e"]:
         for run in range(RUNS):
             try:
                 path = base / tech / f"split_{run}"

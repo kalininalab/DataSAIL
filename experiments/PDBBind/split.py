@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import pickle
 
 import deepchem as dc
 import numpy as np
@@ -89,7 +90,7 @@ def main():
         techniques=["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"],
         splits=[8, 2],
         names=["train", "test"],
-        runs=1,
+        runs=5,
         solver="SCIP",
         inter=[(x[0], x[0]) for x in df[["ids"]].values.tolist()],
         e_type="M",
@@ -101,6 +102,7 @@ def main():
         max_sec=1000,
         epsilon=0.05,
     )
+    pickle.dump((e_splits, f_splits, inter_splits), open("lppdbbind_full.pkl", "wb"))
 
     for technique in inter_splits:
         for run in range(len(inter_splits[technique])):
@@ -130,6 +132,12 @@ def random(path):
 
 
 if __name__ == '__main__':
+    df = load_lp_pdbbind()
+    print(df.head())
+    df.to_csv("tests/data/LP_PDBBind.csv", index=False)
     # extract(pickle.load(open("backup_scip.pkl", "rb"))[-1])
-    main()
+    # main()
     # random(Path("experiments") / "PDBBind" / "random_lp")
+    # df = load_lp_pdbbind()
+    # e_splits, f_splits, inter_splits = pickle.load(open("lppdbbind_save.pkl", "rb"))
+    # split_to_dataset(df, inter_splits["I1e"][0], Path("experiments") / "PDBBind" / "lppdbbind_full" / "I1e" / f"split_{0}")

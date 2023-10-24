@@ -197,7 +197,6 @@ def test_wlkernel_molecule(molecule_data):
 
 @pytest.mark.parametrize("algo", [CDHIT, MMSEQS])
 def test_force_clustering(algo):
-    print()
     dataset = cluster(DataSet(
         type=P_TYPE,
         format=FORM_FASTA,

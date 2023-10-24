@@ -3,9 +3,12 @@ import subprocess
 import sys
 
 import deepchem as dc
+import esm
+import numpy as np
 import pandas as pd
+import torch
 from rdkit import Chem
-
+from rdkit.Chem import AllChem
 
 RUNS = 5
 MPP_EPOCHS = 50
@@ -37,6 +40,38 @@ splitters = {
     "Butina": dc.splits.ButinaSplitter(),
     "Fingerprint": dc.splits.FingerprintSplitter(),
 }
+
+
+num_layers = 12
+model, alphabet = esm.pretrained.esm2_t12_35M_UR50D()
+batch_converter = alphabet.get_batch_converter()
+model.eval()
+
+
+def embed_smiles(smile):
+    mol = Chem.MolFromSmiles(smile)
+    if mol is None:
+        print("Failed")
+        return [0] * 1024
+    return list(AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=1024))
+
+
+def embed_aaseqs(aaseq):
+    batch_labels, batch_strs, batch_tokens = batch_converter([("query", aaseq)])
+    batch_lens = (batch_tokens != alphabet.padding_idx).sum(1)
+    with torch.no_grad():
+        results = model(batch_tokens, repr_layers=[num_layers], return_contacts=True)
+        token_representations = results["representations"][num_layers]
+
+        sequence_representations = []
+        for i, tokens_len in enumerate(batch_lens):
+            sequence_representations.append(token_representations[i, 1: tokens_len - 1].mean(0))
+        return sequence_representations[0].numpy()
+
+
+def get_bounds(values, axis=0):
+    mean = np.mean(values, axis=axis)
+    return mean - np.std(values, axis=axis), mean + np.std(values, axis=axis)
 
 
 def dc2pd(ds, ds_name):

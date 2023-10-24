@@ -1,6 +1,5 @@
 import time
 from typing import Dict, Tuple
-import pickle
 
 from datasail.argparse_patch import remove_patch
 from datasail.cluster.clustering import cluster
@@ -74,29 +73,28 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     LOGGER.info("Store results")
 
     # infer interaction assignment from entity assignment if necessary and possible
-    if inter is not None:
+    output_inter_split_map = dict()
+    if new_inter is not None:
         for technique in kwargs[KW_TECHNIQUES]:
-            if len(inter_split_map.get(technique, [])) < kwargs[KW_RUNS]:
-                for run in range(kwargs[KW_RUNS]):
-                    if e_name_split_map.get(technique, None) is not None:
-                        insert(
-                            inter_split_map,
-                            technique,
-                            {(e, f): e_name_split_map[technique][run].get(e_dataset.id_map[e], NOT_ASSIGNED)
-                             for e, f in inter}
-                        )
-                    if f_name_split_map.get(technique, None) is not None:
-                        insert(
-                            inter_split_map,
-                            technique,
-                            {(e, f): f_name_split_map[technique][run].get(f_dataset.id_map[f], NOT_ASSIGNED)
-                             for e, f in inter},
-                        )
+            output_inter_split_map[technique] = []
+            for run in range(kwargs[KW_RUNS]):
+                output_inter_split_map[technique].append(dict())
+                for e, f in inter:
+                    if technique.endswith(DIM_2) or technique == "R":
+                        output_inter_split_map[technique][-1][(e, f)] = inter_split_map[technique][run].get(
+                            (e_dataset.id_map.get(e, ""), f_dataset.id_map.get(f, "")), NOT_ASSIGNED)
+                    elif technique in e_name_split_map:
+                        output_inter_split_map[technique][-1][(e, f)] = e_name_split_map[technique][run].get(
+                            e_dataset.id_map.get(e, ""), NOT_ASSIGNED)
+                    elif technique in f_name_split_map:
+                        output_inter_split_map[technique][-1][(e, f)] = f_name_split_map[technique][run].get(
+                            f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
+                    else:
+                        raise ValueError()
 
     LOGGER.info("BQP splitting finished and results stored.")
     LOGGER.info(f"Total runtime: {time.time() - start:.5f}s")
-    pickle.dump((inter_split_map, e_name_split_map, f_name_split_map, e_cluster_split_map, f_cluster_split_map),
-                open("save.pkl", "wb"))
+
     if kwargs[KW_OUTDIR] is not None:
         report(
             techniques=kwargs[KW_TECHNIQUES],
@@ -106,7 +104,7 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
             f_name_split_map=f_name_split_map,
             e_cluster_split_map=e_cluster_split_map,
             f_cluster_split_map=f_cluster_split_map,
-            inter_split_map=inter_split_map,
+            inter_split_map=output_inter_split_map,
             runs=kwargs[KW_RUNS],
             output_dir=kwargs[KW_OUTDIR],
             split_names=kwargs[KW_NAMES],
@@ -114,7 +112,7 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     else:
         full_e_name_split_map = fill_split_maps(e_dataset, e_name_split_map)
         full_f_name_split_map = fill_split_maps(f_dataset, f_name_split_map)
-        return full_e_name_split_map, full_f_name_split_map, inter_split_map
+        return full_e_name_split_map, full_f_name_split_map, output_inter_split_map
 
 
 def fill_split_maps(dataset: DataSet, name_split_map: Dict) -> Dict:

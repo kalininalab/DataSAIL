@@ -9,8 +9,7 @@ from matplotlib import gridspec
 from sklearn.manifold import TSNE
 from sympy.physics.control.control_plots import matplotlib, plt
 
-from experiments.PDBBind.visualize import embed_smiles, embed_aaseqs, get_bounds, read_markdowntable
-from experiments.utils import RUNS, USE_UMAP
+from experiments.utils import RUNS, USE_UMAP, embed_smiles, embed_aaseqs
 
 
 def read_log(path):
@@ -53,6 +52,7 @@ def read_single_data(name, path, encodings):
 
                 for split in ["train", "test"]:
                     for aa_seq in aaseqs[split]:
+                        aa_seq = aa_seq.replace(":", "G")[:1022]
                         if aa_seq not in encodings["p_map"]:
                             if aa_seq not in prot_embeds:
                                 prot_embeds[aa_seq] = embed_aaseqs(aa_seq)
@@ -77,8 +77,8 @@ def read_data():
         "d_map": {},
         "p_map": {},
     }
-    data = {n: read_single_data(n, Path("pdbbind") / n, encodings) for n in
-            ["R", "ICSe", "ICSf", "ICD", "CCSe", "CCSf", "CCD"]}
+    data = {n: read_single_data(n, Path("lppdbbind") / n, encodings) for n in
+            ["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"]}
 
     if USE_UMAP:
         prot_umap, drug_umap = umap.UMAP(), umap.UMAP()
@@ -92,7 +92,7 @@ def read_data():
     for d, trans in [("e", d_trans), ("f", p_trans)]:
         for m in "IC":
             for split in ["train", "test"]:
-                data[f"{m}CS{d}"][f"{split}_coord"] = trans[data[f"{m}CS{d}"][f"{split}_ids"]]
+                data[f"{m}1{d}"][f"{split}_coord"] = trans[data[f"{m}1{d}"][f"{split}_ids"]]
     return data
 
 
@@ -114,8 +114,8 @@ def plot_embeds(ax, data, mode, legend=None):
 def plot_full(data):
     matplotlib.rc('font', **{'size': 16})
     axis = 0
-    rand, icse, icsf, icd, ccse, ccsf, ccd = data["R"], data["ICSe"], data["ICSf"], data["ICD"], data["CCSe"], data[
-        "CCSf"], data["CCD"]
+    rand, icse, icsf, icd, ccse, ccsf, ccd = data["R"], data["I1e"], data["I1f"], data["I2"], data["C1e"], data["C1f"], \
+        data["C2"]
     x = np.arange(0.0, 50, 1)
 
     fig = plt.figure()
@@ -138,7 +138,7 @@ def plot_full(data):
                        (ccse, "Drug cluster-based"), (ccsf, "Prot cluster-based"), (ccd, "cluster-based 2D")]:
         # ax_full.fill_between(x, *get_bounds(tech["metric"], axis=axis), alpha=0.5)
         ax_full.plot(np.average(tech["metric"], axis=axis), label=name)
-    ax_full.set_ylabel("MSE of RMSE-prediction")
+    ax_full.set_ylabel("MSE")
     ax_full.set_xlabel("Epoch")
     ax_full.set_title("Performance comparison")
     ax_full.margins(x=0)
@@ -151,7 +151,7 @@ def plot_full(data):
 
 
 def analyze():
-    pkl_name = f"read_lpdata_{'umap' if USE_UMAP else 'tsne'}.pkl"
+    pkl_name = f"lpdata_{'umap' if USE_UMAP else 'tsne'}.pkl"
     if not os.path.exists(pkl_name):  # or True:
         data = read_data()
         with open(pkl_name, "wb") as out:

@@ -68,8 +68,6 @@ def run_ecfp(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     count = len(cluster_names)
     sim_matrix = np.zeros((count, count))
     for i in range(count):
-        # if i % 100 == 0:
-        #     print(f"\r{i + 1} / {count}", end="")
         sim_matrix[i, i] = 1
         sim_matrix[i, :i] = DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])
         sim_matrix[:i, i] = sim_matrix[i, :i]

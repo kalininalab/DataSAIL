@@ -1,8 +1,10 @@
-from typing import List, Tuple, Optional, Generator, Callable
+import os
+from typing import List, Tuple, Optional, Generator, Callable, Iterable, Union
 
 from datasail.reader.read_molecules import remove_duplicate_values
-from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_folder
-from datasail.settings import G_TYPE, UNK_LOCATION, FORM_FASTA
+from datasail.reader.read_proteins import parse_fasta
+from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_folder, read_csv
+from datasail.settings import G_TYPE, UNK_LOCATION, FORM_FASTA, FASTA_FORMATS, FORM_GENOMES
 
 
 def read_genome_data(
@@ -35,8 +37,18 @@ def read_genome_data(
     """
     dataset = DataSet(type=G_TYPE, location=UNK_LOCATION, format=FORM_FASTA)
     if isinstance(data, str):
-        dataset.data = dict(read_folder(data))
+        if data.split(".")[-1].lower() in FASTA_FORMATS:
+            dataset.data = parse_fasta(data)
+        elif os.path.isfile(data):
+            dataset.data = dict(read_csv(data))
+        elif os.path.isdir(data):
+            dataset.data = dict(read_folder(data))
+            dataset.format = FORM_GENOMES
+        else:
+            raise ValueError()
         dataset.location = data
+    elif isinstance(data, Union[list, tuple]) and isinstance(data[0], Iterable) and len(data[0]) == 2:
+        dataset.data = dict(data)
     elif isinstance(data, dict):
         dataset.data = data
     elif isinstance(data, Callable):

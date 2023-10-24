@@ -12,7 +12,8 @@ concrete input has to look like is described in the following.
 Data Input
   - FASTA:
     A simple fasta file with sequence headers and sequences. An exception is FASTA input to MASH for genomic data.
-    Here, the input has to be a folder of fasta files where each fasta file represents one genome.
+    Here, the input has to be a folder of fasta files where each fasta file represents one genome. The identifier in
+    the FASTA files have to be free of whitespaces, otherwise, CD-HIT will have problem and might cause errors.
   - PDB:
     This has to be a folder with PDB files. All files not ending with :code:`.pdb` will be ignored.
   - SMILES:

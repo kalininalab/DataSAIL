@@ -63,12 +63,12 @@ Required!
 
 Select the mode to split the data. Choices are
   * R: Random split,
-  * ICS: identity-based cold-single split,
-  * ICD: identity-based cold-double split,
-  * CCS: similarity-based cold-single split,
-  * CCD: similarity-based cold-double split
+  * I1: identity-based cold-single split,
+  * I2: identity-based cold-double split,
+  * C1: similarity-based cold-single split,
+  * C2: similarity-based cold-double split
 
-For both, ICS and CCS, you have to specify e or f, i.e. ICSe, ICSf, CCSe, or CCSf, to make clear if DataSAIL shall
+For both, I1 and C1, you have to specify e or f, i.e. I1e, I1f, C1e, or C1f, to make clear if DataSAIL shall
 compute a cold split based on the e-entity or the f-entity.
 
 -s / -\-splits
@@ -92,9 +92,7 @@ introduced by shuffling the dataset everytime a new split is requested.
 
 -\-solver
 ---------
-Which solver to use to solve the binary quadratic program. Choices are SCIP (free of charge) and MOSEK (licensed and
-only applicable if a valid mosek license is stored (see the `MOSEK website <https://www.mosek.com/>`__ for more
-information on licensing). Note: You can still use the program, even if you don't have a MOSEK license and rely on SCIP.
+Which solver to use to solve the binary linear program. The choices are presented :ref:`here <solver-label>`.
 
 -\-scalar
 ---------

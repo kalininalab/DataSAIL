@@ -36,7 +36,6 @@ def validate_args(**kwargs) -> Dict[str, object]:
     Returns:
         The kwargs in case something has been adjusted, e.g. splits normalization or naming
     """
-    print("Hell yeah, parsing args")
     # create output directory
     output_created = False
     if kwargs[KW_OUTDIR] is not None and not os.path.isdir(kwargs[KW_OUTDIR]):
@@ -214,10 +213,6 @@ def datasail(
     Returns:
         Three dictionaries mapping techniques to another dictionary. The inner dictionary maps input id to their splits.
     """
-    if names is None:
-        names = ["train", "val", "test"]
-    if splits is None:
-        splits = [0.7, 0.2, 0.1]
     kwargs = validate_args(
         output=None, techniques=techniques, inter=inter, max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
         splits=splits, names=names, epsilon=epsilon, runs=runs, solver=solver, cache=cache,

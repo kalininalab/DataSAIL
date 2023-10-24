@@ -43,7 +43,7 @@ on these matrices.
     * - CD-HIT
       - FASTA
       - \-
-      - \-
+      - FASTA
       - \-
       - Sim
       - No
@@ -143,6 +143,9 @@ The general command to run CD-HIT in DataSAIL is
     cd-hit -i <input> -o clusters -g 1 -n ? -c ?
 
 where the values for :code:`-n` and :code:`-c` are optimized as described above.
+
+To run CD-HIT for genomic input, provide the argument :code:`e_sim="cd-hit-est"` when calling from a python script and
+:code:`--e-sim=cd-hit-est` when calling from the command line.
 
 ECFP++
 ------
