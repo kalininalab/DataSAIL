@@ -22,3 +22,15 @@ log*.txt
 MoleculeNet.py
 run_moleculenet.sh
 viz_molnet.py
+/experiments/MPP/datasail/
+/experiments/MPP/deepchem/
+/experiments/PDBBind/lppdbbind/
+/experiments/PDBBind/runs/
+/experiments/segfault/
+/experiments/tsne/
+/experiments/umap/
+/experiments/david.py
+/experiments/MPP_timing.pkl
+/experiments/stiming.png
+/experiments/timing.png
+/runs/

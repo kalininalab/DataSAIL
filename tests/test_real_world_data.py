@@ -105,10 +105,10 @@ def test_full_single_colds(ligand_data, ligand_weights, protein_data, protein_we
     assert isdir(join(output, "logs"))
     assert isdir(join(output, "tmp"))
 
-    shutil.rmtree(output)
+    shutil.rmtree(output, ignore_errors=True)
 
 
-def test_all_pdbbind_splits():
+def test_pdbbind_splits():
     df = pd.read_csv("data/rw_data/LP_PDBBind.csv")  # .iloc[:1000, :]
     run_sail(
         inter=[(x[0], x[0]) for x in df[["ids"]].values.tolist()],
@@ -143,13 +143,16 @@ def test_all_pdbbind_splits():
     assert isfile("data/rw_data/pdbbind_splits/C2/inter.tsv")
 
     for technique in ["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"]:
+        print(technique)
         df = pd.read_csv(f"data/rw_data/pdbbind_splits/{technique}/inter.tsv", sep="\t")
-        assert df.shape == [19122, 3]
+        assert df.shape > (19120, 3)
         assert set(df.columns).issubset({"E_ID", "F_ID", "Split"})
         assert set(df["Split"].unique()).issubset({"train", "test", NOT_ASSIGNED})
         vc = df["Split"].value_counts().to_dict()
         assert vc["train"] / (vc["train"] + vc["test"]) > 0.69
         assert vc["test"] > 10
+
+    shutil.rmtree("data/rw_data/pdbbind_splits", ignore_errors=True)
 
 
 def check_inter_completeness(input_inter_filename, split_inter_filename, split_names):

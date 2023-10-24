@@ -10,7 +10,7 @@ from cvxpy import Variable
 from cvxpy.constraints.constraint import Constraint
 import numpy as np
 
-from datasail.settings import LOGGER, SOLVER_CPLEX, SOLVER_GLPK, SOLVER_XPRESS, SOLVER_SCIP, SOLVER_MOSEK, \
+from datasail.settings import LOGGER, SOLVER_CPLEX, SOLVER_XPRESS, SOLVER_SCIP, SOLVER_MOSEK, \
     SOLVER_GUROBI, SOLVERS, NOT_ASSIGNED
 
 

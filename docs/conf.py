@@ -8,9 +8,7 @@ import sphinx_rtd_theme
 sys.path.insert(0, os.path.abspath("./.."))
 
 import datasail
-
-with open("../recipe/meta.yaml") as meta_file:
-    version = meta_file.readlines()[2].split("\"")[1]
+from datasail.version import __version__
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -36,7 +34,7 @@ author = "Roman Joeres"
 project = "DataSAIL"
 copyright = f"{datetime.datetime.now().year}, {author}"
 
-release = version
+release = __version__
 
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
