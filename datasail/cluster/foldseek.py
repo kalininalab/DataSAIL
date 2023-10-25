@@ -75,6 +75,6 @@ def run_foldseek(
             cluster_sim[namap[q1], namap[q2]] = sim
             cluster_sim[namap[q2], namap[q1]] = sim
 
-    shutil.rmtree(results_folder)
+    shutil.rmtree(results_folder, ignore_errors=True)
 
     return dataset.names, dict((n, n) for n in dataset.names), cluster_sim

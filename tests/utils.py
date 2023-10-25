@@ -66,4 +66,4 @@ def check_folder(output_root, epsilon, e_weight, f_weight, e_filename, f_filenam
         if n == "I":
             break
 
-    shutil.rmtree(output_root)
+    shutil.rmtree(output_root, ignore_errors=True)

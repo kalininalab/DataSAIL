@@ -60,7 +60,7 @@ def run_mash(
     cluster_dist = read_mash_tsv(f"{results_folder}/cluster.tsv", len(names))
     cluster_names = names
 
-    shutil.rmtree(results_folder)
+    shutil.rmtree(results_folder, ignore_errors=True)
 
     return cluster_names, cluster_map, cluster_dist
 

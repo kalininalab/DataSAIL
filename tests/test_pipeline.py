@@ -257,7 +257,7 @@ def test_genomes():
         cache_dir=None,
     )
 
-    shutil.rmtree("data/genomes/out")
+    shutil.rmtree("data/genomes/out", ignore_errors=True)
 
 
 def check_identity_tsv(filename):

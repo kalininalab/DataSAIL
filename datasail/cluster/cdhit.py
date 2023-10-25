@@ -102,7 +102,7 @@ def cdhit_trial(
     cluster_names = list(set(cluster_map.values()))
     cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
 
-    shutil.rmtree(results_folder)
+    shutil.rmtree(results_folder, ignore_errors=True)
 
     return cluster_names, cluster_map, cluster_sim
 

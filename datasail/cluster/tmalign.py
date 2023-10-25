@@ -46,7 +46,7 @@ def run_tmalign(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray
 
     cluster_names, cluster_map, cluster_sim = dataset.names, dict((n, n) for n in dataset.names), \
         read_tmalign_folder(dataset, results_folder)
-    shutil.rmtree(results_folder)
+    shutil.rmtree(results_folder, ignore_errors=True)
 
     return cluster_names, cluster_map, cluster_sim
 

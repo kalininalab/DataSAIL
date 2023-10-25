@@ -11,9 +11,9 @@ def pytest_sessionstart(session):
 
 def pytest_sessionfinish(session):
     try:
-        shutil.rmtree("data/perf_7_3")
-        shutil.rmtree("data/perf_70_30")
-        shutil.rmtree("data/pipeline/out/")
+        shutil.rmtree("data/perf_7_3", ignore_errors=True)
+        shutil.rmtree("data/perf_70_30", ignore_errors=True)
+        shutil.rmtree("data/pipeline/out/", ignore_errors=True)
         if os.path.isfile("data/solver.log"):
             os.remove("data/solver.log")
         if os.path.isfile("solver.log"):

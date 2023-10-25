@@ -22,7 +22,7 @@ def train(model, name):
                 print(os.path.exists("experiments/MPP/{model}/cdata/{name}/{tech}/split_{run}/fold_0/"))
                 if os.path.exists("experiments/MPP/{model}/cdata/{name}/{tech}/split_{run}/fold_0/"):
                     print("Delete folder")
-                    shutil.rmtree("experiments/MPP/{model}/cdata/{name}/{tech}/split_{run}/fold_0/")
+                    shutil.rmtree("experiments/MPP/{model}/cdata/{name}/{tech}/split_{run}/fold_0/", ignore_errors=True)
 
                 train_df = pd.read_csv(f"experiments/MPP/{model}/cdata/{name}/{tech}/split_{run}/train.csv")
                 test_df = pd.read_csv(f"experiments/MPP/{model}/cdata/{name}/{tech}/split_{run}/test.csv")
