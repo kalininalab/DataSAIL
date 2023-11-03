@@ -37,7 +37,7 @@ pip install grakel
 to install it into a new empty environment or
 
 ````shell
-conda install -c conda-forge -c kalininalab -c bioconda MPP
+mamba install -c conda-forge -c kalininalab -c bioconda MPP
 pip install grakel
 ````
 
