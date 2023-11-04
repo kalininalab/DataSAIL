@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 import deepchem as dc
 import esm
@@ -33,7 +34,7 @@ mpp_datasets = {
 }
 
 
-splitters = {
+SPLITTERS = {
     "Scaffold": dc.splits.ScaffoldSplitter(),
     "Weight": dc.splits.MolecularWeightSplitter(),
     "MinMax": dc.splits.MaxMinSplitter(),
@@ -85,6 +86,24 @@ def dc2pd(ds, ds_name):
         df[ds.tasks.tolist()] = pd.to_numeric(df[ds.tasks.tolist()], downcast="integer")
         return df[["ID", "SMILES", "w"] + ds.tasks.tolist()]
     return df[["ID", "SMILES"] + ds.tasks.tolist()]
+
+
+def is_valid_smiles(smiles):
+    try:
+        mol = Chem.MolFromSmiles(smiles)
+        return mol is not None
+    except:
+        return False
+
+
+def load_lp_pdbbind():
+    df = pd.read_csv(Path("experiments") / "PDBBind" / "LP_PDBBind.csv")
+    df.rename(columns={"Unnamed: 0": "ids", "smiles": "Ligand", "seq": "Target", "value": "y"}, inplace=True)
+    df = df[["ids", "Ligand", "Target", "y"]]
+    df.dropna(inplace=True)
+    df = df[df.apply(lambda x: len(x["Ligand"]) <= 200 and len(x["Target"]) <= 2000, axis=1)]
+    df = df[df["Ligand"].apply(is_valid_smiles)]
+    return df
 
 
 def telegram(message: str = "Hello World"):

@@ -72,7 +72,7 @@ def train_model(folder, technique, run):
         del model_parameters
     global count
     count += 1
-    # telegram(f"[PDB {count} / 35] Training finished for PDBBind - {technique} - Run {run + 1}/5")
+    telegram(f"[PDB {count} / 35] Training finished for PDBBind - {technique} - Run {run + 1}/5")
 
 
 def read_val_rmse(folder):
@@ -84,10 +84,12 @@ def read_val_rmse(folder):
 
 
 def main():
-    for technique in ["R", "ICSe", "ICSf", "ICD", "CCSe", "CCSf", "CCD"]:
-        for run in range(RUNS):
-            print(f"Train {technique} - {run}")
-            train_model(Path("experiments") / "PDBBind" / "data_scip_improved" / technique / f"split_{run}", technique, run)
+    # for tool, techniques in [("deepchem", ["Scaffold", "Weight"])]:
+    for tool, techniques in [("deepchem", ["MinMax", "Fingerprint", "Butina"])]:
+        for tech in techniques:
+            for run in range(RUNS):
+                print(f"Train {tech} - {run}")
+                train_model(Path("experiments") / "PDBBind" / tool / tech / f"split_{run}", tech, run)
 
 
 if __name__ == '__main__':

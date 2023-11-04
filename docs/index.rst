@@ -10,18 +10,18 @@ The code for Data Splitting Against Information Leakage, short DataSAIL, is avai
 Quick Start
 ===========
 
-DataSAIL currently only runs in Python 3.10. Therefore, you have to install it into a Python 3.10 environment. For
+DataSAIL currently only runs in any oficially supported version of Python (3.7, 3.8, 3.9, 3.10, 3.11). For
 conda, this can be created by running
 
 .. code-block:: shell
 
-    conda create -n datasail python=3.10
+    conda create -n datasail
 
 Other than described on the conda-website, the command to install DataSAIL within your just created environment is
 
 .. code-block:: shell
 
-    mamba install -c kalininalab -c conda-forge -c bioconda datasail
+    mamba install -c kalininalab -c mosek -c conda-forge -c bioconda datasail
     pip install grakel
 
 The second command is necessary to run WLK clustering as the grakel library is not available on conda for python 3.10.

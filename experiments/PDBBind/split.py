@@ -1,78 +1,16 @@
 import os
+import sys
 from pathlib import Path
-import pickle
 
-import deepchem as dc
 import numpy as np
 import pandas as pd
-from rdkit import Chem, RDLogger
+from deepchem.data import DiskDataset
+import lohi_splitter as lohi
 
 from datasail.sail import datasail
+from experiments.utils import load_lp_pdbbind, SPLITTERS, RUNS, telegram
 
-threetoone = {
-    "CYS": "C",
-    "ASP": "D",
-    "SER": "S",
-    "GLN": "Q",
-    "LYS": "K",
-    "ILE": "I",
-    "PRO": "P",
-    "THR": "T",
-    "PHE": "F",
-    "ASN": "N",
-    "GLY": "G",
-    "HIS": "H",
-    "LEU": "L",
-    "ARG": "R",
-    "TRP": "W",
-    "ALA": "A",
-    "VAL": "V",
-    "GLU": "E",
-    "TYR": "Y",
-    "MET": "M",
-}
-lg = RDLogger.logger()
-lg.setLevel(RDLogger.CRITICAL)
-
-
-def load_pdbbind(set_name="general"):
-    dataset = dc.molnet.load_pdbbind(featurizer=dc.feat.DummyFeaturizer(), splitter=None, set_name=set_name)
-    df = dataset[1][0].to_dataframe()
-    df.rename(columns={"X1": "Ligand", "X2": "Target"}, inplace=True)
-    df = df[["ids", "Ligand", "Target", "y"]]
-    df["Ligand"] = df["Ligand"].apply(mol2smiles)
-    df["Target"] = df["Target"].apply(pdb_to_sequence)
-    df.dropna(inplace=True)
-    df.set_index("ids", inplace=True)
-    df["ids"] = df.index
-    return df
-
-
-def mol2smiles(x):
-    try:
-        mol = Chem.MolFromMol2File(x.replace(".sdf", ".mol2"))
-        if mol is None:
-            return None
-        return Chem.MolToSmiles(mol)
-    except:
-        return None
-
-
-def pdb_to_sequence(pdb_filename: str):
-    try:
-        pdb_filename = pdb_filename.replace("pocket", "protein")
-        sequences = {}
-        with open(pdb_filename, "r") as data:
-            for line in data.readlines():
-                if line[:4] == "ATOM" and line[12:16].strip() == "CA":
-                    res = line[20:22].strip()
-                    if res not in sequences:
-                        sequences[res] = ""
-                    sequences[res] += threetoone[line[17:20].strip()]
-        longest = max(sequences.items(), key=lambda x: len(x[1]))
-        return longest[1]
-    except:
-        return None
+count = 0
 
 
 def split_to_dataset(df, assignment, target_dir):
@@ -83,14 +21,15 @@ def split_to_dataset(df, assignment, target_dir):
     df[test].to_csv(target_dir / "test.csv")
 
 
-def main():
+def split_w_datasail():
+    base = Path("experiments") / "PDBBind" / "datasail"
     df = load_lp_pdbbind()
 
     e_splits, f_splits, inter_splits = datasail(
         techniques=["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"],
         splits=[8, 2],
         names=["train", "test"],
-        runs=5,
+        runs=RUNS,
         solver="SCIP",
         inter=[(x[0], x[0]) for x in df[["ids"]].values.tolist()],
         e_type="M",
@@ -102,42 +41,124 @@ def main():
         max_sec=1000,
         epsilon=0.05,
     )
-    pickle.dump((e_splits, f_splits, inter_splits), open("lppdbbind_full.pkl", "wb"))
 
     for technique in inter_splits:
         for run in range(len(inter_splits[technique])):
-            split_to_dataset(df, inter_splits[technique][run], Path("experiments") / "PDBBind" / "lppdbbind" / technique / f"split_{run}")
+            split_to_dataset(df, inter_splits[technique][run], base / technique / f"split_{run}")
 
 
-def load_lp_pdbbind():
-    df = pd.read_csv("/home/rjo21/Downloads/LP_PDBBind.csv")
-    df.rename(columns={"Unnamed: 0": "ids", "smiles": "Ligand", "seq": "Target", "value": "y"}, inplace=True)
-    df = df[["ids", "Ligand", "Target", "y"]]
-    df.dropna(inplace=True)
-    return df
-
-
-def random(path):
-    os.makedirs(path, exist_ok=True)
-    # df = load_pdbbind("refined")
+def split_w_deepchem():
+    base = Path("experiments") / "PDBBind" / "deepchem"
     df = load_lp_pdbbind()
-    train_mask = np.random.choice([True, False], len(df), replace=True, p=[0.8, 0.2])
-    test_mask = ~train_mask
-    df[train_mask].to_csv(path / "train.csv", index=False)
-    df[test_mask].to_csv(path / "test.csv", index=False)
-    df["split"] = ["train" if x else "test" for x in train_mask]
-    df.rename(columns={"Ligand": "ligands", "Target": "proteins", "y": "affinity"}, inplace=True)
-    df = df[df.apply(lambda x: len(x["ligands"]) <= 200 and len(x["proteins"]) <= 2000, axis=1)]
-    df.to_csv(path / "lp_pdbbind.csv", index=False)
+    ds = DiskDataset.from_numpy(X=np.zeros(len(df)), ids=df["Ligand"].tolist(),
+                                y=df["y"].tolist())  # , ids=df["ids"].tolist())
+
+    for run in range(RUNS):
+        for tech in SPLITTERS:
+            try:
+                path = base / tech / f"split_{run}"
+                os.makedirs(path, exist_ok=True)
+
+                with open(path / "start.txt", "w") as start:
+                    print("Start", file=start)
+
+                train_set, test_set = SPLITTERS[tech].train_test_split(ds, frac_train=0.8)
+
+                df[df["Ligand"].isin(set(train_set.ids))].to_csv(path / "train.csv", index=False)
+                df[df["Ligand"].isin(set(test_set.ids))].to_csv(path / "test.csv", index=False)
+                global count
+                count += 1
+                telegram(
+                    f"[PDBBind {count} / 25] Splitting finished for PDBBind - deepchem - {tech} - Run {run + 1} / 5")
+            except Exception as e:
+                print("=" * 80 + f"\n{e}\n" + "=" * 80)
+        ds = ds.complete_shuffle()
+
+
+def split_w_lohi():
+    base = Path("experiments") / "PDBBind" / "lohi"
+    df = load_lp_pdbbind()
+
+    for run in range(RUNS):
+        try:
+            path = base / "lohi" / f"split_{run}"
+            os.makedirs(path, exist_ok=True)
+
+            with open(path / "start.txt", "w") as start:
+                print("Start", file=start)
+
+            train_test_partition = lohi.hi_train_test_split(
+                smiles=list(df["Ligand"]),
+                similarity_threshold=0.4,
+                train_min_frac=0.7,
+                test_min_frac=0.1,
+                coarsening_threshold=0.4,
+                max_mip_gap=0.1,
+                verbose=False,
+            )
+
+            df.iloc[train_test_partition[0]].to_csv(path / "train.csv", index=False)
+            df.iloc[train_test_partition[1]].to_csv(path / "test.csv", index=False)
+            global count
+            count += 1
+            telegram(f"[PDBBind {count} / 35] Splitting finished for PDBBind - lohi - Run {run + 1} / 5")
+        except Exception as e:
+            print("=" * 80 + f"\n{e}\n" + "=" * 80)
+        df = df.sample(frac=1)
+
+
+def split_w_graphpart():
+    base = Path("experiments") / "PDBBind" / "graphpart"
+    df = load_lp_pdbbind()
+
+    for run in range(RUNS):
+        try:
+            path = base / "graphpart" / f"split_{run}"
+            os.makedirs(path, exist_ok=True)
+
+            with open(path / "start.txt", "w") as start:
+                print("Start", file=start)
+
+            with open(path / "seqs.fasta", "w") as out:
+                for _, row in df.iterrows():
+                    print(f">{row['ids']}\n{row['Target']}", file=out)
+
+            cmd = f"cd {os.path.abspath(path)} && graphpart mmseqs2 -ff seqs.fasta -th 0.3 -te 0.15"
+            print(cmd)
+            os.system(cmd)  # > log.txt")
+
+            split = pd.read_csv("graphpart_result.csv")
+            train_ids = set(split[split["cluster"] < 0.5]["AC"])
+            test_ids = set(split[split["cluster"] > 0.5]["AC"])
+
+            df[df["ids"].isin(train_ids)].to_csv(path / "train.csv", index=False)
+            df[df["ids"].isin(test_ids)].to_csv(path / "test.csv", index=False)
+            global count
+            count += 1
+            telegram(f"[PDBBind {count} / 35] Training finished for PDBBind - graphpart - Run {run + 1} / 5")
+        except Exception as e:
+            print("=" * 80 + f"\n{e}\n" + "=" * 80)
+        df = df.sample(frac=1)
+
+
+def main():
+    # split_w_datasail()
+    split_w_deepchem()
+    # split_w_lohi()
+    # split_w_graphpart()
 
 
 if __name__ == '__main__':
-    df = load_lp_pdbbind()
-    print(df.head())
-    df.to_csv("tests/data/LP_PDBBind.csv", index=False)
-    # extract(pickle.load(open("backup_scip.pkl", "rb"))[-1])
-    # main()
-    # random(Path("experiments") / "PDBBind" / "random_lp")
-    # df = load_lp_pdbbind()
-    # e_splits, f_splits, inter_splits = pickle.load(open("lppdbbind_save.pkl", "rb"))
-    # split_to_dataset(df, inter_splits["I1e"][0], Path("experiments") / "PDBBind" / "lppdbbind_full" / "I1e" / f"split_{0}")
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "datasail":
+            split_w_datasail()
+        elif sys.argv[1] == "deepchem":
+            split_w_deepchem()
+        elif sys.argv[1] == "lohi":
+            split_w_lohi()
+        elif sys.argv[1] == "graphpart":
+            split_w_graphpart()
+        else:
+            print("Unknown splitter:", sys.argv[1])
+    else:
+        main()
