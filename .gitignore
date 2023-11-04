@@ -34,3 +34,8 @@ viz_molnet.py
 /experiments/stiming.png
 /experiments/timing.png
 /runs/
+/experiments/PDBBind/datasail/
+/experiments/MPP/lohi/
+/experiments/PDBBind/deepchem/
+/experiments/PDBBind/graphpart/
+/experiments/PDBBind/lohi/

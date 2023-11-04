@@ -22,6 +22,5 @@ dependencies:
   - pytest-cov
   - pytest-cases
   - rdkit
-  - mosek::mosek
   - pip:
       - grakel
