@@ -4,7 +4,7 @@ echo "Prepare conda"
 conda install -y anaconda-client conda-build
 
 echo "Building conda package for Linux"
-conda build --variants "{'python': ['3.8', '3.9', '3.10', '3.11']}" -c conda-forge -c bioconda -c mosek --output-folder . --no-test recipe
+conda build --variants "{'python': ['3.8', '3.9', '3.10', '3.11']}" -c conda-forge -c bioconda -c mosek --output-folder . --no-test ../recipe
 
 echo "Convert conda package to other platforms"
 conda convert --platform osx-64 linux-64/*.tar.bz2
