@@ -1,6 +1,8 @@
 #!/bin/bash
 
 echo "Prepare conda"
+conda create -n upload_env -y python=3.9
+conda activate upload_env
 conda install -y anaconda-client conda-build
 conda list
 anaconda upload -h
