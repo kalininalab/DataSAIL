@@ -15,4 +15,4 @@ jobs:
     - name: Check out the repository to the runner
       uses: actions/checkout@v1
     - name: Run publish script
-      run: ./publish.sh
+      run: bash publish.sh
