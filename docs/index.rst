@@ -10,14 +10,8 @@ The code for Data Splitting Against Information Leakage, short DataSAIL, is avai
 Quick Start
 ===========
 
-DataSAIL currently only runs in any oficially supported version of Python (3.7, 3.8, 3.9, 3.10, 3.11). For
-conda, this can be created by running
-
-.. code-block:: shell
-
-    conda create -n datasail
-
-Other than described on the conda-website, the command to install DataSAIL within your just created environment is
+DataSAIL is avalable for all modern versions of Pytion (v3.8 or newer). Other than described on the conda-website, 
+the command to install DataSAIL within your just created environment is
 
 .. code-block:: shell
 
@@ -45,6 +39,14 @@ using
 The arguments for the package use of DataSAIL are explained in the :ref:`methods documentation <datasail-doc-label>`.
 You can find a more detailed description of them based on their :ref:`CLI <datasail-cli-label>` use as the
 arguments are mostly the same.
+
+Usability
+=========
+
+DataSAIL is available for Linux, MacOS, and Windows. As DataSAIL relies on MMMseqs2, MASH, and FoldSeek, this cannot 
+be used on Windows. Therefore, DataSAIL on Windows is limited to ECFP++ and user-specific datatypes.
+
+DataSAIL is avaliable for all modern Python versions, i.e., 3.8-3.12.
 
 .. toctree::
     :maxdepth: 3

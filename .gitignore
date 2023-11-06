@@ -18,6 +18,8 @@ datasail/cluster/wlk_olga.py
 datasail/cluster/ecfp_amay.py
 tmp/
 log*.txt
+*.png
+*.pdf
 
 MoleculeNet.py
 run_moleculenet.sh
@@ -39,3 +41,6 @@ viz_molnet.py
 /experiments/PDBBind/deepchem/
 /experiments/PDBBind/graphpart/
 /experiments/PDBBind/lohi/
+/experiments_local/
+/mave_test/
+/tests/data/rw_data/mave_splits/
