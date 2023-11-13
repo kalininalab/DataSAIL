@@ -13,11 +13,12 @@ count = 0
 
 
 def split_w_datasail(name):
-    base = Path('experiments') / 'MPP' / 'datasail' / 'sdata' / name
+    base = Path('experiments') / 'MPP' / 'datasail' / 'cdata' / name
     dataset = mpp_datasets[name][0](featurizer=dc.feat.DummyFeaturizer(), splitter=None)[1][0]
     df = dc2pd(dataset, name)
+    print(df.shape)
 
-    for tech in ["I1e", "C1e"]:
+    for tech in ["I1e"]:
         try:
 
             with open(base / tech / "start.txt", "w") as start:
@@ -110,12 +111,14 @@ def split_w_lohi(name):
 
 
 def main():
-    for ds_name in sorted(list(mpp_datasets.keys()), key=lambda x: mpp_datasets[x][3]):
-        if ds_name in ["pdbbind", "pcba"]:
-            continue
-        # split_w_datasail(ds_name)
-        # split_w_deepchem(ds_name)
-        split_w_lohi(ds_name)
+    # split_w_datasail("muv")
+    split_w_datasail("qm9")
+    # for ds_name in sorted(list(mpp_datasets.keys()), key=lambda x: mpp_datasets[x][3]):
+    #     if ds_name in ["pdbbind", "pcba"]:
+    #         continue
+    # split_w_datasail(ds_name)
+    # split_w_deepchem(ds_name)
+    # split_w_lohi(ds_name)
 
 
 if __name__ == '__main__':

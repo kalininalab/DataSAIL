@@ -12,6 +12,24 @@ from sympy.physics.control.control_plots import matplotlib, plt
 from experiments.utils import RUNS, USE_UMAP, embed_smiles, embed_aaseqs
 
 
+LINES = {
+    "Random": ("black", "solid"),
+    "Drug ID-based": ("tab:blue", "solid"),
+    "Prot ID-based": ("tab:blue", "dashed"),
+    "Drug cluster-based": ("tab:orange", "solid"),
+    "Prot cluster-based": ("tab:orange", "dashed"),
+    "ID-based 2D": ("gold", "solid"),
+    "cluster-based 2D": ("gold", "dashed"),
+    "LoHi": ("tab:green", "solid"),
+    "Butina": ("tab:red", "solid"),
+    "Fingerprint": ("tab:purple", "solid"),
+    "MaxMin": ("tab:brown", "solid"),
+    "Scaffold": ("tab:pink", "solid"),
+    "Weight": ("tab:gray", "solid"),
+    "GraphPart": ("tab:cyan", "solid"),
+}
+
+
 def read_log(path):
     output = []
     with open(path, "r") as data:
@@ -141,26 +159,42 @@ def plot_full(data):
     ax_pc = fig.add_subplot(gs_left[1, 1])
     ax_full = fig.add_subplot(gs_right[0])
 
-    plot_embeds(ax_di, icse, "ECFP", "drug identity-based", legend=4)
-    plot_embeds(ax_dc, ccse, "ECFP", "drug cluster-based")
-    plot_embeds(ax_pi, icsf, "ESM", "protein identity-based")
-    plot_embeds(ax_pc, ccsf, "ESM", "protein cluster-based")
+    plot_embeds(ax_di, icse, "ECFP", "Drug ID-based", legend=4)
+    plot_embeds(ax_dc, ccse, "ECFP", "Drug cluster-based")
+    plot_embeds(ax_pi, icsf, "ESM", "Prot ID-based")
+    plot_embeds(ax_pc, ccsf, "ESM", "Prot cluster-based")
 
     for tech, name in [(rand, "Random"), (icse, "Drug ID-based"), (icsf, "Prot ID-based"), (icd, "ID-based 2D"),
                        (ccse, "Drug cluster-based"), (ccsf, "Prot cluster-based"), (ccd, "cluster-based 2D")]:
         # ax_full.fill_between(x, *get_bounds(tech["metric"], axis=axis), alpha=0.5)
         # ax_full.plot(np.average(tech["metric"], axis=axis), label=name)
-        ax_full.plot(get_mean(tech["metric"], axis=axis), label=name)
+        c, s = LINES[name]
+        ax_full.plot(smooth(get_mean(tech["metric"], axis=axis)), label=name, color=c, linestyle=s)
     ax_full.set_ylabel("MSE")
     ax_full.set_xlabel("Epoch")
     ax_full.set_title("Performance comparison")
     ax_full.margins(x=0)
-    ax_full.legend()
+    ax_full.legend(loc=3)
 
     fig.set_size_inches(20, 10)
     fig.tight_layout()
     plt.savefig(Path("experiments") / "PDBBind" / f"PDBBind_{'umap' if USE_UMAP else 'tsne'}.png")
     plt.show()
+
+
+def smooth(data, window_size=5):
+    if window_size % 2 == 0:
+        window_size += 1
+    half_window = window_size // 2
+    smoothed = []
+    for i in range(len(data)):
+        if i < half_window:
+            smoothed.append(np.mean(data[:i + half_window + 1]))
+        elif i > len(data) - half_window:
+            smoothed.append(np.mean(data[i - half_window:]))
+        else:
+            smoothed.append(np.mean(data[i - half_window:i + half_window + 1]))
+    return smoothed
 
 
 def get_mean(data, axis=0):
@@ -186,6 +220,7 @@ def plot_cold_drug(data):
     gs_right = gs[1].subgridspec(1, 1)
     ax_i1 = fig.add_subplot(gs_left[0, 0])
     ax_c1 = fig.add_subplot(gs_left[0, 1])
+    axl = fig.add_subplot(gs_left[0, 2])
     ax_lh = fig.add_subplot(gs_left[1, 0])
     ax_bu = fig.add_subplot(gs_left[1, 1])
     ax_fi = fig.add_subplot(gs_left[1, 2])
@@ -199,21 +234,27 @@ def plot_cold_drug(data):
     plot_embeds(ax_lh, lohi, "ECFP", "LoHi")
     plot_embeds(ax_bu, butina, "ECFP", "Butina")
     plot_embeds(ax_fi, fingerprint, "ECFP", "Fingerprint")
-    plot_embeds(ax_mm, minmax, "ECFP", "MinMax")
+    plot_embeds(ax_mm, minmax, "ECFP", "MaxMin")
     plot_embeds(ax_sc, scaffold, "ECFP", "Scaffold")
     plot_embeds(ax_we, weight, "ECFP", "Weight")
 
-    for tech, name in [(i1e, "Drug ID"), (c1e, "Drug cluster"), (lohi, "LoHi"), (butina, "Butina"),
-                       (fingerprint, "Fingerprint"), (minmax, "MinMax"), (scaffold, "Scaffold"), (weight, "Weight")]:
+    for tech, name in [(i1e, "Drug ID-based"), (c1e, "Drug cluster-based"), (lohi, "LoHi"), (butina, "Butina"),
+                       (fingerprint, "Fingerprint"), (minmax, "MaxMin"), (scaffold, "Scaffold"), (weight, "Weight")]:
         # ax_full.fill_between(x, *get_bounds(tech["metric"], axis=axis), alpha=0.5)
         # ax_full.plot(np.average(tech["metric"], axis=0), label=name)
-        ax_full.plot(get_mean(tech["metric"], axis=0), label=name)
+        c, s = LINES[name]
+        ax_full.plot(smooth(get_mean(tech["metric"], axis=0)), label=name, color=c, linestyle=s)
     ax_full.set_ylabel("MSE")
     ax_full.set_xlabel("Epoch")
     ax_full.set_title("Performance comparison")
     ax_full.margins(x=0)
-    ax_full.legend(loc=3)
-    # ax_full.legend(loc='center right', bbox_to_anchor=(0, 0.5))
+    # ax_full.legend(loc=3)
+    for _ in range(8):
+        axl.plot([], [], visible=False)
+    legend = axl.legend(["ID-based", "Cluster-based", "LoHi", "Butina", "Fingerprint", "MaxMin", "Scaffold", "Weight"], loc="center right", markerscale=10, fontsize=15)
+    for handle in legend.legend_handles:
+        handle.set_visible(True)
+    axl.set_axis_off()
 
     fig.set_size_inches(25, 12)
     fig.tight_layout()
@@ -224,30 +265,38 @@ def plot_cold_drug(data):
 def plot_cold_prot(data):
     i1f, c1f, graphpart = data["I1f"], data["C1f"], data["graphpart"]
     fig = plt.figure()
-    gs = gridspec.GridSpec(1, 2, figure=fig)
+    gs = gridspec.GridSpec(1, 2, figure=fig)  # , width_ratios=[1, 2])
 
-    gs_left = gs[0].subgridspec(3, 1, hspace=0.3)
-    gs_right = gs[1].subgridspec(1, 1)
-    ax_i1 = fig.add_subplot(gs_left[0])
-    ax_c1 = fig.add_subplot(gs_left[1])
-    ax_gp = fig.add_subplot(gs_left[2])
+    gs_left = gs[0].subgridspec(2, 2, hspace=0.3)
+    gs_right = gs[1].subgridspec(1, 1, hspace=0.3)
+    ax_i1 = fig.add_subplot(gs_left[0, 0])
+    ax_c1 = fig.add_subplot(gs_left[0, 1])
+    ax_gp = fig.add_subplot(gs_left[1, 0])
+    axl = fig.add_subplot(gs_left[1, 1])
     ax_full = fig.add_subplot(gs_right[0])
 
     plot_embeds(ax_i1, i1f, "ESM", "prot identity", legend=4)
     plot_embeds(ax_c1, c1f, "ESM", "prot cluster")
     plot_embeds(ax_gp, graphpart, "ESM", "GraphPart")
 
-    for tech, name in [(i1f, "Prot ID"), (c1f, "Prot cluster"), (graphpart, "GraphPart")]:
+    for tech, name in [(i1f, "Prot ID-based"), (c1f, "Prot cluster-based"), (graphpart, "GraphPart")]:
         # ax_full.fill_between(x, *get_bounds(tech["metric"], axis=axis), alpha=0.5)
         # ax_full.plot(np.average(tech["metric"], axis=0), label=name)
-        ax_full.plot(get_mean(tech["metric"], axis=0), label=name)
+        c, s = LINES[name]
+        ax_full.plot(smooth(get_mean(tech["metric"], axis=0)), label=name, color=c, linestyle=s)
     ax_full.set_ylabel("MSE")
     ax_full.set_xlabel("Epoch")
     ax_full.set_title("Performance comparison")
     ax_full.margins(x=0)
-    ax_full.legend(loc=3)
+    # ax_full.legend(loc=3)
+    for _ in range(3):
+        axl.plot([], [], visible=False)
+    legend = axl.legend(["ID-based", "Cluster-based", "GraphPart"], loc="center right", markerscale=10, fontsize=15)
+    for h, handle in enumerate(legend.legend_handles):
+        handle.set_visible(True)
+    axl.set_axis_off()
 
-    fig.set_size_inches(15, 12)
+    fig.set_size_inches(20, 10)
     fig.tight_layout()
     plt.savefig(Path("experiments") / "PDBBind" / f"PDBBind_CT_{'umap' if USE_UMAP else 'tsne'}.png")
     plt.show()
@@ -262,8 +311,8 @@ def analyze():
     else:
         with open(pkl_name, "rb") as pickled_data:
             data = pickle.load(pickled_data)
-    # plot_full(data)
-    # plot_cold_drug(data)
+    plot_full(data)
+    plot_cold_drug(data)
     plot_cold_prot(data)
 
 

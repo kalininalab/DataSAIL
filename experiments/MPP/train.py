@@ -15,7 +15,7 @@ def train(model, name):
     dfs = {"val": pd.DataFrame({"rows": list(range(50))}), "test": pd.DataFrame({"rows": [0]})}
     # store the results in training, validation, and test files
     cpath = Path("experiments") / "MPP" / model / "cdata" / name
-    for tech in [x for x in os.listdir(cpath) if os.path.isdir(cpath / x)]:
+    for tech in ["I1e"]:  # x for x in os.listdir(cpath) if os.path.isdir(cpath / x)]:
         for run in range(RUNS):
             print(tech, "-", run)
             try:
@@ -75,17 +75,19 @@ def train(model, name):
 
                 global count
                 count += 1
-                telegram(f"[MPP {count} / 55] Training finished for MPP - lohi - {name} - Run {run + 1} / 5")
+                telegram(f"[MPP {count} / 10] Training finished for MPP - lohi - {name} - Run {run + 1} / 5")
             except Exception as e:
                 print(e)
     for split, df in dfs.items():
-        save_path = Path("experiments") / "MPP" / model / "cdata" / name / f"{split}_metrics.tsv"
+        save_path = Path("experiments") / "MPP" / model / "cdata" / name / f"new_{split}_metrics.tsv"
         print("Saving:", df.shape, "to", save_path)
         df.to_csv(save_path, sep="\t", index=False)
 
 
-for dataset in sorted(list(mpp_datasets.keys()), key=lambda x: mpp_datasets[x][3]):
-    if dataset in {"qm9", "muv", "bace"}:
-        continue
-    print(dataset, "-", "lohi")
-    train("lohi", dataset)
+# for dataset in sorted(list(mpp_datasets.keys()), key=lambda x: mpp_datasets[x][3]):
+#     if dataset in {"qm9", "muv", "bace"}:
+#         continue
+#     print(dataset, "-", "lohi")
+#     train("lohi", dataset)
+train("datasail", "muv")
+train("datasail", "qm9")

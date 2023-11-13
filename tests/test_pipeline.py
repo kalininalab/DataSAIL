@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 
-from datasail.sail import sail
+from datasail.sail import sail, datasail
 from tests.utils import check_folder, run_sail
 
 
@@ -258,6 +258,29 @@ def test_genomes():
     )
 
     shutil.rmtree("data/genomes/out", ignore_errors=True)
+
+
+def test_rna():
+    e_splits, _, _ = datasail(
+        inter=None,
+        max_sec=100,
+        verbose="I",
+        techniques=["I1e", "C1e"],
+        splits=[0.7, 0.3],
+        names=["train", "test"],
+        e_type="G",
+        e_data="data/rw_data/RBD/RBD.fasta",
+    )
+    assert "I1e" in e_splits
+    assert "C1e" in e_splits
+    assert len(e_splits["I1e"]) == 1
+    assert len(e_splits["C1e"]) == 1
+    assert len(e_splits["I1e"][0]) == 15000
+    assert len(e_splits["C1e"][0]) == 15000
+    assert 10_000 < sum(x == "train" for x in e_splits["I1e"][0].values()) < 11_000
+    assert 4_000 < sum(x == "test" for x in e_splits["I1e"][0].values()) < 5_000
+    assert 10_000 < sum(x == "train" for x in e_splits["C1e"][0].values()) < 11_000
+    assert 4_000 < sum(x == "test" for x in e_splits["C1e"][0].values()) < 5_000
 
 
 def check_identity_tsv(filename):

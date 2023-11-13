@@ -75,13 +75,21 @@ def get_bounds(values, axis=0):
     return mean - np.std(values, axis=axis), mean + np.std(values, axis=axis)
 
 
+def mol2smiles(mol):
+    try:
+        return Chem.MolToSmiles(Chem.rdmolops.RemoveHs(mol))
+    except:
+        return None
+
+
 def dc2pd(ds, ds_name):
     df = ds.to_dataframe()
     name_map = dict([(f"y{i + 1}", task) for i, task in enumerate(ds.tasks)] + [("y", ds.tasks[0]), ("X", "SMILES")])
     df.rename(columns=name_map, inplace=True)
     df["ID"] = [f"Comp{i + 1:06d}" for i in range(len(df))]
     if ds_name in ["qm7", "qm8", "qm9"]:
-        df["SMILES"] = df["SMILES"].apply(lambda mol: Chem.MolToSmiles(Chem.rdmolops.RemoveHs(mol)))
+        df["SMILES"] = df["SMILES"].apply(lambda mol: mol2smiles(mol))
+        df = df[df["SMILES"].notna()]
     if mpp_datasets[ds_name][1][0] == "classification":
         df[ds.tasks.tolist()] = pd.to_numeric(df[ds.tasks.tolist()], downcast="integer")
         return df[["ID", "SMILES", "w"] + ds.tasks.tolist()]

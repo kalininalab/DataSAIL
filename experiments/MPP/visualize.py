@@ -16,24 +16,21 @@ DATASETS = ["QM7", "QM8", "QM9", "ESOL", "FreeSolv", "Lipophilicity", "MUV", "HI
             "SIDER", "ClinTox"]
 METRICS = ["MAE ↓"] * 3 + ["RMSE ↓"] * 3 + ["PRC-AUC ↑"] + ["ROC-AUC ↑"] * 7
 
-
 def plot_embeds():
     fig, axes = plt.subplots(
         len(DATASETS), len(SPLITS),
         figsize=(len(SPLITS) * 4, len(DATASETS) * 3),
     )
     data = [[None for _ in range(len(SPLITS))] for _ in range(len(DATASETS))]
-    for i, dataset in enumerate(["qm9"]):  # DATASETS):
-        print(dataset)
+    for i, dataset in enumerate(DATASETS):
         os.makedirs(Path("experiments") / "MPP" / ('umap' if USE_UMAP else 'tsne'), exist_ok=True)
         embed_path = Path("experiments") / "MPP" / ('umap' if USE_UMAP else 'tsne') / f"embeds_{dataset}.pkl"
-        # if os.path.exists(embed_path):
-        #     print("Loaded", os.path.abspath(embed_path))
-        #     data[i] = pickle.load(open(embed_path, "rb"))
-        #     continue
+        if os.path.exists(embed_path):
+            data[i] = pickle.load(open(embed_path, "rb"))
+            continue
         smiles = set()
-        for j, split in enumerate(["I1e"]):  # SPLITS):
-            base_filename = lambda x, y: Path("experiments") / "MPP" / y / "sdata" / dataset.lower() / split / \
+        for j, split in enumerate(SPLITS):
+            base_filename = lambda x, y: Path("experiments") / "MPP" / y / "cdata" / dataset.lower() / split / \
                 "split_0" / f"{x}.csv"
             if j == 2:
                 filename = lambda x: base_filename(x, "lohi")
@@ -52,8 +49,6 @@ def plot_embeds():
                 smiles.update(test["SMILES"].values)
             except Exception as e:
                 print(f"{dataset} - {split}: {e}")
-        print(len(smiles))
-        exit(0)
         smiles = [(s, embed_smiles(s)) for s in smiles]
         if USE_UMAP:
             embedder = UMAP(n_components=2, random_state=42)
@@ -63,6 +58,7 @@ def plot_embeds():
         smiles = dict(list(zip([s[0] for s in smiles], embed)))
         for j, split in enumerate(SPLITS):
             if data[i][j] is None:
+                print("Data is empty -", dataset, "-", split)
                 continue
             data[i][j]["train"] = np.array([smiles[s] for s in data[i][j]["train"]])
             data[i][j]["test"] = np.array([smiles[s] for s in data[i][j]["test"]])
@@ -83,10 +79,14 @@ def plot_embeds():
                 pass
 
     for ax, split in zip(axes[0], ["I1", "C1"] + SPLITS[2:]):
-        ax.set_title(split, fontsize=20)
+        if split == "MinMax":
+            split = "MaxMin"
+        elif split == "lohi":
+            split = "LoHi"
+        ax.set_title(split, fontsize=30, fontweight="bold")
 
     for ax, ds_name, metric in zip(axes[:, 0], DATASETS, METRICS):
-        ax.set_ylabel(f"{ds_name}", rotation=90, fontsize=16)
+        ax.set_ylabel(f"{ds_name}", rotation=90, fontsize=30, fontweight="bold")
 
     fig.tight_layout()
     plt.savefig(Path("experiments") / "MPP" / f"MPP_embeds_{'umap' if USE_UMAP else 'tsne'}.png")
@@ -133,13 +133,14 @@ def plot_perf():
     plt.show()
 
 
-def plot_perf_4x3():
-    fig, axes = plt.subplots(3, 4, figsize=(16, 9))
+def plot_perf_5x3():
+    fig, axes = plt.subplots(3, 5, figsize=(20, 9))
     handles, labels = [], []
-    for i, dataset in enumerate([key for key in DATASETS if key.lower() not in "muvhiv"]):
-        print(dataset)
-        axes[i // 4, i % 4].set_title(dataset)
-        axes[i // 4, i % 4].set_ylabel(METRICS[i], rotation=90)
+    for d, dataset in enumerate(DATASETS):
+        i = d if d < 7 else d + 1
+        print(i, "|", i // 5, "|", i % 5)
+        axes[i // 5, i % 5].set_title(dataset, fontsize=15)
+        axes[i // 5, i % 5].set_ylabel(METRICS[d], rotation=90, fontsize=10)
         for j, split in enumerate(SPLITS):
             base_name = lambda x: Path("experiments") / "MPP" / x / "cdata" / dataset.lower() / "val_metrics.tsv"
             if j < 2:
@@ -149,38 +150,29 @@ def plot_perf_4x3():
             else:
                 filename = base_name("deepchem")
             if not os.path.exists(filename):
+                axes[i // 5, i % 5].plot([], [], visible=False)
                 continue
             try:
                 table = pd.read_csv(filename, sep="\t")
                 f = lambda x: "ICSe" if x == "I1e" else ("CCSe" if x == "C1e" else split)
                 mask = [f(split) in col for col in table.columns]
-                print(f(split))
-                print(mask)
-                print(table.columns)
                 mean = np.average(table[table.columns[mask]].values, axis=1)
                 bounds = get_bounds(table[table.columns[mask]].values, axis=1)
                 x = np.arange(0.0, 50, 1)
-                # axes[i // 4, i % 4].fill_between(x, *bounds, alpha=0.5)
-                h, = axes[i // 4, i % 4].plot(mean)
-                if i == 0:
-                    handles.append(h)
-                    labels.append(split)
+                axes[i // 5, i % 5].plot(mean)
             except Exception as e:
                 print(f"{dataset} - {split}: {e}")
-
-    # axes[-1, -2].legend(handles=handles, loc='upper center', bbox_to_anchor=(0.5, -0.2), fancybox=False, shadow=False, ncol=3)
-    axes[-1, -2].legend(
-        handles=handles,
-        labels=labels,
-        bbox_to_anchor=(-1.65, -0.3, 3., .102),
-        loc='lower center',
-        ncol=7,
-        mode="expand",
-        borderaxespad=0.,
-    )
+    for _ in range(len(SPLITS)):
+        axes[1, 2].plot([], [], visible=False)
+    axes[1, 2].legend(loc='center')
+    names = list(map(lambda x: "LoHi" if x == "lohi" else ("MaxMin" if x == "MinMax" else x), SPLITS))
+    legend = axes[1, 2].legend(names, loc="center", markerscale=10, fontsize=15)
+    for h, handle in enumerate(legend.legend_handles):
+        handle.set_visible(True)
+    axes[1, 2].set_axis_off()
 
     fig.tight_layout()
-    plt.savefig(Path("experiments") / "MPP" / "MPP_perf_4x3.png")
+    plt.savefig(Path("experiments") / "MPP" / "MPP_perf_5x3.png")
     plt.show()
 
 
@@ -242,6 +234,6 @@ def plot_double(names):
 
 if __name__ == '__main__':
     # plot_perf()
-    # plot_perf_4x3()
+    plot_perf_5x3()
     # plot_double(["QM7", "Tox21"])
-    plot_embeds()
+    # plot_embeds()
