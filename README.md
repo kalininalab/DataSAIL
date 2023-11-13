@@ -8,16 +8,16 @@
 [![platforms](https://anaconda.org/kalininalab/datasail/badges/platforms.svg)](https://anaconda.org/kalininalab/datasail)
 [![license](https://anaconda.org/kalininalab/datasail/badges/license.svg)](https://anaconda.org/kalininalab/datasail)
 [![downloads](https://anaconda.org/kalininalab/datasail/badges/downloads.svg)](https://anaconda.org/kalininalab/datasail)
-[![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-3100/)
+![Python 3](https://img.shields.io/badge/python-3-blue.svg)
 
 DataSAIL is a tool that splits data while minimizing the information leakage. This tool formulates the splitting of a 
 dataset as constrained minimization problem and computes the assignment of data points to splits while minimizing the 
 objective function that accounts for information leakage.
 
 Internally, DataSAIL uses disciplined quasi-convex programming and binary quadratic programs to formulate the 
-optimization task. To solve this DataSAIL relies on [SCIP](https://scipopt.org/), one of the fastest non-commercial 
-solvers for this type of problems and [MOSEK](https://mosek.com), a commercial solver that distributes free licenses 
-for academic use.
+optimization task. DataSAIL utilizes solves like [SCIP](https://scipopt.org/), one of the fastest non-commercial 
+solvers for this type of problems, and [MOSEK](https://mosek.com), a commercial solver that distributes free licenses 
+for academic use. There are other options, please check the documentation.
 
 Apart from the here presented short overview, you can find a more detailed explanation of the tool on 
 [ReadTheDocs](https://datasail.readthedocs.io/en/latest/index.html). 
@@ -51,10 +51,10 @@ DataSAIL is available from Python 3.8 and newer.
 DataSAIL is installed as a commandline tool. So, in the conda environment DataSAIL has been installed to, you can run 
 
 ````shell
-sail --e-type P --e-data <path_to_fasta> --e-sim mmseqs --output <path_to_output_path> --technique C1e
+datasail --e-type P --e-data <path_to_fasta> --e-sim mmseqs --output <path_to_output_path> --technique C1e
 ````
 
-to split a set of proteins that have been clustered using mmseqs. For a full list of arguments run `sail -h` and 
+to split a set of proteins that have been clustered using mmseqs. For a full list of arguments run `datasail -h` and 
 checkout [ReadTheDocs](https://datasail.readthedocs.io/en/latest/index.html).
 
 ## When to use DataSAIL and when not to use

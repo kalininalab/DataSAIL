@@ -11,10 +11,10 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: publish-to-conda
-      uses: Old-Shatterhand/publish-conda-multichannel-action@v0.2.1
+      uses: Old-Shatterhand/publish-conda-multichannel-action@v0.0.10
       with:
         AnacondaToken: ${{ secrets.DATASAIL_ANACONDA_TOKEN }}
         Channels: "mosek"
-        Versions: "3.8,3.9,3.10,3.11"
+        Versions: "3.8,3.9,3.10,3.11,3.12"
         Folder: "recipe"
         Platforms: "osx-64,osx-arm64,win-64"
