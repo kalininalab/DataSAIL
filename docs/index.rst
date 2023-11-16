@@ -15,7 +15,7 @@ the command to install DataSAIL within your just created environment is
 
 .. code-block:: shell
 
-    mamba install -c kalininalab -c mosek -c conda-forge -c bioconda datasail
+    mamba install -c kalininalab -c conda-forge -c bioconda datasail
     pip install grakel
 
 The second command is necessary to run WLK clustering as the grakel library is not available on conda for python 3.10.

@@ -31,7 +31,6 @@ requirements:
     - cd-hit
     - mash
     - tmalign
-    - mosek
     - cvxpy
     - pytest-cov
     - rdkit>=2023.03.3

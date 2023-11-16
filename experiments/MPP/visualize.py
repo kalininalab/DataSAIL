@@ -16,6 +16,7 @@ DATASETS = ["QM7", "QM8", "QM9", "ESOL", "FreeSolv", "Lipophilicity", "MUV", "HI
             "SIDER", "ClinTox"]
 METRICS = ["MAE ↓"] * 3 + ["RMSE ↓"] * 3 + ["PRC-AUC ↑"] + ["ROC-AUC ↑"] * 7
 
+
 def plot_embeds():
     fig, axes = plt.subplots(
         len(DATASETS), len(SPLITS),
@@ -31,7 +32,7 @@ def plot_embeds():
         smiles = set()
         for j, split in enumerate(SPLITS):
             base_filename = lambda x, y: Path("experiments") / "MPP" / y / "cdata" / dataset.lower() / split / \
-                "split_0" / f"{x}.csv"
+                                         "split_0" / f"{x}.csv"
             if j == 2:
                 filename = lambda x: base_filename(x, "lohi")
             elif j < 2:
@@ -207,7 +208,8 @@ def plot_double(names):
             try:
                 ax[i, t].scatter(*data[t]["train"].T, s=1, label="train")
                 ax[i, t].scatter(*data[t]["test"].T, s=1, label="test")
-                ax[i, t].set_title(f"ECFP4 embeddings of\nthe {'random' if t == 0 else 'cluster-based'} split using t-SNE")
+                ax[i, t].set_title(
+                    f"ECFP4 embeddings of\nthe {'random' if t == 0 else 'cluster-based'} split using t-SNE")
                 if i == 1 and t == 0:
                     ax[i, t].legend(loc=4, markerscale=8)
                 if t == 0:
