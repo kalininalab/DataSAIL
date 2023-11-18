@@ -68,3 +68,17 @@ One can distinguish two main ways to train a machine-learning model on biologica
 DataSAIL is created to compute complex data splits by separating data based on similarities. This makes 
 complex data splits for the first scenario. So, you can use DataSAIL when your model is applied to data  
 different from your training data but not if the data in the application is more or less the same as in the training.
+
+## Citation
+
+If you used DataSAIL to split your data, please cite DataSAIL in your publication.
+````
+@article{joeres2022datasail,
+  title={DataSAIL: Data Splitting Against Information Leakage},
+  author={Joeres, Roman and Blumenthal, David B. and Kalinina, Olga V},
+  journal={bioRxiv},
+  pages={2023--11},
+  year={2023},
+  publisher={Cold Spring Harbor Laboratory}
+}
+````
