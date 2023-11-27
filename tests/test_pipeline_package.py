@@ -12,7 +12,7 @@ from tests.pipeline_package_fixtures import *
     (True, False, None, None, None, False, None, None, False, "I1f"),
     (True, False, "wlk", None, None, False, None, None, False, "I1f"),
     (False, False, None, None, None, False, None, None, False, "I1f"),
-    (False, False, "mmseqs", None, None, False, None, None, False, "I1f"),
+    (False, False, "mmseqspp", None, None, False, None, None, False, "I1f"),
     (False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "I1f"),
     (False, False, None, "data/pipeline/prot_dist.tsv", None, False, None, None, False, "I1f"),
     (False, True, None, None, None, False, None, None, False, "I1f"),

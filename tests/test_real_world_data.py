@@ -119,6 +119,7 @@ def test_pdbbind_splits():
         epsilon=0.1,
         e_type="M",
         e_data=df[["ids", "Ligand"]].values.tolist(),
+        e_sim="mmseqs",
         f_type="P",
         f_data=df[["ids", "Target"]].values.tolist(),
         solver="SCIP",

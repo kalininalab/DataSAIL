@@ -30,7 +30,7 @@ of entities of "other" input type is to provide them as a matrix in a file and t
 on these matrices.
 
 .. list-table:: Input molecule types and their available clustering algorithms
-    :widths: 25 20 15 15 15 15 15
+    :widths: 25 20 15 15 15 15 15 15
     :header-rows: 1
 
     * - Clust. Algo
@@ -47,7 +47,7 @@ on these matrices.
       - \-
       - Sim
       - No
-    * - Scaffold + ECFP + Tanimoto Coeffs
+    * - ECFP++
       - \-
       - SMILES
       - \-
@@ -82,6 +82,13 @@ on these matrices.
       - \-
       - Sim
       - No
+    * - MMseqs2++
+      - FASTA
+      - \-
+      - \-
+      - \-
+      - Sim
+      - Yes
     * - WLKernel
       - PDB
       - SMILES
@@ -130,8 +137,10 @@ Details about the clustering algorithms
 CD-HIT
 ------
 
-CD-HIT is used to cluster protein sequences, for more information on CD-HIT, visit the `website <https://sites.google.com/view/cd-hit>`__,
-checkout the `GitHub repository <https://github.com/weizhongli/cdhit>`__, or read the `paper <https://doi.org/10.1093/bioinformatics/bts565>`__.
+CD-HIT is used to cluster protein sequences, for more information on CD-HIT, visit the
+`website <https://sites.google.com/view/cd-hit>`__, checkout the
+`GitHub repository <https://github.com/weizhongli/cdhit>`__, or read the
+`paper <https://doi.org/10.1093/bioinformatics/bts565>`__.
 
 CD-HIT has two parameters to adjust how fine or coarse the clustering will be. Those are :code:`-n` and :code:`-c`.
 Those are automatically adjusted and searched to find a good clustering to start splitting the data.
@@ -154,14 +163,16 @@ ECFP++ is a short name for a 3-step process to detect clusters in a dataset of c
 compute Scaffolds following `RDKits MakeScaffoldGeneric <https://rdkit.org/docs/source/rdkit.Chem.Scaffolds.MurckoScaffold.html#rdkit.Chem.Scaffolds.MurckoScaffold.MakeScaffoldGeneric>`__.
 This way, molecules are simplified by replacing every heavy atom with carbon atoms and every bond with a single bond.
 The second step is to compute a 1024-bit `Morgan fingerprint <https://doi.org/10.1021/ci100050t>`__ with radius 2.
-Lastly, DataSAIL computes the similarity of these fingerprints as `Tanimoto-Similarities <https://en.wikipedia.org/wiki/Jaccard_index>`__
+Lastly, DataSAIL computes the similarity of these fingerprints as
+`Tanimoto-Similarities <https://en.wikipedia.org/wiki/Jaccard_index>`__
 of the bit-vectors.
 
 FoldSeek
 --------
 
-FoldSeek is used to cluster protein structures based on PDB input. For more information checkout the `GitHub repository <https://github.com/steineggerlab/foldseek>`__
-and the `paper <https://doi.org/10.1101/2022.02.07.479398>`__.
+FoldSeek is used to cluster protein structures based on PDB input. For more information checkout the
+`GitHub repository <https://github.com/steineggerlab/foldseek>`__ and the
+`paper <https://doi.org/10.1101/2022.02.07.479398>`__.
 
 As FoldSeek produces a pairwise similarity matrix, it is not optimizes such as CD-HIT, but will be followed by some
 additional clustering.
@@ -177,7 +188,8 @@ MASH
 
 To cluster genomes in DataSAIL, the only option so far is MASH (CD-HIT-EST is to be included). Similar to FoldSeek it
 produces a pairwise distance matrix which is used in subsequent rounds of additional clustering. To get more
-information on MASH, read the `paper <https://doi.org/10.1186/s13059-016-0997-x>`__ and the `ReadTheDocs page <https://mash.readthedocs.io/en/latest/>`__.
+information on MASH, read the `paper <https://doi.org/10.1186/s13059-016-0997-x>`__ and the
+`ReadTheDocs page <https://mash.readthedocs.io/en/latest/>`__.
 
 DataSAIl calls MASH in two steps. First to compute the sketches and then to compute their distance
 
@@ -190,7 +202,8 @@ MMseqs2
 =======
 
 An alternative to CD-HIT to cluster protein sequences is MMseqs2. To get more information on the functionality of
-MMseqs2, checkout the `GitHub repository <https://github.com/soedinglab/MMseqs2>`__ and the `paper <https://doi.org/10.1038/nbt.3988>`__.
+MMseqs2, checkout the `GitHub repository <https://github.com/soedinglab/MMseqs2>`__ and the
+`paper <https://doi.org/10.1038/nbt.3988>`__.
 
 To interact with MMseqs2, DataSAIL calls it through commandline with
 
@@ -200,6 +213,14 @@ To interact with MMseqs2, DataSAIL calls it through commandline with
 
 Like CD-HIT, MMseqs2 does not output pairwise similarities, therefore, a sequence similarity parameter has to be
 tweaked to find the best clustering for DataSAIL to work with. The parameter in question here is :code:`--min-seq-id`.
+
+MMseqs2++
+=========
+
+MMseqs2++ is the acronym for using MMseqs2 to compute a similarity matrix between protein sequences and then using this
+for spectral clustering. This is more accurate than using MMseqs2 to cluster sequences directly, but it is
+significantly slower due to the alignments computed. To get more information on the functionality of MMseqs2, checkout
+the `GitHub repository <https://github.com/soedinglab/MMseqs2>`__ and the `paper <https://doi.org/10.1038/nbt.3988>`__.
 
 WL-Kernel
 ---------

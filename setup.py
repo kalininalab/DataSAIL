@@ -1,10 +1,8 @@
 from setuptools import setup, find_packages
 from datasail.version import __version__
 
-
 with open("README.md", "r") as desc_file:
     long_description = desc_file.read()
-
 
 setup(
     name="DataSAIL",
@@ -12,7 +10,7 @@ setup(
     description="Data Splitting Against Information Leaking",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    license='Apache Commons 2.0',
+    license='MIT',
     author="Roman Joeres",
     maintainer="Roman Joeres",
     classifiers=[

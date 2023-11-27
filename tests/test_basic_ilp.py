@@ -1,13 +1,13 @@
 import numpy as np
 
-from datasail.solver.blp.id_cold_single import solve_ics_blp
-from datasail.solver.blp.id_cold_double import solve_icd_blp
-from datasail.solver.blp.cluster_cold_single import solve_ccs_blp
-from datasail.solver.blp.cluster_cold_double import solve_ccd_blp
+from datasail.solver.id_1d import solve_i1
+from datasail.solver.id_2d import solve_i2
+from datasail.solver.cluster_1d import solve_c1
+from datasail.solver.cluster_2d import solve_c2
 
 
 def test_ics():
-    solution = solve_ics_blp(
+    solution = solve_i1(
         entities=["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"],
         weights=[6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
         epsilon=0.05,
@@ -27,7 +27,7 @@ def test_ics():
 
 
 def test_icd():
-    solution = solve_icd_blp(
+    solution = solve_i2(
         e_entities=["D1", "D2", "D3", "D4", "D5"],
         f_entities=["P1", "P2", "P3", "P4", "P5"],
         inter={
@@ -63,7 +63,7 @@ def test_icd():
 
 
 def test_ccd():
-    solution = solve_ccd_blp(
+    solution = solve_c2(
         e_clusters=["D1", "D2", "D3"],
         e_similarities=np.asarray([
             [5, 5, 0],
@@ -108,7 +108,7 @@ def test_ccd():
 
 
 def test_ccs_sim():
-    solution = solve_ccs_blp(
+    solution = solve_c1(
         clusters=["1", "2", "3", "4", "5"],
         weights=[3, 3, 3, 2, 2],
         similarities=np.asarray([
@@ -133,7 +133,7 @@ def test_ccs_sim():
 
 
 def test_ccs_sim_3c():
-    solution = solve_ccs_blp(
+    solution = solve_c1(
         clusters=["1", "2", "3", "4", "5"],
         weights=[30, 30, 50, 20, 20],
         similarities=np.asarray([
@@ -161,7 +161,7 @@ def test_ccs_sim_3c():
 
 
 def test_ccs_dist():
-    solution = solve_ccs_blp(
+    solution = solve_c1(
         clusters=["1", "2", "3", "4", "5"],
         weights=[3, 3, 3, 2, 2],
         similarities=None,

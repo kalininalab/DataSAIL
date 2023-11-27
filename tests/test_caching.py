@@ -57,7 +57,6 @@ def check_true_equality(truth, shuffled):
     assert truth.location == shuffled.location
     assert truth.weights == shuffled.weights
     assert truth.cluster_weights == shuffled.cluster_weights
-    assert truth.threshold == shuffled.threshold
 
     if truth.similarity is not None:
         check_matrices(truth.names, truth.similarity, shuffled.names, shuffled.similarity)

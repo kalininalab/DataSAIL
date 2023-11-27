@@ -1,7 +1,7 @@
 import pytest
 
 from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
-    check_mash_dist_arguments, check_mash_sketch_arguments, check_mash_arguments
+    check_mash_dist_arguments, check_mash_sketch_arguments, check_mmseqspp_arguments
 
 
 @pytest.mark.parametrize("args", [
@@ -57,6 +57,49 @@ def test_mmseqs_parser_invalid(args):
 
 
 @pytest.mark.parametrize("args", [
+    "-s 4.0", "-k 15", "--mask-prob 0.8", "--mask-lower-case 1",
+    "--max-accept 100", "--max-rejected 50", "--max-seqs 500", "--min-aln-len 20", "--min-seq-id 0.9",
+    "--min-ungapped-score 20", "--realign", "--realign-score-bias 0.1", "--realign-max-seqs 10",
+    "--spaced-kmer-mode 1", "--split-mode 2", "--split-memory-limit 2G", "--cov-mode 3",
+    "--pca 5", "--pcb 10", "--sub-mat [aa:blosum80.out,nucl:nucleotide.out]",
+    "--max-seq-len 5000", "--db-load-mode 1", "--alignment-mode 2", "--alignment-output-mode 4",
+    "--alph-size [aa:20,nucl:4]", "--alt-ali 3", "--corr-score-weight 0.005", "--diag-score",
+    "-e 0.00001", "--exact-kmer-matching 1", "--mask 0", "--mask-prob 0.95", "--mask-lower-case 0",
+    "--max-accept 200", "--max-rejected 100", "--max-seqs 1000", "--min-aln-len 30", "--min-seq-id 0.95",
+    "--min-ungapped-score 30", "--realign-score-bias -0.1", "--realign-max-seqs 20",
+    "-s 7.5", "--score-bias 0.2", "--seed-sub-mat [aa:VTML80.out,nucl:nucleotide.out]",
+    "--seq-id-mode 1", "--spaced-kmer-mode 0", "--spaced-kmer-pattern '1-2-1'",
+    "--split 4", "--split-mode 1", "--split-memory-limit 1G", "--taxon-list '123,456,789'",
+    "--wrapped-scoring", "--zdrop 50", "--add-self-matches", "--comp-bias-corr 0",
+    "--comp-bias-corr-scale 0.8", "-c 0.8", "--cov-mode 5", "--pca 2", "--pcb 5", "--add-self-matches",
+    "--sub-mat [aa:blosum45.out,nucl:nucleotide.out]", "--max-seq-len 10000", "--db-load-mode 3",
+])
+def test_mmseqspp_parser_valid(args):
+    assert check_mmseqspp_arguments(args) is not None
+
+
+@pytest.mark.parametrize("args", [
+    "-s -0.5", "-k -1", "--mask-prob 1.5", "--mask-lower-case 2",
+    "--max-accept -100", "--max-rejected -50", "--max-seqs 0", "--min-aln-len -20", "--min-seq-id 1.1",
+    "--min-ungapped-score -20", "--realign-score-bias -1.5", "--realign-max-seqs 0",
+    "--spaced-kmer-mode 2", "--split-mode 3", "--cov-mode 6",
+    "--pca -5", "--pcb -10", "--max-seq-len -5000", "--db-load-mode 4",
+    "--alignment-mode 4", "--alignment-output-mode 6",
+    "--alt-ali -3", "--corr-score-weight -0.005", "-e -0.0005", "--exact-kmer-matching 2",
+    "--mask 2", "--mask-prob 1.05", "--mask-lower-case 2", "--max-accept -200", "--max-rejected -100",
+    "--max-seqs 0", "--min-aln-len -30", "--min-seq-id 1.05", "--min-ungapped-score -30",
+    "--realign-score-bias 1.5", "--realign-max-seqs 0", "-s 8.0", "--score-bias -0.2",
+    "--seq-id-mode 3", "--spaced-kmer-mode 2",
+    "--split -4", "--split-mode 3", "--zdrop -50",
+    "--comp-bias-corr 2", "--comp-bias-corr-scale -0.8", "-c 1.5", "--cov-mode 6", "--pca -2", "--pcb -5",
+    "--max-seq-len -10000", "--db-load-mode 4",
+])
+def test_mmseqspp_parser_invalid(args):
+    with pytest.raises(ValueError):
+        check_mmseqspp_arguments(args)
+
+
+@pytest.mark.parametrize("args", [
     "--comp-bias-corr 1", "--comp-bias-corr-scale 0.8", "-s 5.0", "-k 50", "--max-seqs 1000", "--split 200",
     "--split-mode 1", "--diag-score", "--exact-kmer-matching 1", "--mask 0", "--mask-prob 0.2",
     "--mask-lower-case 1", "--min-ungapped-score 500", "--spaced-kmer-mode 0", "--alignment-mode 2",
@@ -95,37 +138,21 @@ def test_foldseek_parser_invalid(args):
 
 
 @pytest.mark.parametrize("args", [
-    "-p 1", "-k 1", "-k 32", "-s 1", "-S 0", "-S 4294967296", "-w 0", "-w 1", "-b 1B", "-b 2K", "-m 10", "-c 0.1",
-    "-g 1B", "-g 2K", "-a -k 9",
+    "-p 1", "-v 0.0", "-v 1.0", "-d 0.0", "-d 1.0", "-k 1", "-k 32", "-s 1", "-S 0", "-S 4294967296", "-w 0", "-w 1",
+    "-b 1B", "-b 2K", "-m 10", "-c 0.1", "-g 1B", "-g 2K", "-a -k 9",
 ])
-def test_mash_sketch_parser_valid(args):
+def test_mash_parser_valid(args):
     assert check_mash_sketch_arguments(args) is not None
 
 
 @pytest.mark.parametrize("args", [
-    "-p 0", "-k 0", "-k 33", "-s 0", "-S -1", "-S 4294967297", "-w -0.1", "-w 1.1", "-b 0B", "-b ABC", "-m 0", "-c 0",
-    "-g 0B", "-g ABC", "-a -z -a", "-r -i -r", "-b 2", "-c 0", "-g B", "-a -k 8", "-n -a", "-Z -z",
+    "-p 0", "-v -0.1", "-v 1.1", "-d -0.1", "-d 1.1", "-k 0", "-k 33", "-s 0", "-S -1", "-S 4294967297", "-w -0.1",
+    "-w 1.1", "-b 0B", "-b ABC", "-m 0", "-c 0", "-g 0B", "-g ABC", "-a -z -a", "-r -i -r", "-b 2", "-c 0", "-g B",
+    "-a -k 8", "-n -a", "-Z -z",
 ])
-def test_mash_sketch_parser_invalid(args):
+def test_mash_parser_invalid(args):
     with pytest.raises(ValueError):
         check_mash_sketch_arguments(args)
-
-
-@pytest.mark.parametrize("args", [
-    "-v -0.1", "-v 1.1", "-d -0.1", "-d 1.1", "-k 0", "-k 33", "-s 0", "-S -1", "-S 4294967297", "-w -0.1", "-w 1.1",
-    "-m 0", "-c 0", "-g 0B", "-g ABC", "-a -z", "-r -i", "-c 0", "-g B", "-a -k 8"
-])
-def test_mash_dist_parser_invalid(args):
-    with pytest.raises(ValueError):
-        check_mash_dist_arguments(args)
-
-
-@pytest.mark.parametrize("args", [
-    "-v 0.0", "-v 1.0", "-d 0.0", "-d 1.0", "-k 1", "-k 32", "-s 1", "-S 0", "-S 4294967296", "-w 0.0", "-w 1.0",
-    "-m 10", "-c 1", "-g 1B", "-g 2K", "-a", "-z", "-r", "-i", "-b 2", "-n", "-Z",
-])
-def test_mash_dist_parser_valid(args):
-    assert check_mash_dist_arguments(args) is not None
 
 
 def test_check_booleans():

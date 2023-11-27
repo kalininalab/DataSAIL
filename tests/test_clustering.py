@@ -9,13 +9,14 @@ from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
+from datasail.cluster.mmseqspp import run_mmseqspp
 from datasail.cluster.tmalign import run_tmalign
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.read_proteins import parse_fasta, read_folder
 from datasail.reader.utils import DataSet, read_csv
 from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
-    check_mash_arguments
-from datasail.settings import P_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN
+    check_mash_arguments_new, check_mmseqspp_arguments
+from datasail.settings import P_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN, MMSEQSPP
 
 
 @pytest.mark.todo
@@ -90,12 +91,20 @@ def test_additional_clustering():
 
 def protein_fasta_data(algo):
     data = parse_fasta("data/pipeline/seqs.fasta")
+    if algo == CDHIT:
+        args = check_cdhit_arguments("")
+    elif algo == MMSEQS:
+        args = check_mmseqs_arguments("")
+    elif algo == MMSEQSPP:
+        args = check_mmseqspp_arguments("")
+    else:
+        raise ValueError(f"Unknown algorithm: {algo}")
     return DataSet(
         type="M",
         data=data,
         names=list(sorted(data.keys())),
         location="data/pipeline/seqs.fasta",
-        args=check_cdhit_arguments("") if algo == CDHIT else check_mmseqs_arguments()
+        args=args,
     )
 
 
@@ -129,7 +138,7 @@ def genome_fasta_data():
         data=data,
         names=list(sorted(data.keys())),
         location="data/genomes/",
-        args=check_mash_arguments(""),
+        args=check_mash_arguments_new(""),
     )
 
 
@@ -175,6 +184,14 @@ def test_mmseqs2_protein():
     if platform.system() == "Windows":
         pytest.skip("MMseqs2 is not supported on Windows")
     check_clustering(*run_mmseqs(data, 1, "./"), dataset=data)
+
+
+@pytest.mark.nowin
+def test_mmseqspp_protein():
+    data = protein_fasta_data(MMSEQSPP)
+    if platform.system() == "Windows":
+        pytest.skip("MMseqs2 is not supported on Windows")
+    check_clustering(*run_mmseqspp(data, 1, "./"), dataset=data)
 
 
 @pytest.mark.nowin
