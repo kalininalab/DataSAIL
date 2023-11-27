@@ -7,10 +7,10 @@ from cvxpy import SolverError
 from datasail.cluster.clustering import reverse_clustering, cluster_interactions, reverse_interaction_clustering
 from datasail.reader.utils import DataSet, DictMap
 from datasail.settings import LOGGER, MODE_F, TEC_R, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MMSEQS, CDHIT, MMSEQS2
-from datasail.solver.blp.id_cold_single import solve_ics_blp
-from datasail.solver.blp.id_cold_double import solve_icd_blp
-from datasail.solver.blp.cluster_cold_single import solve_ccs_blp
-from datasail.solver.blp.cluster_cold_double import solve_ccd_blp
+from datasail.solver.id_1d import solve_i1
+from datasail.solver.id_2d import solve_i2
+from datasail.solver.cluster_1d import solve_c1
+from datasail.solver.cluster_2d import solve_c2
 from datasail.solver.utils import sample_categorical
 
 
@@ -101,7 +101,7 @@ def run_solver(
                         names = dataset.names
                         weights = [dataset.weights.get(x, 0) for x in dataset.names]
 
-                    solution = solve_ics_blp(
+                    solution = solve_i1(
                         entities=names,
                         weights=weights,
                         epsilon=epsilon,
@@ -131,7 +131,7 @@ def run_solver(
                             else:
                                 insert(output_e_entities, technique, solution)
                 elif technique.startswith(TEC_I2):
-                    solution = solve_icd_blp(
+                    solution = solve_i2(
                         e_entities=e_dataset.names,
                         f_entities=f_dataset.names,
                         inter=set(inter),
@@ -148,7 +148,7 @@ def run_solver(
                         insert(output_e_entities, technique, solution[1])
                         insert(output_f_entities, technique, solution[2])
                 elif technique.startswith(TEC_C1):
-                    cluster_split = solve_ccs_blp(
+                    cluster_split = solve_c1(
                         clusters=dataset.cluster_names,
                         weights=[dataset.cluster_weights.get(c, 0) for c in dataset.cluster_names],
                         similarities=dataset.cluster_similarity,
@@ -172,7 +172,7 @@ def run_solver(
                                    reverse_clustering(cluster_split, e_dataset.cluster_map))
                 elif technique.startswith(TEC_C2):
                     cluster_inter = cluster_interactions(inter, e_dataset, f_dataset)
-                    cluster_split = solve_ccd_blp(
+                    cluster_split = solve_c2(
                         e_clusters=e_dataset.cluster_names,
                         e_similarities=e_dataset.cluster_similarity,
                         e_distances=e_dataset.cluster_distance,

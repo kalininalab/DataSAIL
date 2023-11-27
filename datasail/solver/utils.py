@@ -29,32 +29,6 @@ def compute_limits(epsilon: float, total: int, splits: List[float]) -> List[floa
     return [int((split - epsilon) * total) for split in splits]
 
 
-def inter_mask(
-        e_entities: List[str],
-        f_entities: List[str],
-        inter: Collection[Tuple[str, str]],
-) -> np.ndarray:
-    """
-    Compute an interaction mask, i.e. an adjacency matrix from the list of interactions.
-    Compute adjacency matrix by first compute mappings from entity names to their index and then setting the
-    individual interactions to 1.
-
-    Args:
-        e_entities: Entities in e-dataset
-        f_entities: Entities in f-dataset
-        inter: List of interactions between entities in e-dataset and entities in f-dataset
-
-    Returns:
-        Adjacency matrix based on the list of interactions
-    """
-    output = np.zeros((len(e_entities), len(f_entities)))
-    d_map = dict((e, i) for i, e in enumerate(e_entities))
-    p_map = dict((f, i) for i, f in enumerate(f_entities))
-    for e, f in inter:
-        output[d_map[e], p_map[f]] = 1
-    return output
-
-
 class LoggerRedirect:
     def __init__(self, logfile_name):
         """
@@ -130,8 +104,6 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: str) -> 
         f"The problem has {sum([functools.reduce(operator.mul, v.shape, 1) for v in problem.variables()])} variables "
         f"and {sum([functools.reduce(operator.mul, c.shape, 1) for c in problem.constraints])} constraints.")
 
-    # if solver == SOLVER_GLPK:
-    #     kwargs = {"glpk_mi_params": {"tm_lim": max_sec}}
     if solver == SOLVER_SCIP:
         kwargs = {"scip_params": {"limits/time": max_sec}}
     elif solver == SOLVER_CPLEX:
