@@ -12,11 +12,12 @@ from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
+from datasail.cluster.mmseqspp import run_mmseqspp
 from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, N_CLUSTERS
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS
 
 
 def cluster(dataset: DataSet, **kwargs) -> DataSet:
@@ -101,6 +102,8 @@ def similarity_clustering(
         cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
     elif dataset.similarity.lower() == "mmseqs":
         cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == "mmseqspp":
+        cluster_names, cluster_map, cluster_sim = run_mmseqspp(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "foldseek":
         cluster_names, cluster_map, cluster_sim = run_foldseek(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "cdhit":

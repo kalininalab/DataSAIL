@@ -1,7 +1,7 @@
 import argparse
 import os
 from pydoc import locate
-from typing import Dict, List, Sequence
+from typing import Dict, List, Sequence, Literal
 
 import yaml
 
@@ -198,20 +198,6 @@ def parse_datasail_args(args) -> Dict[str, object]:
         default="",
         help="Additional arguments for the clustering algorithm used in --e-dist or --e-sim."
     )
-    e_ent.add_argument(
-        "--e-max-sim",
-        type=float,
-        dest=KW_E_MAX_SIM,
-        default=1.0,
-        help="Maximum similarity of two samples from the first data in two split."
-    )
-    e_ent.add_argument(
-        "--e-max-dist",
-        type=float,
-        dest=KW_E_MAX_DIST,
-        default=1.0,
-        help="Maximal distance of two samples from the second data in the same split."
-    )
     f_ent = parser.add_argument_group("Second Input Arguments")
     f_ent.add_argument(
         "--f-type",
@@ -259,20 +245,6 @@ def parse_datasail_args(args) -> Dict[str, object]:
         default="",
         help="Additional arguments for the clustering algorithm used in --f-dist or --f-sim."
     )
-    f_ent.add_argument(
-        "--f-max-sim",
-        type=float,
-        dest=KW_F_MAX_SIM,
-        default=1.0,
-        help="Maximum similarity of two samples from the second dataset in two split."
-    )
-    f_ent.add_argument(
-        "--f-max-dist",
-        type=float,
-        dest=KW_F_MAX_DIST,
-        default=1.0,
-        help="Maximal distance of two samples from the second dataset in the same split."
-    )
     args = insert_patch(args)
     return vars(parser.parse_args(args))
 
@@ -286,6 +258,7 @@ class MultiYAMLParser(argparse.ArgumentParser):
             algo_name: Name of the algorithm to parse arguments for.
         """
         super().__init__()
+        self.fos_map = {}
         if algo_name is not None:
             self.add_yaml_arguments(YAML_FILE_NAMES[algo_name])
 
@@ -330,30 +303,33 @@ class MultiYAMLParser(argparse.ArgumentParser):
                     kwargs["nargs"] = values["cardinality"]
                 if values["default"] is not None:
                     kwargs["default"] = values["default"]
+            self.fos_map[name.replace("-", "_")] = values.get("fos", 0)
             super().add_argument(
                 *values["calls"],
                 **kwargs,
             )
 
-    def get_user_arguments(self, args: argparse.Namespace, ds_args: List[str]) -> str:
+    def get_user_arguments(self, args: argparse.Namespace, ds_args: List[str], fos: Literal[0, 1] = 0) -> str:
         """
         Get the arguments that the user provided to the program that differ from default values.
 
         Args:
             args: Arguments provided by the user.
             ds_args: Arguments that are optimized by DataSAIL and extracted differently.
+            fos:
 
         Returns:
             String representation of the arguments that the user provided for the program to be passed to subprograms.
         """
-        cleaned_args = namespace_diff(args, self.parse_args([]))
+        cleaned_args = namespace_diff(args, self.parse_args([]))  # the non-standard arguments
         action_map = {action.dest: action.option_strings[0] for action in self._actions}
+        fos = {fos, 2}
 
         for key in ds_args:
             if key in cleaned_args:
                 del cleaned_args[key]
 
-        return " ".join([f"{action_map[key]} {value}" for key, value in cleaned_args.items()])
+        return " ".join([f"{action_map[key]} {value}" for key, value in cleaned_args.items() if self.fos_map[key] in fos])
 
 
 def namespace_diff(a: argparse.Namespace, b: argparse.Namespace) -> dict:

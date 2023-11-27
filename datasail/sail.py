@@ -118,10 +118,6 @@ def validate_args(**kwargs) -> Dict[str, object]:
         if kwargs[KW_E_DIST].lower() not in DIST_ALGOS and not os.path.isfile(kwargs[KW_E_DIST]):
             error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10,
                   kwargs[KW_CLI])
-    if 1 < kwargs[KW_E_MAX_SIM] < 0:
-        error("The maximal similarity value for the E-data has to be a real value in [0,1].", 11, kwargs[KW_CLI])
-    if 1 < kwargs[KW_E_MAX_DIST] < 0:
-        error("The maximal distance value for the E-data has to be a real value in [0,1].", 12, kwargs[KW_CLI])
 
     # syntactically parse the input data for the F-dataset
     if kwargs[KW_F_DATA] is not None and isinstance(kwargs[KW_F_DATA], str) and not os.path.exists(kwargs[KW_F_DATA]):
@@ -137,10 +133,6 @@ def validate_args(**kwargs) -> Dict[str, object]:
         if kwargs[KW_F_DIST].lower() not in DIST_ALGOS and not os.path.isfile(kwargs[KW_F_DIST]):
             error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16,
                   kwargs[KW_CLI])
-    if 1 < kwargs[KW_F_MAX_SIM] < 0:
-        error("The maximal similarity value for the F-data has to be a real value in [0,1].", 17, kwargs[KW_CLI])
-    if 1 < kwargs[KW_F_MAX_DIST] < 0:
-        error("The maximal distance value for the F-data has to be a real value in [0,1].", 18, kwargs[KW_CLI])
 
     return kwargs
 
@@ -164,16 +156,12 @@ def datasail(
         e_sim: MATRIX_INPUT = None,
         e_dist: MATRIX_INPUT = None,
         e_args: str = "",
-        e_max_sim: float = 1.0,
-        e_max_dist: float = 1.0,
         f_type: str = None,
         f_data: DATA_INPUT = None,
         f_weights: DATA_INPUT = None,
         f_sim: MATRIX_INPUT = None,
         f_dist: MATRIX_INPUT = None,
         f_args: str = "",
-        f_max_sim: float = 1.0,
-        f_max_dist: float = 1.0,
         threads: int = 1,
 ) -> Tuple[Dict, Dict, Dict]:
     """
@@ -198,16 +186,12 @@ def datasail(
         e_sim: Similarity measure to apply for the e-data
         e_dist: Distance measure to apply for the e-data
         e_args: Additional arguments for the tools in e_sim or e_dist
-        e_max_sim: Maximal similarity of two entities in different splits
-        e_max_dist: Maximal distance of two entities in the same split
         f_type: Data format of the second batch of data
         f_data: Data file of the second batch of data
         f_weights: Weighting of the datapoints from f-data as TSV format
         f_sim: Similarity measure to apply for the f-data
         f_dist: Distance measure to apply for the f-data
         f_args: Additional arguments for the tools in f_sim or f-dist
-        f_max_sim: Maximal similarity of two f-entities in different splits
-        f_max_dist: Maximal distance of two f-entities in the same split
         threads: number of threads to use for one CD-HIT run
 
     Returns:
@@ -215,11 +199,9 @@ def datasail(
     """
     kwargs = validate_args(
         output=None, techniques=techniques, inter=inter, max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
-        splits=splits, names=names, epsilon=epsilon, runs=runs, solver=solver, cache=cache,
-        cache_dir=cache_dir, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=e_dist,
-        e_args=e_args, e_max_sim=e_max_sim, e_max_dist=e_max_dist, f_type=f_type, f_data=f_data, f_weights=f_weights,
-        f_sim=f_sim, f_dist=f_dist, f_args=f_args, f_max_sim=f_max_sim, f_max_dist=f_max_dist, threads=threads,
-        cli=False,
+        splits=splits, names=names, epsilon=epsilon, runs=runs, solver=solver, cache=cache, cache_dir=cache_dir,
+        e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=e_dist, e_args=e_args, f_type=f_type,
+        f_data=f_data, f_weights=f_weights, f_sim=f_sim, f_dist=f_dist, f_args=f_args, threads=threads, cli=False,
     )
     return datasail_main(**kwargs)
 

@@ -12,8 +12,6 @@ def read_other_data(
         weights: DATA_INPUT = None,
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
-        max_sim: float = 1.0,
-        max_dist: float = 1.0,
         id_map: Optional[str] = None,
         inter: Optional[List[Tuple[str, str]]] = None,
         index: Optional[int] = None,
@@ -28,8 +26,6 @@ def read_other_data(
         weights: Weight file for the data
         sim: Similarity file or metric
         dist: Distance file or metric
-        max_sim: Maximal similarity between entities in two splits
-        max_dist: Maximal similarity between entities in one split
         id_map: Mapping of ids in case of duplicates in the dataset
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
@@ -54,7 +50,7 @@ def read_other_data(
     else:
         raise ValueError()
 
-    dataset, inter = read_data(weights, sim, dist, max_sim, max_dist, inter, index, tool_args, dataset)
+    dataset, inter = read_data(weights, sim, dist, inter, index, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)
 
     return dataset, inter

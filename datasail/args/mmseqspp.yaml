@@ -1,0 +1,351 @@
+add-backtrace:
+  description: Add backtrace string (convert to alignments with mmseqs convertalis module)
+  type: bool
+  cardinality: 0
+  default: false
+  calls: ["-a"]
+  fos: 1
+
+alignment-mode:
+  description: How to compute the alignment
+  type: int
+  cardinality: "?"
+  default: "0"
+  calls: ["--alignment-mode"]
+  fos: 1
+
+alignment-output-mode:
+  description: How to compute the alignment for output
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--alignment-output-mode"]
+  fos: 1
+
+alph-size:
+  description: Alphabet size
+  type: str
+  cardinality: "?"
+  default: "aa:21,nucl:5"
+  calls: ["--alph-size"]
+  fos: 0
+
+alt-ali:
+  description: Show up to this many alternative alignments
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--alt-ali"]
+  fos: 1
+
+corr-score-weight:
+  description: Weight of backtrace correlation score that is added to the alignment score
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["--corr-score-weight"]
+  fos: 1
+
+diag-score:
+  description: Use ungapped diagonal scoring during prefilter
+  type: bool
+  cardinality: 0
+  default: true
+  calls: ["--diag-score"]
+  fos: 0
+
+exact-kmer-matching:
+  description: Extract only exact k-mers for matching
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--exact-kmer-matching"]
+  fos: 0
+
+gap-open:
+  description: Gap open cost
+  type: str
+  cardinality: "?"
+  default: "aa:11,nucl:5"
+  calls: ["--gap-open"]
+  fos: 1
+
+gap-extend:
+  description: Gap extension cost
+  type: str
+  cardinality: "?"
+  default: "aa:1,nucl:2"
+  calls: ["--gap-extend"]
+  fos: 1
+
+k:
+  description: k-mer length
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["-k"]
+  fos: 0
+
+k-score:
+  description: k-mer threshold for generating similar k-mer lists
+  type: str
+  cardinality: "?"
+  default: "seq:2147483647,prof:2147483647"
+  calls: ["--k-score"]
+  fos: 0
+
+mask:
+  description: Mask sequences in k-mer stage
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["--mask"]
+  fos: 0
+
+mask-prob:
+  description: Mask sequences if probability is above threshold
+  type: float
+  cardinality: "?"
+  default: 0.9
+  calls: ["--mask-prob"]
+  fos: 0
+
+mask-lower-case:
+  description: Lowercase letters will be excluded from k-mer search
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--mask-lower-case"]
+  fos: 0
+
+max-accept:
+  description: Maximum accepted alignments before alignment calculation for a query is stopped
+  type: int
+  cardinality: "?"
+  default: 2147483647
+  calls: ["--max-accept"]
+  fos: 1
+
+max-rejected:
+  description: Maximum rejected alignments before alignment calculation for a query is stopped
+  type: int
+  cardinality: "?"
+  default: 2147483647
+  calls: ["--max-rejected"]
+  fos: 1
+
+max-seqs:
+  description: Maximum results per query sequence allowed to pass the prefilter
+  type: int
+  cardinality: "?"
+  default: 300
+  calls: ["--max-seqs"]
+  fos: 0
+
+min-aln-len:
+  description: Minimum alignment length
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--min-aln-len"]
+  fos: 1
+
+min-ungapped-score:
+  description: Accept only matches with ungapped alignment score above threshold
+  type: int
+  cardinality: "?"
+  default: 15
+  calls: ["--min-ungapped-score"]
+  fos: 0
+
+realign:
+  description: Compute more conservative, shorter alignments
+  type: bool
+  cardinality: 0
+  default: false
+  calls: ["--realign"]
+  fos: 1
+
+realign-score-bias:
+  description: Additional bias when computing realignment
+  type: float
+  cardinality: "?"
+  default: -0.2
+  calls: ["--realign-score-bias"]
+  fos: 1
+
+realign-max-seqs:
+  description: Maximum number of results to return in realignment
+  type: int
+  cardinality: "?"
+  default: 2147483647
+  calls: ["--realign-max-seqs"]
+  fos: 1
+
+s:
+  description: Sensitivity
+  type: float
+  cardinality: "?"
+  default: 4.0
+  calls: ["-s"]
+  fos: 0
+
+score-bias:
+  description: Score bias when computing SW alignment (in bits)
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["--score-bias"]
+  fos: 1
+
+seed-sub-mat:
+  description: Substitution matrix file for k-mer generation
+  type: str
+  cardinality: "?"
+  default: "aa:VTML80.out,nucl:nucleotide.out"
+  calls: ["--seed-sub-mat"]
+  fos: 0
+
+seq-id-mode:
+  description: Alignment length options
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--seq-id-mode"]
+  fos: 1
+
+spaced-kmer-mode:
+  description: Use consecutive or spaced k-mers
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["--spaced-kmer-mode"]
+  fos: 0
+
+spaced-kmer-pattern:
+  description: User-specified spaced k-mer pattern
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["--spaced-kmer-pattern"]
+  fos: 0
+
+split:
+  description: Split input into N equally distributed chunks
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--split"]
+  fos: 0
+
+split-mode:
+  description: Split mode options
+  type: int
+  cardinality: "?"
+  default: 2
+  calls: ["--split-mode"]
+  fos: 0
+
+split-memory-limit:
+  description: Set max memory per split
+  type: str
+  cardinality: "?"
+  default: "0"
+  calls: ["--split-memory-limit"]
+  fos: 0
+
+taxon-list:
+  description: Taxonomy ID, possibly multiple values separated by ','
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["--taxon-list"]
+  fos: 0
+
+wrapped-scoring:
+  description: Double the (nucleotide) query sequence during the scoring process to allow wrapped diagonal scoring around end and start
+  type: bool
+  cardinality: 0
+  default: false
+  calls: ["--wrapped-scoring"]
+  fos: 1
+
+zdrop:
+  description: Maximal allowed difference between score values before alignment is truncated (nucleotide alignment only)
+  type: int
+  cardinality: "?"
+  default: 40
+  calls: ["--zdrop"]
+  fos: 1
+
+add-self-matches:
+  description: Artificially add entries of queries with themselves (for clustering)
+  type: bool
+  cardinality: 0
+  default: false
+  calls: ["--add-self-matches"]
+  fos: 2
+
+comp-bias-corr:
+  description: Correct for locally biased amino acid composition
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["--comp-bias-corr"]
+  fos: 2
+
+comp-bias-corr-scale:
+  description: Correct for locally biased amino acid composition (scale)
+  type: float
+  cardinality: "?"
+  default: 1.0
+  calls: ["--comp-bias-corr-scale"]
+  fos: 2
+
+cov-mode:
+  description: Coverage mode options
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--cov-mode"]
+  fos: 2
+
+pca:
+  description: Pseudo count admixture strength
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--pca"]
+  fos: 2
+
+pcb:
+  description: "Pseudo counts: Neff at half of maximum admixture"
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--pcb"]
+  fos: 2
+
+sub-mat:
+  description: Substitution matrix file
+  type: str
+  cardinality: "?"
+  default: "aa:blosum62.out,nucl:nucleotide.out"
+  calls: ["--sub-mat"]
+  fos: 2
+
+max-seq-len:
+  description: Maximum sequence length
+  type: int
+  cardinality: "?"
+  default: 65535
+  calls: ["--max-seq-len"]
+  fos: 2
+
+db-load-mode:
+  description: Database preload mode
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--db-load-mode"]
+  fos: 2

@@ -33,12 +33,10 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
         raise ValueError()
 
     e_dataset = read_data_type(kwargs[KW_E_TYPE])(
-        kwargs[KW_E_DATA], kwargs[KW_E_WEIGHTS], kwargs[KW_E_SIM], kwargs[KW_E_DIST], kwargs[KW_E_MAX_SIM],
-        kwargs[KW_E_MAX_DIST], inter, 0, kwargs[KW_E_ARGS],
+        kwargs[KW_E_DATA], kwargs[KW_E_WEIGHTS], kwargs[KW_E_SIM], kwargs[KW_E_DIST], inter, 0, kwargs[KW_E_ARGS],
     )
     f_dataset = read_data_type(kwargs[KW_F_TYPE])(
-        kwargs[KW_F_DATA], kwargs[KW_F_WEIGHTS], kwargs[KW_F_SIM], kwargs[KW_F_DIST], kwargs[KW_F_MAX_SIM],
-        kwargs[KW_F_MAX_DIST], inter, 1, kwargs[KW_F_ARGS],
+        kwargs[KW_F_DATA], kwargs[KW_F_WEIGHTS], kwargs[KW_F_SIM], kwargs[KW_F_DIST], inter, 1, kwargs[KW_F_ARGS],
     )
 
     return e_dataset, f_dataset, inter

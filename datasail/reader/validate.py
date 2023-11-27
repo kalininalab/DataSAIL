@@ -3,7 +3,8 @@ from argparse import Namespace
 from typing import Tuple, Union, Optional
 
 from datasail.parsers import MultiYAMLParser
-from datasail.settings import CDHIT, MMSEQS2, MASH, MASH_SKETCH, MASH_DIST, FOLDSEEK, MMSEQS, get_default, CDHIT_EST
+from datasail.settings import CDHIT, MMSEQS2, MASH, MASH_SKETCH, MASH_DIST, FOLDSEEK, MMSEQS, get_default, CDHIT_EST, \
+    MMSEQSPP
 
 
 def validate_user_args(
@@ -28,16 +29,22 @@ def validate_user_args(
     """
     sim_on, dist_on = isinstance(similarity, str), isinstance(distance, str)
     both_none = not sim_on and not dist_on
-    if (sim_on and similarity.lower().startswith(CDHIT)) or (both_none and get_default(dtype, dformat)[0] == CDHIT):
-        return check_cdhit_arguments(tool_args)
-    if (sim_on and similarity.lower().startswith(CDHIT_EST)) or (both_none and get_default(dtype, dformat)[0] == CDHIT_EST):
+    if (sim_on and similarity.lower().startswith(CDHIT_EST)) or \
+            (both_none and get_default(dtype, dformat)[0] == CDHIT_EST):
         return check_cdhit_est_arguments(tool_args)
-    elif (sim_on and similarity.lower().startswith(MMSEQS)) or (both_none and get_default(dtype, dformat)[0] in [MMSEQS, MMSEQS2]):
+    elif (sim_on and similarity.lower().startswith(CDHIT)) or (both_none and get_default(dtype, dformat)[0] == CDHIT):
+        return check_cdhit_arguments(tool_args)
+    elif (sim_on and similarity.lower().startswith(MMSEQSPP)) or \
+            (both_none and get_default(dtype, dformat)[0] == MMSEQSPP):
+        return check_mmseqspp_arguments(tool_args)
+    elif (sim_on and similarity.lower().startswith(MMSEQS)) or \
+            (both_none and get_default(dtype, dformat)[0] in [MMSEQS, MMSEQS2]):
         return check_mmseqs_arguments(tool_args)
-    elif (sim_on and similarity.lower().startswith(FOLDSEEK)) or (both_none and get_default(dtype, dformat)[0] == FOLDSEEK):
+    elif (sim_on and similarity.lower().startswith(FOLDSEEK)) or \
+            (both_none and get_default(dtype, dformat)[0] == FOLDSEEK):
         return check_foldseek_arguments(tool_args)
     elif (dist_on and distance.lower().startswith(MASH)) or (both_none and get_default(dtype, dformat)[1] == MASH):
-        return check_mash_arguments(tool_args)
+        return check_mash_arguments_new(tool_args)
     else:
         return None
 
@@ -85,8 +92,6 @@ def check_cdhit_est_arguments(args: str = "") -> Namespace:
         raise ValueError("Invalid value for -b. It should be between 1 and 32.")
     if not (0 <= args.M):
         raise ValueError("Invalid value for -M. It should be greater than or equal to 0.")
-    if not (0 <= args.T):
-        raise ValueError("Invalid value for -T. It should be greater than or equal to 0.")
     if not (0 <= args.n):
         raise ValueError("Invalid value for -n. It should be greater than or equal to 0.")
     if not (0 <= args.S <= 4294967296):
@@ -168,8 +173,6 @@ def check_cdhit_arguments(args: str = "") -> Namespace:
         raise ValueError("Invalid value for -b. It should be between 1 and 32.")
     if not (0 <= args.M):
         raise ValueError("Invalid value for -M. It should be greater than or equal to 0.")
-    if not (0 <= args.T):
-        raise ValueError("Invalid value for -T. It should be greater than or equal to 0.")
     if not (0 <= args.n):
         raise ValueError("Invalid value for -n. It should be greater than or equal to 0.")
     # if not (0 <= args.l):
@@ -263,7 +266,7 @@ def check_mmseqs_arguments(args: str = "") -> Optional[Namespace]:
             raise ValueError(f"Invalid value for --{arg_name.replace('_', '-')}. It should be 0 or 1.")
 
     # Check integer values
-    for arg_name in ["k", "max_seqs", "split", "threads", "zdrop", "id_offset",
+    for arg_name in ["k", "max_seqs", "split", "zdrop", "id_offset",
                      "cluster_steps", "max_rejected", "max_accept", "realign_max_seqs", "min_aln_len", "hash_shift",
                      "kmer_per_seq"]:
         if not (0 <= getattr(args, arg_name) <= 2147483647):
@@ -301,6 +304,128 @@ def check_mmseqs_arguments(args: str = "") -> Optional[Namespace]:
     # aa_kmer_per_seq_scale, nucl_kmer_per_seq_scale = map(float, args.kmer_per_seq_scale.split(','))
     # if aa_kmer_per_seq_scale <= 0 or nucl_kmer_per_seq_scale <= 0:
     #     raise ValueError("Invalid values for --kmer-per-seq-scale. Values should be positive floats.")
+
+    return args
+
+
+def check_mmseqspp_arguments(args: str = "") -> Optional[Namespace]:
+    """
+    Validate the custom arguments provided to DataSAIL for executing MMSEQS++. That is mmseqs used for computing
+    similarity matrix between the sequences.
+
+    Args:
+        args: String of the arguments that can be set by user
+
+    Returns:
+        The namespace containing the parsed and validated arguments.
+    """
+    args = MultiYAMLParser(MMSEQSPP).parse_args(args)
+
+    # Check specific conditions for certain arguments
+    if not 1.0 <= args.s <= 7.5:
+        raise ValueError("Error: Sensitivity must be between 1.0 and 7.5.")
+
+    # if args.gap_open < 0 or (args.alph_size == 'aa' and args.gap_open > 11):
+    #     raise ValueError("Error: Gap open cost is out of valid range.")
+
+    # if args.gap_extend < 0 or (args.alph_size == 'aa' and args.gap_extend > 11):
+    #     raise ValueError("Error: Gap extension cost is out of valid range.")
+
+    if args.k < 0:
+        raise ValueError("Error: k-mer length must be a non-negative integer.")
+
+    if not 0.0 <= args.mask_prob <= 1.0:
+        raise ValueError("Error: Mask probability must be between 0 and 1.")
+
+    if args.alignment_mode not in [0, 1, 2, 3]:
+        raise ValueError("Error: Alignment mode must be 0, 1, 2, or 3.")
+
+    if args.alignment_output_mode not in [0, 1, 2, 3, 4, 5]:
+        raise ValueError("Error: Alignment output mode must be 0, 1, 2, 3, 4, or 5.")
+
+    if args.alt_ali < 0:
+        raise ValueError("Error: Show up to this many alternative alignments must be a non-negative integer.")
+
+    if not 0.0 <= args.corr_score_weight:
+        raise ValueError("Error: Weight of backtrace correlation score must be a non-negative float.")
+
+    if args.diag_score not in [0, 1]:
+        raise ValueError("Error: Ungapped diagonal scoring during prefilter must be 0 or 1.")
+
+    if args.exact_kmer_matching not in [0, 1]:
+        raise ValueError("Error: Extract only exact k-mers for matching must be 0 or 1.")
+
+    if args.k < 0:
+        raise ValueError("Error: k-mer length must be a non-negative integer.")
+
+    if args.mask not in [0, 1]:
+        raise ValueError("Error: Mask argument must be 0 or 1.")
+
+    if not 0.0 <= args.mask_prob <= 1.0:
+        raise ValueError("Error: Mask probability must be between 0.0 and 1.0.")
+
+    if args.mask_lower_case not in [0, 1]:
+        raise ValueError("Error: Mask lower case argument must be 0 or 1.")
+
+    if args.max_accept < 0:
+        raise ValueError("Error: Maximum accepted alignments must be a non-negative integer.")
+
+    if args.max_rejected < 0:
+        raise ValueError("Error: Maximum rejected alignments must be a non-negative integer.")
+
+    if args.max_seqs < 1:
+        raise ValueError("Error: Maximum results per query sequence must be at least 1.")
+
+    if args.min_aln_len < 0:
+        raise ValueError("Error: Minimum alignment length must be a non-negative integer.")
+
+    if args.min_ungapped_score < 0:
+        raise ValueError("Error: Minimum ungapped alignment score must be a non-negative integer.")
+
+    if args.realign_score_bias < -1.0 or args.realign_score_bias > 1.0:
+        raise ValueError("Error: Realign score bias must be between -1.0 and 1.0.")
+
+    if args.realign_max_seqs < 1:
+        raise ValueError("Error: Maximum number of results for realignment must be at least 1.")
+
+    if args.spaced_kmer_mode not in [0, 1]:
+        raise ValueError("Error: Spaced k-mer mode must be 0 or 1.")
+
+    if args.split_mode not in [0, 1, 2]:
+        raise ValueError("Error: Split mode must be 0, 1, or 2.")
+
+    if args.cov_mode not in [0, 1, 2, 3, 4, 5]:
+        raise ValueError("Error: Coverage mode must be 0, 1, 2, 3, 4, or 5.")
+
+    if args.db_load_mode not in [0, 1, 2, 3]:
+        raise ValueError("Error: Database preload mode must be 0, 1, 2, or 3.")
+
+    if args.seq_id_mode not in [0, 1, 2]:
+        raise ValueError("Error: Sequence identity mode must be 0, 1, or 2.")
+
+    if args.pca < 0:
+        raise ValueError("Error: PCA must be a non-negative integer.")
+
+    if args.pcb < 0:
+        raise ValueError("Error: PCB must be a non-negative integer.")
+
+    if args.score_bias < 0:
+        raise ValueError("Error: The score bias must be a non-negative integer.")
+
+    if args.split < 0:
+        raise ValueError("Error: The number of splits must be a non-negative integer.")
+
+    if args.zdrop < 0:
+        raise ValueError("Error: zdrop must be a non-negative integer.")
+
+    if not (0 <= args.max_seq_len <= 65536):
+        raise ValueError("Invalid value for max_seq_len. It should be between 0 and 65536.")
+
+    if args.comp_bias_corr not in [0, 1]:
+        raise ValueError("Error: Composition bias correction must be 0 or 1.")
+
+    if not (0.0 <= args.comp_bias_corr_scale <= 1.0):
+        raise ValueError("Error: Composition bias correction scale must be between 0.0 and 1.0.")
 
     return args
 
@@ -413,9 +538,6 @@ def check_foldseek_arguments(args: str = "") -> Namespace:
     if not (0 <= args.db_load_mode <= 3):
         raise ValueError("Invalid value for db_load_mode. It should be between 0 and 3.")
 
-    if not (1 <= args.threads <= 2147483647):
-        raise ValueError("Invalid value for threads. It should be between 1 and 2147483647.")
-
     # if not (0 <= args.v <= 3):
     #     raise ValueError("Invalid value for v. It should be between 0 and 3.")
 
@@ -474,6 +596,60 @@ def check_mash_arguments(args: str = "") -> Tuple[Optional[Namespace], Optional[
             dist_args = check_mash_dist_arguments(arg_array[1])
 
     return sketch_args, dist_args
+
+
+def check_mash_arguments_new(args: str = "") -> Namespace:
+    args = MultiYAMLParser(MASH).parse_args(args)
+
+    if not (0 <= args.v <= 1):
+        raise ValueError("Invalid value for -v. It should be between 0 and 1.")
+    if not (0 <= args.d <= 1):
+        raise ValueError("Invalid value for -d. It should be between 0 and 1.")
+    if not (1 <= args.k <= 32):
+        raise ValueError("Invalid value for -k. It should be between 1 and 32.")
+    if args.s <= 0:
+        raise ValueError("Invalid value for -s. It should be greater than 0.")
+    if not (0 <= args.S <= 4294967296):
+        raise ValueError("Invalid value for -S. It should be between 0 and 4294967296.")
+    if not (0 <= args.w <= 1):
+        raise ValueError("Invalid value for -w. It should be between 0 and 1.")
+    if args.m <= 0:
+        raise ValueError("Invalid value for -m. It should be greater than 0.")
+    if args.c <= 0:
+        raise ValueError("Invalid value for -c. It should be greater than 0.")
+
+    if args.g != "":
+        valid_suffixes = ['B', 'K', 'M', 'G', 'T']
+        size_str = args.g.upper()
+        suffix = size_str[-1]
+        if suffix not in valid_suffixes:
+            raise ValueError("Invalid suffix for -g. Use one of: B, K, M, G, T.")
+        try:
+            size = int(size_str[:-1])
+            if size <= 0:
+                raise ValueError("Invalid value for -g. Size must be greater than 0.")
+        except ValueError:
+            raise ValueError("Invalid value for -g. Numeric size is expected before the suffix.")
+
+    if args.a and args.z != "":
+        raise ValueError("Options -a and -z are mutually exclusive.")
+    if args.r and args.i:
+        raise ValueError("Options -r and -i are mutually exclusive.")
+    if args.b != "" and args.r:
+        raise ValueError("Option -b implies -r.")
+    if args.m != 1 and args.r:
+        raise ValueError("Option -m implies -r.")
+    if args.c != 1 and args.r:
+        raise ValueError("Option -c implies -r.")
+    if args.g != "" and args.r:
+        raise ValueError("Option -g implies -r.")
+    if args.a and args.k not in [9, 21]:
+        raise ValueError("Option -a implies -k 9.")
+    if args.n and (args.a or args.z != ""):
+        raise ValueError("Option -n is implied by -a or -z.")
+    if args.Z and (args.a or args.z != ""):
+        raise ValueError("Option -Z is implied by -a or -z.")
+    return args
 
 
 def check_mash_sketch_arguments(args: str = "") -> Namespace:
@@ -590,7 +766,8 @@ def check_mash_dist_arguments(args: str = ""):
     """
     # args = args.split(" ") if " " in args else (args if isinstance(args, list) else [args])
     args = MultiYAMLParser(MASH_DIST).parse_args(args)
-
+    if args.p < 1:
+        raise ValueError("Invalid value for -p. It should be greater than or equal to 1.")
     if not (0 <= args.v <= 1):
         raise ValueError("Invalid value for -v. It should be between 0 and 1.")
     if not (0 <= args.d <= 1):
@@ -627,14 +804,14 @@ def check_mash_dist_arguments(args: str = ""):
         raise ValueError("Options -r and -i are mutually exclusive.")
     if args.b != "" and args.r:
         raise ValueError("Option -b implies -r.")
+    if args.m != 1 and args.r:
+        raise ValueError("Option -m implies -r.")
     if args.c != 1 and args.r:
         raise ValueError("Option -c implies -r.")
     if args.g != "" and args.r:
         raise ValueError("Option -g implies -r.")
     if args.a and args.k not in [9, 21]:
         raise ValueError("Option -a implies -k 9.")
-    # if args.l and args.i:
-    #     raise ValueError("Option -l and -i are mutually exclusive.")
     if args.n and (args.a or args.z != ""):
         raise ValueError("Option -n is implied by -a or -z.")
     if args.Z and (args.a or args.z != ""):

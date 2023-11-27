@@ -50,12 +50,12 @@ M:
   cardinality: "?"
   default: 800
   calls: ["-M"]
-T:
-  description: Number of threads, default 1; with 0, all CPUs will be used, range non-negative
-  type: int
-  cardinality: "?"
-  default: 1
-  calls: ["-T"]
+# T:
+#   description: Number of threads, default 1; with 0, all CPUs will be used, range non-negative
+#   type: int
+#   cardinality: "?"
+#   default: 1
+#   calls: ["-T"]
 n:
   description: Word length, see user's guide for choosing it, range [5;10], dependence on c
   type: int

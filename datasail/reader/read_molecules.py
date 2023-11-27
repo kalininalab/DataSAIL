@@ -3,19 +3,22 @@ from typing import List, Tuple, Optional, Callable, Generator, Union, Iterable
 
 import numpy as np
 from rdkit import Chem
-from rdkit.Chem import MolFromMol2File, MolFromMolFile, MolFromPDBFile, MolFromPNGFile, \
-    MolFromTPLFile, MolFromXYZFile
+from rdkit.Chem import MolFromMol2File, MolFromMolFile, MolFromPDBFile, MolFromTPLFile, MolFromXYZFile
+try:
+    from rdkit.Chem import MolFromMrvFile
+except ImportError:
+    MolFromMrvFile = None
 
 from datasail.reader.utils import read_csv, DataSet, read_data, DATA_INPUT, MATRIX_INPUT
 from datasail.settings import M_TYPE, UNK_LOCATION, FORM_SMILES
 
 
 mol_reader = {
-    "mol2": MolFromMol2File,
     "mol": MolFromMolFile,
+    "mol2": MolFromMol2File,
+    "mrv": MolFromMrvFile,
     # "sdf": MolFromMol2File,
     "pdb": MolFromPDBFile,
-    "png": MolFromPNGFile,
     "tpl": MolFromTPLFile,
     "xyz": MolFromXYZFile,
 }
@@ -26,8 +29,6 @@ def read_molecule_data(
         weights: DATA_INPUT = None,
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
-        max_sim: float = 1.0,
-        max_dist: float = 1.0,
         inter: Optional[List[Tuple[str, str]]] = None,
         index: Optional[int] = None,
         tool_args: str = "",
@@ -40,8 +41,6 @@ def read_molecule_data(
         weights: Weight file for the data
         sim: Similarity file or metric
         dist: Distance file or metric
-        max_sim: Maximal similarity between entities in two splits
-        max_dist: Maximal similarity between entities in one split
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
         tool_args: Additional arguments for the tool
@@ -57,7 +56,7 @@ def read_molecule_data(
             dataset.data = {}
             for file in os.listdir(data):
                 ending = file.split(".")[-1]
-                if ending != "sdf":
+                if ending != "sdf" and mol_reader[ending] is not None:
                     dataset.data[os.path.basename(file)] = mol_reader[ending](os.path.join(data, file))
                 else:
                     suppl = Chem.SDMolSupplier(os.path.join(data, file))
@@ -77,7 +76,7 @@ def read_molecule_data(
     else:
         raise ValueError()
 
-    dataset = read_data(weights, sim, dist, max_sim, max_dist, inter, index, tool_args, dataset)
+    dataset = read_data(weights, sim, dist, inter, index, tool_args, dataset)
     dataset = remove_molecule_duplicates(dataset)
 
     return dataset

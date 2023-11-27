@@ -453,12 +453,12 @@ db-load-mode:
   default: 0
   calls: ["--db-load-mode"]
 
-threads:
-  description: Number of CPU-cores used (all by default)
-  type: int
-  cardinality: "?"
-  default: 16
-  calls: ["--threads"]
+# threads:
+#   description: Number of CPU-cores used (all by default)
+#   type: int
+#   cardinality: "?"
+#   default: 16
+#   calls: ["--threads"]
 
 # compressed:
 #   description: Write compressed output

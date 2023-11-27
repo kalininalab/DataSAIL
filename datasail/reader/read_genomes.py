@@ -12,8 +12,6 @@ def read_genome_data(
         weights: DATA_INPUT = None,
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
-        max_sim: float = 1.0,
-        max_dist: float = 1.0,
         inter: Optional[List[Tuple[str, str]]] = None,
         index: Optional[int] = None,
         tool_args: str = "",
@@ -26,8 +24,6 @@ def read_genome_data(
         weights: Weight file for the data
         sim: Similarity file or metric
         dist: Distance file or metric
-        max_sim: Maximal similarity between entities in two splits
-        max_dist: Maximal similarity between entities in one split
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
         tool_args: Additional arguments for the tool
@@ -58,6 +54,6 @@ def read_genome_data(
     else:
         raise ValueError()
 
-    dataset = read_data(weights, sim, dist, max_sim, max_dist, inter, index, tool_args, dataset)
+    dataset = read_data(weights, sim, dist, inter, index, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)
     return dataset

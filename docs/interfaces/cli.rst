@@ -126,7 +126,7 @@ The e_id has to match an entity id from the first input argument.
 -\-e-sim
 --------
 Provide the name of a method to determine similarity between samples of the first input dataset. This can either be
-cdhit, ecfp, foldseek, mmseqs, wlk, or a filepath to a file storing the pairwise similarities in TSV.
+cdhit, ecfp, foldseek, mmseqs, mmseqspp, wlk, or a filepath to a file storing the pairwise similarities in TSV.
 
 -\-e-dist
 ---------
@@ -136,11 +136,3 @@ filepath to a file storing the pairwise distances in TSV.
 -\-e-args
 ---------
 Additional arguments for the clustering algorithm used in -\-e-dist or -\-e-sim.
-
--\-e-max-sim
-------------
-The maximum similarity of two samples from the first data in two split.
-
--\-e-max-dist
--------------
-The maximal distance of two samples from the second data in the same split.

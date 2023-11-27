@@ -1,0 +1,142 @@
+v:
+  description: Maximum p-value to report. (0-1)
+  type: float
+  cardinality: "?"
+  default: 1.0
+  calls: ["-v"]
+  fos: 1
+
+d:
+  description: Maximum distance to report. (0-1)
+  type: float
+  cardinality: "?"
+  default: 1.0
+  calls: ["-d"]
+  fos: 1
+
+I:
+  description: ID field for sketch of reads (instead of first sequence ID).
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["-I"]
+  fos: 0
+
+C:
+  description: Comment for a sketch of reads (instead of first sequence comment).
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["-C"]
+  fos: 0
+
+k:
+  description: K-mer size. Hashes will be based on strings of this many nucleotides.
+  type: int
+  cardinality: "?"
+  default: 21
+  calls: ["-k"]
+  fos: 2
+
+s:
+  description: Sketch size. Each sketch will have at most this many non-redundant min-hashes.
+  type: int
+  cardinality: "?"
+  default: 1000
+  calls: ["-s"]
+  fos: 2
+
+i:
+  description: Sketch individual sequences, rather than whole files, e.g. for multi-fastas of single-chromosome genomes or pair-wise gene comparisons.
+  type: bool
+  cardinality: 0
+  default: False
+  calls: ["-i"]
+  fos: 2
+
+S:
+  description: Seed to provide to the hash function.
+  type: int
+  cardinality: "?"
+  default: 42
+  calls: ["-S"]
+  fos: 2
+
+w:
+  description: Probability threshold for warning about low k-mer size.
+  type: float
+  cardinality: "?"
+  default: 0.01
+  calls: ["-w"]
+
+r:
+  description: Input is a read set. See Reads options below.
+  type: bool
+  cardinality: 0
+  default: False
+  calls: ["-r"]
+  fos: 2
+
+b:
+  description: Use a Bloom filter of this size to filter out unique k-mers. Implies -r.
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["-b"]
+  fos: 2
+
+m:
+  description: Minimum copies of each k-mer required to pass noise filter for reads. Implies -r.
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["-m"]
+  fos: 2
+
+c:
+  description: Target coverage. Sketching will conclude if this coverage is reached before the end of the input file.
+  type: float
+  cardinality: "?"
+  default: 1
+  calls: ["-c"]
+  fos: 2
+
+g:
+  description: Genome size. If specified, will be used for p-value calculation instead of an estimated size from k-mer content. Implies -r.
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["-g"]
+  fos: 2
+
+n:
+  description: Preserve strand.
+  type: bool
+  cardinality: 0
+  default: False
+  calls: ["-n"]
+  fos: 2
+
+a:
+  description: Use amino acid alphabet.
+  type: bool
+  cardinality: 0
+  default: False
+  calls: ["-a"]
+  fos: 2
+
+z:
+  description: Alphabet to base hashes on.
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["-z"]
+  fos: 2
+
+Z:
+  description: Preserve case in k-mers and alphabet.
+  type: bool
+  cardinality: 0
+  default: False
+  calls: ["-Z"]
+  fos: 2

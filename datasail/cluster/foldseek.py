@@ -40,7 +40,8 @@ def run_foldseek(
           f"easy-search " \
           f"{os.path.join('..', dataset.location)} " \
           f"{os.path.join('..', dataset.location)} " \
-          f"aln.m8 tmp " \
+          f"aln.m8 " \
+          f"tmp " \
           f"--format-output 'query,target,fident' " \
           f"-e inf " \
           f"--threads {threads} " \

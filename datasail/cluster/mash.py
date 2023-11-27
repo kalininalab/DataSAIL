@@ -30,15 +30,15 @@ def run_mash(
     """
     if not INSTALLED[MASH]:
         raise ValueError("MASH is not installed.")
-    user_args_sketch = MultiYAMLParser(MASH_SKETCH).get_user_arguments(dataset.args[0], [])
-    user_args_dist = MultiYAMLParser(MASH_DIST).get_user_arguments(dataset.args[1], [])
+    parser = MultiYAMLParser(MASH)
+    sketch_args = parser.get_user_arguments(dataset.args, [], 0)
+    dist_args = parser.get_user_arguments(dataset.args, [], 1)
 
     results_folder = "mash_results"
     cmd = f"mkdir {results_folder} && " \
           f"cd mash_results && " \
-          f"mash sketch -s 10000 -p {threads} -o ./cluster {os.path.join('..', dataset.location, '*.fna')} " \
-          f"{user_args_sketch} && " \
-          f"mash dist -p {threads} -t cluster.msh cluster.msh > cluster.tsv {user_args_dist}"
+          f"mash sketch -p {threads} -o ./cluster {os.path.join('..', dataset.location, '*.fna')} {sketch_args} && " \
+          f"mash dist -p {threads} {dist_args} -t cluster.msh cluster.msh > cluster.tsv"
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"

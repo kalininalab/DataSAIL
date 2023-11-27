@@ -31,7 +31,6 @@ class DataSet:
     cluster_similarity: Optional[Union[np.ndarray, str]] = None
     distance: Optional[Union[np.ndarray, str]] = None
     cluster_distance: Optional[Union[np.ndarray, str]] = None
-    threshold: Optional[float] = None
 
     def __hash__(self) -> int:
         """
@@ -99,6 +98,17 @@ class DataSet:
 
 
 def permute(names, similarity=None, distance=None):
+    """
+    Permute the order of the data the names list and the according distance or similarity matrix.
+
+    Args:
+        names: List of names of samples in the dataset
+        similarity: Similarity matrix of datapoints in the dataset
+        distance: Distance matrix of datapoints in the dataset
+
+    Returns:
+        Permuted names, similarity and distance matrix
+    """
     permutation = np.random.permutation(len(names))
     names = [names[x] for x in permutation]
     if isinstance(similarity, np.ndarray):
@@ -164,45 +174,39 @@ def read_csv(filepath: str) -> Generator[Tuple[str, str], None, None]:
 
 
 def read_matrix_input(
-        in_data: MATRIX_INPUT, max_val: float = 1.0, default_names: Optional[List[str]] = None
-) -> Tuple[List[str], Union[np.ndarray, str], float]:
+        in_data: MATRIX_INPUT,
+        default_names: Optional[List[str]] = None
+) -> Tuple[List[str], Union[np.ndarray, str]]:
     """
     Read the data from different types of similarity or distance.
 
     Args:
         in_data: Matrix data encoding the similarities/distances and the names of the samples
-        max_val: Maximal value of the used metric, either distance or similarity
-        default_names: Names to use as default, if max_val specifies a clustering method
+        default_names: Names to use as default
 
     Returns:
-        Tuple of names of the data samples, a matrix holding their similarities/distances or a string encoding a method
-        to compute the fore-mentioned, and the threshold to apply when splitting
+        Tuple of names of the data samples and a matrix holding their similarities/distances or a string encoding a
+        method to compute the fore-mentioned
     """
     if isinstance(in_data, str):
         if os.path.isfile(in_data):
             names, similarity = read_clustering_file(in_data)
-            threshold = max_val
         else:
             names = default_names
             similarity = in_data
-            threshold = max_val
     elif isinstance(in_data, tuple):
         names, similarity = in_data
-        threshold = max_val
     elif isinstance(in_data, Callable):
         names, similarity = in_data()
-        threshold = max_val
     else:
         raise ValueError()
-    return names, similarity, threshold
+    return names, similarity
 
 
 def read_data(
         weights: DATA_INPUT,
         sim: MATRIX_INPUT,
         dist: MATRIX_INPUT,
-        max_sim: float,
-        max_dist: float,
         inter: Optional[List[Tuple[str, str]]],
         index: Optional[int],
         tool_args: str,
@@ -215,8 +219,6 @@ def read_data(
         weights: Weight file for the data
         sim: Similarity file or metric
         dist: Distance file or metric
-        max_sim: Maximal similarity between entities in two splits
-        max_dist: Maximal similarity between entities in one split
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
         tool_args: Additional arguments for the tool
@@ -244,20 +246,17 @@ def read_data(
     if sim is None and dist is None:
         dataset.similarity, dataset.distance = get_default(dataset.type, dataset.format)
         dataset.names = list(dataset.data.keys())
-        dataset.threshold = 1
     elif sim is not None:
-        dataset.names, dataset.similarity, dataset.threshold = \
-            read_matrix_input(sim, max_sim, list(dataset.data.keys()))
+        dataset.names, dataset.similarity = \
+            read_matrix_input(sim, list(dataset.data.keys()))
     elif dist is not None:
-        dataset.names, dataset.distance, dataset.threshold = \
-            read_matrix_input(dist, max_dist, list(dataset.data.keys()))
+        dataset.names, dataset.distance = \
+            read_matrix_input(dist, list(dataset.data.keys()))
     else:
         if sim is not None:
             dataset.similarity = sim
-            dataset.threshold = max_sim
         else:
             dataset.distance = dist
-            dataset.threshold = max_dist
         dataset.names = list(dataset.data.keys())
 
     dataset.args = validate_user_args(dataset.type, dataset.format, sim, dist, tool_args)

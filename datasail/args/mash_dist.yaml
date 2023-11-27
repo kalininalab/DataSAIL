@@ -82,12 +82,12 @@ w:
   default: 0.01
   calls: ["-w"]
 
-r:
-  description: Input is a read set. See Reads options below. Incompatible with -i.
-  type: bool
-  cardinality: 0
-  default: False
-  calls: ["-r"]
+# r:
+#   description: Input is a read set. See Reads options below. Incompatible with -i.
+#   type: bool
+#   cardinality: 0
+#   default: False
+#   calls: ["-r"]
 
 b:
   description: Use a Bloom filter of this size (raw bytes or with K/M/G/T) to filter out unique k-mers. This is useful if exact filtering with -m uses too much memory. However, some unique k-mers may pass erroneously, and copies cannot be counted beyond 2. Implies -r.

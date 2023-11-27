@@ -33,7 +33,7 @@ requirements:
     - tmalign
     - cvxpy
     - pytest-cov
-    - rdkit>=2023.03.3
+    - rdkit>=2019.09.1
     - pytest-cases
     - pyyaml
     - cvxopt

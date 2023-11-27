@@ -7,7 +7,7 @@ import numpy as np
 from datasail.cluster.utils import cluster_param_binary_search, extract_fasta
 from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, INSTALLED, CDHIT_EST, CDHIT
+from datasail.settings import LOGGER, INSTALLED, CDHIT_EST
 
 
 def run_cdhit_est(
@@ -96,13 +96,13 @@ def cdhit_est_trial(
     os.system(cmd)
 
     if not os.path.isfile(f"{results_folder}/clusters.clstr"):
-        raise ValueError("Something went wrong with cd-hit. The output file does not exist.")
+        raise ValueError("Something went wrong with cd-hit-est. The output file does not exist.")
 
     cluster_map = get_cdhit_map(f"{results_folder}/clusters.clstr")
     cluster_names = list(set(cluster_map.values()))
     cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
 
-    # shutil.rmtree(results_folder)
+    shutil.rmtree(results_folder, ignore_errors=True)
 
     return cluster_names, cluster_map, cluster_sim
 

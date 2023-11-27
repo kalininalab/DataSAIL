@@ -29,12 +29,12 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[
         raise ValueError("MMseqs is not installed.")
 
     user_args = MultiYAMLParser(MMSEQS2).get_user_arguments(dataset.args, ["c"])
-    vals = (dataset.args.c,)
+    optim_vals = (dataset.args.c,)  # values to be optimized
     extract_fasta(dataset)
 
     return cluster_param_binary_search(
         dataset,
-        vals,
+        optim_vals,
         (0.1,),
         (1,),
         user_args,
@@ -69,8 +69,11 @@ def mmseqs_trial(
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    cmd = f"mkdir mmseqs_results && " \
-          f"cd mmseqs_results && " \
+
+    results_folder = "mmseqs_results"
+
+    cmd = f"mkdir {results_folder} && " \
+          f"cd {results_folder} && " \
           f"mmseqs " \
           f"easy-cluster " \
           f"{os.path.join('..', dataset.location)} " \
@@ -85,20 +88,20 @@ def mmseqs_trial(
     else:
         cmd += f"> {log_file}"
 
-    if os.path.exists("mmseqs_results"):
-        cmd = "rm -rf mmseqs_results && " + cmd
+    if os.path.exists(results_folder):
+        cmd = f"rm -rf {results_folder} && " + cmd
 
     LOGGER.info(cmd)
     os.system(cmd)
 
-    if not os.path.isfile("mmseqs_results/mmseqs_out_cluster.tsv"):
+    if not os.path.isfile(f"{results_folder}/mmseqs_out_cluster.tsv"):
         raise ValueError("Something went wrong with mmseqs. The output file does not exist.")
 
-    cluster_map = get_mmseqs_map("mmseqs_results/mmseqs_out_cluster.tsv")
+    cluster_map = get_mmseqs_map(f"{results_folder}/mmseqs_out_cluster.tsv")
     cluster_names = list(set(cluster_map.values()))
     cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
 
-    shutil.rmtree("mmseqs_results", ignore_errors=True)
+    shutil.rmtree(results_folder, ignore_errors=True)
 
     return cluster_names, cluster_map, cluster_sim
 
