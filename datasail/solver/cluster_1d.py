@@ -6,7 +6,7 @@ import numpy as np
 from datasail.solver.utils import solve, cluster_y_constraints, compute_limits
 
 
-def solve_ccs_blp(
+def solve_c1(
         clusters: List[Union[str, int]],
         weights: List[float],
         similarities: Optional[np.ndarray],

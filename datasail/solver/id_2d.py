@@ -6,7 +6,7 @@ import numpy as np
 from datasail.solver.utils import solve, interaction_contraints, collect_results_2d, compute_limits
 
 
-def solve_icd_blp(
+def solve_i2(
         e_entities: List[str],
         f_entities: List[str],
         inter: Set[Tuple[str, str]],

@@ -6,7 +6,7 @@ import numpy as np
 from datasail.solver.utils import solve
 
 
-def solve_ics_blp(
+def solve_i1(
         entities: List[str],
         weights: List[float],
         epsilon: float,

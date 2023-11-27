@@ -7,7 +7,7 @@ from datasail.solver.utils import solve, interaction_contraints, cluster_y_const
     leakage_loss, compute_limits
 
 
-def solve_ccd_blp(
+def solve_c2(
         e_clusters: List[Union[str, int]],
         e_similarities: Optional[np.ndarray],
         e_distances: Optional[np.ndarray],
