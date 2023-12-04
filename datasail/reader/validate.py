@@ -44,7 +44,7 @@ def validate_user_args(
             (both_none and get_default(dtype, dformat)[0] == FOLDSEEK):
         return check_foldseek_arguments(tool_args)
     elif (dist_on and distance.lower().startswith(MASH)) or (both_none and get_default(dtype, dformat)[1] == MASH):
-        return check_mash_arguments_new(tool_args)
+        return check_mash_arguments(tool_args)
     else:
         return None
 
@@ -490,17 +490,11 @@ def check_foldseek_arguments(args: str = "") -> Namespace:
     if not (0 <= args.alignment_output_mode <= 5):
         raise ValueError("Invalid value for alignment_output_mode. It should be between 0 and 5.")
 
-    # if not (0.0 <= args.e <= float("inf")):
-    #     raise ValueError("Invalid value for e. It should be between 0.0 and infinity.")
-
     if not (0 <= args.min_aln_len <= 2147483647):
         raise ValueError("Invalid value for min_aln_len. It should be between 0 and 2147483647.")
 
     if not (0 <= args.seq_id_mode <= 2):
         raise ValueError("Invalid value for seq_id_mode. It should be between 0 and 2.")
-
-    # if not (0 <= args.alt_ali <= 2147483647):
-    #     raise ValueError("Invalid value for alt_ali. It should be between 0 and 2147483647.")
 
     if not (0 <= args.num_iterations <= 2147483647):
         raise ValueError("Invalid value for num_iterations. It should be between 0 and 2147483647.")
@@ -529,29 +523,14 @@ def check_foldseek_arguments(args: str = "") -> Namespace:
     if not (0 <= args.mask_bfactor_threshold <= 100):
         raise ValueError("Invalid value for mask_bfactor_threshold. It should be between 0 and 100.")
 
-    # if not (0 <= args.format_mode <= 5):
-    #     raise ValueError("Invalid value for format_mode. It should be between 0 and 5.")
-
     if not (0 <= args.greedy_best_hits <= 1):
         raise ValueError("Invalid value for greedy_best_hits. It should be either 0 or 1.")
 
     if not (0 <= args.db_load_mode <= 3):
         raise ValueError("Invalid value for db_load_mode. It should be between 0 and 3.")
 
-    # if not (0 <= args.v <= 3):
-    #     raise ValueError("Invalid value for v. It should be between 0 and 3.")
-
     if not (0 <= args.max_seq_len <= 65536):
         raise ValueError("Invalid value for max_seq_len. It should be between 0 and 65536.")
-
-    # if not (0 <= args.compressed <= 1):
-    #     raise ValueError("Invalid value for compressed. It should be either 0 or 1.")
-
-    # if not (0 <= args.remove_tmp_files <= 1):
-    #     raise ValueError("Invalid value for remove_tmp_files. It should be either 0 or 1.")
-
-    # if not (0 <= args.force_reuse <= 1):
-    #     raise ValueError("Invalid value for force_reuse. It should be either 0 or 1.")
 
     if not (0 <= args.zdrop <= 2147483647):
         raise ValueError("Invalid value for zdrop. It should be between 0 and 2147483647.")
@@ -559,215 +538,15 @@ def check_foldseek_arguments(args: str = "") -> Namespace:
     if not (0 <= args.chain_name_mode <= 1):
         raise ValueError("Invalid value for chain_name_mode. It should be either 0 or 1.")
 
-    # if not (0 <= args.write_mapping <= 1):
-    #     raise ValueError("Invalid value for write_mapping. It should be either 0 or 1.")
-
     if not (1 <= args.coord_store_mode <= 2):
         raise ValueError("Invalid value for coord_store_mode. It should be between 1 and 2.")
 
-    # if not (0 <= args.write_lookup <= 1):
-    #     raise ValueError("Invalid value for write_lookup. It should be either 0 or 1.")
-
-    # if not (0 <= args.db_output <= 1):
-    #     raise ValueError("Invalid value for db_output. It should be either 0 or 1.")
-
     return args
 
 
-def check_mash_arguments(args: str = "") -> Tuple[Optional[Namespace], Optional[Namespace]]:
-    """
-    Validate the custom arguments provided to DataSAIL for executing MASH.
-
-    Args:
-        args: String of the arguments that can be set by user. This should contain "|" as a separator between sketch
-        and dist arguments.
-
-    Returns:
-        The namespace containing the parsed and validated arguments.
-    """
-    if os.path.isfile(args):
-        raise NotImplementedError()
-    else:
-        arg_array = args.split("|")
-        sketch_args, dist_args = None, None
-        if len(arg_array) > 0:
-            sketch_args = check_mash_sketch_arguments(arg_array[0])
-        if len(arg_array) > 1:
-            dist_args = check_mash_dist_arguments(arg_array[1])
-
-    return sketch_args, dist_args
-
-
-def check_mash_arguments_new(args: str = "") -> Namespace:
+def check_mash_arguments(args: str = "") -> Namespace:
     args = MultiYAMLParser(MASH).parse_args(args)
 
-    if not (0 <= args.v <= 1):
-        raise ValueError("Invalid value for -v. It should be between 0 and 1.")
-    if not (0 <= args.d <= 1):
-        raise ValueError("Invalid value for -d. It should be between 0 and 1.")
-    if not (1 <= args.k <= 32):
-        raise ValueError("Invalid value for -k. It should be between 1 and 32.")
-    if args.s <= 0:
-        raise ValueError("Invalid value for -s. It should be greater than 0.")
-    if not (0 <= args.S <= 4294967296):
-        raise ValueError("Invalid value for -S. It should be between 0 and 4294967296.")
-    if not (0 <= args.w <= 1):
-        raise ValueError("Invalid value for -w. It should be between 0 and 1.")
-    if args.m <= 0:
-        raise ValueError("Invalid value for -m. It should be greater than 0.")
-    if args.c <= 0:
-        raise ValueError("Invalid value for -c. It should be greater than 0.")
-
-    if args.g != "":
-        valid_suffixes = ['B', 'K', 'M', 'G', 'T']
-        size_str = args.g.upper()
-        suffix = size_str[-1]
-        if suffix not in valid_suffixes:
-            raise ValueError("Invalid suffix for -g. Use one of: B, K, M, G, T.")
-        try:
-            size = int(size_str[:-1])
-            if size <= 0:
-                raise ValueError("Invalid value for -g. Size must be greater than 0.")
-        except ValueError:
-            raise ValueError("Invalid value for -g. Numeric size is expected before the suffix.")
-
-    if args.a and args.z != "":
-        raise ValueError("Options -a and -z are mutually exclusive.")
-    if args.r and args.i:
-        raise ValueError("Options -r and -i are mutually exclusive.")
-    if args.b != "" and args.r:
-        raise ValueError("Option -b implies -r.")
-    if args.m != 1 and args.r:
-        raise ValueError("Option -m implies -r.")
-    if args.c != 1 and args.r:
-        raise ValueError("Option -c implies -r.")
-    if args.g != "" and args.r:
-        raise ValueError("Option -g implies -r.")
-    if args.a and args.k not in [9, 21]:
-        raise ValueError("Option -a implies -k 9.")
-    if args.n and (args.a or args.z != ""):
-        raise ValueError("Option -n is implied by -a or -z.")
-    if args.Z and (args.a or args.z != ""):
-        raise ValueError("Option -Z is implied by -a or -z.")
-    return args
-
-
-def check_mash_sketch_arguments(args: str = "") -> Namespace:
-    """
-    Validate the custom arguments provided to DataSAIL for executing MASH sketch.
-
-    Args:
-        args: String of the arguments that can be set by user
-
-    Returns:
-        The namespace containing the parsed and validated arguments.
-    """
-    # args = args.split(" ") if " " in args else (args if isinstance(args, list) else [args])
-    args = MultiYAMLParser(MASH_SKETCH).parse_args(args)
-
-    # Check if _p is valid
-    if args.p < 1:
-        raise ValueError("Invalid value for -p. It should be greater than or equal to 1.")
-
-    # Check if -k is within the valid range
-    if not (1 <= args.k <= 32):
-        raise ValueError("Invalid value for -k. It should be between 1 and 32.")
-
-    # Check if -s is within the valid range
-    if args.s < 1:
-        raise ValueError("Invalid value for -s. It should be greater than or equal to 1.")
-
-    # Check if -S is within the valid range
-    if not (0 <= args.S <= 4294967296):
-        raise ValueError("Invalid value for -S. It should be between 0 and 4294967296.")
-
-    # Check if -w is within the valid range
-    if not (0 <= args.w <= 1):
-        raise ValueError("Invalid value for -w. It should be between 0 and 1.")
-
-    # Check if -b is a valid size
-    if args.b != "":
-        valid_suffixes = ['B', 'K', 'M', 'G', 'T']
-        size_str = args.b.upper()
-        suffix = size_str[-1]
-        if suffix not in valid_suffixes:
-            raise ValueError("Invalid suffix for -b. Use one of: B, K, M, G, T.")
-        try:
-            size = int(size_str[:-1])
-            if size <= 0:
-                raise ValueError("Invalid value for -b. Size must be greater than 0.")
-        except ValueError:
-            raise ValueError("Invalid value for -b. Numeric size is expected before the suffix.")
-
-    # Check if -m is within the valid range
-    if args.m <= 0:
-        raise ValueError("Invalid value for -m. It should be greater than 0.")
-
-    # Check if -c is within the valid range
-    if args.c <= 0:
-        raise ValueError("Invalid value for -c. It should be greater than 0.")
-
-    # Check if -g is a valid size
-    if args.g != "":
-        valid_suffixes = ['B', 'K', 'M', 'G', 'T']
-        size_str = args.g.upper()
-        suffix = size_str[-1]
-        if suffix not in valid_suffixes:
-            raise ValueError("Invalid suffix for -g. Use one of: B, K, M, G, T.")
-        try:
-            size = int(size_str[:-1])
-            if size <= 0:
-                raise ValueError("Invalid value for -g. Size must be greater than 0.")
-        except ValueError:
-            raise ValueError("Invalid value for -g. Numeric size is expected before the suffix.")
-
-    # Additional checks for conflicting options
-    if args.a and args.z != "":
-        raise ValueError("Options -a and -z are mutually exclusive.")
-
-    if args.r and args.i:
-        raise ValueError("Options -r and -i are mutually exclusive.")
-
-    if args.b != "" and args.r:
-        raise ValueError("Option -b implies -r.")
-
-    if args.m != 1 and args.r:
-        raise ValueError("Option -m implies -r.")
-
-    if args.c != 1 and args.r:
-        raise ValueError("Option -c implies -r.")
-
-    if args.g != "" and args.r:
-        raise ValueError("Option -g implies -r.")
-
-    if args.a and args.k not in [9, 21]:
-        raise ValueError("Option -a implies -k 9.")
-
-    # if args.l and args.i:
-    #     raise ValueError("Option -l and -i are mutually exclusive.")
-
-    if args.n and (args.a or args.z != ""):
-        raise ValueError("Option -n is implied by -a or -z.")
-
-    if args.Z and (args.a or args.z != ""):
-        raise ValueError("Option -Z is implied by -a or -z.")
-    return args
-
-
-def check_mash_dist_arguments(args: str = ""):
-    """
-    Validate the custom arguments provided to DataSAIL for executing MASH dist.
-
-    Args:
-        args: String of the arguments that can be set by user
-
-    Returns:
-        The namespace containing the parsed and validated arguments.
-    """
-    # args = args.split(" ") if " " in args else (args if isinstance(args, list) else [args])
-    args = MultiYAMLParser(MASH_DIST).parse_args(args)
-    if args.p < 1:
-        raise ValueError("Invalid value for -p. It should be greater than or equal to 1.")
     if not (0 <= args.v <= 1):
         raise ValueError("Invalid value for -v. It should be between 0 and 1.")
     if not (0 <= args.d <= 1):

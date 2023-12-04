@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Dict, Optional
 
 import cvxpy
@@ -15,7 +16,7 @@ def solve_i1(
         max_sec: int,
         max_sol: int,
         solver: str,
-        log_file: str,
+        log_file: Path,
 ) -> Optional[Dict[str, str]]:
     """
     Solve identity-based cold splitting using disciplined quasi-convex programming and binary linear programming.

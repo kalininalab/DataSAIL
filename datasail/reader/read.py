@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Callable, Generator
 
 from datasail.reader.read_genomes import read_genome_data
@@ -21,7 +22,7 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
     # TODO: Semantic checks of arguments
     if kwargs[KW_INTER] is None:
         inter = None
-    elif isinstance(kwargs[KW_INTER], str):
+    elif isinstance(kwargs[KW_INTER], Path):
         inter = list(tuple(x) for x in read_csv(kwargs[KW_INTER]))
     elif isinstance(kwargs[KW_INTER], list):
         inter = kwargs[KW_INTER]

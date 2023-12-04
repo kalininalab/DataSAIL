@@ -1,4 +1,5 @@
 import platform
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -15,7 +16,7 @@ from datasail.cluster.wlk import run_wlk
 from datasail.reader.read_proteins import parse_fasta, read_folder
 from datasail.reader.utils import DataSet, read_csv
 from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
-    check_mash_arguments_new, check_mmseqspp_arguments
+    check_mash_arguments, check_mmseqspp_arguments
 from datasail.settings import P_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN, MMSEQSPP
 
 
@@ -90,7 +91,7 @@ def test_additional_clustering():
 
 
 def protein_fasta_data(algo):
-    data = parse_fasta("data/pipeline/seqs.fasta")
+    data = parse_fasta(Path("data") / "pipeline" / "seqs.fasta")
     if algo == CDHIT:
         args = check_cdhit_arguments("")
     elif algo == MMSEQS:
@@ -103,42 +104,42 @@ def protein_fasta_data(algo):
         type="M",
         data=data,
         names=list(sorted(data.keys())),
-        location="data/pipeline/seqs.fasta",
+        location=Path("data") / "pipeline" / "seqs.fasta",
         args=args,
     )
 
 
 def protein_pdb_data(algo):
-    data = dict((k, v) for k, v in read_folder("data/pipeline/pdbs", ".pdb"))
+    data = dict((k, v) for k, v in read_folder(Path("data") / "pipeline" / "pdbs", "pdb"))
     return DataSet(
         type="M",
         data=data,
         names=list(sorted(data.keys())),
-        location="data/pipeline/pdbs/",
+        location=Path("data") / "pipeline" / "pdbs",
         args=check_foldseek_arguments() if algo == FOLDSEEK else None,
     )
 
 
 @pytest.fixture
 def molecule_data():
-    data = dict((k, v) for k, v in read_csv("data/pipeline/drugs.tsv"))
+    data = dict((k, v) for k, v in read_csv(Path("data") / "pipeline" / "drugs.tsv"))
     return DataSet(
         type="M",
         data=data,
         names=list(sorted(data.keys())),
-        location="data/pipeline/drugs.tsv",
+        location=Path("data") / "pipeline" / "drugs.tsv",
     )
 
 
 @pytest.fixture
 def genome_fasta_data():
-    data = dict((k, v) for k, v in read_folder("data/genomes", ".fna"))
+    data = dict((k, v) for k, v in read_folder(Path("data") / "genomes", ".fna"))
     return DataSet(
         type="M",
         data=data,
         names=list(sorted(data.keys())),
-        location="data/genomes/",
-        args=check_mash_arguments_new(""),
+        location=Path("data") / "genomes",
+        args=check_mash_arguments(""),
     )
 
 
@@ -168,14 +169,14 @@ def test_foldseek_protein():
     data = protein_pdb_data(FOLDSEEK)
     if platform.system() == "Windows":
         pytest.skip("Foldseek is not supported on Windows")
-    check_clustering(*run_foldseek(data, 1, "./"), dataset=data)
+    check_clustering(*run_foldseek(data, 1, Path("./")), dataset=data)
 
 
 @pytest.mark.nowin
 def test_mash_genomic(genome_fasta_data):
     if platform.system() == "Windows":
         pytest.skip("MASH is not supported on Windows")
-    check_clustering(*run_mash(genome_fasta_data, 1, "./"), dataset=genome_fasta_data)
+    check_clustering(*run_mash(genome_fasta_data, 1, Path("./")), dataset=genome_fasta_data)
 
 
 @pytest.mark.nowin
@@ -183,7 +184,7 @@ def test_mmseqs2_protein():
     data = protein_fasta_data(MMSEQS)
     if platform.system() == "Windows":
         pytest.skip("MMseqs2 is not supported on Windows")
-    check_clustering(*run_mmseqs(data, 1, "./"), dataset=data)
+    check_clustering(*run_mmseqs(data, 1, Path("./")), dataset=data)
 
 
 @pytest.mark.nowin
@@ -191,7 +192,7 @@ def test_mmseqspp_protein():
     data = protein_fasta_data(MMSEQSPP)
     if platform.system() == "Windows":
         pytest.skip("MMseqs2 is not supported on Windows")
-    check_clustering(*run_mmseqspp(data, 1, "./"), dataset=data)
+    check_clustering(*run_mmseqspp(data, 1, Path("./")), dataset=data)
 
 
 @pytest.mark.nowin
@@ -218,7 +219,7 @@ def test_force_clustering(algo):
         type=P_TYPE,
         format=FORM_FASTA,
         names=[f"Seq{i + 1:04d}" for i in range(len(open("data/rw_data/pdbbind_clean.fasta", "r").readlines()))],
-        location="data/rw_data/pdbbind_clean.fasta",
+        location=Path("data") / "rw_data" / "pdbbind_clean.fasta",
         similarity=algo,
         args=check_cdhit_arguments("") if algo == CDHIT else check_mmseqs_arguments(""),
 

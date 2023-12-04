@@ -1,5 +1,5 @@
-import os.path
 import pickle
+from pathlib import Path
 from typing import Optional
 from pip._internal.utils.appdirs import user_cache_dir
 
@@ -20,9 +20,9 @@ def load_from_cache(dataset: DataSet, **kwargs) -> Optional[DataSet]:
     """
     if kwargs.get("cache", False):
         name = f"{hex(hash(dataset))[2:34]}.pkl"
-        cache_dir = kwargs.get(KW_CACHE_DIR, user_cache_dir("DataSAIL"))
-        if os.path.isfile(os.path.join(cache_dir, name)):
-            return pickle.load(open(os.path.join(cache_dir, name), "rb"))
+        cache_dir = kwargs.get(KW_CACHE_DIR, Path(user_cache_dir("DataSAIL")))
+        if (cache_file := (cache_dir / name)).is_file():
+            return pickle.load(open(cache_file, "rb"))
 
 
 def store_to_cache(dataset: DataSet, **kwargs) -> None:
@@ -35,6 +35,6 @@ def store_to_cache(dataset: DataSet, **kwargs) -> None:
     """
     if kwargs.get("cache", False):
         name = f"{hex(hash(dataset))[2:34]}.pkl"
-        cache_dir = kwargs.get(KW_CACHE_DIR, user_cache_dir("DataSAIL"))
-        os.makedirs(cache_dir, exist_ok=True)
-        pickle.dump(dataset, open(os.path.join(cache_dir, name), "wb"))
+        cache_dir = kwargs.get(KW_CACHE_DIR, Path(user_cache_dir("DataSAIL")))
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        pickle.dump(dataset, open(cache_dir / name, "wb"))

@@ -67,7 +67,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
             metric = dataset.similarity if dataset.similarity is not None else dataset.distance
             form = "similarity" if dataset.similarity is not None else "distance"
             if kwargs[KW_OUTDIR] is not None:
-                heatmap(metric, os.path.join(kwargs[KW_OUTDIR], dataset.get_name() + f"_{form}.png"))
+                heatmap(metric, kwargs[KW_OUTDIR] / (dataset.get_name() + f"_{form}.png"))
 
     if len(dataset.cluster_names) > MAX_CLUSTERS:
         dataset = force_clustering(dataset)

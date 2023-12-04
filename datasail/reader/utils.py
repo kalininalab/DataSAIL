@@ -1,6 +1,7 @@
 import os
 from argparse import Namespace
 from dataclasses import dataclass, fields
+from pathlib import Path
 from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
 
 import numpy as np
@@ -9,8 +10,8 @@ import pandas as pd
 from datasail.reader.validate import validate_user_args
 from datasail.settings import get_default
 
-DATA_INPUT = Optional[Union[str, Dict[str, str], Callable[..., Dict[str, str]], Generator[Tuple[str, str], None, None]]]
-MATRIX_INPUT = Optional[Union[str, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
+DATA_INPUT = Optional[str | Path | Dict[str, str] | Callable[..., Dict[str, str]] | Generator[Tuple[str, str], None, None]]
+MATRIX_INPUT = Optional[str | Path | Tuple[List[str], np.ndarray] | Callable[..., Tuple[List[str], np.ndarray]]]
 DictMap = Dict[str, List[Dict[str, str]]]
 
 
@@ -18,19 +19,19 @@ DictMap = Dict[str, List[Dict[str, str]]]
 class DataSet:
     type: Optional[str] = None
     format: Optional[str] = None
-    args: Optional[Union[Namespace, Tuple[Namespace, Namespace]]] = None
+    args: Optional[Namespace | Tuple[Namespace, Namespace]] = None
     names: Optional[List[str]] = None
     id_map: Optional[Dict[str, str]] = None
     cluster_names: Optional[List[str]] = None
     data: Optional[Dict[str, str]] = None
     cluster_map: Optional[Dict[str, str]] = None
-    location: Optional[str] = None
+    location: Optional[Path] = None
     weights: Optional[Dict[str, float]] = None
     cluster_weights: Optional[Dict[str, float]] = None
-    similarity: Optional[Union[np.ndarray, str]] = None
-    cluster_similarity: Optional[Union[np.ndarray, str]] = None
-    distance: Optional[Union[np.ndarray, str]] = None
-    cluster_distance: Optional[Union[np.ndarray, str]] = None
+    similarity: Optional[np.ndarray | str] = None
+    cluster_similarity: Optional[np.ndarray | str] = None
+    distance: Optional[np.ndarray | str] = None
+    cluster_distance: Optional[np.ndarray | str] = None
 
     def __hash__(self) -> int:
         """
@@ -77,11 +78,9 @@ class DataSet:
         Returns:
             Name of the dataset
         """
-        if os.path.isfile(self.location):
-            return os.path.splitext(os.path.basename(self.location))[0]
-        elif os.path.isdir(self.location):
-            return os.path.split(self.location)[-1]
-        return self.location
+        if self.location.exists():
+            return self.location.stem
+        return str(self.location)
 
     def shuffle(self):
         """
@@ -137,7 +136,7 @@ def count_inter(inter: List[Tuple[str, str]], mode: int) -> Generator[Tuple[str,
         yield key, tmp[mode].count(key)
 
 
-def read_clustering_file(filepath: str, sep: str = "\t") -> Tuple[List[str], np.ndarray]:
+def read_clustering_file(filepath: Path, sep: str = "\t") -> Tuple[List[str], np.ndarray]:
     """
     Read a similarity or distance matrix from a file.
 
@@ -158,7 +157,7 @@ def read_clustering_file(filepath: str, sep: str = "\t") -> Tuple[List[str], np.
     return names, np.array(measures)
 
 
-def read_csv(filepath: str) -> Generator[Tuple[str, str], None, None]:
+def read_csv(filepath: Path) -> Generator[Tuple[str, str], None, None]:
     """
     Read in a CSV file as pairs of data.
 
@@ -188,12 +187,11 @@ def read_matrix_input(
         Tuple of names of the data samples and a matrix holding their similarities/distances or a string encoding a
         method to compute the fore-mentioned
     """
-    if isinstance(in_data, str):
-        if os.path.isfile(in_data):
-            names, similarity = read_clustering_file(in_data)
-        else:
-            names = default_names
-            similarity = in_data
+    if isinstance(in_data, Path) and in_data.is_file():
+        names, similarity = read_clustering_file(in_data)
+    elif isinstance(in_data, str):
+        names = default_names
+        similarity = in_data
     elif isinstance(in_data, tuple):
         names, similarity = in_data
     elif isinstance(in_data, Callable):
@@ -264,7 +262,7 @@ def read_data(
     return dataset
 
 
-def read_folder(folder_path: str, file_extension: Optional[str] = None) -> Generator[Tuple[str, str], None, None]:
+def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Generator[Tuple[str, str], None, None]:
     """
     Read in all PDB file from a folder and ignore non-PDB files.
 
@@ -275,9 +273,9 @@ def read_folder(folder_path: str, file_extension: Optional[str] = None) -> Gener
     Yields:
         Pairs of the PDB files name and the path to the file
     """
-    for filename in os.listdir(folder_path):
-        if file_extension is None or filename.endswith(file_extension):
-            yield ".".join(filename.split(".")[:-1]), os.path.abspath(os.path.join(folder_path, filename))
+    for filename in folder_path.iterdir():
+        if file_extension is None or filename.suffix[1:].lower() == file_extension.lower():
+            yield filename.stem, filename
 
 
 def get_prefix_args(prefix, **kwargs) -> Dict[str, Any]:

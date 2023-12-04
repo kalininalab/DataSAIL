@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import List, Tuple, Optional, Callable, Generator, Union, Iterable
 
 import numpy as np
@@ -14,13 +15,13 @@ from datasail.settings import M_TYPE, UNK_LOCATION, FORM_SMILES
 
 
 mol_reader = {
-    "mol": MolFromMolFile,
-    "mol2": MolFromMol2File,
-    "mrv": MolFromMrvFile,
+    ".mol": MolFromMolFile,
+    ".mol2": MolFromMol2File,
+    ".mrv": MolFromMrvFile,
     # "sdf": MolFromMol2File,
-    "pdb": MolFromPDBFile,
-    "tpl": MolFromTPLFile,
-    "xyz": MolFromXYZFile,
+    ".pdb": MolFromPDBFile,
+    ".tpl": MolFromTPLFile,
+    ".xyz": MolFromXYZFile,
 }
 
 
@@ -49,19 +50,18 @@ def read_molecule_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=M_TYPE, format=FORM_SMILES, location=UNK_LOCATION)
-    if isinstance(data, str):
-        if data.lower().endswith(".tsv"):
+    if isinstance(data, Path):
+        if data.suffix[1:].lower() == "tsv":
             dataset.data = dict(read_csv(data))
-        elif os.path.isdir(data):
+        elif data.is_dir():
             dataset.data = {}
-            for file in os.listdir(data):
-                ending = file.split(".")[-1]
-                if ending != "sdf" and mol_reader[ending] is not None:
-                    dataset.data[os.path.basename(file)] = mol_reader[ending](os.path.join(data, file))
+            for file in data.iterdir():
+                if file.suffix[1:].lower() != "sdf" and mol_reader[file.suffix[1:].lower()] is not None:
+                    dataset.data[file.stem] = mol_reader[file.suffix[1:].lower()](file)
                 else:
-                    suppl = Chem.SDMolSupplier(os.path.join(data, file))
+                    suppl = Chem.SDMolSupplier(file)
                     for i, mol in enumerate(suppl):
-                        dataset.data[f"{os.path.basename(file)}_{i}"] = mol
+                        dataset.data[f"{file.stem}_{i}"] = mol
         else:
             raise ValueError()
         dataset.location = data

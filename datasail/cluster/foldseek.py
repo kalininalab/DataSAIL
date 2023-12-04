@@ -1,5 +1,6 @@
 import os
 import shutil
+from pathlib import Path
 from typing import Tuple, List, Dict, Optional
 
 import numpy as np
@@ -12,7 +13,7 @@ from datasail.settings import LOGGER, FOLDSEEK, INSTALLED
 def run_foldseek(
         dataset: DataSet,
         threads: int = 1,
-        log_dir: Optional[str] = None,
+        log_dir: Optional[Path] = None,
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run FoldSeek to cluster the proteins based on their structure.
@@ -32,14 +33,14 @@ def run_foldseek(
         raise ValueError("Foldseek is not installed.")
     user_args = MultiYAMLParser(FOLDSEEK).get_user_arguments(dataset.args, [])
 
-    results_folder = "fs_results"
+    results_folder = Path("fs_results")
 
     cmd = f"mkdir {results_folder} && " \
           f"cd {results_folder} && " \
           f"foldseek " \
           f"easy-search " \
-          f"{os.path.join('..', dataset.location)} " \
-          f"{os.path.join('..', dataset.location)} " \
+          f"{Path('..') / dataset.location} " \
+          f"{Path('..') / dataset.location} " \
           f"aln.m8 " \
           f"tmp " \
           f"--format-output 'query,target,fident' " \
@@ -50,16 +51,16 @@ def run_foldseek(
     if log_dir is None:
         cmd += "> /dev/null 2>&1"
     else:
-        cmd += f"> {os.path.join(log_dir, f'{dataset.get_name()}_foldseek.log')}"
+        cmd += f"> {log_dir / f'{dataset.get_name()}_foldseek.log'}"
 
-    if os.path.exists(results_folder):
+    if results_folder.exists():
         cmd = f"rm -rf {results_folder} && " + cmd
 
     LOGGER.info("Start FoldSeek clustering")
     LOGGER.info(cmd)
     os.system(cmd)
 
-    if not os.path.isfile(f"{results_folder}/aln.m8"):
+    if not (results_folder / "aln.m8").exists():
         raise ValueError("Something went wrong with foldseek. The output file does not exist.")
 
     namap = dict((n, i) for i, n in enumerate(dataset.names))

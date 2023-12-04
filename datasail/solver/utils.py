@@ -2,6 +2,7 @@ import functools
 import logging
 import operator
 import sys
+from pathlib import Path
 
 from typing import List, Optional, Union, Tuple, Collection, Dict, Callable
 
@@ -84,7 +85,7 @@ class LoggerRedirect:
         sys.stdout = self.old_stdout
 
 
-def solve(loss, constraints: List, max_sec: int, solver: str, log_file: str) -> Optional[cvxpy.Problem]:
+def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path) -> Optional[cvxpy.Problem]:
     """
     Minimize the loss function based on the constraints with the timelimit specified by max_sec.
 

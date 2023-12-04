@@ -1,5 +1,6 @@
 import os
 import shutil
+from pathlib import Path
 from typing import Tuple, List, Dict, Optional
 
 import numpy as np
@@ -12,7 +13,7 @@ from datasail.settings import LOGGER, INSTALLED, MASH, MASH_DIST, MASH_SKETCH
 def run_mash(
         dataset: DataSet,
         threads: int = 1,
-        log_dir: Optional[str] = None,
+        log_dir: Optional[Path] = None,
 ) -> Tuple[List[str], Dict[str, str], Optional[np.ndarray]]:
     """
     Run MASH on the provided dataset.
@@ -34,30 +35,30 @@ def run_mash(
     sketch_args = parser.get_user_arguments(dataset.args, [], 0)
     dist_args = parser.get_user_arguments(dataset.args, [], 1)
 
-    results_folder = "mash_results"
+    results_folder = Path("mash_results")
     cmd = f"mkdir {results_folder} && " \
           f"cd mash_results && " \
-          f"mash sketch -p {threads} -o ./cluster {os.path.join('..', dataset.location, '*.fna')} {sketch_args} && " \
+          f"mash sketch -p {threads} -o ./cluster {Path('..') / dataset.location / '*.fna'} {sketch_args} && " \
           f"mash dist -p {threads} {dist_args} -t cluster.msh cluster.msh > cluster.tsv"
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"
     else:
-        cmd += f"> {os.path.join(log_dir, f'{dataset.get_name()}_mash.log')}"
+        cmd += f"> {log_dir / f'{dataset.get_name()}_mash.log'}"
 
-    if os.path.exists(results_folder):
+    if results_folder.exists():
         cmd = f"rm -rf {results_folder} && " + cmd
 
     LOGGER.info("Start MASH clustering")
     LOGGER.info(cmd)
     os.system(cmd)
 
-    if not os.path.isfile(f"{results_folder}/cluster.tsv"):
+    if not (results_folder / "cluster.tsv").exists():
         raise ValueError("Something went wrong with MASH. The output file does not exist.")
 
     names = dataset.names
     cluster_map = dict((n, n) for n in names)
-    cluster_dist = read_mash_tsv(f"{results_folder}/cluster.tsv", len(names))
+    cluster_dist = read_mash_tsv(results_folder / "cluster.tsv", len(names))
     cluster_names = names
 
     shutil.rmtree(results_folder, ignore_errors=True)
@@ -65,7 +66,7 @@ def run_mash(
     return cluster_names, cluster_map, cluster_dist
 
 
-def read_mash_tsv(filename: str, num_entities: int) -> np.ndarray:
+def read_mash_tsv(filename: Path, num_entities: int) -> np.ndarray:
     """
     Read in the TSV file with pairwise distances produces by MASH.
 

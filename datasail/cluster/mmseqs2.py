@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Dict, Tuple, List, Optional
 import shutil
 
@@ -10,7 +11,7 @@ from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, MMSEQS2, INSTALLED
 
 
-def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[str]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run mmseqs in the commandline and read in the results into clusters.
 
@@ -70,13 +71,13 @@ def mmseqs_trial(
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
 
-    results_folder = "mmseqs_results"
+    results_folder = Path("mmseqs_results")
 
     cmd = f"mkdir {results_folder} && " \
           f"cd {results_folder} && " \
           f"mmseqs " \
           f"easy-cluster " \
-          f"{os.path.join('..', dataset.location)} " \
+          f"{Path('..') / dataset.location} " \
           f"mmseqs_out " \
           f"mmseqs_tmp " \
           f"--threads {threads} " \
@@ -88,16 +89,16 @@ def mmseqs_trial(
     else:
         cmd += f"> {log_file}"
 
-    if os.path.exists(results_folder):
+    if results_folder.exists():
         cmd = f"rm -rf {results_folder} && " + cmd
 
     LOGGER.info(cmd)
     os.system(cmd)
 
-    if not os.path.isfile(f"{results_folder}/mmseqs_out_cluster.tsv"):
+    if not (results_folder / "mmseqs_out_cluster.tsv").is_file():
         raise ValueError("Something went wrong with mmseqs. The output file does not exist.")
 
-    cluster_map = get_mmseqs_map(f"{results_folder}/mmseqs_out_cluster.tsv")
+    cluster_map = get_mmseqs_map(results_folder / "mmseqs_out_cluster.tsv")
     cluster_names = list(set(cluster_map.values()))
     cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
 
@@ -106,7 +107,7 @@ def mmseqs_trial(
     return cluster_names, cluster_map, cluster_sim
 
 
-def get_mmseqs_map(cluster_file: str) -> Dict[str, str]:
+def get_mmseqs_map(cluster_file: Path) -> Dict[str, str]:
     """
     Read clusters from mmseqs output into map from cluster members to cluster representatives (cluster names).
 
@@ -130,7 +131,7 @@ def get_mmseqs_map(cluster_file: str) -> Dict[str, str]:
     return mapping
 
 
-def get_mmseqs_map_old(cluster_file: str) -> Dict[str, str]:
+def get_mmseqs_map_old(cluster_file: Path) -> Dict[str, str]:
     """
     This is a helper method for get_mmseqs_map that is necessary when DataSAIL is run on Windows and in a Python3.8
     build. In this case, MMseqs struggles with different linebreaks of Linux and Windows.

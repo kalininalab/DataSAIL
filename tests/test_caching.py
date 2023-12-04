@@ -1,5 +1,6 @@
 import copy
 import os
+from pathlib import Path
 
 import pytest
 
@@ -11,32 +12,22 @@ from datasail.reader.utils import read_csv
 
 @pytest.mark.parametrize("size", ["perf_7_3", "perf_70_30"])
 def test_caching(size):
-    os.makedirs(f"data/{size}/splits/", exist_ok=True)
+    base = Path("data") / size
+    (base / "splits").mkdir(parents=True, exist_ok=True)
     dataset = read_molecule_data(
-        data="data/perf_7_3/lig.tsv",
-        sim="data/perf_7_3/lig_sim.tsv",
-        inter=list(read_csv("data/perf_7_3/inter.tsv")),
+        data=base / "lig.tsv",
+        sim=base / "lig_sim.tsv",
+        inter=list(read_csv(base / "inter.tsv")),
         index=0,
     )
 
-    dataset = cluster(dataset, **{"output": "data/perf_7_3/splits/", "threads": 1, "log_dir": "log.txt"})
+    original_dataset = cluster(dataset, **{"output": base / "splits", "threads": 1, "log_dir": Path() / "log.txt"})
 
-    store_to_cache(dataset, **{"cache": True, "cache_dir": "./test_cache/"})
+    # test caching
+    store_to_cache(dataset, **{"cache": True, "cache_dir": Path("test_cache")})
+    assert load_from_cache(dataset, **{"cache": True, "cache_dir": Path("test_cache")}) is not None
 
-    assert load_from_cache(dataset, **{"cache": True, "cache_dir": "./test_cache/"}) is not None
-
-
-@pytest.mark.parametrize("size", ["perf_7_3", "perf_70_30"])
-def test_shuffling(size):
-    os.makedirs(f"data/{size}/splits/", exist_ok=True)
-    original_dataset = read_molecule_data(
-        data="data/perf_7_3/lig.tsv",
-        sim="data/perf_7_3/lig_sim.tsv",
-        inter=list(read_csv("data/perf_7_3/inter.tsv")),
-        index=0,
-    )
-
-    original_dataset = cluster(original_dataset, **{"output": "data/perf_7_3/splits/", "threads": 1, "log_dir": "log.txt"})
+    # test shuffling
     shuffle_dataset = copy.deepcopy(original_dataset)
     for i in range(5):
         shuffle_dataset.shuffle()

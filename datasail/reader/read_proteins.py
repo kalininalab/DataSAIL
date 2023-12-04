@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Generator, Tuple, Dict, List, Optional, Set, Callable, Union, Iterable
 
 import numpy as np
@@ -33,13 +34,13 @@ def read_protein_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=P_TYPE, location=UNK_LOCATION)
-    if isinstance(data, str):
-        if data.split(".")[-1].lower() in FASTA_FORMATS:
+    if isinstance(data, Path):
+        if data.suffix[1:] in FASTA_FORMATS:
             dataset.data = parse_fasta(data)
-        elif os.path.isfile(data):
+        elif data.is_file():
             dataset.data = dict(read_csv(data))
-        elif os.path.isdir(data):
-            dataset.data = dict(read_folder(data, ".pdb"))
+        elif data.is_dir():
+            dataset.data = dict(read_folder(data, "pdb"))
         else:
             raise ValueError()
         dataset.location = data
@@ -54,7 +55,7 @@ def read_protein_data(
     else:
         raise ValueError()
 
-    dataset.format = FORM_PDB if os.path.exists(next(iter(dataset.data.values()))) else FORM_FASTA
+    dataset.format = FORM_PDB if str(next(iter(dataset.data.values()))).endswith(".pdb") else FORM_FASTA
 
     dataset = read_data(weights, sim, dist, inter, index, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)
@@ -62,7 +63,7 @@ def read_protein_data(
     return dataset
 
 
-def parse_fasta(path: str = None) -> Dict[str, str]:
+def parse_fasta(path: Path = None) -> Dict[str, str]:
     """
     Parse a FASTA file and do some validity checks if requested.
 

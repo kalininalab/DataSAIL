@@ -1,5 +1,6 @@
 import argparse
 import os
+from pathlib import Path
 from pydoc import locate
 from typing import Dict, List, Sequence, Literal
 
@@ -28,7 +29,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     parser.add_argument(
         "-o",
         "--output",
-        type=str,
+        type=Path,
         required=True,
         dest=KW_OUTDIR,
         help="Output directory to store the splits in.",
@@ -36,7 +37,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     parser.add_argument(
         "-i",
         "--inter",
-        type=str,
+        type=Path,
         default=None,
         dest=KW_INTER,
         help="Path to TSV file of interactions between two entities. The first entry in each line has to match an "
@@ -146,6 +147,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     split.add_argument(
         "--cache-dir",
         default=None,
+        type=Path,
         dest=KW_CACHE_DIR,
         help="Destination of the cache folder. Default is the OS-default cache dir."
     )
@@ -160,14 +162,14 @@ def parse_datasail_args(args) -> Dict[str, object]:
     )
     e_ent.add_argument(
         "--e-data",
-        type=str,
+        type=Path,
         dest=KW_E_DATA,
         default=None,
         help="First input to the program. This can either be the filepath a directory containing only data files.",
     )
     e_ent.add_argument(
         "--e-weights",
-        type=str,
+        type=Path,
         dest=KW_E_WEIGHTS,
         default=None,
         help="Custom weights of the first bunch of samples. The file has to have TSV format where every line is of the "
@@ -208,14 +210,14 @@ def parse_datasail_args(args) -> Dict[str, object]:
     )
     f_ent.add_argument(
         "--f-data",
-        type=str,
+        type=Path,
         dest=KW_F_DATA,
         default=None,
         help="Second input to the program. This can either be the filepath a directory containing only data files.",
     )
     f_ent.add_argument(
         "--f-weights",
-        type=str,
+        type=Path,
         dest=KW_F_WEIGHTS,
         default=None,
         help="Custom weights of the second bunch of samples. The file has to have TSV format where every line is of "
@@ -281,14 +283,14 @@ class MultiYAMLParser(argparse.ArgumentParser):
                 args = [args]
         return super().parse_args(args)
 
-    def add_yaml_arguments(self, yaml_filepath) -> None:
+    def add_yaml_arguments(self, yaml_filepath: Path) -> None:
         """
         Add arguments to the parser based on a YAML file.
 
         Args:
             yaml_filepath: Path to the YAML file to read the arguments from.
         """
-        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), yaml_filepath), "r") as data:
+        with open(Path(__file__).parent.resolve() / yaml_filepath, "r") as data:
             data = yaml.safe_load(data)
         for name, values in data.items():
             kwargs = {"dest": name.replace("-", "_"), "type": locate(values["type"])}

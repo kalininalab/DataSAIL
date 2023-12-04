@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Dict, Tuple, List, Union
 import math
 
@@ -36,7 +37,7 @@ def run_wlk(dataset: DataSet, n_iter: int = 4) -> Tuple[List[str], Dict[str, str
 
     LOGGER.info("Start WLK clustering")
 
-    if os.path.isfile(list(dataset.data.values())[1]):  # read PDB files into grakel graph objects
+    if Path(list(dataset.data.values())[1]).is_file():  # read PDB files into grakel graph objects
         graphs = [pdb_to_grakel(dataset.data[name]) for name in dataset.names]
     else:  # read molecules from SMILES to grakel graph objects
         graphs = [mol_to_grakel(MolFromSmiles(dataset.data[name])) for name in dataset.names]

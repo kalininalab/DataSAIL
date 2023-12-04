@@ -1,5 +1,6 @@
-import os.path
-from typing import Dict, List, Callable, Union, Generator
+import os
+from pathlib import Path
+from typing import Dict, List, Callable, Generator
 
 from datasail.parsers import parse_datasail_args
 from datasail.reader.utils import DATA_INPUT, MATRIX_INPUT
@@ -38,17 +39,17 @@ def validate_args(**kwargs) -> Dict[str, object]:
     """
     # create output directory
     output_created = False
-    if kwargs[KW_OUTDIR] is not None and not os.path.isdir(kwargs[KW_OUTDIR]):
+    if kwargs[KW_OUTDIR] and not kwargs[KW_OUTDIR].is_dir():
         output_created = True
-        os.makedirs(kwargs[KW_OUTDIR], exist_ok=True)
+        kwargs[KW_OUTDIR].mkdir(parents=True, exist_ok=True)
 
     LOGGER.setLevel(VERB_MAP[kwargs[KW_VERBOSE]])
     LOGGER.handlers[0].setLevel(level=VERB_MAP[kwargs[KW_VERBOSE]])
 
-    if kwargs[KW_OUTDIR] is not None:
-        kwargs[KW_LOGDIR] = os.path.abspath(os.path.join(kwargs[KW_OUTDIR], "logs"))
-        os.makedirs(kwargs[KW_LOGDIR], exist_ok=True)
-        file_handler = logging.FileHandler(os.path.join(kwargs[KW_LOGDIR], "general.log"))
+    if kwargs[KW_OUTDIR]:
+        kwargs[KW_LOGDIR] = kwargs[KW_OUTDIR] / "logs"
+        kwargs[KW_LOGDIR].mkdir(parents=True, exist_ok=True)
+        file_handler = logging.FileHandler(kwargs[KW_LOGDIR] / "general.log")
         file_handler.setLevel(level=VERB_MAP[kwargs[KW_VERBOSE]])
         file_handler.setFormatter(FORMATTER)
         LOGGER.addHandler(file_handler)
@@ -64,7 +65,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
     if len(kwargs[KW_SPLITS]) < 2:
         error("Less then two splits required. This is no useful input, please check the input again.", 1,
               kwargs[KW_CLI])
-    if kwargs[KW_NAMES] is None:
+    if not kwargs[KW_NAMES]:
         kwargs[KW_NAMES] = [f"Split{x:03d}" for x in range(len(kwargs[KW_SPLITS]))]
     elif len(kwargs[KW_SPLITS]) != len(kwargs[KW_NAMES]):
         error("Different number of splits and names. You have to give the same number of splits and names for them.",
@@ -87,7 +88,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
         kwargs[KW_THREADS] = min(kwargs[KW_THREADS], os.cpu_count())
 
     # check the interaction file
-    if kwargs[KW_INTER] is not None and isinstance(kwargs[KW_INTER], str) and not os.path.isfile(kwargs[KW_INTER]):
+    if kwargs[KW_INTER] and isinstance(kwargs[KW_INTER], Path) and not kwargs[KW_INTER].is_file():
         error("The interaction filepath is not valid.", 5, kwargs[KW_CLI])
 
     # check the epsilon value
@@ -99,38 +100,40 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The number of runs cannot be lower than 1.", 25, kwargs[KW_CLI])
 
     # check the input regarding the caching
-    if kwargs[KW_CACHE] is not None and kwargs[KW_CACHE_DIR] is not None and isinstance(kwargs[KW_CACHE_DIR], str) and \
-            not os.path.isdir(kwargs[KW_CACHE_DIR]):
-        LOGGER.warning("Cache directory does not exist, DataSAIL creates it automatically")
-        os.makedirs(kwargs[KW_CACHE_DIR], exist_ok=True)
+    if kwargs[KW_CACHE] and kwargs[KW_CACHE_DIR]:
+        kwargs[KW_CACHE_DIR] = Path(kwargs[KW_CACHE_DIR])
+        if not kwargs[KW_CACHE_DIR].is_dir():
+            LOGGER.warning("Cache directory does not exist, DataSAIL creates it automatically")
+        kwargs[KW_CACHE_DIR].mkdir(parents=True, exist_ok=True)
 
     # syntactically parse the input data for the E-dataset
-    if kwargs[KW_E_DATA] is not None and isinstance(kwargs[KW_E_DATA], str) and not os.path.exists(kwargs[KW_E_DATA]):
+    if kwargs[KW_E_DATA] and isinstance(kwargs[KW_E_DATA], Path) and not kwargs[KW_E_DATA].exists():
         error("The filepath to the E-data is invalid.", 7, kwargs[KW_CLI])
-    if kwargs[KW_E_WEIGHTS] is not None and isinstance(kwargs[KW_E_WEIGHTS], str) and \
-            not os.path.isfile(kwargs[KW_E_WEIGHTS]):
+    if kwargs[KW_E_WEIGHTS] and isinstance(kwargs[KW_E_WEIGHTS], Path) and not kwargs[KW_E_WEIGHTS].is_file():
         error("The filepath to the weights of the E-data is invalid.", 8, kwargs[KW_CLI])
-    if kwargs[KW_E_SIM] is not None and isinstance(kwargs[KW_E_SIM], str):
-        if kwargs[KW_E_SIM].lower() not in SIM_ALGOS and not os.path.isfile(kwargs[KW_E_SIM]):
+    if kwargs[KW_E_SIM] and isinstance(kwargs[KW_E_SIM], str) and kwargs[KW_E_SIM].lower() not in SIM_ALGOS:
+        kwargs[KW_E_SIM] = Path(kwargs[KW_E_SIM])
+        if not kwargs[KW_E_SIM].is_file():
             error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", 9,
                   kwargs[KW_CLI])
-    if kwargs[KW_E_DIST] is not None and isinstance(kwargs[KW_E_DIST], str):
-        if kwargs[KW_E_DIST].lower() not in DIST_ALGOS and not os.path.isfile(kwargs[KW_E_DIST]):
+    if kwargs[KW_E_DIST] and isinstance(kwargs[KW_E_DIST], str) and kwargs[KW_E_DIST].lower() not in DIST_ALGOS:
+        kwargs[KW_E_DIST] = Path(kwargs[KW_E_DIST])
+        if not kwargs[KW_E_DIST].is_file():
             error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10,
                   kwargs[KW_CLI])
 
     # syntactically parse the input data for the F-dataset
-    if kwargs[KW_F_DATA] is not None and isinstance(kwargs[KW_F_DATA], str) and not os.path.exists(kwargs[KW_F_DATA]):
+    if kwargs[KW_F_DATA] and isinstance(kwargs[KW_F_DATA], Path) and not kwargs[KW_F_DATA].exists():
         error("The filepath to the F-data is invalid.", 13, kwargs[KW_CLI])
-    if kwargs[KW_F_WEIGHTS] is not None and isinstance(kwargs[KW_F_WEIGHTS], str) and not os.path.isfile(
-            kwargs[KW_F_WEIGHTS]):
+    if kwargs[KW_F_WEIGHTS] and isinstance(kwargs[KW_F_WEIGHTS], Path) and not kwargs[KW_F_WEIGHTS].is_file():
         error("The filepath to the weights of the F-data is invalid.", 14, kwargs[KW_CLI])
-    if kwargs[KW_F_SIM] is not None and isinstance(kwargs[KW_F_SIM], str):
-        if kwargs[KW_F_SIM].lower() not in SIM_ALGOS and not os.path.isfile(kwargs[KW_F_SIM]):
+    if kwargs[KW_F_SIM] and isinstance(kwargs[KW_F_SIM], str) and kwargs[KW_F_SIM].lower() not in SIM_ALGOS:
+        kwargs[KW_F_SIM] = Path(kwargs[KW_F_SIM])
+        if not kwargs[KW_F_SIM].is_file():
             error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", 15,
                   kwargs[KW_CLI])
-    if kwargs[KW_F_DIST] is not None and isinstance(kwargs[KW_F_DIST], str):
-        if kwargs[KW_F_DIST].lower() not in DIST_ALGOS and not os.path.isfile(kwargs[KW_F_DIST]):
+    if kwargs[KW_F_DIST] and isinstance(kwargs[KW_F_DIST], str) and kwargs[KW_F_DIST].lower() not in DIST_ALGOS:
+        if not kwargs[KW_F_DIST].is_file():
             error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16,
                   kwargs[KW_CLI])
 
@@ -138,8 +141,8 @@ def validate_args(**kwargs) -> Dict[str, object]:
 
 
 def datasail(
-        techniques: Union[str, List[str], Callable[..., List[str]], Generator[str, None, None]] = None,
-        inter: Union[str, List[Tuple[str, str]], Callable[..., List[str]], Generator[str, None, None]] = None,
+        techniques: str | List[str] | Callable[..., List[str]] | Generator[str, None, None] = None,
+        inter: Optional[str | Path | List[Tuple[str, str]] | Callable[..., List[str]] | Generator[str, None, None]] = None,
         max_sec: int = 100,
         max_sol: int = 1000,
         verbose: str = "W",
@@ -149,7 +152,7 @@ def datasail(
         runs: int = 1,
         solver: str = SOLVER_SCIP,
         cache: bool = False,
-        cache_dir: str = None,
+        cache_dir: str | Path = None,
         e_type: str = None,
         e_data: DATA_INPUT = None,
         e_weights: DATA_INPUT = None,
@@ -197,11 +200,17 @@ def datasail(
     Returns:
         Three dictionaries mapping techniques to another dictionary. The inner dictionary maps input id to their splits.
     """
+
+    def to_path(x):
+        return Path(x) if isinstance(x, str) else x
+
     kwargs = validate_args(
-        output=None, techniques=techniques, inter=inter, max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
-        splits=splits, names=names, epsilon=epsilon, runs=runs, solver=solver, cache=cache, cache_dir=cache_dir,
-        e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=e_dist, e_args=e_args, f_type=f_type,
-        f_data=f_data, f_weights=f_weights, f_sim=f_sim, f_dist=f_dist, f_args=f_args, threads=threads, cli=False,
+        output=None, techniques=techniques, inter=to_path(inter), max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
+        splits=splits, names=names, epsilon=epsilon, runs=runs, solver=solver, cache=cache,
+        cache_dir=to_path(cache_dir), e_type=e_type, e_data=to_path(e_data), e_weights=to_path(e_weights),
+        e_sim=to_path(e_sim), e_dist=to_path(e_dist), e_args=e_args, f_type=f_type, f_data=to_path(f_data),
+        f_weights=to_path(f_weights), f_sim=to_path(f_sim), f_dist=to_path(f_dist), f_args=f_args, threads=threads,
+        cli=False,
     )
     return datasail_main(**kwargs)
 

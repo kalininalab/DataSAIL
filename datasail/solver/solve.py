@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Tuple, Optional, List, Dict, Union
 
 import numpy as np
@@ -41,7 +42,7 @@ def run_solver(
         max_sec: int,
         max_sol: int,
         solver: str,
-        log_dir: str,
+        log_dir: Path,
 ) -> Tuple[Dict[str, List[Dict[Tuple[str, str], str]]], DictMap, DictMap, DictMap, DictMap]:
     """
     Run a solver based on the selected technique.
@@ -78,7 +79,7 @@ def run_solver(
                 LOGGER.info(technique)
                 mode = technique[-1]
                 dataset = f_dataset if mode == MODE_F else e_dataset
-                log_file = None if log_dir is None else os.path.join(log_dir, f"{dataset.get_name()}_{technique}.log")
+                log_file = None if log_dir is None else log_dir / f"{dataset.get_name()}_{technique}.log"
 
                 if technique == TEC_R:
                     # losing interactions here: from 19074 to 18810 (round about 1.5%)

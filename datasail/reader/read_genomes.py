@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import List, Tuple, Optional, Generator, Callable, Iterable, Union
 
 from datasail.reader.read_molecules import remove_duplicate_values
@@ -32,12 +33,12 @@ def read_genome_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=G_TYPE, location=UNK_LOCATION, format=FORM_FASTA)
-    if isinstance(data, str):
-        if data.split(".")[-1].lower() in FASTA_FORMATS:
+    if isinstance(data, Path):
+        if data.suffix[1:].lower() in FASTA_FORMATS:
             dataset.data = parse_fasta(data)
-        elif os.path.isfile(data):
+        elif data.is_file():
             dataset.data = dict(read_csv(data))
-        elif os.path.isdir(data):
+        elif data.is_dir():
             dataset.data = dict(read_folder(data))
             dataset.format = FORM_GENOMES
         else:

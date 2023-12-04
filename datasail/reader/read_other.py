@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import List, Tuple, Optional, Generator, Callable
 
 from datasail.reader.read_genomes import read_folder
@@ -35,8 +36,8 @@ def read_other_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=O_TYPE, location=UNK_LOCATION, format=FORM_OTHER)
-    if isinstance(data, str):
-        if os.path.exists(data):
+    if isinstance(data, Path):
+        if data.exists():
             dataset.data = read_folder(data)
             dataset.location = data
         else:

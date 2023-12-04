@@ -8,22 +8,23 @@ from datasail.reader.read_proteins import read_protein_data, parse_fasta
 
 
 def sabdab_inter_list():
-    return list(read_csv("data/rw_data/sabdab_full/interactions.tsv"))
+    return list(read_csv("data/rw_data/sabdab_full/inter.tsv"))
 
 
 def sabdab_inter_returner():
-    return lambda: list(read_csv("data/rw_data/sabdab_full/interactions.tsv"))
+    return lambda: list(read_csv("data/rw_data/sabdab_full/inter.tsv"))
 
 
 def sabdab_inter_generator():
-    for x in list(read_csv("data/rw_data/sabdab_full/interactions.tsv")):
+    for x in list(read_csv("data/rw_data/sabdab_full/inter.tsv")):
         yield x
 
 
 @pytest.fixture
 def sabdab_ag_dataset():
     return cluster(
-        read_protein_data("data/rw_data/sabdab_full/ag.fasta", None, None, None, list(read_csv("data/rw_data/sabdab_full/interactions.tsv")), 0),
+        read_protein_data("data/rw_data/sabdab_full/ag.fasta", None, None, None, list(read_csv(
+            "data/rw_data/sabdab_full/inter.tsv")), 0),
         threads=1,
         logdir="",
     )
@@ -32,7 +33,8 @@ def sabdab_ag_dataset():
 @pytest.fixture
 def sabdab_vh_dataset():
     return cluster(
-        read_protein_data("data/rw_data/sabdab_full/vh.fasta", None, None, None, list(read_csv("data/rw_data/sabdab_full/interactions.tsv")), 1),
+        read_protein_data("data/rw_data/sabdab_full/vh.fasta", None, None, None, list(read_csv(
+            "data/rw_data/sabdab_full/inter.tsv")), 1),
         threads=1,
         logdir="",
     )

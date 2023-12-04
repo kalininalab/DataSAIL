@@ -1,20 +1,20 @@
 import os
 import shutil
+from pathlib import Path
 from typing import List
 
 from datasail.sail import sail
 
 
-def read_tsv(filepath):
-    assert os.path.exists(filepath)
+def read_tsv(filepath: Path):
+    assert filepath.exists()
     with open(filepath, "r") as d:
         mols = [line.strip().split("\t") for line in d.readlines()]
-    os.remove(filepath)
     return mols
 
 
 def run_sail(
-        inter=None, output: str = "", max_sec: int = 100, max_sol: int = 1000, verbosity: str = "I",
+        inter=None, output: Path = "", max_sec: int = 100, max_sol: int = 1000, verbosity: str = "I",
         splits: List[float] = None, names: List[str] = None, epsilon: float = 0.05, runs: int = 1, solver: str = "SCIP",
         techniques: List[str] = None, cache: bool = False, cache_dir: str = None,
         e_type: str = None, e_data=None, e_weights=None, e_sim=None, e_dist=None, e_args: str = "",
@@ -41,12 +41,12 @@ def check_folder(output_root, epsilon, e_weight, f_weight, e_filename, f_filenam
             f_map = dict((k, float(v)) for k, v in [tuple(line.strip().split("\t")[:2]) for line in in_data.readlines()[1:]])
 
     split_data = []
-    if os.path.isfile(os.path.join(output_root, "inter.tsv")):
-        split_data.append(("I", read_tsv(os.path.join(output_root, "inter.tsv"))))
-    if e_filename is not None and os.path.isfile(os.path.join(output_root, e_filename)):
-        split_data.append(("E", read_tsv(os.path.join(output_root, e_filename))))
-    if f_filename is not None and os.path.isfile(os.path.join(output_root, f_filename)):
-        split_data.append(("F", read_tsv(os.path.join(output_root, f_filename))))
+    if (i_file := output_root / "inter.tsv").exists():
+        split_data.append(("I", read_tsv(i_file)))
+    if e_filename and (e_file := output_root / e_filename).exists():
+        split_data.append(("E", read_tsv(e_file)))
+    if f_filename and (f_file := output_root / f_filename).exists():
+        split_data.append(("F", read_tsv(f_file)))
 
     assert len(split_data) > 0
 

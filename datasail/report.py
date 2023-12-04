@@ -1,5 +1,6 @@
 import math
 import os
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Set
 
 import numpy as np
@@ -21,7 +22,7 @@ def report(
         f_cluster_split_map: DictMap,
         inter_split_map: Dict[str, List[Dict[Tuple[str, str], str]]],
         runs: int,
-        output_dir: str,
+        output_dir: Path,
         split_names: List[str],
 ) -> None:
     """
@@ -42,7 +43,7 @@ def report(
         split_names: Names of the splits
     """
     # create the output folder to store the results in
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     for t in techniques:
         for run in range(runs):
@@ -54,8 +55,8 @@ def report(
             folder_name = t
             if runs > 1:
                 folder_name += f"_{run + 1}"
-            save_dir = os.path.join(output_dir, folder_name)
-            os.makedirs(save_dir, exist_ok=True)
+            save_dir = output_dir / folder_name
+            save_dir.mkdir(parents=True, exist_ok=True)
 
             # save mapping of interactions for this split if applicable
             if t in inter_split_map:
@@ -87,7 +88,7 @@ def report(
 
 
 def individual_report(
-        save_dir: str,
+        save_dir: Path,
         dataset: DataSet,
         name_split_map: Dict[str, Dict[str, str]],
         cluster_split_map: Dict[str, Dict[str, str]],
@@ -123,7 +124,7 @@ def individual_report(
     # print(stats_string(sum(dataset.weights.values()), split_counts))
 
 
-def save_inter_assignment(save_dir: str, inter_split_map: Optional[Dict[Tuple[str, str], str]]) -> None:
+def save_inter_assignment(save_dir: Path, inter_split_map: Optional[Dict[Tuple[str, str], str]]) -> None:
     """
     Save the assignment of interactions to splits in a TSV file.
 
@@ -137,10 +138,10 @@ def save_inter_assignment(save_dir: str, inter_split_map: Optional[Dict[Tuple[st
     pd.DataFrame(
         [(x1, x2, x3) for (x1, x2), x3 in inter_split_map.items()],
         columns=["E_ID", "F_ID", "Split"],
-    ).to_csv(os.path.join(save_dir, "inter.tsv"), sep="\t", columns=["E_ID", "F_ID", "Split"], index=False)
+    ).to_csv(save_dir / "inter.tsv", sep="\t", columns=["E_ID", "F_ID", "Split"], index=False)
 
 
-def save_assignment(save_dir: str, dataset: DataSet, name_split_map: Optional[Dict[str, str]]) -> None:
+def save_assignment(save_dir: Path, dataset: DataSet, name_split_map: Optional[Dict[str, str]]) -> None:
     """
     Save an assignment from data points to splits.
 
@@ -152,9 +153,7 @@ def save_assignment(save_dir: str, dataset: DataSet, name_split_map: Optional[Di
     if name_split_map is None:
         return
 
-    filepath = os.path.join(
-        save_dir, f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_splits.tsv"
-    )
+    filepath = save_dir / f"{char2name(dataset.type)}_{dataset.location.stem}_splits.tsv"
 
     pd.DataFrame(
         [(x1, name_split_map.get(x2, "")) for x1, x2 in dataset.id_map.items()],
@@ -162,7 +161,7 @@ def save_assignment(save_dir: str, dataset: DataSet, name_split_map: Optional[Di
     ).to_csv(filepath, sep="\t", columns=["ID", "Split"], index=False)
 
 
-def save_clusters(save_dir: str, dataset: DataSet) -> None:
+def save_clusters(save_dir: Path, dataset: DataSet) -> None:
     """
     Save a clustering to a TSV file. The clustering is the mapping from data points to cluster representatives or names.
 
@@ -172,9 +171,8 @@ def save_clusters(save_dir: str, dataset: DataSet) -> None:
     """
     if dataset.cluster_map is None:
         return
-    filepath = os.path.join(
-        save_dir, f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_clusters.tsv"
-    )
+    filepath = save_dir / f"{char2name(dataset.type)}_{dataset.location.stem}_clusters.tsv"
+
     pd.DataFrame(
         [(x1, dataset.cluster_map.get(x2, "")) for x1, x2 in dataset.id_map.items()],
         columns=["ID", "Cluster_ID"],
@@ -182,7 +180,7 @@ def save_clusters(save_dir: str, dataset: DataSet) -> None:
 
 
 def save_t_sne(
-        save_dir: str,
+        save_dir: Path,
         dataset: DataSet,
         name_split_map: Dict[str, str],
         cluster_split_map: Dict[str, str],
@@ -219,7 +217,7 @@ def save_matrix_tsne(
         dataset: DataSet,
         entity_split_map: Dict[str, str],
         split_names: List[str],
-        save_dir: str,
+        save_dir: Path,
         postfix: str
 ) -> None:
     """
@@ -236,9 +234,7 @@ def save_matrix_tsne(
         postfix: Postfix for the filename
     """
     distances = distances if distances is not None else 1 - similarities
-    output_file_name = os.path.join(
-        save_dir, f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_{postfix}.png"
-    )
+    output_file_name = save_dir / f"{char2name(dataset.type)}_{dataset.location.stem}_{postfix}.png"
     # compute t-SNE embeddings
     embeds = TSNE(
         n_components=2,
@@ -261,7 +257,7 @@ def save_matrix_tsne(
     plt.clf()
 
 
-def save_cluster_hist(save_dir: str, dataset: DataSet) -> None:
+def save_cluster_hist(save_dir: Path, dataset: DataSet) -> None:
     """
     Store visualization of cluster sizes.
 
@@ -283,10 +279,7 @@ def save_cluster_hist(save_dir: str, dataset: DataSet) -> None:
     plt.xlabel("Size of Cluster")
     plt.ylabel("Number of Clusters")
     plt.title("Size distribution of clusters")
-    plt.savefig(os.path.join(
-        save_dir,
-        f"{char2name(dataset.type)}_{dataset.location.split('/')[-1].split('.')[0]}_cluster_hist.png"
-    ))
+    plt.savefig(save_dir / f"{char2name(dataset.type)}_{dataset.location.stem}_cluster_hist.png")
     plt.clf()
 
 

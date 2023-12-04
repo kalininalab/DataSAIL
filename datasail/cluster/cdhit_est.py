@@ -1,5 +1,6 @@
 import os
 import shutil
+from pathlib import Path
 from typing import Tuple, List, Dict, Optional
 
 import numpy as np
@@ -73,11 +74,11 @@ def cdhit_est_trial(
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    results_folder = "cdhit_est_results"
+    results_folder = Path("cdhit_est_results")
     cmd = f"mkdir {results_folder} && " \
           f"cd {results_folder} && " \
           f"cd-hit-est " \
-          f"-i {os.path.join('..', dataset.location)} " \
+          f"-i {Path('..') / dataset.location} " \
           f"-o clusters " \
           f"-d 0 " \
           f"-T {threads} " \
@@ -89,16 +90,16 @@ def cdhit_est_trial(
     else:
         cmd += f"> {log_file}"
 
-    if os.path.exists(results_folder):
+    if results_folder.exists():
         cmd = f"rm -rf {results_folder} && " + cmd
 
     LOGGER.info(cmd)
     os.system(cmd)
 
-    if not os.path.isfile(f"{results_folder}/clusters.clstr"):
+    if not (results_folder / "clusters.clstr").exists():
         raise ValueError("Something went wrong with cd-hit-est. The output file does not exist.")
 
-    cluster_map = get_cdhit_map(f"{results_folder}/clusters.clstr")
+    cluster_map = get_cdhit_map(results_folder / "clusters.clstr")
     cluster_names = list(set(cluster_map.values()))
     cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
 
@@ -107,7 +108,7 @@ def cdhit_est_trial(
     return cluster_names, cluster_map, cluster_sim
 
 
-def get_cdhit_map(cluster_file: str) -> Dict[str, str]:
+def get_cdhit_map(cluster_file: Path) -> Dict[str, str]:
     """
     Read the cluster assignment from the output of CD-HIT.
 

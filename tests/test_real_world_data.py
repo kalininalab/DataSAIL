@@ -1,6 +1,6 @@
 import os
 import shutil
-from os.path import isdir, isfile, join
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -10,36 +10,40 @@ from datasail.reader.utils import read_csv
 from datasail.settings import NOT_ASSIGNED
 from tests.utils import run_sail
 
+base = Path("data") / "rw_data"
+mave = base / "mave"
+mibig = base / "mibig"
+sabdab_f = base / "sabdab_full"
+sabdab_d = base / "sabdab_domains"
+
 
 @pytest.mark.real
 @pytest.mark.todo
 @pytest.mark.parametrize(
     "ligand_data,ligand_weights,protein_data,protein_weights,interactions,output", [
-        (None, None, "data/rw_data/mave/mave_db_gold_standard_only_sequences.fasta",
-         "data/rw_data/mave/mave_db_gold_standard_weights.tsv", None, "data/rw_data/mave_splits"),
-        ("data/rw_data/mibig/compounds.tsv", None, None, None, None, "data/rw_data/mibig_splits"),
-        ("data/rw_data/sabdab_full/ag.fasta", None, "data/rw_data/sabdab_full/vh.fasta", None,
-         "data/rw_data/sabdab_full/interactions.tsv", "data/rw_data/sabdab_full_splits"),
-        ("data/rw_data/sabdab_full/ag.fasta", None, "data/rw_data/sabdab_full/vh.fasta", None, None,
-         "data/rw_data/sabdab_full2_splits"),
-        ("data/rw_data/sabdab_domains/ag.fasta", None, "data/rw_data/sabdab_domains/CDR-H1_48_seqlen.tsv", None,
-         "data/rw_data/sabdab_domains/interactions.tsv", "data/rw_data/sabdab_dom1_splits"),
-        ("data/rw_data/sabdab_domains/ag.fasta", None, "data/rw_data/sabdab_domains/CDR-H1_48_seqlen_1000.tsv", None,
-         "data/rw_data/sabdab_domains/interactions.tsv", "data/rw_data/sabdab_dom2_splits"),
-        ("data/rw_data/sabdab_domains/ag.fasta", None, "data/rw_data/sabdab_domains/CDR-H1_seq_all.tsv", None,
-         "data/rw_data/sabdab_domains/interactions.tsv", "data/rw_data/sabdab_dom3_splits"),
-        ("data/rw_data/sabdab_domains/ag.fasta", None, "data/rw_data/sabdab_domains/CDR-H2_48_seqlen.tsv", None,
-         "data/rw_data/sabdab_domains/interactions.tsv", "data/rw_data/sabdab_dom4_splits"),
-        ("data/rw_data/sabdab_domains/ag.fasta", None, "data/rw_data/sabdab_domains/CDR-H2_48_seqlen_1000.tsv", None,
-         "data/rw_data/sabdab_domains/interactions.tsv", "data/rw_data/sabdab_dom5_splits"),
-        ("data/rw_data/sabdab_domains/ag.fasta", None, "data/rw_data/sabdab_domains/CDR-H2_seq_all.tsv", None,
-         "data/rw_data/sabdab_domains/interactions.tsv", "data/rw_data/sabdab_dom6_splits"),
-        ("data/rw_data/sabdab_domains/ag.fasta", None, "data/rw_data/sabdab_domains/CDR-H3_48_seqlen.tsv", None,
-         "data/rw_data/sabdab_domains/interactions.tsv", "data/rw_data/sabdab_dom7_splits"),
-        ("data/rw_data/sabdab_domains/ag.fasta", None, "data/rw_data/sabdab_domains/CDR-H3_48_seqlen_1000.tsv", None,
-         "data/rw_data/sabdab_domains/interactions.tsv", "data/rw_data/sabdab_dom8_splits"),
-        ("data/rw_data/sabdab_domains/ag.fasta", None, "data/rw_data/sabdab_domains/CDR-H3_seq_all.tsv", None,
-         "data/rw_data/sabdab_domains/interactions.tsv", "data/rw_data/sabdab_dom9_splits"),
+        (None, None, mave / "mave_db_gold_standard_only_sequences.fasta",
+         mave / "mave_db_gold_standard_weights.tsv", None, base / "mave_splits"),
+        (mibig / "compounds.tsv", None, None, None, None, base / "mibig_splits"),
+        (sabdab_f / "ag.fasta", None, sabdab_f / "vh.fasta", None, sabdab_f / "inter.tsv", base / "sabdab_full_splits"),
+        (sabdab_f / "ag.fasta", None, sabdab_f / "vh.fasta", None, None, base / "sabdab_full2_splits"),
+        (sabdab_d / "ag.fasta", None, sabdab_d / "CDR-H1_48_seqlen.tsv", None, sabdab_d / "inter.tsv",
+         base / "sabdab_dom1_splits"),
+        (sabdab_d / "ag.fasta", None, sabdab_d / "CDR-H1_48_seqlen_1000.tsv", None, sabdab_d / "inter.tsv",
+         base / "sabdab_dom2_splits"),
+        (sabdab_d / "ag.fasta", None, sabdab_d / "CDR-H1_seq_all.tsv", None, sabdab_d / "inter.tsv",
+         base / "sabdab_dom3_splits"),
+        (sabdab_d / "ag.fasta", None, sabdab_d / "CDR-H2_48_seqlen.tsv", None, sabdab_d / "inter.tsv",
+         base / "sabdab_dom4_splits"),
+        (sabdab_d / "ag.fasta", None, sabdab_d / "CDR-H2_48_seqlen_1000.tsv", None, sabdab_d / "inter.tsv",
+         base / "sabdab_dom5_splits"),
+        (sabdab_d / "ag.fasta", None, sabdab_d / "CDR-H2_seq_all.tsv", None, sabdab_d / "inter.tsv",
+         base / "sabdab_dom6_splits"),
+        (sabdab_d / "ag.fasta", None, sabdab_d / "CDR-H3_48_seqlen.tsv", None, sabdab_d / "inter.tsv",
+         base / "sabdab_dom7_splits"),
+        (sabdab_d / "ag.fasta", None, sabdab_d / "CDR-H3_48_seqlen_1000.tsv", None, sabdab_d / "inter.tsv",
+         base / "sabdab_dom8_splits"),
+        (sabdab_d / "ag.fasta", None, sabdab_d / "CDR-H3_seq_all.tsv", None, sabdab_d / "inter.tsv",
+         base / "sabdab_dom9_splits"),
     ])
 def test_full_single_colds(ligand_data, ligand_weights, protein_data, protein_weights, interactions, output):
     techniques = []
@@ -67,52 +71,53 @@ def test_full_single_colds(ligand_data, ligand_weights, protein_data, protein_we
 
     if ligand_data is not None:
         name_prefix = "Protein_e_seqs" if "sabdab" in ligand_data else "Molecule_e_smiles"
-        assert isdir(join(output, "I1e"))
+        assert (output / "I1e").is_dir()
         if interactions is not None:
-            assert isfile(join(output, "I1e", "inter.tsv"))
-            assert check_inter_completeness(interactions, join(output, "I1e", "inter.tsv"), ["train", "test"])
-        assert isfile(join(output, "I1e", name_prefix + "_splits.tsv"))
-        assert check_split_completeness(ligand_data, join(output, "I1e", name_prefix + "_splits.tsv"), ["train", "test"])
+            assert (output / "I1e" / "inter.tsv").is_file()
+            assert check_inter_completeness(interactions, output / "I1e" / "inter.tsv", ["train", "test"])
+        assert (output / "I1e" / name_prefix + "_splits.tsv").is_file()
+        assert check_split_completeness(ligand_data, output / "I1e"/ name_prefix + "_splits.tsv", ["train", "test"])
 
-        assert isdir(join(output, "C1e"))
+        assert (output / "C1e").is_dir()
         if interactions is not None:
-            assert isfile(join(output, "C1e", "inter.tsv"))
-            assert check_inter_completeness(interactions, join(output, "C1e", "inter.tsv"), ["train", "test"])
-        assert isfile(join(output, "C1e", name_prefix + "_cluster_hist.png"))
-        assert isfile(join(output, "C1e", name_prefix + "_clusters.png"))
-        assert isfile(join(output, "C1e", name_prefix + "_clusters.tsv"))
-        assert isfile(join(output, "C1e", name_prefix + "_splits.tsv"))
-        assert check_split_completeness(ligand_data, join(output, "C1e", name_prefix + "_splits.tsv"), ["train", "test"])
+            assert (output / "C1e" / "inter.tsv").is_file()
+            assert check_inter_completeness(interactions, output / "C1e" / "inter.tsv", ["train", "test"])
+        assert (output / "C1e" / name_prefix + "_cluster_hist.png").is_file()
+        assert (output / "C1e" / name_prefix + "_clusters.png").is_file()
+        assert (output / "C1e" / name_prefix + "_clusters.tsv").is_file()
+        assert (output / "C1e" / name_prefix + "_splits.tsv").is_file()
+        assert check_split_completeness(ligand_data, output / "C1e" / name_prefix + "_splits.tsv", ["train", "test"])
 
     if protein_data is not None:
-        assert isdir(join(output, "I1f"))
+        assert (output / "I1f").is_dir()
         if interactions is not None:
-            assert isfile(join(output, "I1f", "inter.tsv"))
-            assert check_inter_completeness(interactions, join(output, "I1f", "inter.tsv"), ["train", "test"])
-        assert isfile(join(output, "I1f", "Protein_f_seqs_splits.tsv"))
-        assert check_split_completeness(protein_data, join(output, "I1f", "Protein_f_seqs_splits.tsv"), ["train", "test"])
+            assert (output / "I1f" / "inter.tsv").is_file()
+            assert check_inter_completeness(interactions, output / "I1f" / "inter.tsv", ["train", "test"])
+        assert (output / "I1f" / "Protein_f_seqs_splits.tsv").is_file()
+        assert check_split_completeness(protein_data, output / "I1f" / "Protein_f_seqs_splits.tsv", ["train", "test"])
 
-        assert isdir(join(output, "C1f"))
+        assert (output / "C1f").is_dir()
         if interactions is not None:
-            assert isfile(join(output, "C1f", "inter.tsv"))
-            assert check_inter_completeness(interactions, join(output, "C1f", "inter.tsv"), ["train", "test"])
-        assert isfile(join(output, "C1f", "Protein_f_seqs_cluster_hist.png"))
-        assert isfile(join(output, "C1f", "Protein_f_seqs_clusters.png"))
-        assert isfile(join(output, "C1f", "Protein_f_seqs_clusters.tsv"))
-        assert isfile(join(output, "C1f", "Protein_f_seqs_splits.tsv"))
-        assert check_split_completeness(protein_data, join(output, "C1f", "Protein_f_seqs_splits.tsv"), ["train", "test"])
+            assert (output / "C1f" / "inter.tsv").is_file()
+            assert check_inter_completeness(interactions, output / "C1f" / "inter.tsv", ["train", "test"])
+        assert (output / "C1f" / "Protein_f_seqs_cluster_hist.png").is_file()
+        assert (output / "C1f" / "Protein_f_seqs_clusters.png").is_file()
+        assert (output / "C1f" / "Protein_f_seqs_clusters.tsv").is_file()
+        assert (output / "C1f" / "Protein_f_seqs_splits.tsv").is_file()
+        assert check_split_completeness(protein_data, output /"C1f" / "Protein_f_seqs_splits.tsv", ["train", "test"])
 
-    assert isdir(join(output, "logs"))
-    assert isdir(join(output, "tmp"))
+    assert (output / "logs").is_dir()
+    assert (output / "tmp").is_dir()
 
     shutil.rmtree(output, ignore_errors=True)
 
 
 def test_pdbbind_splits():
-    df = pd.read_csv("data/rw_data/LP_PDBBind.csv").iloc[:1000, :]
+    base = Path("data") / "rw_data"
+    df = pd.read_csv(base / "LP_PDBBind.csv").iloc[:1000, :]
     run_sail(
         inter=[(x[0], x[0]) for x in df[["ids"]].values.tolist()],
-        output="data/rw_data/pdbbind_splits",
+        output=(out := base / "pdbbind_splits"),
         techniques=["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"],
         splits=[0.8, 0.2],
         names=["train", "test"],
@@ -126,25 +131,24 @@ def test_pdbbind_splits():
         threads=1
     )
 
-    assert isdir("data/rw_data/pdbbind_splits")
-    assert isdir("data/rw_data/pdbbind_splits/R")
-    assert isdir("data/rw_data/pdbbind_splits/I1e")
-    assert isdir("data/rw_data/pdbbind_splits/I1f")
-    assert isdir("data/rw_data/pdbbind_splits/I2")
-    assert isdir("data/rw_data/pdbbind_splits/C1e")
-    assert isdir("data/rw_data/pdbbind_splits/C1f")
-    assert isdir("data/rw_data/pdbbind_splits/C2")
+    assert out.is_dir()
+    assert (r := out / "R").is_dir()
+    assert (i1e := out / "I1e").is_dir()
+    assert (i1f := out / "I1f").is_dir()
+    assert (i2 := out / "I2").is_dir()
+    assert (c1e := out / "C1e").is_dir()
+    assert (c1f := out / "C1f").is_dir()
+    assert (c2 := out / "C2").is_dir()
 
-    assert isfile("data/rw_data/pdbbind_splits/R/inter.tsv")
-    assert isfile("data/rw_data/pdbbind_splits/I1e/inter.tsv")
-    assert isfile("data/rw_data/pdbbind_splits/I1f/inter.tsv")
-    assert isfile("data/rw_data/pdbbind_splits/I2/inter.tsv")
-    assert isfile("data/rw_data/pdbbind_splits/C1e/inter.tsv")
-    assert isfile("data/rw_data/pdbbind_splits/C1f/inter.tsv")
-    assert isfile("data/rw_data/pdbbind_splits/C2/inter.tsv")
+    assert (r / "inter.tsv")
+    assert (i1e / "inter.tsv")
+    assert (i1f / "inter.tsv")
+    assert (i2 / "inter.tsv")
+    assert (c1e / "inter.tsv")
+    assert (c1f / "inter.tsv")
+    assert (c2 / "inter.tsv")
 
     for technique in ["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"]:
-        print(technique)
         df = pd.read_csv(f"data/rw_data/pdbbind_splits/{technique}/inter.tsv", sep="\t")
         # assert df.shape > (19120, 3)
         assert set(df.columns).issubset({"E_ID", "F_ID", "Split"})
@@ -185,14 +189,14 @@ def check_split_completeness(input_data, split_names_filename, split_names):
             names_split[key] = value
 
     names_count = 0
-    if isdir(input_data):
+    if input_data.is_dir():
         for filename in os.listdir(input_data):
             if filename not in names_split:
                 return False
             if names_split[filename] not in split_names:
                 return False
             names_count += 1
-    elif isfile(input_data):
+    elif input_data.is_file():
         if input_data.split(".")[-1].lower() in {"fasta", "fa", "fna"}:
             data = parse_fasta(input_data)
         elif input_data.split(".")[-1].lower() in {"tsv"}:

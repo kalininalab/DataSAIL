@@ -25,7 +25,7 @@ def run_mmseqspp(
     align_args = parser.get_user_arguments(dataset.args, [], 1)
     extract_fasta(dataset)
 
-    result_folder = "mmseqspp_results"
+    result_folder = Path("mmseqspp_results")
 
     cmd = lambda x: f"mkdir {result_folder} && " \
                     f"cd {result_folder} && " \
@@ -39,17 +39,17 @@ def run_mmseqspp(
     else:
         cmd = cmd(f">> {Path(log_dir) / f'{dataset.get_name()}_mmseqspp.log'}")
 
-    if os.path.exists(result_folder):
+    if result_folder.exists():
         cmd = f"rm -rf {result_folder} && " + cmd
 
     LOGGER.info("Start MMseqs2 Align")
     LOGGER.info(cmd)
     os.system(cmd)
 
-    if not os.path.isfile(f"{result_folder}/alis.tsv"):
+    if not (result_folder / "alis.tsv").is_file():
         raise ValueError("Something went wront with mmseqs alignment. The output file does not exist.")
 
-    df = pd.read_csv(f"{result_folder}/alis.tsv", sep="\t")
+    df = pd.read_csv(result_folder / "alis.tsv", sep="\t")
     table = df.pivot(index="query", columns="target", values="fident").fillna(0).to_numpy()
 
     shutil.rmtree(result_folder, ignore_errors=True)

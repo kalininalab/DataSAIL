@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Tuple, List, Dict, Callable, Optional
 
 import numpy as np
@@ -20,7 +21,7 @@ def cluster_param_binary_search(
         trial: Callable,
         args2str: Callable,
         gen_args: Callable,
-        log_dir: str,
+        log_dir: Path,
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Perform binary search on the parameter space for clustering algorithms. So far, this is used to find optimal number
@@ -55,10 +56,8 @@ def cluster_param_binary_search(
         user_str = ""
         if user_args != "":
             user_str = f"_{user_args.replace('-', '').replace(' ', '_')}"
-        return None if log_dir is None else os.path.join(
-            log_dir,
-            f"{dataset.get_name()}_{trial.__name__[:-6]}_{args2str(x).replace('-', '').replace(' ', '_')}{user_str}.log"
-        )
+        return None if not log_dir else log_dir / f"{dataset.get_name()}_{trial.__name__[:-6]}_" \
+                                                  f"{args2str(x).replace('-', '').replace(' ', '_')}{user_str}.log"
 
     # cluster with the initial arguments
     cluster_names, cluster_map, cluster_sim = trial(
@@ -155,8 +154,8 @@ def extract_fasta(dataset: DataSet) -> None:
     Args:
         dataset: The dataset to extract the amino acid sequences from
     """
-    if not os.path.exists(dataset.location):
-        dataset.location = dataset.location + (".fasta" if dataset.location.endswith(UNK_LOCATION) else "")
+    if not dataset.location.exists():
+        dataset.location = f"{dataset.location}{'.fasta' if str(dataset.location).endswith(UNK_LOCATION) else ''}"
         with open(dataset.location, "w") as out:
             for idx, seq in dataset.data.items():
                 print(f">{idx}\n{seq}", file=out)
