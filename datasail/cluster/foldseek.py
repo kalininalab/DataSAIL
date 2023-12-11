@@ -51,7 +51,7 @@ def run_foldseek(
     if log_dir is None:
         cmd += "> /dev/null 2>&1"
     else:
-        cmd += f"> {log_dir / f'{dataset.get_name()}_foldseek.log'}"
+        cmd += f"> {(log_dir / f'{dataset.get_name()}_foldseek.log').resolve()}"
 
     if results_folder.exists():
         cmd = f"rm -rf {results_folder} && " + cmd

@@ -1,5 +1,5 @@
 from typing import List, Tuple, Optional, Dict, Union
-
+from pathlib import Path
 import cvxpy
 import numpy as np
 
@@ -21,7 +21,7 @@ def solve_c2(
         max_sec: int,
         max_sol: int,
         solver: str,
-        log_file: str,
+        log_file: Path,
 ) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[str, str], Dict[str, str]]]:
     """
     Solve cluster-based double-cold splitting using disciplined quasi-convex programming and binary quadratic

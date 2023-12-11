@@ -1,4 +1,5 @@
 from typing import Optional, Tuple, List, Set, Dict
+from pathlib import Path
 
 import cvxpy
 import numpy as np
@@ -16,7 +17,7 @@ def solve_i2(
         max_sec: int,
         max_sol: int,
         solver: str,
-        log_file: str,
+        log_file: Path,
 ) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[object, str], Dict[object, str]]]:
     """
     Solve identity-based double-cold splitting using disciplined quasi-convex programming and binary quadratic

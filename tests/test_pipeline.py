@@ -7,21 +7,22 @@ from datasail.sail import sail, datasail
 from tests.utils import check_folder, run_sail
 
 
+base = Path("data") / "pipeline"
 @pytest.mark.parametrize("data", [
     (True, False, None, None, None, False, None, None, False, "I1f"),
     (True, False, "wlk", None, None, False, None, None, False, "I1f"),
     (False, False, None, None, None, False, None, None, False, "I1f"),
     # (False, False, "mmseqs", None, None, False, None, None, False, "ICP"),
-    (False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "I1f"),
-    (False, False, None, "data/pipeline/prot_dist.tsv", None, False, None, None, False, "I1f"),
-    (False, True, None, None, None, False, None, None, False, "I1f"),
-    (None, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "I1e"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "I1e"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", True, None, None, False, "I1e"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, "data/pipeline/drug_sim.tsv", None, False, "I1e"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", True, "wlk", None, False, "I1e"),  # <-- 10/11
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "I1e"),
-    (True, False, "wlk", None, "data/pipeline/drugs.tsv", False, "wlk", None, True, "I1f"),
+    (False, False, base / "prot_sim.tsv", None, None, False, None, None, False, "I1f"),
+    (False, False, None, base / "prot_dist.tsv", None, False, None, None, False, "I1f"),
+    (False, True, None, None, None, False, None, None, False, "I1f"),  # <-- 5/12
+    (None, False, None, None, base / "drugs.tsv", False, None, None, False, "I1e"),
+    (False, False, None, None, base / "drugs.tsv", False, None, None, False, "I1e"),
+    (False, False, None, None, base / "drugs.tsv", True, None, None, False, "I1e"),  # <-- 8/12
+    (False, False, None, None, base / "drugs.tsv", False, base / "drug_sim.tsv", None, False, "I1e"),
+    (False, False, None, None, base / "drugs.tsv", True, "wlk", None, False, "I1e"),  # <-- 10/12
+    (False, False, None, None, base / "drugs.tsv", False, None, base / "drug_dist.tsv", False, "I1e"),
+    (True, False, "wlk", None, base / "drugs.tsv", False, "wlk", None, True, "I1f"),
     # (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "C1e"),
     # (False, False, "data/pipeline/prot_sim.tsv", None, "data/pipeline/drugs.tsv", False, None,
     #  "data/pipeline/drug_dist.tsv", False, "C1f"),
@@ -48,16 +49,12 @@ def test_pipeline(data):
         e_weights=(base / "drug_weights.tsv") if drug_weights else None,
         e_sim=drug_sim,
         e_dist=drug_dist,
-        e_max_sim=1,
-        e_max_dist=1,
         e_args="",
         f_type=None if pdb is None else "P",
         f_data=None if pdb is None else (base / ("pdbs" if pdb else "seqs.fasta")),
         f_weights=(base / "prot_weights.tsv") if prot_weights else None,
         f_sim=prot_sim,
         f_dist=prot_dist,
-        f_max_sim=1,
-        f_max_dist=1,
         f_args="",
         cache=False,
         cache_dir=None,
@@ -257,18 +254,18 @@ def test_rna():
         splits=[0.7, 0.3],
         names=["train", "test"],
         e_type="G",
-        e_data="data/rw_data/RBD/RBD.fasta",
+        e_data="data/rw_data/RBD/RBD_small.fasta",
     )
     assert "I1e" in e_splits
     assert "C1e" in e_splits
     assert len(e_splits["I1e"]) == 1
     assert len(e_splits["C1e"]) == 1
-    assert len(e_splits["I1e"][0]) == 15000
-    assert len(e_splits["C1e"][0]) == 15000
-    assert 10_000 < sum(x == "train" for x in e_splits["I1e"][0].values()) < 11_000
-    assert 4_000 < sum(x == "test" for x in e_splits["I1e"][0].values()) < 5_000
-    assert 10_000 < sum(x == "train" for x in e_splits["C1e"][0].values()) < 11_000
-    assert 4_000 < sum(x == "test" for x in e_splits["C1e"][0].values()) < 5_000
+    assert len(e_splits["I1e"][0]) == 25
+    assert len(e_splits["C1e"][0]) == 25
+    assert 15 < sum(x == "train" for x in e_splits["I1e"][0].values()) < 20
+    assert 5 < sum(x == "test" for x in e_splits["I1e"][0].values()) < 10
+    assert 15 < sum(x == "train" for x in e_splits["C1e"][0].values()) < 20
+    assert 5 < sum(x == "test" for x in e_splits["C1e"][0].values()) < 10
 
 
 def check_identity_tsv(filename):

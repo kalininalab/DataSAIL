@@ -163,7 +163,7 @@ def seqs_equality(seq1: str, seq2: str) -> float:
     return 1.0 if seq1 == seq2 else 0.0
 
 
-def extract_pdb_seqs(pdb_file: str) -> Dict[str, str]:
+def extract_pdb_seqs(pdb_file: Path) -> Dict[str, str]:
     """
     Extract all amino acid sequences from a PDB file.
 

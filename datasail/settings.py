@@ -1,7 +1,9 @@
 import logging
 import shutil
+import subprocess
 import sys
 from typing import Tuple, Optional
+import platform
 
 import cvxpy
 
@@ -54,6 +56,11 @@ _stdout_handler.setFormatter(FORMATTER)
 _stdout_handler.setLevel(logging.INFO)
 LOGGER.addHandler(_stdout_handler)
 
+if platform.system() == "Windows":
+    from ctypes.wintypes import MAX_PATH
+else:
+    MAX_PATH = int(subprocess.check_output(["getconf", "PATH_MAX", "/"]))
+
 # Define static values here, e.g. integer constants or string keys
 WLK = "wlk"
 MMSEQS = "mmseqs"
@@ -69,6 +76,7 @@ MASH_DIST = "mash_dist"
 TMALIGN = "tmalign"
 SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, ]
 DIST_ALGOS = [MASH, ]
+ALGOS = SIM_ALGOS + DIST_ALGOS
 INSTALLED = {
     CDHIT: shutil.which("cd-hit") is not None,
     CDHIT_EST: shutil.which("cd-hit-est") is not None,

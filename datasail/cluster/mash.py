@@ -44,7 +44,7 @@ def run_mash(
     if log_dir is None:
         cmd += "> /dev/null 2>&1"
     else:
-        cmd += f"> {log_dir / f'{dataset.get_name()}_mash.log'}"
+        cmd += f"> {(log_dir / f'{dataset.get_name()}_mash.log').resolve()}"
 
     if results_folder.exists():
         cmd = f"rm -rf {results_folder} && " + cmd

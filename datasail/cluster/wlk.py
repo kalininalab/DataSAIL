@@ -8,7 +8,7 @@ import numpy as np
 from rdkit.Chem import MolFromSmiles
 
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER
+from datasail.settings import LOGGER, MAX_PATH
 
 Point = Tuple[float, float, float]
 
@@ -37,8 +37,9 @@ def run_wlk(dataset: DataSet, n_iter: int = 4) -> Tuple[List[str], Dict[str, str
 
     LOGGER.info("Start WLK clustering")
 
-    if Path(list(dataset.data.values())[1]).is_file():  # read PDB files into grakel graph objects
-        graphs = [pdb_to_grakel(dataset.data[name]) for name in dataset.names]
+    sample = list(dataset.data.values())[0]
+    if isinstance(sample, Path) or (len(sample) < MAX_PATH and Path(sample).is_file()):  # read PDB files into grakel graph objects
+        graphs = [pdb_to_grakel(Path(dataset.data[name])) for name in dataset.names]
     else:  # read molecules from SMILES to grakel graph objects
         graphs = [mol_to_grakel(MolFromSmiles(dataset.data[name])) for name in dataset.names]
 
@@ -98,7 +99,7 @@ def mol_to_grakel(mol) -> Graph:
 class PDBStructure:
     """Structure class"""
 
-    def __init__(self, filename: str) -> None:
+    def __init__(self, filename: Path) -> None:
         """
         Read the $C_{\alpha}$ atoms from a PDB file.
 
@@ -137,7 +138,7 @@ class PDBStructure:
             [(res.num, (node_encoding.get(res.name.lower(), 20))) for i, res in enumerate(self.residues.values())])
 
 
-def pdb_to_grakel(pdb: Union[str, PDBStructure], threshold: float = 7) -> Graph:
+def pdb_to_grakel(pdb: Union[Path, PDBStructure], threshold: float = 7) -> Graph:
     """
     Convert a PDB file into a grakel graph to compute WLKs over them.
 
@@ -148,7 +149,7 @@ def pdb_to_grakel(pdb: Union[str, PDBStructure], threshold: float = 7) -> Graph:
     Returns:
         A grakel graph based on the PDB structure
     """
-    if isinstance(pdb, str):
+    if isinstance(pdb, Path):
         pdb = PDBStructure(pdb)
 
     tmp_edges = pdb.get_edges(threshold)

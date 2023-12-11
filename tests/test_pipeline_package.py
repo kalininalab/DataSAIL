@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Tuple, Optional, List
 
 from pytest_cases import lazy_value
@@ -8,22 +9,23 @@ from datasail.sail import datasail
 from tests.pipeline_package_fixtures import *
 
 
+base = Path("data") / "pipeline"
 @pytest.mark.parametrize("data", [
     (True, False, None, None, None, False, None, None, False, "I1f"),
-    (True, False, "wlk", None, None, False, None, None, False, "I1f"),
+    (True, False, "wlk", None, None, False, None, None, False, "I1f"),  # <-- 1/14
     (False, False, None, None, None, False, None, None, False, "I1f"),
-    (False, False, "mmseqspp", None, None, False, None, None, False, "I1f"),
-    (False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "I1f"),
-    (False, False, None, "data/pipeline/prot_dist.tsv", None, False, None, None, False, "I1f"),
+    (False, False, "mmseqspp", None, None, False, None, None, False, "I1f"),  # <-- 3/14
+    (False, False, base / "prot_sim.tsv", None, None, False, None, None, False, "I1f"),
+    (False, False, None, base / "prot_dist.tsv", None, False, None, None, False, "I1f"),
     (False, True, None, None, None, False, None, None, False, "I1f"),
-    (None, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "I1e"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, None, False, "I1e"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", True, None, None, False, "I1e"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, "data/pipeline/drug_sim.tsv", None, False, "I1e"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", True, "wlk", None, False, "I1e"),  # <-- 10/11
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "I1e"),
-    (True, False, "wlk", None, "data/pipeline/drugs.tsv", False, "wlk", None, True, "I1f"),
-    (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "C1e"),
+    (None, False, None, None, base / "drugs.tsv", False, None, None, False, "I1e"),
+    (False, False, None, None, base / "drugs.tsv", False, None, None, False, "I1e"),
+    (False, False, None, None, base / "drugs.tsv", True, None, None, False, "I1e"),
+    (False, False, None, None, base / "drugs.tsv", False, base / "drug_sim.tsv", None, False, "I1e"),
+    (False, False, None, None, base / "drugs.tsv", True, "wlk", None, False, "I1e"),  # <-- 11/14
+    (False, False, None, None, base / "drugs.tsv", False, None, base / "drug_dist.tsv", False, "I1e"),
+    (True, False, "wlk", None, base / "drugs.tsv", False, "wlk", None, True, "I1f"),  # <-- 13/14
+    (False, False, None, None, base / "drugs.tsv", False, None, base / "drug_dist.tsv", False, "C1e"),
     # (False, False, "data/pipeline/prot_sim.tsv", None, "data/pipeline/drugs.tsv", False, None,
     #  "data/pipeline/drug_dist.tsv", False, "C1f"),
     # (False, False, None, None, "data/pipeline/drugs.tsv", False, None, "data/pipeline/drug_dist.tsv", False, "C1e"),
@@ -32,7 +34,7 @@ def test_pipeline(data):
     pdb, prot_weights, prot_sim, prot_dist, drugs, drug_weights, drug_sim, drug_dist, inter, mode = data
 
     e_name_split_map, f_name_split_map, inter_split_map = datasail(
-        inter="data/pipeline/inter.tsv" if inter else None,
+        inter=base / "inter.tsv" if inter else None,
         max_sec=10,
         techniques=[mode],
         splits=[0.67, 0.33] if mode in ["IC", "CC"] else [0.7, 0.3],
@@ -40,12 +42,12 @@ def test_pipeline(data):
         epsilon=0.25,
         e_type=None if drugs is None else "M",
         e_data=drugs,
-        e_weights="data/pipeline/drug_weights.tsv" if drug_weights else None,
+        e_weights=(base / "drug_weights.tsv") if drug_weights else None,
         e_sim=drug_sim,
         e_dist=drug_dist,
         f_type=None if pdb is None else "P",
-        f_data=None if pdb is None else ("data/pipeline/pdbs" if pdb else "data/pipeline/seqs.fasta"),
-        f_weights="data/pipeline/prot_weights.tsv" if prot_weights else None,
+        f_data=None if pdb is None else ((base / "pdbs") if pdb else (base / "seqs.fasta")),
+        f_weights=(base / "prot_weights.tsv") if prot_weights else None,
         f_sim=prot_sim,
         f_dist=prot_dist,
         solver="SCIP",
@@ -83,9 +85,8 @@ def test_pipeline_inputs(
             f_weights=None, f_sim=None,
     ) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]]]]:
         kwargs = dict(
-            inter=inter, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=None, e_max_sim=1,
-            e_max_dist=1, e_args="", f_type=f_type, f_data=f_data, f_weights=f_weights, f_sim=f_sim, f_dist=None,
-            f_max_sim=1, f_max_dist=1, f_args="",
+            inter=inter, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=None, e_args="",
+            f_type=f_type, f_data=f_data, f_weights=f_weights, f_sim=f_sim, f_dist=None, f_args="",
         )
         # read e-entities and f-entities
         return read_data(**kwargs)
@@ -118,19 +119,20 @@ def test_pipeline_inputs(
 
 
 def test_report():
+    root = Path("data") / "perf_7_3"
     e_name_split_map, f_name_split_map, inter_split_map = datasail(
-        inter="data/perf_7_3/inter.tsv",
+        inter=root / "inter.tsv",
         max_sec=100,
         techniques=["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"],
         splits=[0.7, 0.3],
         names=["train", "test"],
         epsilon=0.25,
         e_type="M",
-        e_data="data/perf_7_3/lig.tsv",
-        e_sim="data/perf_7_3/lig_sim.tsv",
+        e_data=root / "lig.tsv",
+        e_sim=root / "lig_sim.tsv",
         f_type="P",
-        f_data="data/perf_7_3/prot.fasta",
-        f_sim="data/perf_7_3/prot_sim.tsv",
+        f_data=root / "prot.fasta",
+        f_sim=root / "prot_sim.tsv",
         solver="SCIP",
     )
 

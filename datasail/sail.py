@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict, List, Callable, Generator
+from typing import Dict, List, Callable, Generator, Union
 
 from datasail.parsers import parse_datasail_args
 from datasail.reader.utils import DATA_INPUT, MATRIX_INPUT
@@ -10,7 +10,7 @@ from datasail.settings import *
 
 def error(msg: str, error_code: int, cli: bool) -> None:
     """
-    Print an error message with an individual error code to the commandline. Afterwards, the program is stopped.
+    Print an error message with an individual error code to the commandline. Afterward, the program is stopped.
 
     Args:
         msg: Error message
@@ -141,8 +141,8 @@ def validate_args(**kwargs) -> Dict[str, object]:
 
 
 def datasail(
-        techniques: str | List[str] | Callable[..., List[str]] | Generator[str, None, None] = None,
-        inter: Optional[str | Path | List[Tuple[str, str]] | Callable[..., List[str]] | Generator[str, None, None]] = None,
+        techniques: Union[str, List[str], Callable[..., List[str]], Generator[str, None, None]] = None,
+        inter: Optional[Union[str, Path, List[Tuple[str, str]], Callable[..., List[str]], Generator[str, None, None]]] = None,
         max_sec: int = 100,
         max_sol: int = 1000,
         verbose: str = "W",
@@ -152,7 +152,7 @@ def datasail(
         runs: int = 1,
         solver: str = SOLVER_SCIP,
         cache: bool = False,
-        cache_dir: str | Path = None,
+        cache_dir: Union[str, Path] = None,
         e_type: str = None,
         e_data: DATA_INPUT = None,
         e_weights: DATA_INPUT = None,
@@ -202,7 +202,7 @@ def datasail(
     """
 
     def to_path(x):
-        return Path(x) if isinstance(x, str) else x
+        return Path(x) if isinstance(x, str) and x not in ALGOS else x
 
     kwargs = validate_args(
         output=None, techniques=techniques, inter=to_path(inter), max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
