@@ -130,8 +130,8 @@ def read_data():
 def plot_embeds(ax, data, embed, tech, legend=None):
     ax.scatter(data["train_coord"][:, 0], data["train_coord"][:, 1], s=1, c="blue", label="train", alpha=0.5)
     ax.scatter(data["test_coord"][:, 0], data["test_coord"][:, 1], s=1, c="orange", label="test", alpha=0.5)
-    ax.set_xlabel(f"{'umap' if USE_UMAP else 'tsne'} 1")
-    ax.set_ylabel(f"{'umap' if USE_UMAP else 'tsne'} 2")
+    # ax.set_xlabel(f"{'umap' if USE_UMAP else 'tsne'} 1")
+    # ax.set_ylabel(f"{'umap' if USE_UMAP else 'tsne'} 2")
     ax.set_xticks([])
     ax.set_xticks([], minor=True)
     ax.set_yticks([])
@@ -178,7 +178,7 @@ def plot_full(data):
 
     fig.set_size_inches(20, 10)
     fig.tight_layout()
-    plt.savefig(Path("experiments") / "PDBBind" / f"PDBBind_{'umap' if USE_UMAP else 'tsne'}.png")
+    plt.savefig(Path("experiments") / "PDBBind" / f"PDBBind_{'umap' if USE_UMAP else 'tsne'}.png", transparent=True)
     plt.show()
 
 
@@ -312,8 +312,8 @@ def analyze():
         with open(pkl_name, "rb") as pickled_data:
             data = pickle.load(pickled_data)
     plot_full(data)
-    plot_cold_drug(data)
-    plot_cold_prot(data)
+    # plot_cold_drug(data)
+    # plot_cold_prot(data)
 
 
 if __name__ == '__main__':

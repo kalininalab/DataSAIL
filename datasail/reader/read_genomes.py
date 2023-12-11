@@ -44,7 +44,7 @@ def read_genome_data(
         else:
             raise ValueError()
         dataset.location = data
-    elif isinstance(data, Union[list, tuple]) and isinstance(data[0], Iterable) and len(data[0]) == 2:
+    elif (isinstance(data, list) or isinstance(data, tuple)) and isinstance(data[0], Iterable) and len(data[0]) == 2:
         dataset.data = dict(data)
     elif isinstance(data, dict):
         dataset.data = data

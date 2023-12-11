@@ -4,6 +4,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import matplotlib
+from matplotlib import gridspec
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from umap import UMAP
@@ -234,8 +236,62 @@ def plot_double(names):
     plt.show()
 
 
+def plot_single(name):
+    matplotlib.rc('font', **{'size': 16})
+    index = DATASETS.index(name)
+    fig = plt.figure()
+    gs = gridspec.GridSpec(1, 2, figure=fig, width_ratios=[1, 1.5])
+    gs_left = gs[0].subgridspec(2, 1, hspace=0.3)
+    gs_right = gs[1].subgridspec(1, 1)
+    ax_rand = fig.add_subplot(gs_left[0])
+    ax_cold = fig.add_subplot(gs_left[1])
+    ax_full = fig.add_subplot(gs_right[0])
+
+    for s, split in enumerate(SPLITS[:2]):
+        filename = f"experiments/MPP/datasail/cdata/{name.lower()}/val_metrics.tsv"
+        if not os.path.exists(filename):
+            print(filename, "not found")
+            continue
+        try:
+            table = pd.read_csv(filename, sep="\t")
+            mask = [split.replace("1", "CS") in col for col in table.columns]
+            mean = np.average(table[table.columns[mask]].values, axis=1)
+            print(mean)
+            bounds = get_bounds(table[table.columns[mask]].values, axis=1)
+            x = np.arange(0.0, 50, 1)
+            ax_full.fill_between(x, *bounds, alpha=0.5)
+            ax_full.plot(mean, label='random' if s == 0 else 'clustered')
+            ax_full.set_title(f"Performance comparison ({METRICS[index]})")
+        except Exception as e:
+            print(f"{name} - {split}: {e}")
+    ax_full.legend(loc=1, markerscale=5)
+
+    data = pickle.load(open(f"experiments/MPP/{'umap' if USE_UMAP else 'tsne'}/embeds_{name}.pkl", "rb"))
+    for t, tech in enumerate(SPLITS[:2]):
+        ax = ax_rand if t == 0 else ax_cold
+        ax.set_title(tech)
+        ax.set_xticks([])
+        ax.set_xticks([], minor=True)
+        ax.set_yticks([])
+        ax.set_yticks([], minor=True)
+        try:
+            ax.scatter(*data[t]["train"].T, s=3, label="train")
+            ax.scatter(*data[t]["test"].T, s=3, label="test")
+            ax.set_title(
+                f"ECFP4 embeddings of\nthe {'random' if t == 0 else 'cluster-based'} split using t-SNE")
+            if t == 0:
+                ax.legend(loc=4, markerscale=5)
+        except Exception as e:
+            print(e)
+    fig.set_size_inches(14, 8)
+    fig.tight_layout()
+    plt.savefig(f"{name}.png", transparent=True)
+    plt.show()
+
+
 if __name__ == '__main__':
+    plot_single("Lipophilicity")
     # plot_perf()
-    plot_perf_5x3()
+    # plot_perf_5x3()
     # plot_double(["QM7", "Tox21"])
     # plot_embeds()

@@ -154,8 +154,8 @@ def extract_fasta(dataset: DataSet) -> None:
     Args:
         dataset: The dataset to extract the amino acid sequences from
     """
-    if not dataset.location.exists():
-        dataset.location = f"{dataset.location}{'.fasta' if str(dataset.location).endswith(UNK_LOCATION) else ''}"
+    if dataset.location == UNK_LOCATION or not dataset.location.exists():
+        dataset.location = Path(f"{dataset.location}{'.fasta' if str(dataset.location).endswith(UNK_LOCATION) else ''}")
         with open(dataset.location, "w") as out:
             for idx, seq in dataset.data.items():
                 print(f">{idx}\n{seq}", file=out)
