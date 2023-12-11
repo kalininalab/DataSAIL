@@ -29,7 +29,7 @@ DataSAIL is installable from [conda](https://anaconda.org/kalininalab/datasail) 
 using
 
 ````shell
-mamba create -n sail -c conda-forge -c kalininalab -c -c mosek bioconda DataSAIL
+mamba create -n sail -c conda-forge -c kalininalab -c bioconda DataSAIL
 conda activate sail
 pip install grakel
 ````

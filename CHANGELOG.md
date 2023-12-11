@@ -11,13 +11,14 @@
 - [ ] Input from config files
 - [ ] Stratified splits
 
-## v0.2.2 (2023-1?-??)
+## v0.2.2 (2023-12-11)
 
 - DataSAIL citation
 - Support for MMseqs2 to compute similarity matrices
 - More tests
 - Bugs fixed
-- Added changelog
+- Added CHANGELOG
+- Switched from string-based paths to pathlib
 
 ## v0.2.1.beta (2023-11-06)
 

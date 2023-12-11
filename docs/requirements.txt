@@ -7,7 +7,7 @@ pytest
 setuptools
 cvxpy
 pytest-cov
-rdkit>=2019.09.1
+rdkit>=2022.09.1
 pytest-cases
 scikit-learn
 grakel

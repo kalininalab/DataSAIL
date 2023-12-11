@@ -1,6 +1,6 @@
 package:
   name: "datasail"
-  version: '0.2.1.beta'
+  version: '0.2.2'
 
 source:
   path: ..
@@ -24,7 +24,7 @@ requirements:
     - matplotlib
     - pytest
     - setuptools
-    - pyscipopt
+    - pyscipopt<4.0.0
     - scikit-learn
     - foldseek
     - mmseqs2
@@ -33,11 +33,10 @@ requirements:
     - tmalign
     - cvxpy
     - pytest-cov
-    - rdkit>=2019.09.1
+    - rdkit>=2022.09.1
     - pytest-cases
     - pyyaml
     - cvxopt
-    - glpk
 
 about:
   home: https://github.com/kalininalab/DataSAIL
