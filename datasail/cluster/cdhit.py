@@ -14,7 +14,7 @@ from datasail.settings import LOGGER, CDHIT, INSTALLED
 def run_cdhit(
         dataset: DataSet,
         threads: int = 1,
-        log_dir: Optional[str] = None
+        log_dir: Optional[Path] = None
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run the CD-HIT tool for protein input.
@@ -56,7 +56,7 @@ def cdhit_trial(
         tune_args: Tuple,
         user_args: str,
         threads: int = 1,
-        log_file: Optional[str] = None
+        log_file: Optional[Path] = None
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run CD-HIT on the dataset with the given sequence similarity defined by add_args.
@@ -88,12 +88,13 @@ def cdhit_trial(
     if log_file is None:
         cmd += "> /dev/null 2>&1"
     else:
-        cmd += f"> {log_file}"
+        cmd += f"> {log_file.resolve()}"
 
     if results_folder.exists:
         cmd = f"rm -rf {results_folder} && " + cmd
 
     LOGGER.info(cmd)
+    print(cmd)
     os.system(cmd)
 
     if not (results_folder / "clusters.clstr").is_file():

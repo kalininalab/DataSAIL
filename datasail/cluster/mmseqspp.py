@@ -15,7 +15,7 @@ from datasail.settings import LOGGER, MMSEQS2, INSTALLED, MMSEQSPP
 def run_mmseqspp(
         dataset: DataSet,
         threads: int,
-        log_dir: Optional[str],
+        log_dir: Optional[Path] = None,
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     if not INSTALLED[MMSEQS2]:
         raise ValueError("MMseqs is not installed.")
@@ -37,7 +37,7 @@ def run_mmseqspp(
     if log_dir is None:
         cmd = cmd("> /dev/null 2>&1")
     else:
-        cmd = cmd(f">> {Path(log_dir) / f'{dataset.get_name()}_mmseqspp.log'}")
+        cmd = cmd(f">> {(Path(log_dir) / f'{dataset.get_name()}_mmseqspp.log').resolve()}")
 
     if result_folder.exists():
         cmd = f"rm -rf {result_folder} && " + cmd

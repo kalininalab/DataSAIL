@@ -8,10 +8,10 @@ import numpy as np
 import pandas as pd
 
 from datasail.reader.validate import validate_user_args
-from datasail.settings import get_default
+from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS
 
-DATA_INPUT = Optional[str | Path | Dict[str, str] | Callable[..., Dict[str, str]] | Generator[Tuple[str, str], None, None]]
-MATRIX_INPUT = Optional[str | Path | Tuple[List[str], np.ndarray] | Callable[..., Tuple[List[str], np.ndarray]]]
+DATA_INPUT = Optional[Union[str, Path, Dict[str, str], Callable[..., Dict[str, str]], Generator[Tuple[str, str], None, None]]]
+MATRIX_INPUT = Optional[Union[str, Path, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
 DictMap = Dict[str, List[Dict[str, str]]]
 
 
@@ -19,7 +19,7 @@ DictMap = Dict[str, List[Dict[str, str]]]
 class DataSet:
     type: Optional[str] = None
     format: Optional[str] = None
-    args: Optional[Namespace | Tuple[Namespace, Namespace]] = None
+    args: Optional[Namespace] = None
     names: Optional[List[str]] = None
     id_map: Optional[Dict[str, str]] = None
     cluster_names: Optional[List[str]] = None
@@ -28,10 +28,10 @@ class DataSet:
     location: Optional[Path] = None
     weights: Optional[Dict[str, float]] = None
     cluster_weights: Optional[Dict[str, float]] = None
-    similarity: Optional[np.ndarray | str] = None
-    cluster_similarity: Optional[np.ndarray | str] = None
-    distance: Optional[np.ndarray | str] = None
-    cluster_distance: Optional[np.ndarray | str] = None
+    similarity: Optional[Union[np.ndarray, str]] = None
+    cluster_similarity: Optional[Union[np.ndarray, str]] = None
+    distance: Optional[Union[np.ndarray, str]] = None
+    cluster_distance: Optional[Union[np.ndarray, str]] = None
 
     def __hash__(self) -> int:
         """
@@ -226,15 +226,14 @@ def read_data(
         A dataset storing all information on that datatype
     """
     # parse the protein weights
-    if weights is not None:
-        if isinstance(weights, str):
-            dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
-        elif isinstance(weights, dict):
-            dataset.weights = weights
-        elif isinstance(weights, Callable):
-            dataset.weights = weights()
-        elif isinstance(weights, Generator):
-            dataset.weights = dict(weights)
+    if isinstance(weights, Path):
+        dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
+    elif isinstance(weights, dict):
+        dataset.weights = weights
+    elif isinstance(weights, Callable):
+        dataset.weights = weights()
+    elif isinstance(weights, Generator):
+        dataset.weights = dict(weights)
     elif inter is not None:
         dataset.weights = dict(count_inter(inter, index))
     else:
@@ -244,12 +243,10 @@ def read_data(
     if sim is None and dist is None:
         dataset.similarity, dataset.distance = get_default(dataset.type, dataset.format)
         dataset.names = list(dataset.data.keys())
-    elif sim is not None:
-        dataset.names, dataset.similarity = \
-            read_matrix_input(sim, list(dataset.data.keys()))
-    elif dist is not None:
-        dataset.names, dataset.distance = \
-            read_matrix_input(dist, list(dataset.data.keys()))
+    elif sim is not None and not (isinstance(sim, str) and sim.lower() in SIM_ALGOS):
+        dataset.names, dataset.similarity = read_matrix_input(sim, list(dataset.data.keys()))
+    elif dist is not None and not (isinstance(dist, str) and dist.lower() in DIST_ALGOS):
+        dataset.names, dataset.distance = read_matrix_input(dist, list(dataset.data.keys()))
     else:
         if sim is not None:
             dataset.similarity = sim

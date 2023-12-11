@@ -1,4 +1,5 @@
 from typing import List, Union, Optional, Dict
+from pathlib import Path
 
 import cvxpy
 import numpy as np
@@ -17,7 +18,7 @@ def solve_c1(
         max_sec: int,
         max_sol: int,
         solver: str,
-        log_file: str,
+        log_file: Path,
 ) -> Optional[Dict[str, str]]:
     """
     Solve cluster-based cold splitting using disciplined quasi-convex programming and binary quadratic programming.
