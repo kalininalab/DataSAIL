@@ -99,6 +99,7 @@ def split_w_lohi(subset):
 
 if __name__ == '__main__':
     # load_data()
-    # split_w_datasail("HLM")
-    split_w_deepchem("HLM")
-    split_w_lohi("HLM")
+    for subset in ["MDR1_MDCK_ER", "SOLUBILITY", "hPPB", "rPPB", "RLM"]:
+        split_w_datasail(subset)
+        split_w_deepchem(subset)
+        split_w_lohi(subset)
