@@ -28,6 +28,8 @@ class DataSet:
     location: Optional[Path] = None
     weights: Optional[Dict[str, float]] = None
     cluster_weights: Optional[Dict[str, float]] = None
+    stratification: Optional[Dict[str, str]] = None
+    cluster_stratification: Optional[Dict[str, str]] = None
     similarity: Optional[Union[np.ndarray, str]] = None
     cluster_similarity: Optional[Union[np.ndarray, str]] = None
     distance: Optional[Union[np.ndarray, str]] = None
@@ -203,6 +205,7 @@ def read_matrix_input(
 
 def read_data(
         weights: DATA_INPUT,
+        strats: DATA_INPUT,
         sim: MATRIX_INPUT,
         dist: MATRIX_INPUT,
         inter: Optional[List[Tuple[str, str]]],
@@ -215,6 +218,7 @@ def read_data(
 
     Args:
         weights: Weight file for the data
+        strats: Stratification for the data
         sim: Similarity file or metric
         dist: Distance file or metric
         inter: Interaction, alternative way to compute weights
@@ -238,6 +242,16 @@ def read_data(
         dataset.weights = dict(count_inter(inter, index))
     else:
         dataset.weights = dict((p, 1) for p in list(dataset.data.keys()))
+
+    # parse the protein stratification
+    if isinstance(strats, Path):
+        dataset.stratification = dict(read_csv(strats))
+    elif isinstance(strats, dict):
+        dataset.stratification = strats
+    elif isinstance(strats, Callable):
+        dataset.stratification = strats()
+    elif isinstance(strats, Generator):
+        dataset.stratification = dict(strats)
 
     # parse the protein similarity measure
     if sim is None and dist is None:

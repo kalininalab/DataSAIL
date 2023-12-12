@@ -111,6 +111,8 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The filepath to the E-data is invalid.", 7, kwargs[KW_CLI])
     if kwargs[KW_E_WEIGHTS] and isinstance(kwargs[KW_E_WEIGHTS], Path) and not kwargs[KW_E_WEIGHTS].is_file():
         error("The filepath to the weights of the E-data is invalid.", 8, kwargs[KW_CLI])
+    if kwargs[KW_E_STRAT] and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
+        error("The filepath to the stratification of the E-data is invalid.", 11, kwargs[KW_CLI])
     if kwargs[KW_E_SIM] and isinstance(kwargs[KW_E_SIM], str) and kwargs[KW_E_SIM].lower() not in SIM_ALGOS:
         kwargs[KW_E_SIM] = Path(kwargs[KW_E_SIM])
         if not kwargs[KW_E_SIM].is_file():
@@ -127,6 +129,8 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The filepath to the F-data is invalid.", 13, kwargs[KW_CLI])
     if kwargs[KW_F_WEIGHTS] and isinstance(kwargs[KW_F_WEIGHTS], Path) and not kwargs[KW_F_WEIGHTS].is_file():
         error("The filepath to the weights of the F-data is invalid.", 14, kwargs[KW_CLI])
+    if kwargs[KW_E_STRAT] and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
+        error("The filepath to the stratification of the E-data is invalid.", 20, kwargs[KW_CLI])
     if kwargs[KW_F_SIM] and isinstance(kwargs[KW_F_SIM], str) and kwargs[KW_F_SIM].lower() not in SIM_ALGOS:
         kwargs[KW_F_SIM] = Path(kwargs[KW_F_SIM])
         if not kwargs[KW_F_SIM].is_file():
@@ -156,12 +160,14 @@ def datasail(
         e_type: str = None,
         e_data: DATA_INPUT = None,
         e_weights: DATA_INPUT = None,
+        e_strat: DATA_INPUT = None,
         e_sim: MATRIX_INPUT = None,
         e_dist: MATRIX_INPUT = None,
         e_args: str = "",
         f_type: str = None,
         f_data: DATA_INPUT = None,
         f_weights: DATA_INPUT = None,
+        f_strat: DATA_INPUT = None,
         f_sim: MATRIX_INPUT = None,
         f_dist: MATRIX_INPUT = None,
         f_args: str = "",
@@ -185,13 +191,15 @@ def datasail(
         cache_dir: Directory to store the cache in if not the default location.
         e_type: Data format of the first batch of data
         e_data: Data file of the first batch of data
-        e_weights: Weighting of the datapoints from e_data as TSV format
+        e_weights: Weighting of the datapoints from e_data
+        e_strat: Stratification of the datapoints from e_data
         e_sim: Similarity measure to apply for the e-data
         e_dist: Distance measure to apply for the e-data
         e_args: Additional arguments for the tools in e_sim or e_dist
         f_type: Data format of the second batch of data
         f_data: Data file of the second batch of data
-        f_weights: Weighting of the datapoints from f-data as TSV format
+        f_weights: Weighting of the datapoints from f-data
+        f_strat: Stratification of the datapoints from f-data
         f_sim: Similarity measure to apply for the f-data
         f_dist: Distance measure to apply for the f-data
         f_args: Additional arguments for the tools in f_sim or f-dist
@@ -208,9 +216,9 @@ def datasail(
         output=None, techniques=techniques, inter=to_path(inter), max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
         splits=splits, names=names, epsilon=epsilon, runs=runs, solver=solver, cache=cache,
         cache_dir=to_path(cache_dir), e_type=e_type, e_data=to_path(e_data), e_weights=to_path(e_weights),
-        e_sim=to_path(e_sim), e_dist=to_path(e_dist), e_args=e_args, f_type=f_type, f_data=to_path(f_data),
-        f_weights=to_path(f_weights), f_sim=to_path(f_sim), f_dist=to_path(f_dist), f_args=f_args, threads=threads,
-        cli=False,
+        e_strat=to_path(e_strat), e_sim=to_path(e_sim), e_dist=to_path(e_dist), e_args=e_args, f_type=f_type,
+        f_data=to_path(f_data), f_weights=to_path(f_weights), f_strat=to_path(f_strat), f_sim=to_path(f_sim),
+        f_dist=to_path(f_dist), f_args=f_args, threads=threads, cli=False,
     )
     return datasail_main(**kwargs)
 

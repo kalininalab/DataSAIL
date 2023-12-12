@@ -2,6 +2,7 @@ import functools
 import logging
 import operator
 import sys
+from collections import Counter
 from pathlib import Path
 
 from typing import List, Optional, Union, Tuple, Collection, Dict, Callable
@@ -28,6 +29,25 @@ def compute_limits(epsilon: float, total: int, splits: List[float]) -> List[floa
         lower and upper limits for the splits
     """
     return [int((split - epsilon) * total) for split in splits]
+
+
+def build_stratification_matrix(stratification):
+    if isinstance(stratification[0], str):
+        mapping = {s: i for i, s in enumerate(sorted(set(stratification)))}
+        out = np.zeros((len(stratification), len(mapping)))
+        out[:, [mapping[s] for s in stratification]] = 1
+        return out
+    else:
+        raise NotImplementedError()
+
+
+def stratification_lower_bounds(stratification, splits, epsilon):
+    if isinstance(stratification[0], str):
+        elements = sorted(set(stratification))
+        c = Counter(stratification)
+        return np.array([[c[e] * (split - epsilon) for e in elements] for split in splits])
+    else:
+        raise NotImplementedError()
 
 
 class LoggerRedirect:

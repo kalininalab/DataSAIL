@@ -98,13 +98,16 @@ def run_solver(
                                                          dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]):
                         names = dataset.cluster_names
                         weights = [dataset.cluster_weights.get(x, 0) for x in dataset.cluster_names]
+                        stratification = [dataset.cluster_stratification.get(x, None) for x in dataset.cluster_names]
                     else:
                         names = dataset.names
                         weights = [dataset.weights.get(x, 0) for x in dataset.names]
+                        stratification = [dataset.stratification.get(x, None) for x in dataset.names]
 
                     solution = solve_i1(
                         entities=names,
                         weights=weights,
+                        strats=stratification,
                         epsilon=epsilon,
                         splits=splits,
                         names=split_names,
