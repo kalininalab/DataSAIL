@@ -114,12 +114,10 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path, nu
             "mip.display": 0,
         }}
     elif solver == SOLVER_GLPK_MI:
-        # TODO: How to set these parameters?
-        kwargs = {"glpk_params": {
-            "tm_lim": 0,
-        }}
-        LOGGER.warning(f"DataSAIL currently cannot set user arguments to GLPK_MI. This especially applies to the "
-                       f"time limit.")
+        kwargs = {
+            "tm_lim": max_sec,
+            "threads": num_threads,
+        }
     elif solver == SOLVER_GUROBI:
         kwargs = {
             "TimeLimit": max_sec,
@@ -149,28 +147,28 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path, nu
         }
     else:
         raise ValueError("Unknown solver error")
-    # with LoggerRedirect(log_file):
-    try:
-        problem.solve(
-            solver=SOLVERS[solver],
-            qcp=True,
-            verbose=True,
-            **kwargs,
-        )
-
-        LOGGER.info(f"{solver} status: {problem.status}")
-        LOGGER.info(f"Solution's score: {problem.value}")
-
-        if "optimal" not in problem.status:
-            LOGGER.warning(
-                f'{solver} cannot solve the problem. Please consider relaxing split restrictions, '
-                'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
+    with LoggerRedirect(log_file):
+        try:
+            problem.solve(
+                solver=SOLVERS[solver],
+                qcp=True,
+                verbose=True,
+                **kwargs,
             )
+
+            LOGGER.info(f"{solver} status: {problem.status}")
+            LOGGER.info(f"Solution's score: {problem.value}")
+
+            if "optimal" not in problem.status:
+                LOGGER.warning(
+                    f'{solver} cannot solve the problem. Please consider relaxing split restrictions, '
+                    'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
+                )
+                return None
+            return problem
+        except KeyError:
+            LOGGER.warning(f"Solving failed for {''}. Please use try another solver or update your python version.")
             return None
-        return problem
-    except KeyError:
-        LOGGER.warning(f"Solving failed for {''}. Please use try another solver or update your python version.")
-        return None
 
 
 def sample_categorical(

@@ -20,6 +20,10 @@ from experiments.utils import dc2pd, telegram
 
 blocker = rdBase.BlockLogs()
 
+FOLDER = 'time'
+SOLVERS = ["CBC", "GLPK_MI", "GUROBI", "MOSEK", "SCIP"]
+CLUSTERS = list(range(10, 50, 5)) + list(range(50, 150, 10)) + [200]  # list(range(150, 501, 50))
+
 
 def solve_ccs_blp(
         clusters,
@@ -101,10 +105,10 @@ def run_ecfp(dataset):
 
 
 def run_solver():
-    path = Path("experiments") / "time2"
+    path = Path("experiments") / FOLDER
     path.mkdir(parents=True, exist_ok=True)
 
-    ds_path = Path("experiments") / "time2" / "data.pkl"
+    ds_path = Path("experiments") / FOLDER / "data.pkl"
     if not ds_path.exists():
         dataset = dc.molnet.load_clintox(featurizer=dc.feat.DummyFeaturizer(), splitter=None)[1][0]
         df = dc2pd(dataset, "clintox")
@@ -120,15 +124,15 @@ def run_solver():
         norm = np.sum(dataset.cluster_similarity)
 
     with open(path / "log.txt", "w") as log:
-        for num_clusters in list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 501, 50)):
-            old_path = Path("experiments") / "time2" / "MOSEK" / f"data_{num_clusters}.pkl"
-            if not old_path.exists():
-                ds = copy.deepcopy(dataset)
-                ds = additional_clustering(ds, n_clusters=num_clusters)
-            for solver_name in ["CBC"]:  # ["MOSEK", "SCIP", "GUROBI"]:
-                if old_path.exists():
-                    with open(old_path, "rb") as f:
-                        ds, _ = pickle.load(f)
+        for num_clusters in CLUSTERS:
+            # old_path = Path("experiments") / FOLDER / "MOSEK" / f"data_{num_clusters}.pkl"
+            # if not old_path.exists():
+            ds = copy.deepcopy(dataset)
+            ds = additional_clustering(ds, n_clusters=num_clusters)
+            for solver_name in SOLVERS:
+                # if old_path.exists():
+                #     with open(old_path, "rb") as f:
+                #         ds, _ = pickle.load(f)
                 (path / solver_name).mkdir(parents=True, exist_ok=True)
                 try:
                     problem, assignment, ttime = solve_ccs_blp(
@@ -163,24 +167,22 @@ def weighted_random(names: List[str], weights: Dict[str, int], splits: List[floa
     sizes = np.zeros(len(splits))
     splits = [[] for _ in range(len(splits))]
     names = sorted(names, key=lambda x: weights[x], reverse=True)
-    # print(names)
     for name in names:
         ratios = [(sizes[s] + weights[name]) / min_lim[s] for s in range(len(splits))]
         mindex = np.argmin(ratios)
         sizes[mindex] += weights[name]
         splits[mindex].append(name)
-    # print(splits)
     return splits
 
 
 def random_baseline():
-    base = Path("experiments") / "time2"
+    base = Path("experiments") / FOLDER
     with open(base / "data.pkl", "rb") as f:
         dataset = pickle.load(f)
 
     # cluster-based baseline
     s_leakage, c_leakage = [], []
-    for num_clusters in list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)):
+    for num_clusters in CLUSTERS:
         with open(base / "MOSEK" / f"data_{num_clusters}.pkl", "rb") as f:
             ds, assi = pickle.load(f)
         n_leakage = [], []
@@ -203,7 +205,7 @@ def random_baseline():
 
 def time_overhead():
     times = {}
-    with open(Path("experiments") / "time2" / "log.txt", "r") as data:
+    with open(Path("experiments") / FOLDER / "log.txt", "r") as data:
         for line in data:
             parts = line.split(" | ")
             if parts[0] not in times:
@@ -230,7 +232,7 @@ def viz_single(similarity, assignment):
 
 def blub():
     for num_cluster in list(range(10, 50, 5)):
-        with open(Path("experiments") / "time2" / "MOSEK" / f"data_{num_cluster}.pkl", "rb") as f:
+        with open(Path("experiments") / FOLDER / "MOSEK" / f"data_{num_cluster}.pkl", "rb") as f:
             ds, assi = pickle.load(f)
         viz_single(ds.cluster_similarity, assi)
 
@@ -246,14 +248,14 @@ def visualize():
     c_random, s_random = random_baseline()
     c_performances = {"MOSEK": [], "SCIP": [], "GUROBI": []}
     s_performances = {"MOSEK": [], "SCIP": [], "GUROBI": []}
-    with open(Path("experiments") / "time2" / "data.pkl", "rb") as f:
+    with open(Path("experiments") / FOLDER / "data.pkl", "rb") as f:
         dataset = pickle.load(f)
 
     for solver in ["GUROBI", "MOSEK", "SCIP"]:
-        for num_cluster in list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)):
+        for num_cluster in CLUSTERS:
             print(f"\r{solver} - {num_cluster}", end="")
             try:
-                with open(Path("experiments") / "time2" / solver / f"data_{num_cluster}.pkl", "rb") as f:
+                with open(Path("experiments") / FOLDER / solver / f"data_{num_cluster}.pkl", "rb") as f:
                     ds, assi = pickle.load(f)
                 tmp = np.array([1 if assi[n] == "train" else -1 for n in range(num_cluster)]).reshape(-1, 1)
                 tmp2 = np.array([1 if assi[ds.cluster_map[n]] == "train" else -1 for n in dataset.names]).reshape(-1, 1)
@@ -273,7 +275,7 @@ def visualize():
 
     fig.set_size_inches(20, 8)
     fig.tight_layout()
-    plt.savefig(Path("experiments") / "time2" / "time_overhead.pdf")
+    plt.savefig(Path("experiments") / FOLDER / "time_overhead.pdf")
     plt.show()
 
 

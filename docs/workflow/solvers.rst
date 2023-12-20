@@ -4,9 +4,10 @@ Supported Solvers
 
 .. _solver-label:
 
-With the default installation settings, DataSAIL supports SCIP. This is a free solver that performed good in our
-analysis. Additional solvers are supported upon user installation. All installation steps shall be executed in the
-conda-environment that also contains DataSAIL. Below, we describe the installation steps for the supported solvers.
+With the default installation settings, DataSAIL supports SCIP. This is a free solver that performed best among the
+free solvers during development. Additional solvers are supported upon user installation. All installation steps shall
+be executed in the conda-environment that also contains DataSAIL. Below, we describe the installation steps for the
+supported solvers.
 
 .. note::
     The installation of the solvers is not part of the DataSAIL installation. We provide the installation steps here
@@ -27,7 +28,8 @@ CBC is a solver developed by the COIN-OR foundation and can be installed from co
     mamba install -c conda-forge coin-or-cbc
     pip install cylp
 
-Then, you can request the SCIP solver by :code:`--solver CBC` (CLI) or :code:`solver="CBC"` (Python API).
+Then, you can request the SCIP solver by :code:`--solver CBC` (CLI) or :code:`solver="CBC"` (Python API). CBC is a free
+solver and can be used without any license.
 
 CPLEX
 =====
