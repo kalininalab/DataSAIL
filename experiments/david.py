@@ -1,3 +1,4 @@
+import copy
 import pickle
 import time
 from pathlib import Path
@@ -11,6 +12,7 @@ from rdkit.Chem import AllChem
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 
+from datasail.cluster.clustering import additional_clustering
 from datasail.cluster.utils import read_molecule_encoding
 from datasail.reader.read_molecules import read_molecule_data
 from datasail.solver.utils import solve, compute_limits, cluster_y_constraints
@@ -99,17 +101,14 @@ def run_ecfp(dataset):
 
 
 def run_solver():
-    path = Path("experiments") / "time4"
+    path = Path("experiments") / "time2"
     path.mkdir(parents=True, exist_ok=True)
 
     ds_path = Path("experiments") / "time2" / "data.pkl"
     if not ds_path.exists():
         dataset = dc.molnet.load_clintox(featurizer=dc.feat.DummyFeaturizer(), splitter=None)[1][0]
         df = dc2pd(dataset, "clintox")
-        dataset = read_molecule_data(
-            dict(df[["ID", "SMILES"]].values.tolist()),
-            sim="ecfp",
-        )
+        dataset = read_molecule_data(dict(df[["ID", "SMILES"]].values.tolist()), sim="ecfp")
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity, dataset.cluster_weights = run_ecfp(
             dataset)
         norm = np.sum(dataset.cluster_similarity)
@@ -119,16 +118,17 @@ def run_solver():
         with open(ds_path, "rb") as f:
             dataset = pickle.load(f)
         norm = np.sum(dataset.cluster_similarity)
-    print(norm)
 
     with open(path / "log.txt", "w") as log:
-        for num_clusters in list(range(10, 50, 5)) + list(range(50, 150, 10)):  # + list(range(150, 501, 50)):
-            # ds = copy.deepcopy(dataset)
-            # ds = additional_clustering(ds, n_clusters=num_clusters)
-            for solver_name in ["MOSEK", "SCIP", "GUROBI"]:
-                old_path = Path("experiments") / "time2" / "MOSEK" / f"data_{num_clusters}.pkl"
-                with open(old_path, "rb") as f:
-                    ds, old_assignment = pickle.load(f)
+        for num_clusters in list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 501, 50)):
+            old_path = Path("experiments") / "time2" / "MOSEK" / f"data_{num_clusters}.pkl"
+            if not old_path.exists():
+                ds = copy.deepcopy(dataset)
+                ds = additional_clustering(ds, n_clusters=num_clusters)
+            for solver_name in ["CBC"]:  # ["MOSEK", "SCIP", "GUROBI"]:
+                if old_path.exists():
+                    with open(old_path, "rb") as f:
+                        ds, _ = pickle.load(f)
                 (path / solver_name).mkdir(parents=True, exist_ok=True)
                 try:
                     problem, assignment, ttime = solve_ccs_blp(
@@ -144,7 +144,8 @@ def run_solver():
                         log_file=path / solver_name / f"solve_{num_clusters}.log",
                         threads=16,
                     )
-                except cvxpy.error.SolverError:
+                except cvxpy.error.SolverError as e:
+                    print(e)
                     print(f"{num_clusters} - SolverError", file=log)
                     break
                 with open(path / solver_name / f"data_{num_clusters}.pkl", "wb") as f:
@@ -299,7 +300,7 @@ def visualize2(ax1, times, performances, random):
 
 
 if __name__ == '__main__':
-    # run_solver()
+    run_solver()
     # time_overhead()
     # random_baseline()
-    visualize()
+    # visualize()

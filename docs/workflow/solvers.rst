@@ -4,9 +4,30 @@ Supported Solvers
 
 .. _solver-label:
 
-With the default installation settings, DataSAIL supports SCIP. Both solvers are free to use. Additional
-solvers are supported if the user installs them. All installation steps shall be executed in the conda-environment that
-also contains DataSAIL.
+With the default installation settings, DataSAIL supports SCIP. This is a free solver that performed good in our
+analysis. Additional solvers are supported upon user installation. All installation steps shall be executed in the
+conda-environment that also contains DataSAIL. Below, we describe the installation steps for the supported solvers.
+
+.. note::
+    The installation of the solvers is not part of the DataSAIL installation. We provide the installation steps here
+    for convenience. If you encounter any problems during the installation, please refer to the documentation of the
+    solver.
+
+.. note::
+    In our tests during development, we mostly used SCIP and MOSEK due to convenience. In favour of runtime, we advice
+    to use GUROBI even though licensing can be a bit more complex.
+
+CBC
+===
+
+CBC is a solver developed by the COIN-OR foundation and can be installed from conda by executing
+
+.. code-block:: shell
+
+    mamba install -c conda-forge coin-or-cbc
+    pip install cylp
+
+Then, you can request the SCIP solver by :code:`--solver CBC` (CLI) or :code:`solver="CBC"` (Python API).
 
 CPLEX
 =====
@@ -28,10 +49,12 @@ GLPK is a solver developed by Andrew Makhorin and can be installed from conda by
 
 .. code-block:: shell
 
-    mamba install -c conda-forge glpk
+    mamba install -c conda-forge cvxopt
 
-Then, you can request the GLPK solver by :code:`--solver GLPK` (CLI) or :code:`solver="GLPK"` (Python API).
-GLPK is free to use but did not perform well in our tests. Therefore, we recommend using SCIP instead.
+Then, you can request the GLPK_MI solver either by :code:`--solver GLPK` or :code:`--solver GLPK_MI` (both for CLI) or
+:code:`solver="GLPK"` or :code:`solver="GLPK_MI"` (both Python API). Technically, GLPK and GLPK_MI are two different
+solver, but developed by the same group and GLPK_MI is an extension of GLPK for mixed-integer problems. Because
+GLPK(_MI) is part of the "GNU universe" is free to use.
 
 GUROBI
 ======

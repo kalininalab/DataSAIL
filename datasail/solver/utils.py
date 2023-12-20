@@ -12,7 +12,7 @@ from cvxpy.constraints.constraint import Constraint
 import numpy as np
 
 from datasail.settings import LOGGER, SOLVER_CPLEX, SOLVER_XPRESS, SOLVER_SCIP, SOLVER_MOSEK, \
-    SOLVER_GUROBI, SOLVERS, NOT_ASSIGNED
+    SOLVER_GUROBI, SOLVERS, NOT_ASSIGNED, SOLVER_GLPK_MI, SOLVER_CBC
 
 
 def compute_limits(epsilon: float, total: int, splits: List[float]) -> List[float]:
@@ -101,19 +101,25 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path, nu
         f"The problem has {sum([functools.reduce(operator.mul, v.shape, 1) for v in problem.variables()])} variables "
         f"and {sum([functools.reduce(operator.mul, c.shape, 1) for c in problem.constraints])} constraints.")
 
-    if solver == SOLVER_SCIP:
-        kwargs = {"scip_params": {
-            "limits/time": max_sec,
-            "display/verblevel": 2,
-            "lp/threads": num_threads,
-            "parallel/maxnthreads": num_threads
-        }}
+    if solver == SOLVER_CBC:
+        kwargs = {
+            "maximumSeconds": max_sec,
+            "numberThreads": num_threads,
+        }
     elif solver == SOLVER_CPLEX:
+        # TODO: Find valid license and activate it (free version has problem size limits)
         kwargs = {"cplex_params": {
             "timelimit": max_sec,
             "threads": num_threads,
             "mip.display": 0,
         }}
+    elif solver == SOLVER_GLPK_MI:
+        # TODO: How to set these parameters?
+        kwargs = {"glpk_params": {
+            "tm_lim": 0,
+        }}
+        LOGGER.warning(f"DataSAIL currently cannot set user arguments to GLPK_MI. This especially applies to the "
+                       f"time limit.")
     elif solver == SOLVER_GUROBI:
         kwargs = {
             "TimeLimit": max_sec,
@@ -127,7 +133,15 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path, nu
             "MSK_IPAR_LOG_SIM": 2,
             "MSK_IPAR_LOG_SENSITIVITY": 0,
         }}
+    elif solver == SOLVER_SCIP:
+        kwargs = {"scip_params": {
+            "limits/time": max_sec,
+            "display/verblevel": 2,
+            "lp/threads": num_threads,
+            "parallel/maxnthreads": num_threads
+        }}
     elif solver == SOLVER_XPRESS:
+        # TODO: find valid license and activate it
         kwargs = {
             "maxcuttime": max_sec,
             "miplog": 0,
@@ -135,28 +149,28 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path, nu
         }
     else:
         raise ValueError("Unknown solver error")
-    with LoggerRedirect(log_file):
-        try:
-            problem.solve(
-                solver=SOLVERS[solver],
-                qcp=True,
-                verbose=True,
-                **kwargs,
+    # with LoggerRedirect(log_file):
+    try:
+        problem.solve(
+            solver=SOLVERS[solver],
+            qcp=True,
+            verbose=True,
+            **kwargs,
+        )
+
+        LOGGER.info(f"{solver} status: {problem.status}")
+        LOGGER.info(f"Solution's score: {problem.value}")
+
+        if "optimal" not in problem.status:
+            LOGGER.warning(
+                f'{solver} cannot solve the problem. Please consider relaxing split restrictions, '
+                'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
             )
-
-            LOGGER.info(f"{solver} status: {problem.status}")
-            LOGGER.info(f"Solution's score: {problem.value}")
-
-            if "optimal" not in problem.status:
-                LOGGER.warning(
-                    f'{solver} cannot solve the problem. Please consider relaxing split restrictions, '
-                    'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
-                )
-                return None
-            return problem
-        except KeyError:
-            LOGGER.warning(f"Solving failed for {''}. Please use try another solver or update your python version.")
             return None
+        return problem
+    except KeyError:
+        LOGGER.warning(f"Solving failed for {''}. Please use try another solver or update your python version.")
+        return None
 
 
 def sample_categorical(
