@@ -52,17 +52,13 @@ class LoggerRedirect:
         if self.silent:
             return
         for name, logger in logging.root.manager.loggerDict.items():
-            if isinstance(logger, logging.Logger) and len(logger.handlers) > 0:
+            if hasattr(logger, "handlers") and len(logger.handlers) != 0:
                 for handler in logger.handlers:
-                    if not hasattr(handler, "stream"):
-                        continue
-                    if handler.stream.name == "<stdout>":
-                        if name not in self.disabled:
-                            self.disabled[name] = []
-                        self.disabled[name].append(handler)
-                if name in self.disabled:
-                    for handler in self.disabled[name]:
-                        logger.removeHandler(handler)
+                    if name not in self.disabled:
+                        self.disabled[name] = []
+                    self.disabled[name].append(handler)
+                for handler in self.disabled[name]:
+                    logger.removeHandler(handler)
                 logger.addHandler(self.file_handler)
         sys.stdout = self.file_handler.stream
 
@@ -85,7 +81,7 @@ class LoggerRedirect:
         sys.stdout = self.old_stdout
 
 
-def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path) -> Optional[cvxpy.Problem]:
+def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path, num_threads: int = 14) -> Optional[cvxpy.Problem]:
     """
     Minimize the loss function based on the constraints with the timelimit specified by max_sec.
 
@@ -106,18 +102,37 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path) ->
         f"and {sum([functools.reduce(operator.mul, c.shape, 1) for c in problem.constraints])} constraints.")
 
     if solver == SOLVER_SCIP:
-        kwargs = {"scip_params": {"limits/time": max_sec}}
+        kwargs = {"scip_params": {
+            "limits/time": max_sec,
+            "display/verblevel": 2,
+            "lp/threads": num_threads,
+            "parallel/maxnthreads": num_threads
+        }}
     elif solver == SOLVER_CPLEX:
-        kwargs = {"cplex_params": {}}
+        kwargs = {"cplex_params": {
+            "timelimit": max_sec,
+            "threads": num_threads,
+            "mip.display": 0,
+        }}
     elif solver == SOLVER_GUROBI:
-        kwargs = {"gurobi_params": {}}
+        kwargs = {
+            "TimeLimit": max_sec,
+            "LogToConsole": 0,
+            "Threads": num_threads,
+        }
     elif solver == SOLVER_MOSEK:
         kwargs = {"mosek_params": {
             "MSK_DPAR_OPTIMIZER_MAX_TIME": max_sec,
-            "MSK_IPAR_NUM_THREADS": 14,
+            "MSK_IPAR_NUM_THREADS": num_threads,
+            "MSK_IPAR_LOG_SIM": 2,
+            "MSK_IPAR_LOG_SENSITIVITY": 0,
         }}
     elif solver == SOLVER_XPRESS:
-        kwargs = {"xpress_params": {}}
+        kwargs = {
+            "maxcuttime": max_sec,
+            "miplog": 0,
+            "concurrentthreads": num_threads,
+        }
     else:
         raise ValueError("Unknown solver error")
     with LoggerRedirect(log_file):
@@ -264,7 +279,6 @@ def interaction_contraints(
 
 
 def cluster_y_constraints(
-        uniform: bool,
         clusters: List[str],
         y: List[List[Variable]],
         x: Variable,
@@ -274,7 +288,6 @@ def cluster_y_constraints(
     Generate constraints for the helper variables y in the cluster-based double-cold splitting.
 
     Args:
-        uniform: Boolean flag if the cluster metric is uniform
         clusters: List of cluster names
         y: List of helper variables
         x: Optimization variables
@@ -283,8 +296,6 @@ def cluster_y_constraints(
     Returns:
         List of constraints for the helper variables y
     """
-    if uniform:
-        return []
     return [y[c1][c2] >= cvxpy.max(cvxpy.vstack([x[s, c1] - x[s, c2] for s in range(len(splits))]))
             for c1 in range(len(clusters)) for c2 in range(c1)]
 

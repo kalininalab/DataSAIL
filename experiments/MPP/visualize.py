@@ -13,7 +13,7 @@ import matplotlib.transforms as mtransforms
 
 from experiments.utils import USE_UMAP, embed_smiles, get_bounds
 
-SPLITS = ["I1e", "C1e", "lohi", "Butina", "Fingerprint", "MinMax", "Scaffold", "Weight"]
+SPLITS = ["I1e", "C1e", "lohi", "Butina", "Fingerprint", "M", "Scaffold", "Weight"]
 DATASETS = ["QM7", "QM8", "QM9", "ESOL", "FreeSolv", "Lipophilicity", "MUV", "HIV", "BACE", "BBBP", "Tox21", "ToxCast",
             "SIDER", "ClinTox"]
 METRICS = ["MAE ↓"] * 3 + ["RMSE ↓"] * 3 + ["PRC-AUC ↑"] + ["ROC-AUC ↑"] * 7

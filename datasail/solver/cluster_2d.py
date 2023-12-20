@@ -72,8 +72,8 @@ def solve_c2(
     interaction_contraints(e_clusters, f_clusters, x_i, constraints, splits, x_e, x_f, min_lim, lambda key: inter[key],
                            index)
 
-    constraints += cluster_y_constraints(e_uniform, e_clusters, y_e, x_e, splits) + \
-        cluster_y_constraints(f_uniform, f_clusters, y_f, x_f, splits)
+    constraints += cluster_y_constraints(e_clusters, y_e, x_e, splits) + \
+        cluster_y_constraints(f_clusters, y_f, x_f, splits)
 
     inter_loss = (np.sum(inter) - sum(cvxpy.sum(x) for x in x_i.values())) / np.sum(inter)
     e_loss = leakage_loss(e_uniform, e_intra_weights, y_e, e_clusters, e_similarities)
