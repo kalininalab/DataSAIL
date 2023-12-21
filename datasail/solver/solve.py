@@ -35,6 +35,7 @@ def run_solver(
         e_dataset: DataSet,
         f_dataset: DataSet,
         inter: Optional[Union[np.ndarray, List[Tuple[str, str]]]],
+        delta: float,
         epsilon: float,
         runs: int,
         splits: List[float],
@@ -52,8 +53,9 @@ def run_solver(
         e_dataset: First dataset
         f_dataset: Second dataset
         inter: Interactions of elements or clusters of the two datasets
+        delta: Additive bound for stratification imbalance
         epsilon: Additive bound for exceeding the requested split size
-        runs:
+        runs: Number of runs to perform
         splits: List of split sizes
         split_names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
@@ -107,7 +109,8 @@ def run_solver(
                     solution = solve_i1(
                         entities=names,
                         weights=weights,
-                        strats=stratification,
+                        stratification=stratification,
+                        delta=delta,
                         epsilon=epsilon,
                         splits=splits,
                         names=split_names,
@@ -138,7 +141,12 @@ def run_solver(
                     solution = solve_i2(
                         e_entities=e_dataset.names,
                         f_entities=f_dataset.names,
+                        e_stratification=[e_dataset.stratification.get(x, np.zeros(len(dataset.classes)))
+                                          for x in e_dataset.names],
+                        f_stratification=[f_dataset.stratification.get(x, np.zeros(len(dataset.classes)))
+                                          for x in f_dataset.names],
                         inter=set(inter),
+                        delta=delta,
                         epsilon=epsilon,
                         splits=splits,
                         names=split_names,
@@ -155,8 +163,11 @@ def run_solver(
                     cluster_split = solve_c1(
                         clusters=dataset.cluster_names,
                         weights=[dataset.cluster_weights.get(c, 0) for c in dataset.cluster_names],
+                        stratification=[dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
+                                        for c in dataset.cluster_names],
                         similarities=dataset.cluster_similarity,
                         distances=dataset.cluster_distance,
+                        delta=delta,
                         epsilon=epsilon,
                         splits=splits,
                         names=split_names,
@@ -178,12 +189,17 @@ def run_solver(
                     cluster_inter = cluster_interactions(inter, e_dataset, f_dataset)
                     cluster_split = solve_c2(
                         e_clusters=e_dataset.cluster_names,
+                        e_stratification=[e_dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
+                                          for c in e_dataset.cluster_names],
                         e_similarities=e_dataset.cluster_similarity,
                         e_distances=e_dataset.cluster_distance,
                         f_clusters=f_dataset.cluster_names,
+                        f_stratification=[f_dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
+                                          for c in f_dataset.cluster_names],
                         f_similarities=f_dataset.cluster_similarity,
                         f_distances=f_dataset.cluster_distance,
                         inter=cluster_inter,
+                        delta=delta,
                         epsilon=epsilon,
                         splits=splits,
                         names=split_names,

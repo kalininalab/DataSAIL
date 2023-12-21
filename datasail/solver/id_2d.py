@@ -4,13 +4,17 @@ from pathlib import Path
 import cvxpy
 import numpy as np
 
-from datasail.solver.utils import solve, interaction_contraints, collect_results_2d, compute_limits
+from datasail.solver.utils import solve, interaction_contraints, collect_results_2d, compute_limits, \
+    stratification_constraints
 
 
 def solve_i2(
         e_entities: List[str],
         f_entities: List[str],
+        e_stratification: Optional[List[np.ndarray]],
+        f_stratification: Optional[List[np.ndarray]],
         inter: Set[Tuple[str, str]],
+        delta: float,
         epsilon: float,
         splits: List[float],
         names: List[str],
@@ -26,8 +30,11 @@ def solve_i2(
     Args:
         e_entities: List of entity names to split in e-dataset
         f_entities: List of entity names to split in f-dataset
+        e_stratification: Stratification for the e-dataset
+        f_stratification: Stratification for the f-dataset
         inter: List of interactions
-        epsilon: Additive bound for exceeding the requested split size
+        delta: Additive bound for stratification imbalance
+        epsilon: Additive bound for exceeding the requested split siz
         splits: List of split sizes
         names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
@@ -49,10 +56,13 @@ def solve_i2(
     def index(x, y):
         return (e_entities[x], f_entities[y]) if (e_entities[x], f_entities[y]) in x_i else None
 
-    constraints = [
-        cvxpy.sum(x_e, axis=0) == np.ones((len(e_entities))),
-        cvxpy.sum(x_f, axis=0) == np.ones((len(f_entities))),
-    ]
+    constraints = [cvxpy.sum(x_e, axis=0) == np.ones((len(e_entities))),
+                   cvxpy.sum(x_f, axis=0) == np.ones((len(f_entities)))]
+
+    if e_stratification is not None:
+        stratification_constraints(e_stratification, splits, delta, x_e)
+    if f_stratification is not None:
+        stratification_constraints(f_stratification, splits, delta, x_f)
 
     interaction_contraints(e_entities, f_entities, x_i, constraints, splits, x_e, x_f, min_lim, lambda key: 1, index)
 

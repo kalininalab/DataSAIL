@@ -119,6 +119,7 @@ KW_CACHE = "cache"
 KW_CACHE_DIR = "cache_dir"
 KW_CLI = "cli"
 KW_DATA = "data"
+KW_DELTA = "delta"
 KW_EPSILON = "epsilon"
 
 KW_E_ARGS = "e_args"

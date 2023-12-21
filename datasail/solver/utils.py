@@ -31,23 +31,43 @@ def compute_limits(epsilon: float, total: int, splits: List[float]) -> List[floa
     return [int((split - epsilon) * total) for split in splits]
 
 
+def stratification_constraints(stratification: List[np.ndarray], splits: List[float], delta: float, x: Variable):
+    s_matrix = build_stratification_matrix(stratification)
+    slbo = stratification_lower_bounds(stratification, splits, delta)
+    return (x * s_matrix) >= slbo
+
+
 def build_stratification_matrix(stratification):
-    if isinstance(stratification[0], str):
-        mapping = {s: i for i, s in enumerate(sorted(set(stratification)))}
-        out = np.zeros((len(stratification), len(mapping)))
-        out[:, [mapping[s] for s in stratification]] = 1
-        return out
-    else:
-        raise NotImplementedError()
+    """
+    Build the stratification matrix for the given stratification.
+
+    Args:
+        stratification: Stratification list for the entities
+
+    Returns:
+
+    """
+    mapping = {s: i for i, s in enumerate(sorted(set(stratification)))}
+    out = np.zeros((len(stratification), len(mapping)))
+    out[:, [mapping[s] for s in stratification]] = 1
+    return out
 
 
-def stratification_lower_bounds(stratification, splits, epsilon):
-    if isinstance(stratification[0], str):
-        elements = sorted(set(stratification))
-        c = Counter(stratification)
-        return np.array([[c[e] * (split - epsilon) for e in elements] for split in splits])
-    else:
-        raise NotImplementedError()
+def stratification_lower_bounds(stratification, splits, delta):
+    """
+    Compute the lower bounds for the stratification constraints.
+
+    Args:
+        stratification: Stratification matrix of the entities
+        splits: List of split fractions
+        delta: Additive bound for stratification imbalance
+
+    Returns:
+
+    """
+    elements = sorted(set(stratification))
+    c = Counter(stratification)
+    return np.array([[c[e] * (split - delta) for e in elements] for split in splits])
 
 
 class LoggerRedirect:

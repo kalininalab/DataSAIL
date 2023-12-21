@@ -4,17 +4,20 @@ import cvxpy
 import numpy as np
 
 from datasail.solver.utils import solve, interaction_contraints, cluster_y_constraints, collect_results_2d, \
-    leakage_loss, compute_limits
+    leakage_loss, compute_limits, stratification_constraints
 
 
 def solve_c2(
         e_clusters: List[Union[str, int]],
+        e_stratification: List[np.ndarray],
         e_similarities: Optional[np.ndarray],
         e_distances: Optional[np.ndarray],
         f_clusters: List[Union[str, int]],
+        f_stratification: List[np.ndarray],
         f_similarities: Optional[np.ndarray],
         f_distances: Optional[np.ndarray],
         inter: np.ndarray,
+        delta: float,
         epsilon: float,
         splits: List[float],
         names: List[str],
@@ -29,12 +32,15 @@ def solve_c2(
 
     Args:
         e_clusters: List of cluster names to split from the e-dataset
+        e_stratification: Stratification for the e-dataset
         e_similarities: Pairwise similarity matrix of clusters in the order of their names
         e_distances: Pairwise distance matrix of clusters in the order of their names
         f_clusters: List of cluster names to split from the f-dataset
+        f_stratification: Stratification for the f-dataset
         f_similarities: Pairwise similarity matrix of clusters in the order of their names
         f_distances: Pairwise distance matrix of clusters in the order of their names
         inter: Matrix storing the amount of interactions between the entities in the e-clusters and f-clusters
+        delta: Additive bound for stratification imbalance
         epsilon: Additive bound for exceeding the requested split size
         splits: List of split sizes
         names: List of names of the splits in the order of the splits argument
@@ -68,6 +74,11 @@ def solve_c2(
         cvxpy.sum(x_e, axis=0) == np.ones((len(e_clusters))),
         cvxpy.sum(x_f, axis=0) == np.ones((len(f_clusters))),
     ]
+
+    if e_stratification is not None:
+        constraints += stratification_constraints(e_stratification, splits, delta, x_e)
+    if f_stratification is not None:
+        constraints += stratification_constraints(f_stratification, splits, delta, x_f)
 
     interaction_contraints(e_clusters, f_clusters, x_i, constraints, splits, x_e, x_f, min_lim, lambda key: inter[key],
                            index)

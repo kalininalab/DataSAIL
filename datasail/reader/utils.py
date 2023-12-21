@@ -2,7 +2,7 @@ import os
 from argparse import Namespace
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
+from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable, Set
 
 import numpy as np
 import pandas as pd
@@ -28,8 +28,10 @@ class DataSet:
     location: Optional[Path] = None
     weights: Optional[Dict[str, float]] = None
     cluster_weights: Optional[Dict[str, float]] = None
-    stratification: Optional[Dict[str, str]] = None
-    cluster_stratification: Optional[Dict[str, str]] = None
+    classes: Optional[Dict[Any, int]] = None
+    class_oh: Optional[np.ndarray] = None
+    stratification: Optional[Dict[str, Any]] = None
+    cluster_stratification: Optional[Dict[str, np.ndarray]] = None
     similarity: Optional[Union[np.ndarray, str]] = None
     cluster_similarity: Optional[Union[np.ndarray, str]] = None
     distance: Optional[Union[np.ndarray, str]] = None
@@ -83,6 +85,20 @@ class DataSet:
         if self.location.exists():
             return self.location.stem
         return str(self.location)
+
+    def strat2oh(self, class_name: str) -> Optional[np.ndarray]:
+        """
+        Convert the stratification to a one-hot encoding.
+
+        Args:
+            class_name: Name of the class to get the onehot encoding for
+
+        Returns:
+            A one-hot encoding of the stratification
+        """
+        if self.classes is not None:
+            return self.class_oh[self.classes[class_name]]
+        return None
 
     def shuffle(self):
         """
@@ -243,15 +259,8 @@ def read_data(
     else:
         dataset.weights = dict((p, 1) for p in list(dataset.data.keys()))
 
-    # parse the protein stratification
-    if isinstance(strats, Path):
-        dataset.stratification = dict(read_csv(strats))
-    elif isinstance(strats, dict):
-        dataset.stratification = strats
-    elif isinstance(strats, Callable):
-        dataset.stratification = strats()
-    elif isinstance(strats, Generator):
-        dataset.stratification = dict(strats)
+    dataset.classes, dataset.stratification = read_stratification(strats)
+    dataset.class_oh = np.eye(len(dataset.classes))
 
     # parse the protein similarity measure
     if sim is None and dist is None:
@@ -271,6 +280,32 @@ def read_data(
     dataset.args = validate_user_args(dataset.type, dataset.format, sim, dist, tool_args)
 
     return dataset
+
+
+def read_stratification(strats: DATA_INPUT) -> Tuple[Dict[Any, int], Optional[Dict[str, np.ndarray]]]:
+    """
+    Read in the stratification for the data.
+
+    Args:
+        strats: Stratification input
+
+    Returns:
+        Set of all classes and a dictionary mapping the entity names to their class
+    """
+    # parse the stratification
+    if isinstance(strats, Path):
+        stratification = dict(read_csv(strats))
+    elif isinstance(strats, dict):
+        stratification = strats
+    elif isinstance(strats, Callable):
+        stratification = strats()
+    elif isinstance(strats, Generator):
+        stratification = dict(strats)
+    else:
+        return {0: 0}, None
+
+    classes = {s: i for i, s in enumerate(set(stratification.values()))}
+    return classes, stratification
 
 
 def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Generator[Tuple[str, str], None, None]:

@@ -92,6 +92,10 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The interaction filepath is not valid.", 5, kwargs[KW_CLI])
 
     # check the epsilon value
+    if 1 < kwargs[KW_DELTA] < 0:
+        error("The delta value has to be a real value between 0 and 1.", 6, kwargs[KW_CLI])
+
+    # check the epsilon value
     if 1 < kwargs[KW_EPSILON] < 0:
         error("The epsilon value has to be a real value between 0 and 1.", 6, kwargs[KW_CLI])
 
@@ -152,6 +156,7 @@ def datasail(
         verbose: str = "W",
         splits: List[float] = None,
         names: List[str] = None,
+        delta: float = 0.05,
         epsilon: float = 0.05,
         runs: int = 1,
         solver: str = SOLVER_SCIP,
@@ -184,7 +189,8 @@ def datasail(
         verbose: Verbosity level for logging.
         splits: List of splits, have to add up to one, otherwise scaled accordingly.
         names: List of names of the splits.
-        epsilon: Fraction by how much the provided split sizes may be exceeded
+        epsilon: Fraction by how much the provided split sizes may be undercut
+        delta: Fraction by how much the stratification may be undercut
         runs: Number of runs to perform per split. This may introduce some variance in the splits.
         solver: Solving algorithm to use.
         cache: Boolean flag indicating to store or load results from cache.
@@ -214,7 +220,7 @@ def datasail(
 
     kwargs = validate_args(
         output=None, techniques=techniques, inter=to_path(inter), max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
-        splits=splits, names=names, epsilon=epsilon, runs=runs, solver=solver, cache=cache,
+        splits=splits, names=names, delta=delta, epsilon=epsilon, runs=runs, solver=solver, cache=cache,
         cache_dir=to_path(cache_dir), e_type=e_type, e_data=to_path(e_data), e_weights=to_path(e_weights),
         e_strat=to_path(e_strat), e_sim=to_path(e_sim), e_dist=to_path(e_dist), e_args=e_args, f_type=f_type,
         f_data=to_path(f_data), f_weights=to_path(f_weights), f_strat=to_path(f_strat), f_sim=to_path(f_sim),

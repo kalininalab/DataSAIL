@@ -11,7 +11,7 @@ from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, MMSEQS2, INSTALLED
 
 
-def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path]) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path]) -> None:
     """
     Run mmseqs in the commandline and read in the results into clusters.
 
@@ -19,12 +19,6 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path]) -> Tuple
         dataset: DataSet holding all information on the dta to be clustered
         threads: number of threads to use for one CD-HIT run
         log_dir: Absolute path to the directory to store all the logs in
-
-    Returns:
-        A tuple containing
-          - the names of the clusters (cluster representatives)
-          - the mapping from cluster members to the cluster names (cluster representatives)
-          - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
     if not INSTALLED[MMSEQS2]:
         raise ValueError("MMseqs is not installed.")
@@ -33,7 +27,7 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path]) -> Tuple
     optim_vals = (dataset.args.c,)  # values to be optimized
     extract_fasta(dataset)
 
-    return cluster_param_binary_search(
+    dataset.cluster_names, dataset.cluster_map, dataset.cluster_sim = cluster_param_binary_search(
         dataset,
         optim_vals,
         (0.1,),
