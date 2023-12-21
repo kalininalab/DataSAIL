@@ -1,17 +1,16 @@
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 import cvxpy
 import numpy as np
 
-from datasail.solver.utils import solve, build_stratification_matrix, stratification_lower_bounds, compute_limits, \
-    stratification_constraints
+from datasail.solver.utils import solve, compute_limits, stratification_constraints
 
 
 def solve_i1(
         entities: List[str],
         weights: Optional[List[float]],
-        stratification: Optional[List[np.ndarray]],
+        stratification: Optional[np.ndarray],
         delta: float,
         epsilon: float,
         splits: List[float],

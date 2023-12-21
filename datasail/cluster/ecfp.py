@@ -60,10 +60,10 @@ def run_ecfp(dataset: DataSet) -> None:
     LOGGER.info("Compute Tanimoto Coefficients")
 
     count = len(dataset.cluster_names)
-    dataset.sim_matrix = np.zeros((count, count))
+    dataset.cluster_similarity = np.zeros((count, count))
     for i in range(count):
-        dataset.sim_matrix[i, i] = 1
-        dataset.sim_matrix[i, :i] = DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])
-        dataset.sim_matrix[:i, i] = dataset.sim_matrix[i, :i]
+        dataset.cluster_similarity[i, i] = 1
+        dataset.cluster_similarity[i, :i] = DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])
+        dataset.cluster_similarity[:i, i] = dataset.cluster_similarity[i, :i]
 
     dataset.cluster_map = dict((name, Chem.MolToSmiles(scaffolds[name])) for name in dataset.names)

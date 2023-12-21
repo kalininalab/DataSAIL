@@ -155,7 +155,7 @@ def finish_clustering(dataset: DataSet):
         if dataset.stratification is not None:
             if value not in dataset.cluster_stratification:
                 dataset.cluster_stratification[value] = np.zeros(len(dataset.classes))
-            dataset.cluster_stratification[value] += dataset.strat2oh(key)
+            dataset.cluster_stratification[value] += dataset.strat2oh(name=key)
 
 
 def additional_clustering(

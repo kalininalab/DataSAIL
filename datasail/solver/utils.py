@@ -12,6 +12,7 @@ from cvxpy import Variable
 from cvxpy.constraints.constraint import Constraint
 import numpy as np
 
+from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, SOLVER_CPLEX, SOLVER_XPRESS, SOLVER_SCIP, SOLVER_MOSEK, \
     SOLVER_GUROBI, SOLVERS, NOT_ASSIGNED
 
@@ -31,43 +32,27 @@ def compute_limits(epsilon: float, total: int, splits: List[float]) -> List[floa
     return [int((split - epsilon) * total) for split in splits]
 
 
-def stratification_constraints(stratification: List[np.ndarray], splits: List[float], delta: float, x: Variable):
-    s_matrix = build_stratification_matrix(stratification)
-    slbo = stratification_lower_bounds(stratification, splits, delta)
-    return (x * s_matrix) >= slbo
-
-
-def build_stratification_matrix(stratification):
+def stratification_constraints(
+        s_matrix: np.ndarray,
+        splits: List[float],
+        delta: float,
+        x: Variable,
+) -> Constraint:
     """
-    Build the stratification matrix for the given stratification.
+    Generate the stratification constraints for the given dataset.
 
     Args:
-        stratification: Stratification list for the entities
-
-    Returns:
-
-    """
-    mapping = {s: i for i, s in enumerate(sorted(set(stratification)))}
-    out = np.zeros((len(stratification), len(mapping)))
-    out[:, [mapping[s] for s in stratification]] = 1
-    return out
-
-
-def stratification_lower_bounds(stratification, splits, delta):
-    """
-    Compute the lower bounds for the stratification constraints.
-
-    Args:
-        stratification: Stratification matrix of the entities
-        splits: List of split fractions
+        s_matrix: Stratification matrix for the entities
+        splits: list of splitting fractions
         delta: Additive bound for stratification imbalance
+        x: Optimization variables
 
     Returns:
-
+        A constraint checking the lower bound for each pair of split and class
     """
-    elements = sorted(set(stratification))
-    c = Counter(stratification)
-    return np.array([[c[e] * (split - delta) for e in elements] for split in splits])
+    c = np.sum(s_matrix, axis=0)
+    slbo = np.array([[c[e] * (split - delta) for e in range(s_matrix.shape[1])] for split in splits])
+    return (x * s_matrix) >= slbo
 
 
 class LoggerRedirect:

@@ -86,18 +86,23 @@ class DataSet:
             return self.location.stem
         return str(self.location)
 
-    def strat2oh(self, class_name: str) -> Optional[np.ndarray]:
+    def strat2oh(self, name: Optional[str] = None, class_: Optional[str] = None) -> Optional[np.ndarray]:
         """
         Convert the stratification to a one-hot encoding.
 
         Args:
-            class_name: Name of the class to get the onehot encoding for
+            name: Name of the sample to get the onehot encoding for
+            class_: Class to get the onehot encoding for
 
         Returns:
             A one-hot encoding of the stratification
         """
+        if class_ is None:
+            if name is None:
+                raise ValueError("Either name or class must be provided.")
+            class_ = self.stratification[name]
         if self.classes is not None:
-            return self.class_oh[self.classes[class_name]]
+            return self.class_oh[self.classes[class_]]
         return None
 
     def shuffle(self):

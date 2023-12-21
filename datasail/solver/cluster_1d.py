@@ -10,7 +10,7 @@ from datasail.solver.utils import solve, cluster_y_constraints, compute_limits, 
 def solve_c1(
         clusters: List[Union[str, int]],
         weights: List[float],
-        stratification: List[np.ndarray],
+        s_matrix: Optional[np.ndarray],
         similarities: Optional[np.ndarray],
         distances: Optional[np.ndarray],
         delta: float,
@@ -28,7 +28,7 @@ def solve_c1(
     Args:
         clusters: List of cluster names to split
         weights: Weights of the clusters in the order of their names in e_clusters
-        stratification: Stratification for the clusters
+        s_matrix: Stratification for the clusters
         similarities: Pairwise similarity matrix of clusters in the order of their names
         distances: Pairwise distance matrix of clusters in the order of their names.
         delta: Additive bound for stratification imbalance
@@ -53,8 +53,8 @@ def solve_c1(
     for s, split in enumerate(splits):
         constraints.append(min_lim[s] <= cvxpy.sum(cvxpy.multiply(x[s], weights)))
 
-    if stratification is not None:
-        constraints += stratification_constraints(stratification, splits, delta, x)
+    if s_matrix is not None:
+        constraints.append(stratification_constraints(s_matrix, splits, delta, x))
 
     constraints += cluster_y_constraints(False, clusters, y, x, splits)
 

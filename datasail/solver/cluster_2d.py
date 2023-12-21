@@ -9,11 +9,11 @@ from datasail.solver.utils import solve, interaction_contraints, cluster_y_const
 
 def solve_c2(
         e_clusters: List[Union[str, int]],
-        e_stratification: List[np.ndarray],
+        e_s_matrix: np.ndarray,
         e_similarities: Optional[np.ndarray],
         e_distances: Optional[np.ndarray],
         f_clusters: List[Union[str, int]],
-        f_stratification: List[np.ndarray],
+        f_s_matrix: np.ndarray,
         f_similarities: Optional[np.ndarray],
         f_distances: Optional[np.ndarray],
         inter: np.ndarray,
@@ -32,11 +32,11 @@ def solve_c2(
 
     Args:
         e_clusters: List of cluster names to split from the e-dataset
-        e_stratification: Stratification for the e-dataset
+        e_s_matrix: Stratification for the e-dataset
         e_similarities: Pairwise similarity matrix of clusters in the order of their names
         e_distances: Pairwise distance matrix of clusters in the order of their names
         f_clusters: List of cluster names to split from the f-dataset
-        f_stratification: Stratification for the f-dataset
+        f_s_matrix: Stratification for the f-dataset
         f_similarities: Pairwise similarity matrix of clusters in the order of their names
         f_distances: Pairwise distance matrix of clusters in the order of their names
         inter: Matrix storing the amount of interactions between the entities in the e-clusters and f-clusters
@@ -53,7 +53,7 @@ def solve_c2(
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
         dataset
     """
-    min_lim = compute_limits(epsilon, int(np.sum(inter)) // 2, splits)
+    min_lim = compute_limits(epsilon, int(np.sum(inter)), [s / 2 for s in splits])
     x_e = cvxpy.Variable((len(splits), len(e_clusters)), boolean=True)
     x_f = cvxpy.Variable((len(splits), len(f_clusters)), boolean=True)
     x_i = {(e, f): cvxpy.Variable(len(splits), boolean=True) for e in range(len(e_clusters)) for f in
@@ -64,8 +64,8 @@ def solve_c2(
     # check if the cluster relations are uniform
     e_intra_weights = e_similarities if e_similarities is not None else e_distances
     f_intra_weights = f_similarities if f_similarities is not None else f_distances
-    e_uniform = e_intra_weights is not None and np.allclose(e_intra_weights, np.ones_like(e_intra_weights))
-    f_uniform = f_intra_weights is not None and np.allclose(f_intra_weights, np.ones_like(f_intra_weights))
+    e_uniform = e_intra_weights is None or np.allclose(e_intra_weights, np.ones_like(e_intra_weights))
+    f_uniform = f_intra_weights is None or np.allclose(f_intra_weights, np.ones_like(f_intra_weights))
 
     def index(x, y):
         return (x, y) if (x, y) in x_i else None
@@ -75,10 +75,10 @@ def solve_c2(
         cvxpy.sum(x_f, axis=0) == np.ones((len(f_clusters))),
     ]
 
-    if e_stratification is not None:
-        constraints += stratification_constraints(e_stratification, splits, delta, x_e)
-    if f_stratification is not None:
-        constraints += stratification_constraints(f_stratification, splits, delta, x_f)
+    if e_s_matrix is not None:
+        constraints.append(stratification_constraints(e_s_matrix, [s / 2 for s in splits], delta / 2, x_e))
+    if f_s_matrix is not None:
+        constraints.append(stratification_constraints(f_s_matrix, [s / 2 for s in splits], delta / 2, x_f))
 
     interaction_contraints(e_clusters, f_clusters, x_i, constraints, splits, x_e, x_f, min_lim, lambda key: inter[key],
                            index)

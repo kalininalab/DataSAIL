@@ -10,9 +10,9 @@ from datasail.solver.utils import solve, interaction_contraints, collect_results
 
 def solve_i2(
         e_entities: List[str],
+        e_stratification: Optional[np.ndarray],
         f_entities: List[str],
-        e_stratification: Optional[List[np.ndarray]],
-        f_stratification: Optional[List[np.ndarray]],
+        f_stratification: Optional[np.ndarray],
         inter: Set[Tuple[str, str]],
         delta: float,
         epsilon: float,
@@ -29,8 +29,8 @@ def solve_i2(
 
     Args:
         e_entities: List of entity names to split in e-dataset
-        f_entities: List of entity names to split in f-dataset
         e_stratification: Stratification for the e-dataset
+        f_entities: List of entity names to split in f-dataset
         f_stratification: Stratification for the f-dataset
         inter: List of interactions
         delta: Additive bound for stratification imbalance
@@ -47,7 +47,7 @@ def solve_i2(
         dataset
     """
     inter_count = len(inter)
-    min_lim = compute_limits(epsilon, len(inter), splits)
+    min_lim = compute_limits(epsilon / 2, len(inter), [s / 2 for s in splits])
 
     x_e = cvxpy.Variable((len(splits), len(e_entities)), boolean=True)
     x_f = cvxpy.Variable((len(splits), len(f_entities)), boolean=True)
