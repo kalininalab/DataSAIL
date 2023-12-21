@@ -123,6 +123,7 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path, nu
             "TimeLimit": max_sec,
             "LogToConsole": 0,
             "Threads": num_threads,
+            "MemLimit": 50,  # [GB]
         }
     elif solver == SOLVER_MOSEK:
         kwargs = {"mosek_params": {

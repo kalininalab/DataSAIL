@@ -1,5 +1,6 @@
 import copy
 import pickle
+import sys
 import time
 from pathlib import Path
 from typing import List, Dict
@@ -16,14 +17,9 @@ from datasail.cluster.clustering import additional_clustering
 from datasail.cluster.utils import read_molecule_encoding
 from datasail.reader.read_molecules import read_molecule_data
 from datasail.solver.utils import solve, compute_limits, cluster_y_constraints
-from experiments.utils import dc2pd, telegram
+from experiments.utils import dc2pd, telegram, mpp_datasets, biogen_datasets
 
 blocker = rdBase.BlockLogs()
-
-FOLDER = 'time3'
-SOLVERS = ["GLPK_MI", "GUROBI", "MOSEK", "SCIP"]
-# CLUSTERS = list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 501, 50))
-CLUSTERS = list(range(10, 50, 5)) + list(range(50, 150, 10)) + [150, 200]
 
 
 def solve_ccs_blp(
@@ -105,35 +101,33 @@ def run_ecfp(dataset):
     return cluster_names, cluster_map, sim_matrix, cluster_weights
 
 
-def run_solver():
-    path = Path("experiments") / FOLDER
-    path.mkdir(parents=True, exist_ok=True)
+def run_solver(ds_name: str, clusters: List[int], solvers: List[str]):
+    root = Path("experiments") / "time" / ds_name
+    root.mkdir(parents=True, exist_ok=True)
 
-    ds_path = Path("experiments") / FOLDER / "data.pkl"
+    ds_path = root / "data.pkl"
     if not ds_path.exists():
-        dataset = dc.molnet.load_clintox(featurizer=dc.feat.DummyFeaturizer(), splitter=None)[1][0]
-        df = dc2pd(dataset, "clintox")
+        dataset = mpp_datasets[ds_name][0](featurizer=dc.feat.DummyFeaturizer(), splitter=None)[1][0]
+        df = dc2pd(dataset, ds_name)
         dataset = read_molecule_data(dict(df[["ID", "SMILES"]].values.tolist()), sim="ecfp")
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity, dataset.cluster_weights = run_ecfp(
             dataset)
         norm = np.sum(dataset.cluster_similarity)
-        with open(path / "data.pkl", "wb") as f:
+        with open(root / "data.pkl", "wb") as f:
             pickle.dump(dataset, f)
     else:
         with open(ds_path, "rb") as f:
             dataset = pickle.load(f)
         norm = np.sum(dataset.cluster_similarity)
 
-    for num_clusters in CLUSTERS:
-        # old_path = Path("experiments") / FOLDER / "MOSEK" / f"data_{num_clusters}.pkl"
-        # if not old_path.exists():
+    for num_clusters in clusters:
         ds = copy.deepcopy(dataset)
         ds = additional_clustering(ds, n_clusters=num_clusters)
-        for solver_name in SOLVERS:
-            # if old_path.exists():
-            #     with open(old_path, "rb") as f:
-            #         ds, _ = pickle.load(f)
-            (path / solver_name).mkdir(parents=True, exist_ok=True)
+
+        for solver_name in solvers:
+            solver_path = root / solver_name
+            solver_path.mkdir(parents=True, exist_ok=True)
+
             try:
                 problem, assignment, ttime = solve_ccs_blp(
                     clusters=ds.cluster_names,
@@ -145,23 +139,22 @@ def run_solver():
                     max_sec=7200,
                     max_sol=-1,
                     solver=solver_name,
-                    log_file=path / solver_name / f"solve_{num_clusters}.log",
+                    log_file=root / solver_name / f"solve_{num_clusters}.log",
                     threads=16,
                 )
             except cvxpy.error.SolverError as e:
                 print(e)
-                with open(path / "log.txt", "a") as log:
+                with open(root / "log.txt", "a") as log:
                     print(f"{num_clusters} - SolverError", file=log)
-                continue
-            with open(path / solver_name / f"data_{num_clusters}.pkl", "wb") as f:
+                return
+
+            with open(root / solver_name / f"data_{num_clusters}.pkl", "wb") as f:
                 pickle.dump((ds, assignment), f)
-            tmp = np.array([1 if assignment[ds.cluster_map[n]] == "train" else -1 for n in ds.names]).reshape(-1, 1)
-            mask = tmp @ tmp.T
-            mask[mask == -1] = 0
-            leakage = np.sum(dataset.cluster_similarity * mask) / norm
-            with open(path / "log.txt", "a") as log:
+            tmp = np.array([1 if assignment[n] == "train" else -1 for n in range(num_clusters)]).reshape(-1, 1)
+            leakage = eval(tmp, ds.cluster_similarity)
+            with open(root / "log.txt", "a") as log:
                 print(solver_name, num_clusters, leakage, problem.solver_stats.solve_time, ttime, sep=" | ", file=log)
-            telegram(f"[Timing] {solver_name} - {num_clusters} - {ttime:.1f}s - {leakage:.4f}")
+            telegram(f"[Timing] {ds_name} - {num_clusters} - {ttime:.1f}s - {leakage:.4f}")
 
 
 def weighted_random(names: List[str], weights: Dict[str, int], splits: List[float], epsilon: float):
@@ -177,14 +170,14 @@ def weighted_random(names: List[str], weights: Dict[str, int], splits: List[floa
     return splits
 
 
-def random_baseline():
-    base = Path("experiments") / FOLDER
+def random_baseline(ds_name: str, clusters: List[int]):
+    base = Path("experiments") / "time" / ds_name
     with open(base / "data.pkl", "rb") as f:
         dataset = pickle.load(f)
 
     # cluster-based baseline
     s_leakage, c_leakage = [], []
-    for num_clusters in CLUSTERS:
+    for num_clusters in clusters:
         with open(base / "MOSEK" / f"data_{num_clusters}.pkl", "rb") as f:
             ds, assi = pickle.load(f)
         n_leakage = [], []
@@ -205,9 +198,9 @@ def random_baseline():
     return np.array(c_leakage), np.array(s_leakage)
 
 
-def time_overhead():
+def time_overhead(ds_name: str):
     times = {}
-    with open(Path("experiments") / FOLDER / "log.txt", "r") as data:
+    with open(Path("experiments") / "time" / ds_name / "log.txt", "r") as data:
         for line in data:
             parts = line.split(" | ")
             if parts[0] not in times:
@@ -232,9 +225,9 @@ def viz_single(similarity, assignment):
     plt.show()
 
 
-def blub():
+def blub(ds_name: str):
     for num_cluster in list(range(10, 50, 5)):
-        with open(Path("experiments") / FOLDER / "MOSEK" / f"data_{num_cluster}.pkl", "rb") as f:
+        with open(Path("experiments") / "time" / ds_name / "MOSEK" / f"data_{num_cluster}.pkl", "rb") as f:
             ds, assi = pickle.load(f)
         viz_single(ds.cluster_similarity, assi)
 
@@ -245,21 +238,21 @@ def eval(assignments, similarity):
     return np.sum(similarity * mask) / np.sum(similarity)
 
 
-def visualize():
-    times = time_overhead()
-    c_random, s_random = random_baseline()
+def visualize(ds_name: str, clusters: List[int], solvers):
+    times = time_overhead(ds_name)
+    c_random, s_random = random_baseline(ds_name, clusters)
     c_performances = {"MOSEK": [], "SCIP": [], "GUROBI": []}
     s_performances = {"MOSEK": [], "SCIP": [], "GUROBI": []}
-    with open(Path("experiments") / FOLDER / "data.pkl", "rb") as f:
+    with open(Path("experiments") / "time" / ds_name / "data.pkl", "rb") as f:
         dataset = pickle.load(f)
 
-    for solver in ["GUROBI", "MOSEK", "SCIP"]:
-        for num_cluster in CLUSTERS:
-            print(f"\r{solver} - {num_cluster}", end="")
+    for solver in solvers:
+        for num_clusters in clusters:
+            print(f"\r{solver} - {num_clusters}", end="")
             try:
-                with open(Path("experiments") / FOLDER / solver / f"data_{num_cluster}.pkl", "rb") as f:
+                with open(Path("experiments") / "time" / ds_name / solver / f"data_{num_clusters}.pkl", "rb") as f:
                     ds, assi = pickle.load(f)
-                tmp = np.array([1 if assi[n] == "train" else -1 for n in range(num_cluster)]).reshape(-1, 1)
+                tmp = np.array([1 if assi[n] == "train" else -1 for n in range(num_clusters)]).reshape(-1, 1)
                 tmp2 = np.array([1 if assi[ds.cluster_map[n]] == "train" else -1 for n in dataset.names]).reshape(-1, 1)
                 c_value = eval(tmp, ds.cluster_similarity)
                 s_value = eval(tmp2, dataset.cluster_similarity)
@@ -277,11 +270,12 @@ def visualize():
 
     fig.set_size_inches(20, 8)
     fig.tight_layout()
-    plt.savefig(Path("experiments") / FOLDER / "time_overhead.pdf")
+    plt.savefig(Path("experiments") / "time" / ds_name / "time_overhead.pdf")
     plt.show()
 
 
 def visualize2(ax1, times, performances, random):
+    # TODO: Adjust this function to the new data structure
     ax2 = ax1.twinx()
     ax1.set_xlabel("Number of clusters")
     ax1.set_ylabel("Time [s]")
@@ -304,7 +298,13 @@ def visualize2(ax1, times, performances, random):
 
 
 if __name__ == '__main__':
-    run_solver()
+    if len(sys.argv) == 2:
+        run_solver(sys.argv[1], list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 501, 50)), ["GUROBI"])
+    else:
+        for name in mpp_datasets:
+            if name in biogen_datasets:
+                continue
+            run_solver(name, list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 501, 50)), ["GUROBI"])
     # time_overhead()
     # random_baseline()
     # visualize()
