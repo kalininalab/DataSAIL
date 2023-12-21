@@ -20,9 +20,10 @@ from experiments.utils import dc2pd, telegram
 
 blocker = rdBase.BlockLogs()
 
-FOLDER = 'time'
-SOLVERS = ["CBC", "GLPK_MI", "GUROBI", "MOSEK", "SCIP"]
-CLUSTERS = list(range(10, 50, 5)) + list(range(50, 150, 10)) + [200]  # list(range(150, 501, 50))
+FOLDER = 'time3'
+SOLVERS = ["GLPK_MI", "GUROBI", "MOSEK", "SCIP"]
+# CLUSTERS = list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 501, 50))
+CLUSTERS = list(range(10, 50, 5)) + list(range(50, 150, 10)) + [150, 200]
 
 
 def solve_ccs_blp(
@@ -123,43 +124,44 @@ def run_solver():
             dataset = pickle.load(f)
         norm = np.sum(dataset.cluster_similarity)
 
-    with open(path / "log.txt", "w") as log:
-        for num_clusters in CLUSTERS:
-            # old_path = Path("experiments") / FOLDER / "MOSEK" / f"data_{num_clusters}.pkl"
-            # if not old_path.exists():
-            ds = copy.deepcopy(dataset)
-            ds = additional_clustering(ds, n_clusters=num_clusters)
-            for solver_name in SOLVERS:
-                # if old_path.exists():
-                #     with open(old_path, "rb") as f:
-                #         ds, _ = pickle.load(f)
-                (path / solver_name).mkdir(parents=True, exist_ok=True)
-                try:
-                    problem, assignment, ttime = solve_ccs_blp(
-                        clusters=ds.cluster_names,
-                        weights=[ds.cluster_weights[name] for name in ds.cluster_names],
-                        similarities=ds.cluster_similarity,
-                        epsilon=0.05,
-                        splits=[0.8, 0.2],
-                        names=["train", "test"],
-                        max_sec=7200,
-                        max_sol=-1,
-                        solver=solver_name,
-                        log_file=path / solver_name / f"solve_{num_clusters}.log",
-                        threads=16,
-                    )
-                except cvxpy.error.SolverError as e:
-                    print(e)
+    for num_clusters in CLUSTERS:
+        # old_path = Path("experiments") / FOLDER / "MOSEK" / f"data_{num_clusters}.pkl"
+        # if not old_path.exists():
+        ds = copy.deepcopy(dataset)
+        ds = additional_clustering(ds, n_clusters=num_clusters)
+        for solver_name in SOLVERS:
+            # if old_path.exists():
+            #     with open(old_path, "rb") as f:
+            #         ds, _ = pickle.load(f)
+            (path / solver_name).mkdir(parents=True, exist_ok=True)
+            try:
+                problem, assignment, ttime = solve_ccs_blp(
+                    clusters=ds.cluster_names,
+                    weights=[ds.cluster_weights[name] for name in ds.cluster_names],
+                    similarities=ds.cluster_similarity,
+                    epsilon=0.05,
+                    splits=[0.8, 0.2],
+                    names=["train", "test"],
+                    max_sec=7200,
+                    max_sol=-1,
+                    solver=solver_name,
+                    log_file=path / solver_name / f"solve_{num_clusters}.log",
+                    threads=16,
+                )
+            except cvxpy.error.SolverError as e:
+                print(e)
+                with open(path / "log.txt", "a") as log:
                     print(f"{num_clusters} - SolverError", file=log)
-                    break
-                with open(path / solver_name / f"data_{num_clusters}.pkl", "wb") as f:
-                    pickle.dump((ds, assignment), f)
-                tmp = np.array([1 if assignment[ds.cluster_map[n]] == "train" else -1 for n in ds.names]).reshape(-1, 1)
-                mask = tmp @ tmp.T
-                mask[mask == -1] = 0
-                leakage = np.sum(dataset.cluster_similarity * mask) / norm
+                continue
+            with open(path / solver_name / f"data_{num_clusters}.pkl", "wb") as f:
+                pickle.dump((ds, assignment), f)
+            tmp = np.array([1 if assignment[ds.cluster_map[n]] == "train" else -1 for n in ds.names]).reshape(-1, 1)
+            mask = tmp @ tmp.T
+            mask[mask == -1] = 0
+            leakage = np.sum(dataset.cluster_similarity * mask) / norm
+            with open(path / "log.txt", "a") as log:
                 print(solver_name, num_clusters, leakage, problem.solver_stats.solve_time, ttime, sep=" | ", file=log)
-                telegram(f"[Timing] {solver_name} - {num_clusters} - {ttime:.1f}s - {leakage:.4f}")
+            telegram(f"[Timing] {solver_name} - {num_clusters} - {ttime:.1f}s - {leakage:.4f}")
 
 
 def weighted_random(names: List[str], weights: Dict[str, int], splits: List[float], epsilon: float):
