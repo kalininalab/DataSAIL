@@ -102,7 +102,7 @@ def run_ecfp(dataset):
 
 
 def run_solver(ds_name: str, clusters: List[int], solvers: List[str]):
-    root = Path("experiments") / "time" / ds_name
+    root = Path("/scratch") / "SCRATCH_SAS" / "roman" / "DataSAIL" / "time" / "time" / ds_name
     root.mkdir(parents=True, exist_ok=True)
 
     ds_path = root / "data.pkl"
@@ -113,14 +113,16 @@ def run_solver(ds_name: str, clusters: List[int], solvers: List[str]):
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity, dataset.cluster_weights = run_ecfp(
             dataset)
         norm = np.sum(dataset.cluster_similarity)
-        with open(root / "data.pkl", "wb") as f:
+        with open(ds_path, "wb") as f:
             pickle.dump(dataset, f)
     else:
         with open(ds_path, "rb") as f:
             dataset = pickle.load(f)
         norm = np.sum(dataset.cluster_similarity)
 
-    for num_clusters in clusters:
+    for nc, num_clusters in enumerate(clusters):
+        if nc + 1 < len(clusters) and (root / "GUROBI" / f"data_{clusters[nc + 1]}.pkl").exists():
+            continue
         ds = copy.deepcopy(dataset)
         ds = additional_clustering(ds, n_clusters=num_clusters)
 

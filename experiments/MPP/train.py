@@ -11,7 +11,7 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, Grad
     GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, roc_auc_score
 from sklearn.multioutput import MultiOutputClassifier, MultiOutputRegressor
-from sklearn.neural_network import MLPRegressor
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.svm import LinearSVR, LinearSVC
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
@@ -27,7 +27,7 @@ models = {
     "rf-c": RandomForestClassifier(n_estimators=500, n_jobs=-1, random_state=42),
     "svm-c": MultiOutputClassifier(LinearSVC(random_state=42)),
     "xgb-c": MultiOutputClassifier(GradientBoostingClassifier(random_state=42)),
-    "mlp-c": MLPRegressor(hidden_layer_sizes=(512, 256, 64), random_state=42, max_iter=4 * MPP_EPOCHS),
+    "mlp-c": MLPClassifier(hidden_layer_sizes=(512, 256, 64), random_state=42, max_iter=4 * MPP_EPOCHS),
 }
 metric = {
     "mae": mean_absolute_error,
@@ -37,13 +37,13 @@ metric = {
 }
 
 count = 0
-total_number = 8 * 5
+total_number = 3 * 4 * 14
 
 
-def message(tool, name, algo, tech, run):
+def message(tool, name, algo, tech):
     global count
     count += 1
-    telegram(f"[Training {count}/{total_number}] {tool} - {name} - {algo.upper()} - {tech} - {run + 1}/5")
+    telegram(f"[Training {count}/{total_number}] {tool.split('_')[0]} - {name} - {algo.upper()} - {tech}")
 
 
 def clean_dfs(path):
@@ -64,7 +64,7 @@ def clean_dfs(path):
 
 
 def train_chemprop(tool, name, techniques):
-    dfs = {"val": pd.DataFrame({"rows": list(range(50))}), "test": pd.DataFrame({"rows": [0]})}
+    dfs = {"val": pd.DataFrame({"rows": list(range(RUNS))}), "test": pd.DataFrame({"rows": [0]})}
     # store the results in training, validation, and test files
     base = Path("experiments") / "MPP" / tool / name
     for tech in techniques:
@@ -104,9 +104,9 @@ def train_chemprop(tool, name, techniques):
                         dfs[short][f"{tech}_{metric}_split_{run}"] = [e.value for e in ea.Scalars(metric)]
                 del tb_file
                 del ea
-                message(tool, name, "mpnn", tech, run)
             except Exception as e:
                 print(e)
+            message(tool, name, "mpnn", tech)
     for split, df in dfs.items():
         save_path = Path("experiments") / "MPP" / tool / name / f"{split}_metrics.tsv"
         print("Saving:", df.shape, "to", save_path)
@@ -124,7 +124,7 @@ def prepare_sl_data(name):
     df["ECFP4"] = df["SMILES"].apply(lambda x: embed_smiles(x))
     df.dropna(inplace=True)
     df.to_csv(data_path, index=False)
-    return df
+    return pd.read_csv(data_path)
 
 
 def train_sl_models(model, tool, name, techniques):
@@ -157,21 +157,26 @@ def train_sl_models(model, tool, name, techniques):
                 test_perf = metric[mpp_datasets[name][2]](y_test, test_predictions)
 
             perf[f"{tech}_{run}"] = test_perf
-            message(tool, name, model[:-2], tech, run)
             print(tool, name, model[:-2], tech, run, test_perf, sep=" - ")
+        message(tool, name, model[:-2], tech)
     pd.DataFrame(perf, index=[0]).to_csv(Path("experiments") / "MPP" / tool / name / f"{model}.csv", index=False)
 
 
 def train_all():
     for tool, techniques in [
-        ("datasail", ["I1e", "C1e"]),
-        ("deepchem", "Butina", "Fingerprint", "MaxMin", "Scaffold", "Weight"),
-        ("lohi", ["lohi"])
+        ("datasail_old", ["I1e", "C1e"]),
+        ("deepchem_old", "Butina", "Fingerprint", "MaxMin", "Scaffold", "Weight"),
+        ("lohi_old", ["lohi"])
     ]:
         for name in mpp_datasets:
-            train_chemprop(tool, name, techniques)
+            # train_chemprop(tool, name, techniques)
             for model in ["rf", "svm", "xgb", "mlp"]:
-                train_sl_models(f"{model}-{mpp_datasets[name][1][0]}", tool, name, techniques)
+                try:
+                    train_sl_models(f"{model}-{mpp_datasets[name][1][0]}", tool, name, techniques)
+                except Exception as e:
+                    print("EXCEPTION", tool, model, name, sep=" - ")
+                    print(e)
+                    print("END")
 
 
 def main():

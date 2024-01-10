@@ -1,97 +1,113 @@
-import os.path
+import pickle
+import re
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from DeepPurpose import DTI as models
-from DeepPurpose.utils import data_process, generate_config
+from rdkit import Chem
+from rdkit.Chem import AllChem
+from sklearn.metrics import mean_squared_error
 
-from experiments.utils import RUNS, telegram
+from experiments.MPP.train import models, message
+from experiments.utils import RUNS, embed_aaseqs, telegram
 
 count = 0
+prot_embeds = {}
 
 
-def train_model(folder, technique, run):
-    target = "results_DDTA"
-    if not os.path.exists(folder / target) or True:
-        drug_encoding, target_encoding = "CNN", "CNN"
-        train = pd.read_csv(folder / "train.csv")
-        test = pd.read_csv(folder / "test.csv")
-        train, _, _ = data_process(
-            X_drug=list(train["Ligand"].values),
-            X_target=list(train["Target"].values),
-            y=list(train["y"].values),
-            drug_encoding=drug_encoding,
-            target_encoding=target_encoding,
-            split_method="random",
-            frac=[1, 0, 0],
-        )
-        test, _, _ = data_process(
-            X_drug=list(test["Ligand"].values),
-            X_target=list(test["Ligand"].values),
-            y=list(test["y"].values),
-            drug_encoding=drug_encoding,
-            target_encoding=target_encoding,
-            split_method="random",
-            frac=[1, 0, 0],
-        )
-
-        config = generate_config(
-            drug_encoding=drug_encoding,
-            target_encoding=target_encoding,
-            result_folder=folder / target,
-            batch_size=256,
-            train_epoch=100,
-
-            # DeepDTA
-            cls_hidden_dims=[1024, 1024, 512],
-            cnn_drug_filters=[32, 64, 96],
-            cnn_target_filters=[32, 64, 96],
-            cnn_drug_kernels=[4, 6, 8],
-            cnn_target_kernels=[4, 8, 12],
-            LR=0.001,
-
-            # transformer_emb_size_drug=64,
-            # transformer_intermediate_size_drug=256,
-            # transformer_num_attention_heads_drug=4,
-            # transformer_n_layer_drug=2,
-            # cls_hidden_dims=[1024, 256],
-            # mlp_hidden_dims_drug=[1024, 128],
-            # mlp_hidden_dims_target=[1024, 128],
-            # input_dim_protein=1024,
-        )
-        net = models.model_initialize(**config)
-        model_parameters = filter(lambda p: p.requires_grad, net.model.parameters())
-        print("Number of parameters:", sum([np.prod(p.size()) for p in model_parameters]))
-        # net.train(train, train, train)
-        net.train(train, test, test)
-        del train
-        del test
-        del config
-        del net
-        del model_parameters
-    global count
-    count += 1
-    telegram(f"[PDB {count} / 35] Training finished for PDBBind - {technique} - Run {run + 1}/5")
+def embed_smiles(smile):
+    if smile != smile or isinstance(smile, float) or len(smile) == 0:
+        return None
+    mol = Chem.MolFromSmiles(smile)
+    if mol is None:
+        return None
+    return list(AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=480))
 
 
-def read_val_rmse(folder):
-    output = []
-    with open(folder / "results" / "valid_markdowntable.txt", "r") as table:
-        for line in table.readlines()[3:]:
-            if line[0] == "|":
-                output.append(np.sqrt(line.split("|")[2].strip()))
+def embed_sequence(aaseq):
+    global prot_embeds
+    amino_acids_pattern = re.compile('[^ACDEFGHIKLMNPQRSTVWY]')
+    aaseq = amino_acids_pattern.sub('G', aaseq)[:1022]
+    if aaseq not in prot_embeds:
+        print("Compute new ESM embed")
+        prot_embeds[aaseq] = embed_aaseqs(aaseq)
+    return list(prot_embeds[aaseq])
+
+
+def prepare_sl_data():
+    global prot_embeds
+
+    root = Path("experiments") / "PDBBind" / "data"
+    root.mkdir(parents=True, exist_ok=True)
+
+    data_path = root / "lppdbbind.csv"
+    if data_path.exists():
+        return pd.read_csv(data_path)
+
+    df = pd.read_csv(Path("experiments") / "PDBBind" / "LP_PDBBind.csv")
+    df.rename({"Unnamed: 0": "ids"}, axis=1, inplace=True)
+    df = df[["ids", "smiles", "seq", "value"]]
+
+    embeds_path = Path("experiments") / "PDBBind" / "data" / "prot_embeds_esm2_t12.pkl"
+    if embeds_path.exists():
+        with open(embeds_path, "rb") as f:
+            prot_embeds = pickle.load(f)
+    df["seq_feat"] = df["seq"].apply(lambda x: embed_sequence(x))
+    with open(embeds_path, "wb") as f:
+        pickle.dump(prot_embeds, f)
+
+    df["smiles_feat"] = df["smiles"].apply(lambda x: embed_smiles(x))
+    df.dropna(inplace=True)
+
+    df["feat"] = df[['seq_feat', 'smiles_feat']].apply(lambda x: x["seq_feat"] + x["smiles_feat"], axis=1)
+    df.to_csv(data_path, index=False)
+
+    return pd.read_csv(data_path)
+
+
+def train_sl_models(model, tool, techniques):
+    df = prepare_sl_data()
+    perf = {}
+    for tech in techniques:
+        for run in range(RUNS):
+            root = Path("experiments") / "PDBBind" / tool / tech / f"split_{run}"
+            X_train = np.array([rec[1:-1].split(", ") for rec in df[df["ids"].isin(pd.read_csv(root / "train.csv")["ids"])]["feat"].values], dtype=float)
+            y_train = df[df["ids"].isin(pd.read_csv(root / "train.csv")["ids"])]["value"].to_numpy().reshape(-1, 1)
+            X_test = np.array([rec[1:-1].split(", ") for rec in df[df["ids"].isin(pd.read_csv(root / "test.csv")["ids"])]["feat"].values], dtype=float)
+            y_test = df[df["ids"].isin(pd.read_csv(root / "test.csv")["ids"])]["value"].to_numpy().reshape(-1, 1)
+
+            if model.startswith("rf"):
+                y_train = y_train.squeeze()
+                y_test = y_test.squeeze()
+
+            m = models[f"{model}-r"]
+            m.fit(X_train, y_train)
+
+            test_predictions = m.predict(X_test)
+            test_perf = mean_squared_error(y_test, test_predictions)
+
+            perf[f"{tech}_{run}"] = test_perf
+            print(tool, model, tech, run, test_perf, sep=" - ")
+            message(tool, "PDBBind", model, tech)
+    pd.DataFrame(list(perf.items()), columns=["Name", "Perf"]).to_csv(Path("experiments") / "PDBBind" / tool / f"{model}.csv", index=False)
 
 
 def main():
-    # for tool, techniques in [("deepchem", ["Scaffold", "Weight"])]:
-    for tool, techniques in [("deepchem", ["MinMax", "Fingerprint", "Butina"])]:
+    for tool, techniques in [
+        ("datasail", ["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"]),
+        ("deepchem", ["Butina", "Fingerprint", "MaxMin", "Scaffold", "Weight"]),
+        ("lohi", ["lohi"]),
+        ("graphpart", ["graphpart"])
+    ]:
         for tech in techniques:
-            for run in range(RUNS):
-                print(f"Train {tech} - {run}")
-                train_model(Path("experiments") / "PDBBind" / tool / tech / f"split_{run}", tech, run)
+            for model in ["rf", "svm", "xgb", "mlp"]:
+                try:
+                    train_sl_models(model, tool, [tech])
+                except Exception as e:
+                    print("EXCEPTION", tool, model, tech, sep=" - ")
+                    print(e)
+                    print("END")
 
 
 if __name__ == '__main__':
-    train_model(Path("experiments") / "PDBBind" / "random_lp", "R", 0)
-    # main()
+    main()
