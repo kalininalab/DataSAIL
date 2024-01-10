@@ -302,6 +302,54 @@ def plot_cold_prot(data):
     plt.show()
 
 
+def viz_sl():
+    root = Path("experiments") / "PDBBind"
+    models = ["RF", "SVM", "XGB", "MLP", "D-MPNN"]
+    values = {
+        "drug": [[] for _ in range(8)],
+        "target": [[] for _ in range(3)],
+        "both": [[] for _ in range(3)],
+    }
+
+    for s, tool, tech, mode in [
+        (0, "datasail", "R", "both"),
+        (0, "datasail", "I1e", "drug"),
+        (0, "datasail", "I1f", "target"),
+        (1, "datasail", "I2", "both"),
+        (1, "datasail", "C1e", "drug"),
+        (1, "datasail", "C1f", "target"),
+        (2, "datasail", "C2", "both"),
+        (2, "deepchem", "Butina", "drug"),
+        (3, "deepchem", "MinMax", "drug"),
+        (4, "deepchem", "Fingerprint", "drug"),
+        (5, "deepchem", "Scaffold", "drug"),
+        (6, "deepchem", "Weight", "drug"),
+        (7, "lohi", "lohi", "drug"),
+        (2, "graphpart", "graphpart", "target"),
+    ]:
+        for model in models[:-1]:
+            df = pd.read_csv(root / tool / f"{model.lower()}.csv")
+            df["run"] = df["Name"].apply(lambda x: int(x.split("_")[1]))
+            df["tech"] = df["Name"].apply(lambda x: x.split("_")[0])
+            values[mode][s].append(df[df["tech"] == tech]["Perf"].mean())
+        vals = 0
+        for run in range(RUNS):
+            path = Path("experiments") / "PDBBind" / tool / tech / f"split_{run}"
+            vals += max(read_log(path / "results" / "training.log"))
+        values[mode][s].append(vals / 5.0)
+
+    fig, axs = plt.subplots(1, 3, figsize=(15, 5), sharey=True)
+    df = pd.DataFrame(np.array(values["drug"]).T, columns=["random cold-drug", "similarity-based", "LoHi", "Butina", "Fingerprint", "MaxMin", "Scaffold", "Weight"], index=models)
+    df.plot.bar(ax=axs[0], rot=0, ylabel="MSE")
+    df = pd.DataFrame(np.array(values["target"]).T, columns=["random cold-target", "similarity-based", "GraphPart"], index=models)
+    df.plot.bar(ax=axs[1], rot=0, ylabel="MSE")
+    df = pd.DataFrame(np.array(values["both"]).T, columns=["Random", "identity-based", "similarity-based"], index=models)
+    df.plot.bar(ax=axs[2], rot=0, ylabel="MSE")
+    fig.tight_layout()
+    plt.savefig(root / "sl.png")
+    plt.show()
+
+
 def analyze():
     pkl_name = Path("experiments") / "PDBBind" / f"{'umap' if USE_UMAP else 'tsne'}_embeds.pkl"
     if not os.path.exists(pkl_name):  # or True:
@@ -317,4 +365,5 @@ def analyze():
 
 
 if __name__ == '__main__':
-    analyze()
+    # analyze()
+    viz_sl()

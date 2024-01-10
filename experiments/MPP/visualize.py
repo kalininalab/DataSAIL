@@ -11,9 +11,9 @@ from sklearn.manifold import TSNE
 from umap import UMAP
 import matplotlib.transforms as mtransforms
 
-from experiments.utils import USE_UMAP, embed_smiles, get_bounds
+from experiments.utils import USE_UMAP, embed_smiles, get_bounds, RUNS, mpp_datasets
 
-SPLITS = ["I1e", "C1e", "lohi", "Butina", "Fingerprint", "MinMax", "Scaffold", "Weight"]
+SPLITS = ["I1e", "C1e", "lohi", "Butina", "Fingerprint", "M", "Scaffold", "Weight"]
 DATASETS = ["QM7", "QM8", "QM9", "ESOL", "FreeSolv", "Lipophilicity", "MUV", "HIV", "BACE", "BBBP", "Tox21", "ToxCast",
             "SIDER", "ClinTox"]
 METRICS = ["MAE ↓"] * 3 + ["RMSE ↓"] * 3 + ["PRC-AUC ↑"] + ["ROC-AUC ↑"] * 7
@@ -289,8 +289,29 @@ def plot_single(name):
     plt.show()
 
 
+def viz_sl():
+    for name in ["Tox21"]:
+        root = Path("experiments") / "MPP"
+        models = ["RF", "SVM", "XGB", "MLP", "D-MPNN"]
+        values = [[] for _ in range(2)]
+
+        for i, split in enumerate(["I1e", "C1e"]):
+            for model in models[:-1]:
+                df = pd.read_csv(root / "datasail_old" / name.lower() / f"{model.lower()}-{mpp_datasets[name.lower()][1][0]}.csv")
+                values[i].append(df[[f"{split}_0", f"{split}_1", f"{split}_2", f"{split}_3", f"{split}_4"]].values.mean(axis=1)[0])
+            df = pd.read_csv(Path("experiments") / "MPP" / "datasail_old" / name.lower() / f"val_metrics.tsv", sep="\t")
+            values[i].append(df[[c for c in df.columns if c.startswith(split[0])]].values.max(axis=0).mean())
+
+        df = pd.DataFrame(np.array(values).T, columns=["random", "similarity-based"], index=models)
+        df.plot.bar(rot=0, ylabel="ROC-AUC ↑", title=name, ylim=(0.5, 0.9))
+        plt.tight_layout()
+        plt.savefig(root / f"{name}.png")
+        plt.show()
+
+
 if __name__ == '__main__':
-    plot_single("Lipophilicity")
+    viz_sl()
+    # plot_single("Lipophilicity")
     # plot_perf()
     # plot_perf_5x3()
     # plot_double(["QM7", "Tox21"])

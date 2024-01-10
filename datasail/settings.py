@@ -153,10 +153,13 @@ KW_TECHNIQUES = "techniques"
 KW_THREADS = "threads"
 KW_VERBOSE = "verbosity"
 
-SOLVER_SCIP = "SCIP"
+SOLVER_CBC = "CBC"
 SOLVER_CPLEX = "CPLEX"
+SOLVER_GLPK = "GLPK"
+SOLVER_GLPK_MI = "GLPK_MI"
 SOLVER_GUROBI = "GUROBI"
 SOLVER_MOSEK = "MOSEK"
+SOLVER_SCIP = "SCIP"
 SOLVER_XPRESS = "XPRESS"
 TEC_R = "R"
 SRC_ID = "I"
@@ -177,9 +180,10 @@ N_CLUSTERS = 10
 # 2 Hardly installable
 # 3 Not installable
 SOLVERS = {
-    # "CBC": cvxpy.CBC,  # extra: CBC
+    SOLVER_CBC: cvxpy.CBC,  # extra: CBC
     # "COPT": cvxpy.COPT,
-    # SOLVER_GLPK: cvxpy.GLPK_MI,  # not powerful enough
+    SOLVER_GLPK: cvxpy.GLPK_MI,
+    SOLVER_GLPK_MI: cvxpy.GLPK_MI,
     SOLVER_SCIP: cvxpy.SCIP,
     SOLVER_CPLEX: cvxpy.CPLEX,
     SOLVER_GUROBI: cvxpy.GUROBI,

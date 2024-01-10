@@ -45,21 +45,21 @@ def solve_c1(
     """
     min_lim = compute_limits(epsilon, sum(weights), splits)
 
-    x = cvxpy.Variable((len(splits), len(clusters)), boolean=True)
-    y = [[cvxpy.Variable(1, boolean=True) for _ in range(e)] for e in range(len(clusters))]
+    x = cvxpy.Variable((len(splits), len(clusters)), boolean=True)  # 19
+    y = [[cvxpy.Variable(1, boolean=True) for _ in range(e)] for e in range(len(clusters))]  # 20
     
-    constraints = [cvxpy.sum(x, axis=0) == np.ones((len(clusters)))]
+    constraints = [cvxpy.sum(x, axis=0) == np.ones((len(clusters)))]  # 16
 
     for s, split in enumerate(splits):
-        constraints.append(min_lim[s] <= cvxpy.sum(cvxpy.multiply(x[s], weights)))
+        constraints.append(min_lim[s] <= cvxpy.sum(cvxpy.multiply(x[s], weights)))  # 17
 
     if s_matrix is not None:
         constraints.append(stratification_constraints(s_matrix, splits, delta, x))
 
-    constraints += cluster_y_constraints(False, clusters, y, x, splits)
+    constraints += cluster_y_constraints(False, clusters, y, x, splits)  # 18
 
     intra_weights = similarities if similarities is not None else distances
-    tmp = [[intra_weights[e1, e2] * y[e1][e2] for e2 in range(e1)] for e1 in range(len(clusters))]
+    tmp = [[intra_weights[e1, e2] * y[e1][e2] for e2 in range(e1)] for e1 in range(len(clusters))]  # 15
     loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
     if distances is not None:
         loss = -loss
