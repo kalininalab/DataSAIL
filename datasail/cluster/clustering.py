@@ -243,7 +243,7 @@ def labels2clusters(
         if new_cluster not in new_cluster_weights:
             new_cluster_weights[new_cluster] = 0
         if new_cluster not in new_cluster_stratification:
-            new_cluster_stratification[new_cluster] = np.zeros(dataset.num_classes)
+            new_cluster_stratification[new_cluster] = np.zeros(len(dataset.classes))
         new_cluster_weights[new_cluster] += dataset.cluster_weights[name]
 
     LOGGER.info(f"Reduced number of clusters to {len(new_cluster_names)}.")
