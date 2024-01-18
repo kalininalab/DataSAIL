@@ -13,3 +13,4 @@ scikit-learn
 grakel
 nbsphinx
 nbsphinx-link
+notebook

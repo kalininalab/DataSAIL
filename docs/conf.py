@@ -21,11 +21,12 @@ extensions = [
     "sphinx.ext.githubpages",
     "nbsphinx",
     "nbsphinx_link",
+    "IPython.sphinxext.ipython_console_highlighting"
 ]
 
 autosummary_generate = True
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "_templates"]
+exclude_patterns = ["_build", "_templates", "**.ipynb_checkpoints"]
 
 source_suffix = ".rst"
 master_doc = "index"
