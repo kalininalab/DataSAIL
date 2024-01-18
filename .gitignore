@@ -20,6 +20,10 @@ tmp/
 log*.txt
 *.png
 *.pdf
+*.log
+*.pkl
+*.ipynb
+*.sh
 
 MoleculeNet.py
 run_moleculenet.sh
