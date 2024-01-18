@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from sklearn.metrics import mean_squared_error
@@ -37,18 +38,18 @@ def embed_sequence(aaseq):
 def prepare_sl_data():
     global prot_embeds
 
-    root = Path("experiments") / "PDBBind" / "data"
+    root = Path("..") / "DataSAIL" / "experiments" / "PDBBind" / "data"
     root.mkdir(parents=True, exist_ok=True)
 
     data_path = root / "lppdbbind.csv"
     if data_path.exists():
         return pd.read_csv(data_path)
 
-    df = pd.read_csv(Path("experiments") / "PDBBind" / "LP_PDBBind.csv")
+    df = pd.read_csv(Path("..") / "DataSAIL" / "experiments" / "PDBBind" / "LP_PDBBind.csv")
     df.rename({"Unnamed: 0": "ids"}, axis=1, inplace=True)
     df = df[["ids", "smiles", "seq", "value"]]
 
-    embeds_path = Path("experiments") / "PDBBind" / "data" / "prot_embeds_esm2_t12.pkl"
+    embeds_path = Path("..") / "DataSAIL" / "experiments" / "PDBBind" / "data" / "prot_embeds_esm2_t12.pkl"
     if embeds_path.exists():
         with open(embeds_path, "rb") as f:
             prot_embeds = pickle.load(f)
@@ -70,7 +71,8 @@ def train_sl_models(model, tool, techniques):
     perf = {}
     for tech in techniques:
         for run in range(RUNS):
-            root = Path("experiments") / "PDBBind" / tool / tech / f"split_{run}"
+            print(tool, model, tech, run, "Start", sep=" - ")
+            root = Path("..") / "DataSAIL" / "experiments" / "PDBBind" / tool / tech / f"split_{run}"
             X_train = np.array([rec[1:-1].split(", ") for rec in df[df["ids"].isin(pd.read_csv(root / "train.csv")["ids"])]["feat"].values], dtype=float)
             y_train = df[df["ids"].isin(pd.read_csv(root / "train.csv")["ids"])]["value"].to_numpy().reshape(-1, 1)
             X_test = np.array([rec[1:-1].split(", ") for rec in df[df["ids"].isin(pd.read_csv(root / "test.csv")["ids"])]["feat"].values], dtype=float)
@@ -79,6 +81,8 @@ def train_sl_models(model, tool, techniques):
             if model.startswith("rf"):
                 y_train = y_train.squeeze()
                 y_test = y_test.squeeze()
+                X_train = X_train.squeeze()
+                X_test = X_test.squeeze()
 
             m = models[f"{model}-r"]
             m.fit(X_train, y_train)
@@ -89,25 +93,31 @@ def train_sl_models(model, tool, techniques):
             perf[f"{tech}_{run}"] = test_perf
             print(tool, model, tech, run, test_perf, sep=" - ")
             message(tool, "PDBBind", model, tech)
-    pd.DataFrame(list(perf.items()), columns=["Name", "Perf"]).to_csv(Path("experiments") / "PDBBind" / tool / f"{model}.csv", index=False)
+    pd.DataFrame(list(perf.items()), columns=["Name", "Perf"]).to_csv(Path("experiments") / "PDBBind" / f"{model}.csv", index=False)
 
 
 def main():
-    for tool, techniques in [
-        ("datasail", ["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"]),
-        ("deepchem", ["Butina", "Fingerprint", "MaxMin", "Scaffold", "Weight"]),
-        ("lohi", ["lohi"]),
-        ("graphpart", ["graphpart"])
-    ]:
-        for tech in techniques:
-            for model in ["rf", "svm", "xgb", "mlp"]:
-                try:
-                    train_sl_models(model, tool, [tech])
-                except Exception as e:
-                    print("EXCEPTION", tool, model, tech, sep=" - ")
-                    print(e)
-                    print("END")
+    # for tool, techniques in [
+    #     ("datasail", ["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"]),
+    #     ("deepchem", ["Butina", "Fingerprint", "MaxMin", "Scaffold", "Weight"]),
+    #     ("lohi", ["lohi"]),
+    #     ("graphpart", ["graphpart"])
+    # ]:
+    #     for tech in techniques:
+    for model in ["rf", "svm", "xgb", "mlp"]:
+        try:
+            train_sl_models(model, "datasail", ["I2"])
+        except Exception as e:
+            print("EXCEPTION", "datasail", model, "I2", sep=" - ")
+            print(e)
+            print("END")
 
 
 if __name__ == '__main__':
-    main()
+    vals = [
+        ("rf", "datasail", ["I2"]),
+        ("xgb", "datasail", ["I2"]),
+        ("mlp", "datasail", ["I2"])
+    ]
+    Parallel(n_jobs=3)(delayed(train_sl_models)(*args) for args in vals)
+    # main()

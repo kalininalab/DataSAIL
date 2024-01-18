@@ -10,6 +10,8 @@
 - [ ] Generalization to R-dimensional datasets (see [paper](https://doi.org/10.1101/2023.11.15.566305))
 - [ ] Input from config files
 - [ ] Stratified splits
+- [ ] Include [MashMap3](https://github.com/marbl/MashMap)
+- [ ] Include MASH for amino acid sequences
 
 ## v0.2.2 (2023-12-11)
 

@@ -3,10 +3,14 @@ from pathlib import Path
 import deepchem as dc
 import pandas as pd
 from rdkit import Chem
+from joblib import Parallel, delayed
+from tqdm import tqdm
+from rdkit import rdBase
 
 from datasail.sail import datasail
 from experiments.utils import RUNS, dc2pd
 
+blocker = rdBase.BlockLogs()
 
 def check_smiles(smiles):
     if Chem.MolFromSmiles(smiles) is None:
@@ -26,27 +30,32 @@ def tox2pd(ds):
     return df[["ID", "SMILES", "SR-ARE"]]
 
 
-def split_w_datasail(df):
-    base = Path('experiments') / 'Tox21Strat' / 'datasail'
+def split_w_datasail(df, delta, epsilon):
+    base = Path('experiments') / 'Tox21Strat' / 'datasail' / "de_ablation" / f"d_{delta}_e_{epsilon}"
 
-    e_splits, _, _ = datasail(
-        techniques=["C1e"],
-        splits=[7, 2, 1],
-        names=["train", "val", "test"],
-        runs=RUNS,
-        solver="SCIP",
-        e_type="M",
-        e_data=dict(df[["ID", "SMILES"]].values.tolist()),
-        e_strat=dict(df[["ID", "SR-ARE"]].values.tolist()),
-    )
+    try:
+        e_splits, _, _ = datasail(
+            techniques=["C1e"],
+            splits=[8, 2],
+            names=["train", "test"],
+            runs=RUNS,
+            delta=delta,
+            epsilon=epsilon,
+            solver="SCIP",
+            e_type="M",
+            e_data=dict(df[["ID", "SMILES"]].values.tolist()),
+            e_strat=dict(df[["ID", "SR-ARE"]].values.tolist()),
+        )
 
-    for run in range(RUNS):
-        path = base / f"split_{run}"
-        path.mkdir(parents=True, exist_ok=True)
-        train = list(df["ID"].apply(lambda x: e_splits["C1e"][run].get(x, "") == "train"))
-        test = list(df["ID"].apply(lambda x: e_splits["C1e"][run].get(x, "") == "test"))
-        df[train].to_csv(path / "train.csv", index=False)
-        df[test].to_csv(path / "test.csv", index=False)
+        for run in range(RUNS):
+            path = base / f"split_{run}"
+            path.mkdir(parents=True, exist_ok=True)
+            train = list(df["ID"].apply(lambda x: e_splits["C1e"][run].get(x, "") == "train"))
+            test = list(df["ID"].apply(lambda x: e_splits["C1e"][run].get(x, "") == "test"))
+            df[train].to_csv(path / "train.csv", index=False)
+            df[test].to_csv(path / "test.csv", index=False)
+    except:
+        pass
 
 
 def split_w_deepchem(df):
@@ -67,5 +76,10 @@ def split_w_deepchem(df):
 
 tox = dc.molnet.load_tox21(featurizer=dc.feat.DummyFeaturizer(), splitter=None)[1][0]
 tox = tox2pd(tox)
-# split_w_datasail(tox)
-split_w_deepchem(tox)
+vals = []
+for e in [0.3, 0.25, 0.2, 0.15, 0.1, 0.05]:
+    for d in [0.3, 0.25, 0.2, 0.15, 0.1, 0.05]:
+        vals.append((tox, d, e))
+
+Parallel(n_jobs=12)(delayed(split_w_datasail)(*args) for args in tqdm(vals))
+# split_w_deepchem(tox)

@@ -10,11 +10,30 @@ import pandas as pd
 import torch
 from rdkit import Chem
 from rdkit.Chem import AllChem
+import matplotlib.transforms as mtransforms
 
 RUNS = 5
 MPP_EPOCHS = 50
 USE_UMAP = False  # if False uses tSNE
 biogen_datasets = {"HLM", "MDR1_MDCK_ER", "SOLUBILITY", "hPPB", "rPPB", "RLM"}
+colors = {
+    "test": "#0C7BDC",
+    "train": "#FFC20A",
+    "0d": "#994F00",
+    "r1d": "#E66100",
+    "i1e": "#E66100",
+    "i2": "#DC3220",
+    "s1d": "#5D3A9B",
+    "c1e": "#5D3A9B",
+    "c2": "#1AFF1A",
+    "lohi": "#8581E0",
+    "graphpart": "#F607B1",
+    "butina": "#361276",
+    "fingerprint": "#867D28",
+    "maxmin": "#C5CAB6",
+    "scaffold": "#7532F5",
+    "weight": "#15AEB1",
+}
 
 mpp_datasets = {
     "qm7": [dc.molnet.load_qm7, "regression", "mae", 7160],
@@ -127,6 +146,23 @@ def load_lp_pdbbind():
     df = df[df.apply(lambda x: len(x["Ligand"]) <= 200 and len(x["Target"]) <= 2000, axis=1)]
     df = df[df["Ligand"].apply(is_valid_smiles)]
     return df
+
+
+def set_subplot_label(ax, fig, label):
+    ax.text(
+        0.0,
+        1.0,
+        label,
+        transform=ax.transAxes + mtransforms.ScaledTranslation(
+            0 / 72,
+            0 / 72,
+            fig.dpi_scale_trans
+        ),
+        fontsize="x-large",
+        va="bottom",
+        fontfamily="serif",
+        # fontweight="bold",
+    )
 
 
 def telegram(message: str = "Hello World"):

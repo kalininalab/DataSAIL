@@ -1,6 +1,7 @@
 from typing import List, Union, Optional, Dict
 from pathlib import Path
 
+import time
 import cvxpy
 import numpy as np
 
@@ -56,14 +57,18 @@ def solve_c1(
     if s_matrix is not None:
         constraints.append(stratification_constraints(s_matrix, splits, delta, x))
 
-    constraints += cluster_y_constraints(False, clusters, y, x, splits)  # 18
+    constraints += cluster_y_constraints(clusters, y, x, splits)  # 18
 
     intra_weights = similarities if similarities is not None else distances
     tmp = [[intra_weights[e1, e2] * y[e1][e2] for e2 in range(e1)] for e1 in range(len(clusters))]  # 15
     loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
     if distances is not None:
         loss = -loss
+    start = time.time()
     problem = solve(loss, constraints, max_sec, solver, log_file)
+    ttime = time.time() - start
+    with open("strat_timing.txt", "a") as out:
+        print(delta, epsilon, ttime, sep=",", file=out)
 
     return None if problem is None else {
         e: names[s] for s in range(len(splits)) for i, e in enumerate(clusters) if x[s, i].value > 0.1

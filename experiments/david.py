@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 from typing import List, Dict
 
+import matplotlib
 import cvxpy
 import deepchem as dc
 import numpy as np
@@ -17,7 +18,7 @@ from datasail.cluster.clustering import additional_clustering
 from datasail.cluster.utils import read_molecule_encoding
 from datasail.reader.read_molecules import read_molecule_data
 from datasail.solver.utils import solve, compute_limits, cluster_y_constraints
-from experiments.utils import dc2pd, telegram, mpp_datasets, biogen_datasets
+from experiments.utils import dc2pd, telegram, mpp_datasets, biogen_datasets, colors
 
 blocker = rdBase.BlockLogs()
 
@@ -112,19 +113,21 @@ def run_solver(ds_name: str, clusters: List[int], solvers: List[str]):
         dataset = read_molecule_data(dict(df[["ID", "SMILES"]].values.tolist()), sim="ecfp")
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity, dataset.cluster_weights = run_ecfp(
             dataset)
-        norm = np.sum(dataset.cluster_similarity)
         with open(ds_path, "wb") as f:
             pickle.dump(dataset, f)
     else:
         with open(ds_path, "rb") as f:
             dataset = pickle.load(f)
-        norm = np.sum(dataset.cluster_similarity)
 
     for nc, num_clusters in enumerate(clusters):
-        if nc + 1 < len(clusters) and (root / "GUROBI" / f"data_{clusters[nc + 1]}.pkl").exists():
-            continue
-        ds = copy.deepcopy(dataset)
-        ds = additional_clustering(ds, n_clusters=num_clusters)
+        # if nc + 1 < len(clusters) and (root / "GUROBI" / f"data_{clusters[nc + 1]}.pkl").exists():
+        #     continue
+        if (root / "GUROBI" / f"data_{num_clusters}.pkl").exists():
+            with open(root / "GUROBI" / f"data_{num_clusters}.pkl", "rb") as pkl:
+                ds, _ = pickle.load(pkl)
+        else:
+            ds = copy.deepcopy(dataset)
+            ds = additional_clustering(ds, n_clusters=num_clusters)
 
         for solver_name in solvers:
             solver_path = root / solver_name
@@ -154,9 +157,13 @@ def run_solver(ds_name: str, clusters: List[int], solvers: List[str]):
                 pickle.dump((ds, assignment), f)
             tmp = np.array([1 if assignment[n] == "train" else -1 for n in range(num_clusters)]).reshape(-1, 1)
             leakage = eval(tmp, ds.cluster_similarity)
+            try:
+                solver_time = problem.solver_stats.solve_time
+            except:
+                solver_time = 0
             with open(root / "log.txt", "a") as log:
-                print(solver_name, num_clusters, leakage, problem.solver_stats.solve_time, ttime, sep=" | ", file=log)
-            telegram(f"[Timing] {ds_name} - {num_clusters} - {ttime:.1f}s - {leakage:.4f}")
+                print(solver_name, num_clusters, leakage, solver_time, ttime, sep=" | ", file=log)
+            telegram(f"[Timing] {solver_name} - {ds_name} - {num_clusters} - {ttime:.1f}s - {leakage:.4f}")
 
 
 def weighted_random(names: List[str], weights: Dict[str, int], splits: List[float], epsilon: float):
@@ -173,17 +180,18 @@ def weighted_random(names: List[str], weights: Dict[str, int], splits: List[floa
 
 
 def random_baseline(ds_name: str, clusters: List[int]):
-    base = Path("experiments") / "time" / ds_name
+    base = Path("/scratch") / "SCRATCH_SAS" / "roman" / "DataSAIL" / "time" / "time" / ds_name
     with open(base / "data.pkl", "rb") as f:
         dataset = pickle.load(f)
 
     # cluster-based baseline
     s_leakage, c_leakage = [], []
     for num_clusters in clusters:
-        with open(base / "MOSEK" / f"data_{num_clusters}.pkl", "rb") as f:
+        with open(base / "GUROBI" / f"data_{num_clusters}.pkl", "rb") as f:
             ds, assi = pickle.load(f)
         n_leakage = [], []
         for i in range(5):
+            print("Baseline:", num_clusters, "-", i)
             train_test = weighted_random(ds.cluster_names, ds.cluster_weights, [0.8, 0.2], 0.05)
 
             c_tmp = np.array([1 if n in train_test[0] else -1 for n in ds.cluster_names]).reshape(-1, 1)
@@ -202,7 +210,7 @@ def random_baseline(ds_name: str, clusters: List[int]):
 
 def time_overhead(ds_name: str):
     times = {}
-    with open(Path("experiments") / "time" / ds_name / "log.txt", "r") as data:
+    with open(Path("/scratch") / "SCRATCH_SAS" / "roman" / "DataSAIL" / "time" / "time" / ds_name / "log.txt", "r") as data:
         for line in data:
             parts = line.split(" | ")
             if parts[0] not in times:
@@ -216,7 +224,7 @@ def time_overhead(ds_name: str):
     times["SCIP"][:, 2] = times["SCIP"][:, 1] - np.exp(m_reg.predict(times["SCIP"][:, :2]))
     for solver in ["GUROBI", "MOSEK", "SCIP"]:
         np.clip(times[solver][:, 1:], 0, 7200, out=times[solver][:, 1:])
-    times["SCIP"][-1, 2] = 7200
+    # times["SCIP"][-1, 2] = 7200
     return times
 
 
@@ -229,7 +237,7 @@ def viz_single(similarity, assignment):
 
 def blub(ds_name: str):
     for num_cluster in list(range(10, 50, 5)):
-        with open(Path("experiments") / "time" / ds_name / "MOSEK" / f"data_{num_cluster}.pkl", "rb") as f:
+        with open(Path("/scratch") / "SCRATCH_SAS" / "roman" / "DataSAIL" / "time" / "time" / ds_name / "MOSEK" / f"data_{num_cluster}.pkl", "rb") as f:
             ds, assi = pickle.load(f)
         viz_single(ds.cluster_similarity, assi)
 
@@ -240,73 +248,101 @@ def eval(assignments, similarity):
     return np.sum(similarity * mask) / np.sum(similarity)
 
 
-def visualize(ds_name: str, clusters: List[int], solvers):
-    times = time_overhead(ds_name)
-    c_random, s_random = random_baseline(ds_name, clusters)
-    c_performances = {"MOSEK": [], "SCIP": [], "GUROBI": []}
-    s_performances = {"MOSEK": [], "SCIP": [], "GUROBI": []}
-    with open(Path("experiments") / "time" / ds_name / "data.pkl", "rb") as f:
-        dataset = pickle.load(f)
+def visualize(ds_name: str, clusters: List[int], solvers, ax=None):
+    if show := ax is None:
+        matplotlib.rc('font', **{'size': 16})
+        fig = plt.figure(figsize=(10, 8))
+        gs = fig.add_gridspec(1, 1, figure=fig)
+        ax = fig.add_subplot(gs[0])
 
-    for solver in solvers:
-        for num_clusters in clusters:
-            print(f"\r{solver} - {num_clusters}", end="")
-            try:
-                with open(Path("experiments") / "time" / ds_name / solver / f"data_{num_clusters}.pkl", "rb") as f:
-                    ds, assi = pickle.load(f)
-                tmp = np.array([1 if assi[n] == "train" else -1 for n in range(num_clusters)]).reshape(-1, 1)
-                tmp2 = np.array([1 if assi[ds.cluster_map[n]] == "train" else -1 for n in dataset.names]).reshape(-1, 1)
-                c_value = eval(tmp, ds.cluster_similarity)
-                s_value = eval(tmp2, dataset.cluster_similarity)
-            except Exception:
-                c_value = 1
-                s_value = 1
-            c_performances[solver].append(c_value)
-            s_performances[solver].append(s_value)
+    tnb_path = Path("times_and_baselines.pkl")
+    if tnb_path.exists():
+        with open(tnb_path, "rb") as f:
+            times, c_random, s_random = pickle.load(f)
+    else:
+        print("Fetch times")
+        times = time_overhead(ds_name)
 
-    fig, (axl, axr) = plt.subplots(1, 2)
-    visualize2(axl, times, c_performances, c_random)
-    axl.title.set_text("Unleaked information measured by cluster similarity")
-    visualize2(axr, times, s_performances, s_random)
-    axr.title.set_text("Unleaked information measured by sample similarity")
+        print("Fetch baselines")
+        c_random, s_random = random_baseline(ds_name, clusters)
+        with open(tnb_path, "wb") as f:
+            pickle.dump((times, c_random, s_random), f)
 
-    fig.set_size_inches(20, 8)
-    fig.tight_layout()
-    plt.savefig(Path("experiments") / "time" / ds_name / "time_overhead.pdf")
-    plt.show()
+    perf_path = Path("performances.pkl")
+    if perf_path.exists():
+        with open(perf_path, "rb") as f:
+            c_performances, s_performances = pickle.load(f)
+    else:
+        c_performances = {"MOSEK": [], "SCIP": [], "GUROBI": []}
+        s_performances = {"MOSEK": [], "SCIP": [], "GUROBI": []}
+        base = Path("/scratch") / "SCRATCH_SAS" / "roman" / "DataSAIL" / "time" / "time" / ds_name
+        with open(base / "data.pkl", "rb") as f:
+            dataset = pickle.load(f)
+
+        for solver in solvers:
+            for num_clusters in clusters:
+                print(f"\r{solver} - {num_clusters}", end="")
+                try:
+                    with open(base / solver / f"data_{num_clusters}.pkl", "rb") as f:
+                        ds, assi = pickle.load(f)
+                    # tmp = np.array([1 if assi[n] == "train" else -1 for n in range(num_clusters)]).reshape(-1, 1)
+                    tmp2 = np.array([1 if assi[ds.cluster_map[n]] == "train" else -1 for n in dataset.names]).reshape(-1, 1)
+                    # c_value = eval(tmp, ds.cluster_similarity)
+                    s_value = eval(tmp2, dataset.cluster_similarity)
+                except Exception:
+                    # c_value = 1
+                    s_value = 1
+                # c_performances[solver].append(c_value)
+                s_performances[solver].append(s_value)
+        with open(perf_path, "wb") as f:
+            pickle.dump((c_performances, s_performances), f)
+
+    # fig, (axl, axr) = plt.subplots(1, 2)
+    # visualize2(axl, times, c_performances, c_random)
+    # axl.title.set_text("Unleaked information measured by cluster similarity")
+    visualize2(ax, times, s_performances, s_random, show=show)
+
+    # fig.set_size_inches(20, 8)
+    if show:
+        ax.title.set_text("Unleaked information measured by sample similarity")
+        fig.tight_layout()
+        plt.savefig("david.png")
+        plt.show()
 
 
-def visualize2(ax1, times, performances, random):
+def visualize2(ax1, times, performances, random, show=False):
     # TODO: Adjust this function to the new data structure
     ax2 = ax1.twinx()
-    ax1.set_xlabel("Number of clusters")
+    if show:
+        ax1.set_xlabel("Number of clusters")
     ax1.set_ylabel("Time [s]")
-    ax2.set_ylabel("Intra-cluster Similarity ratio (maximize)")
+    ax2.set_ylabel("1 - leakage (↑)")
 
-    ax1.plot(times["GUROBI"][:, 0], times["GUROBI"][:, 1], label="GUROBI", color="blue", linestyle="dashed")
-    ax1.plot(times["MOSEK"][:, 0], times["MOSEK"][:, 1], label="MOSEK", color="orange", linestyle="dashed")
-    ax1.plot(times["SCIP"][:, 0], times["SCIP"][:, 1], label="SCIP", color="green", linestyle="dashed")
+    N = 25
+    ax1.plot(times["GUROBI"][:N, 0], times["GUROBI"][:N, 1], label="GUROBI", color=colors["train"], linestyle="dashed")
+    ax1.plot(times["MOSEK"][:N, 0], times["MOSEK"][:N, 1], label="MOSEK", color=colors["test"], linestyle="dashed")
+    ax1.plot(times["SCIP"][:N, 0], times["SCIP"][:N, 1], label="SCIP", color=colors["r1d"], linestyle="dashed")
 
-    ax2.plot(times["GUROBI"][:, 0], performances["GUROBI"], label="GUROBI", color="blue")
-    ax2.plot(times["MOSEK"][:, 0], performances["MOSEK"], label="MOSEK", color="orange")
-    ax2.plot(times["SCIP"][:, 0], performances["SCIP"], label="SCIP", color="green")
+    ax2.plot(times["GUROBI"][:N, 0], performances["GUROBI"], label="GUROBI", color=colors["train"])
+    ax2.plot(times["MOSEK"][:N, 0], performances["MOSEK"], label="MOSEK", color=colors["test"])
+    ax2.plot(times["SCIP"][:N, 0], performances["SCIP"], label="SCIP", color=colors["r1d"])
+    ax2.plot(times["GUROBI"][:N, 0], random[:N, 0], color="black", label="Random")
 
-    ax2.fill_between(times["GUROBI"][:, 0], random[:, 1], random[:, 2], color="black", alpha=0.2)
-    ax2.plot(times["GUROBI"][:, 0], random[:, 0], color="black", label="Random")
-
-    ax1.legend(loc="upper left")
+    ax1.legend(loc="center right")
     ax1.set_yscale("log")
     ax2.legend(loc="lower right")
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        run_solver(sys.argv[1], list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 501, 50)), ["GUROBI"])
-    else:
-        for name in mpp_datasets:
-            if name in biogen_datasets:
-                continue
-            run_solver(name, list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 501, 50)), ["GUROBI"])
+    # if len(sys.argv) == 2:
+    #     run_solver(sys.argv[1], list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 501, 50)), ["GUROBI"])
+    # else:
+    #     for name in mpp_datasets:
+    #         if name in biogen_datasets:
+    #             continue
+    #         run_solver(name, list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 501, 50)), ["GUROBI"])
+
     # time_overhead()
     # random_baseline()
-    # visualize()
+    visualize("tox21", list(range(10, 50, 5)) + list(range(50, 150, 10)), ["GUROBI", "MOSEK", "SCIP"])
+    # run_solver("tox21", list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)), ["MOSEK", "SCIP", "GUROBI"])
