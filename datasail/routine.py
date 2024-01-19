@@ -7,7 +7,7 @@ from datasail.reader.read import read_data
 from datasail.reader.utils import DataSet
 from datasail.report import report
 from datasail.settings import LOGGER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
-    KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL
+    KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL, KW_DELTA
 from datasail.solver.solve import run_solver, insert
 
 
@@ -21,8 +21,6 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     kwargs = remove_patch(**kwargs)
     start = time.time()
     LOGGER.info("Read data")
-
-    # kwargs = check_duplicates(**kwargs)
 
     # read e-entities and f-entities
     e_dataset, f_dataset, inter = read_data(**kwargs)
@@ -60,6 +58,7 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
         e_dataset=e_dataset,
         f_dataset=f_dataset,
         inter=new_inter,
+        delta=kwargs[KW_DELTA],
         epsilon=kwargs[KW_EPSILON],
         runs=kwargs[KW_RUNS],
         splits=kwargs[KW_SPLITS],

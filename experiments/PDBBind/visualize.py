@@ -9,24 +9,23 @@ from matplotlib import gridspec
 from sklearn.manifold import TSNE
 from sympy.physics.control.control_plots import matplotlib, plt
 
-from experiments.utils import RUNS, USE_UMAP, embed_smiles, embed_aaseqs
-
+from experiments.utils import RUNS, USE_UMAP, embed_smiles, embed_aaseqs, colors, set_subplot_label
 
 LINES = {
-    "Random": ("black", "solid"),
-    "Drug ID-based": ("tab:blue", "solid"),
-    "Prot ID-based": ("tab:blue", "dashed"),
-    "Drug cluster-based": ("tab:orange", "solid"),
-    "Prot cluster-based": ("tab:orange", "dashed"),
-    "ID-based 2D": ("gold", "solid"),
-    "cluster-based 2D": ("gold", "dashed"),
-    "LoHi": ("tab:green", "solid"),
-    "Butina": ("tab:red", "solid"),
-    "Fingerprint": ("tab:purple", "solid"),
-    "MaxMin": ("tab:brown", "solid"),
-    "Scaffold": ("tab:pink", "solid"),
-    "Weight": ("tab:gray", "solid"),
-    "GraphPart": ("tab:cyan", "solid"),
+    "Random": (colors["0d"], "solid"),
+    "drug ID-based": (colors["r1d"], "solid"),
+    "prot. ID-based": (colors["r1d"], "dashed"),
+    "drug similarity-based": (colors["s1d"], "solid"),
+    "prot. similarity-based": (colors["s1d"], "dashed"),
+    "ID-based 2D": (colors["i2"], "solid"),
+    "similarity-based 2D": (colors["c2"], "dashed"),
+    "LoHi": (colors["lohi"], "solid"),
+    "Butina": (colors["butina"], "solid"),
+    "Fingerprint": (colors["fingerprint"], "solid"),
+    "MaxMin": (colors["maxmin"], "solid"),
+    "Scaffold": (colors["scaffold"], "solid"),
+    "Weight": (colors["weight"], "solid"),
+    "GraphPart": (colors["graphpart"], "solid"),
 }
 
 
@@ -128,17 +127,14 @@ def read_data():
 
 
 def plot_embeds(ax, data, embed, tech, legend=None):
-    ax.scatter(data["train_coord"][:, 0], data["train_coord"][:, 1], s=1, c="blue", label="train", alpha=0.5)
-    ax.scatter(data["test_coord"][:, 0], data["test_coord"][:, 1], s=1, c="orange", label="test", alpha=0.5)
+    ax.scatter(data["train_coord"][:, 0], data["train_coord"][:, 1], s=5, c=colors["train"], label="train")
+    ax.scatter(data["test_coord"][:, 0], data["test_coord"][:, 1], s=5, c=colors["test"], label="test")
     # ax.set_xlabel(f"{'umap' if USE_UMAP else 'tsne'} 1")
     # ax.set_ylabel(f"{'umap' if USE_UMAP else 'tsne'} 2")
-    ax.set_xticks([])
-    ax.set_xticks([], minor=True)
-    ax.set_yticks([])
-    ax.set_yticks([], minor=True)
+    ax.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
     if legend:
-        ax.legend(loc=legend, markerscale=10)
-    ax.set_title(f"{embed} embeddings of\n{tech} split")
+        ax.legend(loc=legend, markerscale=3)
+    # ax.set_title(f"{embed} embeddings of the\n{tech} split using t-SNE")
 
 
 def plot_full(data):
@@ -146,39 +142,77 @@ def plot_full(data):
     axis = 0
     rand, icse, icsf, icd, ccse, ccsf, ccd = \
         data["R"], data["I1e"], data["I1f"], data["I2"], data["C1e"], data["C1f"], data["C2"]
-    x = np.arange(0.0, 50, 1)
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(20, 8.2))
     gs = gridspec.GridSpec(1, 2, figure=fig)
 
-    gs_left = gs[0].subgridspec(2, 2, hspace=0.3)
-    gs_right = gs[1].subgridspec(1, 1)
+    gs_left = gs[0].subgridspec(2, 2, hspace=0.22, wspace=0.05)
+    gs_right = gs[1].subgridspec(2, 1, hspace=0.22)
+    gs_right_top = gs_right[0].subgridspec(1, 2, wspace=0.05)
     ax_di = fig.add_subplot(gs_left[0, 0])
     ax_dc = fig.add_subplot(gs_left[0, 1])
     ax_pi = fig.add_subplot(gs_left[1, 0])
     ax_pc = fig.add_subplot(gs_left[1, 1])
-    ax_full = fig.add_subplot(gs_right[0])
+    ax_full = [fig.add_subplot(gs_right_top[0])]
+    ax_full += [fig.add_subplot(gs_right_top[1], sharey=ax_full[0]), fig.add_subplot(gs_right[1])]
 
-    plot_embeds(ax_di, icse, "ECFP", "Drug ID-based", legend=4)
-    plot_embeds(ax_dc, ccse, "ECFP", "Drug cluster-based")
-    plot_embeds(ax_pi, icsf, "ESM", "Prot ID-based")
-    plot_embeds(ax_pc, ccsf, "ESM", "Prot cluster-based")
+    plot_embeds(ax_di, icse, "ECFP4", "drug ID-based", legend="lower right")
+    set_subplot_label(ax_di, fig, "A")
+    plot_embeds(ax_dc, ccse, "ECFP4", "drug similarity-based")
+    set_subplot_label(ax_dc, fig, "B")
+    plot_embeds(ax_pi, icsf, "ESM2-t12", "prot. ID-based")
+    set_subplot_label(ax_pi, fig, "C")
+    plot_embeds(ax_pc, ccsf, "ESM2-t12", "prot. similarity-based")
+    set_subplot_label(ax_pc, fig, "D")
 
-    for tech, name in [(rand, "Random"), (icse, "Drug ID-based"), (icsf, "Prot ID-based"), (icd, "ID-based 2D"),
-                       (ccse, "Drug cluster-based"), (ccsf, "Prot cluster-based"), (ccd, "cluster-based 2D")]:
-        # ax_full.fill_between(x, *get_bounds(tech["metric"], axis=axis), alpha=0.5)
-        # ax_full.plot(np.average(tech["metric"], axis=axis), label=name)
-        c, s = LINES[name]
-        ax_full.plot(smooth(get_mean(tech["metric"], axis=axis)), label=name, color=c, linestyle=s)
-    ax_full.set_ylabel("MSE")
-    ax_full.set_xlabel("Epoch")
-    ax_full.set_title("Performance comparison")
-    ax_full.margins(x=0)
-    ax_full.legend(loc=3)
+    # for tech, name in [(rand, "Random"), (icse, "drug ID-based"), (icsf, "prot. ID-based"), (icd, "ID-based 2D"),
+    #                    (ccse, "drug similarity-based"), (ccsf, "prot. similarity-based"), (ccd, "similarity-based 2D")]:
+    #       ax_full.fill_between(x, *get_bounds(tech["metric"], axis=axis), alpha=0.5)
+    #       ax_full.plot(np.average(tech["metric"], axis=axis), label=name)
+    #       c, s = LINES[name]
+    #       ax_full.plot(smooth(get_mean(tech["metric"], axis=axis)), label=name, color=c, linestyle=s)
+    #       set_subplot_label(ax_full, fig, "E")
+    # ax_full.set_ylabel("MSE")
+    # ax_full.set_xlabel("Epoch")
+    # ax_full.set_title("Performance comparison (MSE ↓)")
+    # ax_full.margins(x=0)
+    # ax_full.legend(loc="lower left")
 
-    fig.set_size_inches(20, 10)
+    root = Path("..") / "DataSAIL" / "experiments" / "PDBBind" / "datasail"
+    for i, techniques in enumerate([
+        [(icse, "drug ID-based", "I1e"), (ccse, "drug similarity-based", "C1e")],
+        [(icsf, "prot. ID-based", "I1f"), (ccsf, "prot. similarity-based", "C1f")],
+        [(rand, "Random", "R"), (icd, "ID-based 2D", "I2"), (ccd, "similarity-based 2D", "C2")]
+    ]):
+        models = ["RF", "SVM", "XGB", "MLP", "DeepDTA"]
+        values = [[] for _ in range(len(techniques))]
+
+        for s, (tech, name, t) in enumerate(techniques):
+            for model in models[:-1]:
+                try:
+                    df = pd.read_csv(root / f"{model.lower()}.csv")
+                    df["tech"] = df["Name"].apply(lambda x: x.split("_")[0])
+                    values[s].append(df[['Perf', 'tech']].groupby("tech").mean().loc[t].values[0])
+                except Exception as e:
+                    print(e)
+                    values[s].append(0)
+                    pass
+            values[s].append(tech["metric"].min(axis=1).mean())
+            # values[s].append(pd.read_csv(root / split / "val_metrics.tsv", sep="\t").max(axis=0).values[1:].mean())
+        df = pd.DataFrame(np.array(values).T, columns=[x[1] for x in techniques], index=models)
+        c_map = {"I1f": "I1e", "C1f": "C1e", "R": "0d"}
+        df.plot.bar(ax=ax_full[i], rot=0, ylabel="MSE", color=[colors[c_map.get(x[2], x[2]).lower()] for x in techniques])
+        # ax_full[i].plot(smooth(get_mean(tech["metric"], axis=axis)), label=name, color=LINES[name][0],
+        #                 linestyle=LINES[name][1])
+        #  ax_full[i].set_ylabel("MSE")
+        # ax_full[i].set_xlabel("Epoch")
+        # ax_full[i].set_title("Performance comparison (MSE ↓)")
+        # ax_full[i].margins(x=0)
+        ax_full[i].legend(loc="lower right")
+        set_subplot_label(ax_full[i], fig, ["E", "F", "G"][i])
+
     fig.tight_layout()
-    plt.savefig(Path("experiments") / "PDBBind" / f"PDBBind_{'umap' if USE_UMAP else 'tsne'}.png", transparent=True)
+    plt.savefig(f"PDBBind_{'umap' if USE_UMAP else 'tsne'}.png", transparent=True)
     plt.show()
 
 
@@ -193,7 +227,7 @@ def smooth(data, window_size=5):
         elif i > len(data) - half_window:
             smoothed.append(np.mean(data[i - half_window:]))
         else:
-            smoothed.append(np.mean(data[i - half_window:i + half_window + 1]))
+            smoothed.append(np.mean(list(sorted(data[i - half_window:i + half_window + 1]))[1:-1]))
     return smoothed
 
 
@@ -212,7 +246,7 @@ def get_mean(data, axis=0):
 def plot_cold_drug(data):
     i1e, c1e, lohi, butina, fingerprint, minmax, scaffold, weight = \
         data["I1e"], data["C1e"], data["lohi"], data["Butina"], data["Fingerprint"], data["MinMax"], data["Scaffold"], \
-        data["Weight"]
+            data["Weight"]
     fig = plt.figure()
     gs = gridspec.GridSpec(1, 2, figure=fig)
 
@@ -251,7 +285,8 @@ def plot_cold_drug(data):
     # ax_full.legend(loc=3)
     for _ in range(8):
         axl.plot([], [], visible=False)
-    legend = axl.legend(["ID-based", "Cluster-based", "LoHi", "Butina", "Fingerprint", "MaxMin", "Scaffold", "Weight"], loc="center right", markerscale=10, fontsize=15)
+    legend = axl.legend(["ID-based", "Cluster-based", "LoHi", "Butina", "Fingerprint", "MaxMin", "Scaffold", "Weight"],
+                        loc="center right", markerscale=10, fontsize=15)
     for handle in legend.legend_handles:
         handle.set_visible(True)
     axl.set_axis_off()
@@ -302,8 +337,60 @@ def plot_cold_prot(data):
     plt.show()
 
 
+def viz_sl():
+    root = Path("experiments") / "PDBBind"
+    models = ["RF", "SVM", "XGB", "MLP", "D-MPNN"]
+    values = {
+        "drug": [[] for _ in range(8)],
+        "target": [[] for _ in range(3)],
+        "both": [[] for _ in range(3)],
+    }
+
+    for s, tool, tech, mode in [
+        (0, "datasail", "R", "both"),
+        (0, "datasail", "I1e", "drug"),
+        (0, "datasail", "I1f", "target"),
+        (1, "datasail", "I2", "both"),
+        (1, "datasail", "C1e", "drug"),
+        (1, "datasail", "C1f", "target"),
+        (2, "datasail", "C2", "both"),
+        (2, "deepchem", "Butina", "drug"),
+        (3, "deepchem", "MinMax", "drug"),
+        (4, "deepchem", "Fingerprint", "drug"),
+        (5, "deepchem", "Scaffold", "drug"),
+        (6, "deepchem", "Weight", "drug"),
+        (7, "lohi", "lohi", "drug"),
+        (2, "graphpart", "graphpart", "target"),
+    ]:
+        for model in models[:-1]:
+            df = pd.read_csv(root / tool / f"{model.lower()}.csv")
+            df["run"] = df["Name"].apply(lambda x: int(x.split("_")[1]))
+            df["tech"] = df["Name"].apply(lambda x: x.split("_")[0])
+            values[mode][s].append(df[df["tech"] == tech]["Perf"].mean())
+        vals = 0
+        for run in range(RUNS):
+            path = Path("experiments") / "PDBBind" / tool / tech / f"split_{run}"
+            vals += max(read_log(path / "results" / "training.log"))
+        values[mode][s].append(vals / 5.0)
+
+    fig, axs = plt.subplots(1, 3, figsize=(15, 5), sharey=True)
+    df = pd.DataFrame(np.array(values["drug"]).T,
+                      columns=["random cold-drug", "similarity-based", "LoHi", "Butina", "Fingerprint", "MaxMin",
+                               "Scaffold", "Weight"], index=models)
+    df.plot.bar(ax=axs[0], rot=0, ylabel="MSE")
+    df = pd.DataFrame(np.array(values["target"]).T, columns=["random cold-target", "similarity-based", "GraphPart"],
+                      index=models)
+    df.plot.bar(ax=axs[1], rot=0, ylabel="MSE")
+    df = pd.DataFrame(np.array(values["both"]).T, columns=["Random", "identity-based", "similarity-based"],
+                      index=models)
+    df.plot.bar(ax=axs[2], rot=0, ylabel="MSE")
+    fig.tight_layout()
+    plt.savefig(root / "sl.png")
+    plt.show()
+
+
 def analyze():
-    pkl_name = Path("experiments") / "PDBBind" / f"{'umap' if USE_UMAP else 'tsne'}_embeds.pkl"
+    pkl_name = Path("..") / "DataSAIL" / "experiments" / "PDBBind" / f"{'umap' if USE_UMAP else 'tsne'}_embeds.pkl"
     if not os.path.exists(pkl_name):  # or True:
         data = read_data()
         with open(pkl_name, "wb") as out:
@@ -318,3 +405,4 @@ def analyze():
 
 if __name__ == '__main__':
     analyze()
+    # viz_sl()

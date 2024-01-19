@@ -4,17 +4,20 @@ import cvxpy
 import numpy as np
 
 from datasail.solver.utils import solve, interaction_contraints, cluster_y_constraints, collect_results_2d, \
-    leakage_loss, compute_limits
+    leakage_loss, compute_limits, stratification_constraints
 
 
 def solve_c2(
         e_clusters: List[Union[str, int]],
+        e_s_matrix: np.ndarray,
         e_similarities: Optional[np.ndarray],
         e_distances: Optional[np.ndarray],
         f_clusters: List[Union[str, int]],
+        f_s_matrix: np.ndarray,
         f_similarities: Optional[np.ndarray],
         f_distances: Optional[np.ndarray],
         inter: np.ndarray,
+        delta: float,
         epsilon: float,
         splits: List[float],
         names: List[str],
@@ -29,12 +32,15 @@ def solve_c2(
 
     Args:
         e_clusters: List of cluster names to split from the e-dataset
+        e_s_matrix: Stratification for the e-dataset
         e_similarities: Pairwise similarity matrix of clusters in the order of their names
         e_distances: Pairwise distance matrix of clusters in the order of their names
         f_clusters: List of cluster names to split from the f-dataset
+        f_s_matrix: Stratification for the f-dataset
         f_similarities: Pairwise similarity matrix of clusters in the order of their names
         f_distances: Pairwise distance matrix of clusters in the order of their names
         inter: Matrix storing the amount of interactions between the entities in the e-clusters and f-clusters
+        delta: Additive bound for stratification imbalance
         epsilon: Additive bound for exceeding the requested split size
         splits: List of split sizes
         names: List of names of the splits in the order of the splits argument
@@ -47,7 +53,7 @@ def solve_c2(
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
         dataset
     """
-    min_lim = compute_limits(epsilon, int(np.sum(inter)) // 2, splits)
+    min_lim = compute_limits(epsilon, int(np.sum(inter)), [s / 2 for s in splits])
     x_e = cvxpy.Variable((len(splits), len(e_clusters)), boolean=True)
     x_f = cvxpy.Variable((len(splits), len(f_clusters)), boolean=True)
     x_i = {(e, f): cvxpy.Variable(len(splits), boolean=True) for e in range(len(e_clusters)) for f in
@@ -58,8 +64,8 @@ def solve_c2(
     # check if the cluster relations are uniform
     e_intra_weights = e_similarities if e_similarities is not None else e_distances
     f_intra_weights = f_similarities if f_similarities is not None else f_distances
-    e_uniform = e_intra_weights is not None and np.allclose(e_intra_weights, np.ones_like(e_intra_weights))
-    f_uniform = f_intra_weights is not None and np.allclose(f_intra_weights, np.ones_like(f_intra_weights))
+    e_uniform = e_intra_weights is None or np.allclose(e_intra_weights, np.ones_like(e_intra_weights))
+    f_uniform = f_intra_weights is None or np.allclose(f_intra_weights, np.ones_like(f_intra_weights))
 
     def index(x, y):
         return (x, y) if (x, y) in x_i else None
@@ -69,11 +75,16 @@ def solve_c2(
         cvxpy.sum(x_f, axis=0) == np.ones((len(f_clusters))),
     ]
 
+    if e_s_matrix is not None:
+        constraints.append(stratification_constraints(e_s_matrix, [s / 2 for s in splits], delta / 2, x_e))
+    if f_s_matrix is not None:
+        constraints.append(stratification_constraints(f_s_matrix, [s / 2 for s in splits], delta / 2, x_f))
+
     interaction_contraints(e_clusters, f_clusters, x_i, constraints, splits, x_e, x_f, min_lim, lambda key: inter[key],
                            index)
 
-    constraints += cluster_y_constraints(e_uniform, e_clusters, y_e, x_e, splits) + \
-        cluster_y_constraints(f_uniform, f_clusters, y_f, x_f, splits)
+    constraints += cluster_y_constraints(e_clusters, y_e, x_e, splits) + \
+        cluster_y_constraints(f_clusters, y_f, x_f, splits)
 
     inter_loss = (np.sum(inter) - sum(cvxpy.sum(x) for x in x_i.values())) / np.sum(inter)
     e_loss = leakage_loss(e_uniform, e_intra_weights, y_e, e_clusters, e_similarities)

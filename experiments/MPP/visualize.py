@@ -9,11 +9,10 @@ from matplotlib import gridspec
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from umap import UMAP
-import matplotlib.transforms as mtransforms
 
-from experiments.utils import USE_UMAP, embed_smiles, get_bounds
+from experiments.utils import USE_UMAP, embed_smiles, get_bounds, RUNS, mpp_datasets, colors, set_subplot_label
 
-SPLITS = ["I1e", "C1e", "lohi", "Butina", "Fingerprint", "MinMax", "Scaffold", "Weight"]
+SPLITS = ["I1e", "C1e", "lohi", "Butina", "Fingerprint", "M", "Scaffold", "Weight"]
 DATASETS = ["QM7", "QM8", "QM9", "ESOL", "FreeSolv", "Lipophilicity", "MUV", "HIV", "BACE", "BBBP", "Tox21", "ToxCast",
             "SIDER", "ClinTox"]
 METRICS = ["MAE ↓"] * 3 + ["RMSE ↓"] * 3 + ["PRC-AUC ↑"] + ["ROC-AUC ↑"] * 7
@@ -180,59 +179,51 @@ def plot_perf_5x3():
 
 
 def plot_double(names):
-    fig, ax = plt.subplots(2, 3, figsize=(15, 10))
+    matplotlib.rc('font', **{'size': 16})
+    root = Path("..") / "DataSAIL" / "experiments" / "MPP"
+    fig = plt.figure(figsize=(20, 10.67))
+    gs = gridspec.GridSpec(1, 2, figure=fig, width_ratios=[2, 1])
+    gs_left = gs[0].subgridspec(2, 2, hspace=0.17, wspace=0.05)
+    gs_right = gs[1].subgridspec(2, 1, hspace=0.17)
+    ax = [
+        [fig.add_subplot(gs_left[0, 0]), fig.add_subplot(gs_left[0, 1]), fig.add_subplot(gs_right[0])],
+        [fig.add_subplot(gs_left[1, 0]), fig.add_subplot(gs_left[1, 1]), fig.add_subplot(gs_right[1])],
+    ]
     for i, name in enumerate(names):
-        for s, split in enumerate(SPLITS[:2]):
-            filename = f"experiments/MPP/{'datasail' if i < 2 else 'deepchem'}/cdata/{name.lower()}/val_metrics.tsv"
-            if not os.path.exists(filename):
-                continue
-            try:
-                table = pd.read_csv(filename, sep="\t")
-                mask = [split in col for col in table.columns]
-                mean = np.average(table[table.columns[mask]].values, axis=1)
-                bounds = get_bounds(table[table.columns[mask]].values, axis=1)
-                x = np.arange(0.0, 50, 1)
-                ax[i, 2].fill_between(x, *bounds, alpha=0.5)
-                ax[i, 2].plot(mean, label='random' if s == 0 else 'cluster-based')
-                ax[i, 2].set_title(f"Performance comparison ({'MAE ↓' if i == 0 else 'ROC-AUC ↑'})")
-                if i == 0:
-                    ax[i, 2].legend(loc=2)
-            except Exception as e:
-                print(f"{name} - {split}: {e}")
+        # for s, split in enumerate(SPLITS[:2]):
+        #     filename = root / "datasail_old" / name.lower() / "val_metrics.tsv"
+        #     if not os.path.exists(filename):
+        #         print(filename, "not found")
+        #         continue
+        #     try:
+        #         table = pd.read_csv(filename, sep="\t")
+        #         mask = [split.replace("1", "CS") in col for col in table.columns]
+        #         mean = np.average(table[table.columns[mask]].values, axis=1)
+        #         bounds = get_bounds(table[table.columns[mask]].values, axis=1)
+        #         x = np.arange(0.0, 50, 1)
+        #         ax[i][2].fill_between(x, *bounds, alpha=0.5, color=colors["r1d"] if s == 0 else colors["s1d"])
+        #         ax[i][2].plot(mean, label='random' if s == 0 else 'cluster-based', color=colors["r1d"] if s == 0 else colors["s1d"])
+        #         # ax[i, 2].set_title(f"Performance comp. ({'MAE ↓' if i == 0 else 'ROC-AUC ↑'})")
+        #         set_subplot_label(ax[i][2], fig, ["C", "F"][i])
+        #         if i == 0:
+        #             ax[i][2].legend(loc="lower right")
+        #     except Exception as e:
+        #         print(f"{name} - {split}: {e}")
+        viz_sl([name], ax=ax[i][2])
+        set_subplot_label(ax[i][2], fig, ["C", "F"][i])
 
-        data = pickle.load(open(f"experiments/{'umap' if USE_UMAP else 'tsne'}/embeds_{name}.pkl", "rb"))
+        data = pickle.load(open(root / ('umap' if USE_UMAP else 'tsne') / f"embeds_{name}.pkl", "rb"))
         for t, tech in enumerate(SPLITS[:2]):
-            ax[i, t].set_title(tech)
-            ax[i, t].set_xticks([])
-            ax[i, t].set_xticks([], minor=True)
-            ax[i, t].set_yticks([])
-            ax[i, t].set_yticks([], minor=True)
-            try:
-                ax[i, t].scatter(*data[t]["train"].T, s=1, label="train")
-                ax[i, t].scatter(*data[t]["test"].T, s=1, label="test")
-                ax[i, t].set_title(
-                    f"ECFP4 embeddings of\nthe {'random' if t == 0 else 'cluster-based'} split using t-SNE")
-                if i == 1 and t == 0:
-                    ax[i, t].legend(loc=4, markerscale=8)
-                if t == 0:
-                    ax[i, 0].text(
-                        0.0,
-                        1.0,
-                        ["A", "B"][i],
-                        transform=ax[i, 0].transAxes + mtransforms.ScaledTranslation(
-                            -20 / 72,
-                            7 / 72,
-                            fig.dpi_scale_trans
-                        ),
-                        fontsize="x-large",
-                        va="bottom",
-                        fontfamily="serif",
-                        fontweight="bold",
-                    )
-            except Exception as e:
-                print(e)
-    fig.tight_layout()
-    plt.savefig(f"QM9_Tox21.png")
+            ax[i][t].tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
+            ax[i][t].scatter(*data[t]["train"].T, s=5, label="train", c=colors["train"])
+            ax[i][t].scatter(*data[t]["test"].T, s=5, label="test", c=colors["test"])
+            # ax[i, t].set_title(
+            #     f"ECFP4 embeddings of the\n{'random' if t == 0 else 'similarity-based'} split using t-SNE")
+            if i == 0 and t == 0:
+                ax[i][t].legend(loc="lower right", markerscale=3)
+            set_subplot_label(ax[i][t], fig, [["A", "B"], ["D", "E"]][i][t])
+    plt.tight_layout()
+    plt.savefig(f"QM8_Tox21.png")
     plt.show()
 
 
@@ -256,7 +247,6 @@ def plot_single(name):
             table = pd.read_csv(filename, sep="\t")
             mask = [split.replace("1", "CS") in col for col in table.columns]
             mean = np.average(table[table.columns[mask]].values, axis=1)
-            print(mean)
             bounds = get_bounds(table[table.columns[mask]].values, axis=1)
             x = np.arange(0.0, 50, 1)
             ax_full.fill_between(x, *bounds, alpha=0.5)
@@ -270,10 +260,7 @@ def plot_single(name):
     for t, tech in enumerate(SPLITS[:2]):
         ax = ax_rand if t == 0 else ax_cold
         ax.set_title(tech)
-        ax.set_xticks([])
-        ax.set_xticks([], minor=True)
-        ax.set_yticks([])
-        ax.set_yticks([], minor=True)
+        ax.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
         try:
             ax.scatter(*data[t]["train"].T, s=3, label="train")
             ax.scatter(*data[t]["test"].T, s=3, label="test")
@@ -289,9 +276,37 @@ def plot_single(name):
     plt.show()
 
 
+def viz_sl(names, ax=None):
+    if show := ax is None:
+        matplotlib.rc('font', **{'size': 16})
+        fig = plt.figure(figsize=(20, 10.67))
+        gs = gridspec.GridSpec(1, 1, figure=fig)
+        ax = fig.add_subplot(gs[0])
+    for name in names:
+        root = Path("..") / "DataSAIL" / "experiments" / "MPP"
+        models = ["RF", "SVM", "XGB", "MLP", "D-MPNN"]
+        values = [[] for _ in range(2)]
+
+        for i, split in enumerate(["I1e", "C1e"]):
+            for model in models[:-1]:
+                df = pd.read_csv(root / "datasail_old" / name.lower() / f"{model.lower()}-{mpp_datasets[name.lower()][1][0]}.csv")
+                values[i].append(df[[f"{split}_0", f"{split}_1", f"{split}_2", f"{split}_3", f"{split}_4"]].values.mean(axis=1)[0])
+            df = pd.read_csv(root / "datasail_old" / name.lower() / f"val_metrics.tsv", sep="\t")
+            values[i].append(df[[c for c in df.columns if c.startswith(split[0])]].values.max(axis=0).mean())
+
+        df = pd.DataFrame(np.array(values).T, columns=["random", "similarity-based"], index=models)
+        ax = df.plot.bar(ax=ax, rot=0, ylabel=METRICS[DATASETS.index(name)], ylim=(0.5, 0.9), color=[colors["r1d"], colors["s1d"]])
+        if show:
+            ax.set_title(name)
+            plt.tight_layout()
+            plt.savefig(root / f"{name}.png")
+            plt.show()
+
+
 if __name__ == '__main__':
-    plot_single("Lipophilicity")
+    # viz_sl(["Tox21"])
+    # plot_single("Lipophilicity")
     # plot_perf()
     # plot_perf_5x3()
-    # plot_double(["QM7", "Tox21"])
+    plot_double(["QM8", "Tox21"])
     # plot_embeds()

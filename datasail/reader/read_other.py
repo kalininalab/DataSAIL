@@ -11,6 +11,7 @@ from datasail.settings import O_TYPE, UNK_LOCATION, FORM_OTHER
 def read_other_data(
         data: DATA_INPUT,
         weights: DATA_INPUT = None,
+        strats: DATA_INPUT = None,
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
         id_map: Optional[str] = None,
@@ -25,6 +26,7 @@ def read_other_data(
     Args:
         data: Where to load the data from
         weights: Weight file for the data
+        strats: Stratification for the data
         sim: Similarity file or metric
         dist: Distance file or metric
         id_map: Mapping of ids in case of duplicates in the dataset
@@ -51,7 +53,7 @@ def read_other_data(
     else:
         raise ValueError()
 
-    dataset, inter = read_data(weights, sim, dist, inter, index, tool_args, dataset)
+    dataset, inter = read_data(weights, strats, sim, dist, inter, index, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)
 
     return dataset, inter

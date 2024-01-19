@@ -119,6 +119,7 @@ KW_CACHE = "cache"
 KW_CACHE_DIR = "cache_dir"
 KW_CLI = "cli"
 KW_DATA = "data"
+KW_DELTA = "delta"
 KW_EPSILON = "epsilon"
 
 KW_E_ARGS = "e_args"
@@ -126,6 +127,7 @@ KW_E_DATA = "e_data"
 KW_E_DIST = "e_dist"
 KW_E_ID_MAP = "e_id_map"
 KW_E_WEIGHTS = "e_weights"
+KW_E_STRAT = "e_strat"
 KW_E_SIM = "e_sim"
 KW_E_TYPE = "e_type"
 
@@ -134,6 +136,7 @@ KW_F_DATA = "f_data"
 KW_F_DIST = "f_dist"
 KW_F_ID_MAP = "f_id_map"
 KW_F_WEIGHTS = "f_weights"
+KW_F_STRAT = "f_strat"
 KW_F_SIM = "f_sim"
 KW_F_TYPE = "f_type"
 
@@ -150,10 +153,13 @@ KW_TECHNIQUES = "techniques"
 KW_THREADS = "threads"
 KW_VERBOSE = "verbosity"
 
-SOLVER_SCIP = "SCIP"
+SOLVER_CBC = "CBC"
 SOLVER_CPLEX = "CPLEX"
+SOLVER_GLPK = "GLPK"
+SOLVER_GLPK_MI = "GLPK_MI"
 SOLVER_GUROBI = "GUROBI"
 SOLVER_MOSEK = "MOSEK"
+SOLVER_SCIP = "SCIP"
 SOLVER_XPRESS = "XPRESS"
 TEC_R = "R"
 SRC_ID = "I"
@@ -174,9 +180,10 @@ N_CLUSTERS = 10
 # 2 Hardly installable
 # 3 Not installable
 SOLVERS = {
-    # "CBC": cvxpy.CBC,  # extra: CBC
+    SOLVER_CBC: cvxpy.CBC,  # extra: CBC
     # "COPT": cvxpy.COPT,
-    # SOLVER_GLPK: cvxpy.GLPK_MI,  # not powerful enough
+    SOLVER_GLPK: cvxpy.GLPK_MI,
+    SOLVER_GLPK_MI: cvxpy.GLPK_MI,
     SOLVER_SCIP: cvxpy.SCIP,
     SOLVER_CPLEX: cvxpy.CPLEX,
     SOLVER_GUROBI: cvxpy.GUROBI,

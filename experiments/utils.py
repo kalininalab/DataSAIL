@@ -10,10 +10,30 @@ import pandas as pd
 import torch
 from rdkit import Chem
 from rdkit.Chem import AllChem
+import matplotlib.transforms as mtransforms
 
 RUNS = 5
 MPP_EPOCHS = 50
 USE_UMAP = False  # if False uses tSNE
+biogen_datasets = {"HLM", "MDR1_MDCK_ER", "SOLUBILITY", "hPPB", "rPPB", "RLM"}
+colors = {
+    "test": "#0C7BDC",
+    "train": "#FFC20A",
+    "0d": "#994F00",
+    "r1d": "#E66100",
+    "i1e": "#E66100",
+    "i2": "#DC3220",
+    "s1d": "#5D3A9B",
+    "c1e": "#5D3A9B",
+    "c2": "#1AFF1A",
+    "lohi": "#8581E0",
+    "graphpart": "#F607B1",
+    "butina": "#361276",
+    "fingerprint": "#867D28",
+    "maxmin": "#C5CAB6",
+    "scaffold": "#7532F5",
+    "weight": "#15AEB1",
+}
 
 mpp_datasets = {
     "qm7": [dc.molnet.load_qm7, "regression", "mae", 7160],
@@ -31,13 +51,19 @@ mpp_datasets = {
     "toxcast": [dc.molnet.load_toxcast, "classification", "auc", 8575],
     "sider": [dc.molnet.load_sider, "classification", "auc", 1427],
     "clintox": [dc.molnet.load_clintox, "classification", "auc", 1478],
+    "HLM": [None, "regression", "mae", 3087],
+    "MDR1_MDCK_ER": [None, "regression", "mae", 2642],
+    "SOLUBILITY": [None, "regression", "mae", 2173],
+    "hPPB": [None, "regression", "mae", 194],
+    "rPPB": [None, "regression", "mae", 168],
+    "RLM": [None, "regression", "mae", 3054],
 }
 
 
 SPLITTERS = {
     "Scaffold": dc.splits.ScaffoldSplitter(),
     "Weight": dc.splits.MolecularWeightSplitter(),
-    "MinMax": dc.splits.MaxMinSplitter(),
+    "MaxMin": dc.splits.MaxMinSplitter(),
     "Butina": dc.splits.ButinaSplitter(),
     "Fingerprint": dc.splits.FingerprintSplitter(),
 }
@@ -49,12 +75,11 @@ batch_converter = alphabet.get_batch_converter()
 model.eval()
 
 
-def embed_smiles(smile):
-    mol = Chem.MolFromSmiles(smile)
-    if mol is None:
-        print("Failed")
+def embed_smiles(smiles):
+    try:
+        return list(AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(smiles), 2, nBits=1024))
+    except:
         return [0] * 1024
-    return list(AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=1024))
 
 
 def embed_aaseqs(aaseq):
@@ -82,14 +107,23 @@ def mol2smiles(mol):
         return None
 
 
+def check_smiles(smiles):
+    if Chem.MolFromSmiles(smiles) is None:
+        print(smiles)
+        return None
+    return smiles
+
+
 def dc2pd(ds, ds_name):
     df = ds.to_dataframe()
     name_map = dict([(f"y{i + 1}", task) for i, task in enumerate(ds.tasks)] + [("y", ds.tasks[0]), ("X", "SMILES")])
     df.rename(columns=name_map, inplace=True)
     df["ID"] = [f"Comp{i + 1:06d}" for i in range(len(df))]
     if ds_name in ["qm7", "qm8", "qm9"]:
-        df["SMILES"] = df["SMILES"].apply(lambda mol: mol2smiles(mol))
-        df = df[df["SMILES"].notna()]
+        df["SMILES"] = df["SMILES"].apply(mol2smiles)
+    else:
+        df["SMILES"] = df["SMILES"].apply(check_smiles)
+    df = df[df["SMILES"].notna()]
     if mpp_datasets[ds_name][1][0] == "classification":
         df[ds.tasks.tolist()] = pd.to_numeric(df[ds.tasks.tolist()], downcast="integer")
         return df[["ID", "SMILES", "w"] + ds.tasks.tolist()]
@@ -112,6 +146,23 @@ def load_lp_pdbbind():
     df = df[df.apply(lambda x: len(x["Ligand"]) <= 200 and len(x["Target"]) <= 2000, axis=1)]
     df = df[df["Ligand"].apply(is_valid_smiles)]
     return df
+
+
+def set_subplot_label(ax, fig, label):
+    ax.text(
+        0.0,
+        1.0,
+        label,
+        transform=ax.transAxes + mtransforms.ScaledTranslation(
+            0 / 72,
+            0 / 72,
+            fig.dpi_scale_trans
+        ),
+        fontsize="x-large",
+        va="bottom",
+        fontfamily="serif",
+        # fontweight="bold",
+    )
 
 
 def telegram(message: str = "Hello World"):

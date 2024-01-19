@@ -1,9 +1,7 @@
-import copy
-import os
 from typing import Dict, Tuple, List, Union, Optional
 
 import numpy as np
-from sklearn.cluster import AffinityPropagation, AgglomerativeClustering, SpectralClustering
+from sklearn.cluster import AgglomerativeClustering, SpectralClustering
 
 from datasail.cluster.caching import load_from_cache, store_to_cache
 from datasail.cluster.cdhit import run_cdhit
@@ -36,12 +34,10 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         return cache
 
     if isinstance(dataset.similarity, str):  # compute the similarity
-        dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity, dataset.cluster_weights = \
-            similarity_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR])
+        similarity_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR])
 
     elif isinstance(dataset.distance, str):  # compute the distance
-        dataset.cluster_names, dataset.cluster_map, dataset.cluster_distance, dataset.cluster_weights = \
-            distance_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR])
+        distance_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR])
 
     # if the similarity/distance is already given, store it
     elif isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
@@ -77,11 +73,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     return dataset
 
 
-def similarity_clustering(
-        dataset: DataSet,
-        threads: int = 1,
-        log_dir: Optional[str] = None
-) -> Tuple[List[str], Dict[str, str], np.ndarray, Dict[str, float]]:
+def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[str] = None) -> None:
     """
     Compute the similarity based cluster based on a cluster method.
 
@@ -99,38 +91,26 @@ def similarity_clustering(
           - Mapping from current clusters to their weights
     """
     if dataset.similarity.lower() == "wlk":
-        cluster_names, cluster_map, cluster_sim = run_wlk(dataset)
+        run_wlk(dataset)
     elif dataset.similarity.lower() == "mmseqs":
-        cluster_names, cluster_map, cluster_sim = run_mmseqs(dataset, threads, log_dir)
+        run_mmseqs(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "mmseqspp":
-        cluster_names, cluster_map, cluster_sim = run_mmseqspp(dataset, threads, log_dir)
+        run_mmseqspp(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "foldseek":
-        cluster_names, cluster_map, cluster_sim = run_foldseek(dataset, threads, log_dir)
+        run_foldseek(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "cdhit":
-        cluster_names, cluster_map, cluster_sim = run_cdhit(dataset, threads, log_dir)
+        run_cdhit(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "cdhit_est":
-        cluster_names, cluster_map, cluster_sim = run_cdhit_est(dataset, threads, log_dir)
+        run_cdhit_est(dataset, threads, log_dir)
     elif dataset.similarity.lower() == "ecfp":
-        cluster_names, cluster_map, cluster_sim = run_ecfp(dataset)
+        run_ecfp(dataset)
     else:
         raise ValueError(f"Unknown cluster method: {dataset.similarity}")
 
-    # compute the weights for the clusters
-    cluster_weights = {}
-    for key, value in cluster_map.items():
-        if value not in cluster_weights:
-            cluster_weights[value] = 0
-        cluster_weights[value] += 1
-
-    # cluster_map maps members to their cluster names
-    return cluster_names, cluster_map, cluster_sim, cluster_weights
+    finish_clustering(dataset)
 
 
-def distance_clustering(
-        dataset: DataSet,
-        threads: int = 1,
-        log_dir: Optional[str] = None
-) -> Tuple[List[str], Dict[str, str], np.ndarray, Dict[str, float]]:
+def distance_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[str] = None) -> None:
     """
     Compute the distance based cluster based on a cluster method or a file to extract pairwise distance from.
 
@@ -148,19 +128,34 @@ def distance_clustering(
           - Mapping from current clusters to their weights
     """
     if dataset.distance.lower() == "mash":
-        cluster_names, cluster_map, cluster_dist = run_mash(dataset, threads, log_dir)
+        run_mash(dataset, threads, log_dir)
     else:
         raise ValueError(f"Unknown cluster method: {dataset.distance}")
 
-    # compute the weights for the clusters
-    cluster_weights = {}
-    for key, value in cluster_map.items():
-        if value not in cluster_weights:
-            cluster_weights[key] = 0
-        cluster_weights[key] += 1
+    finish_clustering(dataset)
 
-    # cluster_map maps members to their cluster names
-    return cluster_names, cluster_map, cluster_dist, cluster_weights
+
+def finish_clustering(dataset: DataSet):
+    """
+    Finish clustering by computing the weights of the clusters and the stratification of the clusters.
+
+    Args:
+        dataset: The dataset to finish clustering on
+    """
+    # compute the weights and the stratification for the clusters
+    dataset.cluster_weights = {}
+    if dataset.stratification is not None:
+        dataset.cluster_stratification = {}
+
+    for key, value in dataset.cluster_map.items():
+        if value not in dataset.cluster_weights:
+            dataset.cluster_weights[value] = 0
+        dataset.cluster_weights[value] += dataset.weights[key]
+
+        if dataset.stratification is not None:
+            if value not in dataset.cluster_stratification:
+                dataset.cluster_stratification[value] = np.zeros(len(dataset.classes))
+            dataset.cluster_stratification[value] += dataset.strat2oh(name=key)
 
 
 def additional_clustering(
@@ -242,10 +237,13 @@ def labels2clusters(
 
     # compute the mapping of new clusters to their weights as the sum of their members weights
     new_cluster_weights = {}
+    new_cluster_stratification = {}
     for i, name in enumerate(dataset.cluster_names):
         new_cluster = labels[i]
         if new_cluster not in new_cluster_weights:
             new_cluster_weights[new_cluster] = 0
+        if new_cluster not in new_cluster_stratification:
+            new_cluster_stratification[new_cluster] = np.zeros(len(dataset.classes))
         new_cluster_weights[new_cluster] += dataset.cluster_weights[name]
 
     LOGGER.info(f"Reduced number of clusters to {len(new_cluster_names)}.")

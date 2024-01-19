@@ -2,10 +2,11 @@ import os
 import pickle
 from pathlib import Path
 
+import matplotlib
 import numpy as np
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, gridspec
 
-from experiments.utils import mpp_datasets, RUNS
+from experiments.utils import mpp_datasets, RUNS, colors
 
 files = []
 
@@ -38,51 +39,47 @@ def get_dataset_times(path):
     return [get_tech_times(path / ds_name) for ds_name in sorted(os.listdir(path), key=lambda x: mpp_datasets[x][3])]
 
 
-def get_tool_times(path):
-    pkl_path = Path("experiments") / "MPP" / "timing.pkl"
+def get_tool_times(path, ax=None):
+    if show := ax is None:
+        matplotlib.rc('font', **{'size': 16})
+        fig = plt.figure(figsize=(20, 10.67))
+        gs = gridspec.GridSpec(1, 1, figure=fig)
+        ax = fig.add_subplot(gs[0])
+    pkl_path = Path("..") / "DataSAIL" / "experiments" / "MPP" / "timing.pkl"
     if not os.path.exists(pkl_path):
-        times = np.array(get_dataset_times(path / "datasail" / "sdata")), \
-            np.array(get_dataset_times(path / "lohi" / "sdata")), \
-            np.array(get_dataset_times(path / "deepchem" / "sdata"))
+        times = np.array(get_dataset_times(path / "datasail")), \
+            np.array(get_dataset_times(path / "lohi")), \
+            np.array(get_dataset_times(path / "deepchem"))
         pickle.dump(times, open(pkl_path, "wb"))
     else:
         times = pickle.load(open(pkl_path, "rb"))
     times = list(times)
     times[1] = np.concatenate([times[1], np.array([[[0, 0, 0, 0, 0]]])])
     timings = np.concatenate(times, axis=1)
-    # print(timings.shape)
-    labels = ["I1e", "C1e", "LoHi", "Scaffold", "Weight", "MinMax", "Butina", "Fingerprint"]
+    labels = ["I1e", "C1e", "LoHi", "Scaffold", "Weight", "MaxMin", "Butina", "Fingerprint"]
     x = np.array(list(sorted([6160, 21786, 133885, 1128, 642, 4200, 93087, 41127, 1513, 2039, 7831, 8575, 1427, 1478])))
     for i, label in enumerate(labels):
-        label = labels[i]
-        if label == "ICSe":
-            label = "I1"
-        if label == "CCSe":
-            label = "C1"
-        if label == "MinMax":
-            label = "MaxMin"
         tmp = timings[:, i].mean(axis=1)
-        # print(tmp)
-        # print(tmp > 0)
         tmp_x = x[tmp > 0]
         tmp = tmp[tmp > 0]
-        plt.plot(tmp_x, tmp, label=label)
-    plt.hlines(1, x[0], x[-1], linestyles="dashed", colors="black")
-    plt.text(x[0], 1, "1 sec", verticalalignment="bottom", horizontalalignment="left")
-    plt.hlines(60, x[0], x[-1], linestyles="dashed", colors="black")
-    plt.text(x[0], 60, "1 min", verticalalignment="bottom", horizontalalignment="left")
-    plt.hlines(3600, x[0], x[-1], linestyles="dashed", colors="black")
-    plt.text(x[0], 3600, "1 h", verticalalignment="bottom", horizontalalignment="left")
+        ax.plot(tmp_x, tmp, label={"I1e": "Random", "C1e": "Sim. based"}.get(label, label), color=colors[label.lower()])
+    ax.hlines(1, x[0], x[-1], linestyles="dashed", colors="black")
+    ax.text(x[0], 1, "1 sec", verticalalignment="bottom", horizontalalignment="left")
+    ax.hlines(60, x[0], x[-1], linestyles="dashed", colors="black")
+    ax.text(x[0], 60, "1 min", verticalalignment="bottom", horizontalalignment="left")
+    ax.hlines(3600, x[0], x[-1], linestyles="dashed", colors="black")
+    ax.text(x[0], 3600, "1 h", verticalalignment="bottom", horizontalalignment="left")
 
-    plt.legend()
-    plt.xticks([642, 41127, 133885], ["642", "HIV", "QM9"])
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.xlabel("#Molecules in Dataset")
-    plt.ylabel("Time for splitting [sec]")
-    plt.tight_layout()
-    plt.savefig(Path("experiments") / "MPP" / "timing.png")
-    plt.show()
+    ax.legend(ncol=2, loc="lower right")
+    # ax.xticks([642, 41127, 133885], ["642", "HIV", "QM9"])
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("#Molecules in Dataset")
+    ax.set_ylabel("Time for splitting [sec]")
+    if show:
+        plt.tight_layout()
+        plt.savefig("timing.png")
+        plt.show()
 
 
 def old():
