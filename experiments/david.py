@@ -341,8 +341,8 @@ if __name__ == '__main__':
     #         if name in biogen_datasets:
     #             continue
     #         run_solver(name, list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 501, 50)), ["GUROBI"])
-
     # time_overhead()
     # random_baseline()
     visualize("tox21", list(range(10, 50, 5)) + list(range(50, 150, 10)), ["GUROBI", "MOSEK", "SCIP"])
     # run_solver("tox21", list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)), ["MOSEK", "SCIP", "GUROBI"])
+    run_solver("tox21", list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)), ["MOSEK", "SCIP"])
