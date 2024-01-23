@@ -17,22 +17,25 @@ MPP_EPOCHS = 50
 USE_UMAP = False  # if False uses tSNE
 biogen_datasets = {"HLM", "MDR1_MDCK_ER", "SOLUBILITY", "hPPB", "rPPB", "RLM"}
 colors = {
-    "test": "#0C7BDC",
-    "train": "#FFC20A",
+    "test": "#5D3A9B",
+    "train": "#E66100",
     "0d": "#994F00",
-    "r1d": "#E66100",
-    "i1e": "#E66100",
     "i2": "#DC3220",
-    "s1d": "#5D3A9B",
-    "c1e": "#5D3A9B",
     "c2": "#1AFF1A",
-    "lohi": "#8581E0",
-    "graphpart": "#F607B1",
-    "butina": "#361276",
-    "fingerprint": "#867D28",
-    "maxmin": "#C5CAB6",
-    "scaffold": "#7532F5",
-    "weight": "#15AEB1",
+
+    "r1d": "#0C7BDC",
+    "i1e": "#0C7BDC",  # ?
+    "s1d": "#FFC20A",
+    "c1e": "#FFC20A",  # ?
+
+    "lohi": "#E66100",
+    "graphpart": "#5D3A9B",
+    "butina": "#994F00",
+    "fingerprint": "#0C7BDC",
+    "maxmin": "#DC3220",
+    "scaffold": "#FFC20A",
+    "weight": "#1AFF1A",
+    "drop": "#808080",
 }
 
 mpp_datasets = {
@@ -67,6 +70,8 @@ SPLITTERS = {
     "Butina": dc.splits.ButinaSplitter(),
     "Fingerprint": dc.splits.FingerprintSplitter(),
 }
+
+HSPACE = 0.25
 
 
 num_layers = 12
@@ -154,8 +159,8 @@ def set_subplot_label(ax, fig, label):
         1.0,
         label,
         transform=ax.transAxes + mtransforms.ScaledTranslation(
-            0 / 72,
-            0 / 72,
+            -25 / 72,
+            10 / 72,
             fig.dpi_scale_trans
         ),
         fontsize="x-large",

@@ -5,10 +5,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import umap
-from matplotlib import gridspec
+from matplotlib import gridspec, patches, legend_handler
+from matplotlib.lines import Line2D
 from sklearn.manifold import TSNE
 from sympy.physics.control.control_plots import matplotlib, plt
 
+from datasail.reader import read
+from datasail.settings import *
 from experiments.utils import RUNS, USE_UMAP, embed_smiles, embed_aaseqs, colors, set_subplot_label
 
 LINES = {
@@ -38,18 +41,44 @@ def read_log(path):
     return output
 
 
+def read_lp_pdbbind():
+    df = pd.read_csv(Path("experiments") / "PDBBind" / "LP_PDBBind.csv")
+    df.rename(columns={"Unnamed: 0": "ids"}, inplace=True)
+    e_dataset, f_dataset, inter = read.read_data(**{
+        KW_INTER: [(x[0], x[0]) for x in df[["ids"]].values.tolist()],
+        KW_E_TYPE: "M",
+        KW_E_DATA: df[["ids", "smiles"]].values.tolist(),
+        KW_E_WEIGHTS: None,
+        KW_E_STRAT: None,
+        KW_E_SIM: "ecfp",
+        KW_E_DIST: None,
+        KW_E_ARGS: "",
+        KW_F_TYPE: "P",
+        KW_F_DATA: df[["ids", "seq"]].values.tolist(),
+        KW_F_WEIGHTS: None,
+        KW_F_STRAT: None,
+        KW_F_SIM: "ecfp",
+        KW_F_DIST: None,
+        KW_F_ARGS: "",
+    })
+    out = pd.DataFrame([(e_dataset.data[e_dataset.id_map[idx]], f_dataset.data[f_dataset.id_map[idx]]) for idx, _ in inter if idx in e_dataset.id_map and idx in f_dataset.id_map], columns=["smiles", "seq"])
+    return out
+
+
 def read_single_data(name, path, encodings):
-    data = {"folder": path, "train_ids": [], "test_ids": []}
+    data = {"folder": path, "train_ids_drug": [], "test_ids_drug": [], "drop_ids_drug": [], "train_ids_prot": [], "test_ids_prot": [], "drop_ids_prot": []}
     metric = []
+    full = read_lp_pdbbind()
     for r in range(RUNS):
-        if r == 0 and name[-1] not in "2R":
+        if r == 0:  # and name[-1] not in "2R":
             df = pd.read_csv(path / f"split_{r}" / "pdbbind.csv")
             train = df[df["split"] == "train"]
             test = df[df["split"] == "test"]
             smiles = {"train": train["ligands"].tolist(), "test": test["ligands"].tolist()}
             aaseqs = {"train": train["proteins"].tolist(), "test": test["proteins"].tolist()}
 
-            if name in {"I1f", "C1f", "graphpart"}:
+            if name in {"I1f", "C1f", "C2"}:  # , "graphpart"}:
+                print(name, "-", "protein")
                 embed_path = Path("experiments") / "PDBBind" / "prot_embeds.pkl"
                 if os.path.exists(embed_path):
                     prot_embeds = pickle.load(open(embed_path, "rb"))
@@ -57,18 +86,23 @@ def read_single_data(name, path, encodings):
                     prot_embeds = {}
                 print(len(prot_embeds), "protein embedding loaded")
 
+                def register_prot(x):
+                    if x not in encodings["p_map"]:
+                        x = x.replace(":", "G")[:1022]
+                        if x not in prot_embeds:
+                            prot_embeds[x] = embed_aaseqs(x)
+                        encodings["p_map"][x] = len(encodings["prots"])
+                        encodings["prots"].append(prot_embeds[x])
+                    return encodings["p_map"][x]
+
                 for split in ["train", "test"]:
                     for aa_seq in aaseqs[split]:
-                        aa_seq = aa_seq.replace(":", "G")[:1022]
-                        if aa_seq not in encodings["p_map"]:
-                            if aa_seq not in prot_embeds:
-                                prot_embeds[aa_seq] = embed_aaseqs(aa_seq)
-                            encodings["p_map"][aa_seq] = len(encodings["prots"])
-                            encodings["prots"].append(prot_embeds[aa_seq])
-                        data[f"{split}_ids"].append(encodings["p_map"][aa_seq])
+                        data[f"{split}_ids_prot"].append(register_prot(aa_seq))
+                    data["drop_ids_prot"] = [register_prot(aa_seq) for aa_seq in set(full["seq"].values) - (set(aaseqs["train"] + aaseqs["test"]))]
                 pickle.dump(prot_embeds, open(embed_path, "wb"))
 
-            else:
+            if name in {"I1e", "C1e", "C2"}:  # , "LoHi", "Butina", "Fingerprint", "MinMax", "Scaffold", "Weight"}:
+                print(name, "-", "drug")
                 embed_path = Path("experiments") / "PDBBind" / "drug_embeds.pkl"
                 if os.path.exists(embed_path):
                     drug_embeds = pickle.load(open(embed_path, "rb"))
@@ -76,14 +110,18 @@ def read_single_data(name, path, encodings):
                     drug_embeds = {}
                 print(len(drug_embeds), "drug embedding loaded")
 
+                def register_drug(x):
+                    if x not in encodings["d_map"]:
+                        if x not in drug_embeds:
+                            drug_embeds[x] = embed_smiles(x)
+                        encodings["d_map"][x] = len(encodings["drugs"])
+                        encodings["drugs"].append(drug_embeds[x])
+                    return encodings["d_map"][x]
+
                 for split in ["train", "test"]:
                     for smile in smiles[split]:
-                        if smile not in encodings["d_map"]:
-                            if smile not in drug_embeds:
-                                drug_embeds[smile] = embed_smiles(smile)
-                            encodings["d_map"][smile] = len(encodings["drugs"])
-                            encodings["drugs"].append(drug_embeds[smile])
-                        data[f"{split}_ids"].append(encodings["d_map"][smile])
+                        data[f"{split}_ids_drug"].append(register_drug(smile))
+                    data["drop_ids_drug"] = [register_drug(smile) for smile in set(full["smiles"].values) - (set(smiles["train"] + smiles["test"]))]
                 pickle.dump(drug_embeds, open(embed_path, "wb"))
 
         results_path = path / f"split_{r}" / "results" / "training.log"
@@ -121,20 +159,44 @@ def read_data():
                                   ["I1e", "C1e", "Butina", "MinMax", "Fingerprint", "Scaffold", "Weight", "lohi"]),
                                  ("f", p_trans, ["I1f", "C1f", "graphpart"])]:
         for tech in techniques:
-            for split in ["train", "test"]:
-                data[tech][f"{split}_coord"] = trans[data[tech][f"{split}_ids"]]
+            for split in ["train", "test", "drop"]:
+                data[tech][f"{split}_coord_{'drug' if d == 'e' else 'prot'}"] = trans[data[tech][f"{split}_ids_{'drug' if d == 'e' else 'prot'}"]]
+    data["C2"]["train_coord_drug"] = d_trans[data["C2"]["train_ids_drug"]]
+    data["C2"]["test_coord_drug"] = d_trans[data["C2"]["test_ids_drug"]]
+    data["C2"]["drop_coord_drug"] = d_trans[data["C2"]["drop_ids_drug"]]
+    data["C2"]["train_coord_prot"] = p_trans[data["C2"]["train_ids_prot"]]
+    data["C2"]["test_coord_prot"] = p_trans[data["C2"]["test_ids_prot"]]
+    data["C2"]["drop_coord_prot"] = p_trans[data["C2"]["drop_ids_prot"]]
     return data
 
 
-def plot_embeds(ax, data, embed, tech, legend=None):
-    ax.scatter(data["train_coord"][:, 0], data["train_coord"][:, 1], s=5, c=colors["train"], label="train")
-    ax.scatter(data["test_coord"][:, 0], data["test_coord"][:, 1], s=5, c=colors["test"], label="test")
-    # ax.set_xlabel(f"{'umap' if USE_UMAP else 'tsne'} 1")
-    # ax.set_ylabel(f"{'umap' if USE_UMAP else 'tsne'} 2")
+def plot_embeds(ax, data, postfix, title, drop=True, legend=None):
+    n_train = len(data[f"train_ids_{postfix}"])
+    n_test = len(data[f"test_ids_{postfix}"])
+    n_drop = len(data[f"drop_ids_{postfix}"])
+
+    if drop:
+        p = np.concatenate([data[f"train_coord_{postfix}"], data[f"test_coord_{postfix}"], data[f"drop_coord_{postfix}"]])
+        c = np.array([colors["train"]] * n_train + [colors["test"]] * n_test + [colors["drop"]] * n_drop)
+    else:
+        p = np.concatenate([data[f"train_coord_{postfix}"], data[f"test_coord_{postfix}"]])
+        c = np.array([colors["train"]] * n_train + [colors["test"]] * n_test)
+    perm = np.random.permutation(len(p))
+    ax.scatter(p[perm, 0], p[perm, 1], s=5, c=c[perm])
+    ax.set_xlabel(f"{'UMAP' if USE_UMAP else 'tSNE'} 1")
+    ax.set_ylabel(f"{'UMAP' if USE_UMAP else 'tSNE'} 2")
     ax.tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
     if legend:
-        ax.legend(loc=legend, markerscale=3)
-    # ax.set_title(f"{embed} embeddings of the\n{tech} split using t-SNE")
+        handles, labels = ax.get_legend_handles_labels()
+        train_dot = Line2D([0], [0], marker='o', label="train", color=colors["train"], linestyle='None')
+        test_dot = Line2D([0], [0], marker='o', label="test", color=colors["test"], linestyle='None')
+        if drop:
+            drop_dot = Line2D([0], [0], marker='o', label="drop", color=colors["drop"], linestyle='None')
+            handles.extend([train_dot, test_dot, drop_dot])
+        else:
+            handles.extend([train_dot, test_dot])
+        ax.legend(handles=handles, loc=legend, markerscale=2)
+    ax.set_title(title)
 
 
 def plot_full(data):
@@ -201,7 +263,8 @@ def plot_full(data):
             # values[s].append(pd.read_csv(root / split / "val_metrics.tsv", sep="\t").max(axis=0).values[1:].mean())
         df = pd.DataFrame(np.array(values).T, columns=[x[1] for x in techniques], index=models)
         c_map = {"I1f": "I1e", "C1f": "C1e", "R": "0d"}
-        df.plot.bar(ax=ax_full[i], rot=0, ylabel="MSE", color=[colors[c_map.get(x[2], x[2]).lower()] for x in techniques])
+        df.plot.bar(ax=ax_full[i], rot=0, ylabel="MSE",
+                    color=[colors[c_map.get(x[2], x[2]).lower()] for x in techniques])
         # ax_full[i].plot(smooth(get_mean(tech["metric"], axis=axis)), label=name, color=LINES[name][0],
         #                 linestyle=LINES[name][1])
         #  ax_full[i].set_ylabel("MSE")
@@ -213,6 +276,89 @@ def plot_full(data):
 
     fig.tight_layout()
     plt.savefig(f"PDBBind_{'umap' if USE_UMAP else 'tsne'}.png", transparent=True)
+    plt.show()
+
+
+def plot_3x3(data, perf_right=True):
+    matplotlib.rc('font', **{'size': 16})
+
+    fig = plt.figure(figsize=(20, 16))
+    gs = gridspec.GridSpec(3, 3, figure=fig)
+
+    if perf_right:
+        ax_rd = fig.add_subplot(gs[0, 0])
+        ax_sd = fig.add_subplot(gs[0, 1])
+        ax_cd = fig.add_subplot(gs[0, 2])
+        ax_rp = fig.add_subplot(gs[1, 0])
+        ax_sp = fig.add_subplot(gs[1, 1])
+        ax_cp = fig.add_subplot(gs[1, 2])
+        ax_c2d = fig.add_subplot(gs[2, 0])
+        ax_c2p = fig.add_subplot(gs[2, 1])
+        ax_c2 = fig.add_subplot(gs[2, 2])
+    else:
+        ax_rd = fig.add_subplot(gs[0, 0])
+        ax_sd = fig.add_subplot(gs[1, 0])
+        ax_cd = fig.add_subplot(gs[2, 0])
+        ax_rp = fig.add_subplot(gs[0, 1])
+        ax_sp = fig.add_subplot(gs[1, 1])
+        ax_cp = fig.add_subplot(gs[2, 1])
+        ax_c2d = fig.add_subplot(gs[0, 2])
+        ax_c2p = fig.add_subplot(gs[1, 2])
+        ax_c2 = fig.add_subplot(gs[2, 2])
+
+    plot_embeds(ax_rd, data["I1e"], "drug", "Random drug baseline (I1)", drop=False)
+    set_subplot_label(ax_rd, fig, "A")
+    plot_embeds(ax_sd, data["C1e"], "drug", "DataSAIL drug-based (S1)", drop=False)
+    set_subplot_label(ax_sd, fig, "B")
+    plot_embeds(ax_rp, data["I1f"], "prot", "Random protein baseline (I1)", drop=False)
+    set_subplot_label(ax_rp, fig, "D")
+    plot_embeds(ax_sp, data["C1f"], "prot", "DataSAIL protein-based (S1)", drop=False)
+    set_subplot_label(ax_sp, fig, "E")
+    plot_embeds(ax_c2d, data["C2"], "drug", "DataSAIL 2D split (S2) - drugs", legend=4)
+    set_subplot_label(ax_c2d, fig, "G")
+    plot_embeds(ax_c2p, data["C2"], "prot", "DataSAIL 2D split (S2) - proteins")
+    set_subplot_label(ax_c2p, fig, "H")
+
+    ax_full = [ax_cd, ax_cp, ax_c2]
+    root = Path("..") / "DataSAIL" / "experiments" / "PDBBind" / "datasail"
+    for i, techniques in enumerate([
+        [(data["I1e"], "Random drug baseline (I1)", "I1e"), (data["C1e"], "DataSAIL drug-based (S1)", "C1e")],
+        [(data["I1f"], "Random protein baseline (I1)", "I1f"), (data["C1f"], "DataSAIL protein-based (S1)", "C1f")],
+        [(data["R"], "Random baseline", "R"), (data["I2"], "ID-based baseline (I2)", "I2"), (data["C2"], "DataSAIL 2D split (S2)", "C2")]
+    ]):
+        models = ["RF", "SVM", "XGB", "MLP", "DeepDTA"]
+        values = [[] for _ in range(len(techniques))]
+
+        for s, (tech, _, t) in enumerate(techniques):
+            for model in models[:-1]:
+                try:
+                    df = pd.read_csv(root / f"{model.lower()}.csv")
+                    df["tech"] = df["Name"].apply(lambda x: x.split("_")[0])
+                    values[s].append(df[['Perf', 'tech']].groupby("tech").mean().loc[t].values[0])
+                except Exception as e:
+                    print(e)
+                    values[s].append(0)
+                    pass
+            values[s].append(tech["metric"].min(axis=1).mean())
+            # values[s].append(pd.read_csv(root / split / "val_metrics.tsv", sep="\t").max(axis=0).values[1:].mean())
+        df = pd.DataFrame(np.array(values).T, columns=[x[1] for x in techniques], index=models)
+        c_map = {"I1f": "I1e", "C1f": "C1e", "R": "0d"}
+        df.plot.bar(ax=ax_full[i], rot=0, ylabel="MSE",
+                    color=[colors[c_map.get(x[2], x[2]).lower()] for x in techniques])
+        if i == 2:
+            ax_full[i].legend(loc="lower center")
+        else:
+            ax_full[i].legend()
+        set_subplot_label(ax_full[i], fig, ["C", "F", "I"][i])
+        ax_full[i].set_xlabel("ML Models")
+        ax_full[i].set_title("Performance comparison")
+    if not perf_right:
+        print("ShareIT!")
+        ax_full[0].sharey(ax_full[2])
+        ax_full[1].sharey(ax_full[2])
+
+    fig.tight_layout()
+    plt.savefig(f"PDBBind_{'umap' if USE_UMAP else 'tsne'}_3x3{'_Olga' if perf_right else ''}.png", transparent=True)
     plt.show()
 
 
@@ -390,7 +536,7 @@ def viz_sl():
 
 
 def analyze():
-    pkl_name = Path("..") / "DataSAIL" / "experiments" / "PDBBind" / f"{'umap' if USE_UMAP else 'tsne'}_embeds.pkl"
+    pkl_name = Path("..") / "DataSAIL" / "experiments" / "PDBBind" / f"{'umap' if USE_UMAP else 'tsne'}_embeds_2.pkl"
     if not os.path.exists(pkl_name):  # or True:
         data = read_data()
         with open(pkl_name, "wb") as out:
@@ -398,7 +544,8 @@ def analyze():
     else:
         with open(pkl_name, "rb") as pickled_data:
             data = pickle.load(pickled_data)
-    plot_full(data)
+    # plot_full(data)
+    plot_3x3(data, perf_right=False)
     # plot_cold_drug(data)
     # plot_cold_prot(data)
 

@@ -10,6 +10,17 @@ from experiments.utils import mpp_datasets, RUNS, colors
 
 files = []
 
+MARKERS = {
+    "i1e": "o",
+    "c1e": "P",
+    "lohi": "X",
+    "butina": "v",
+    "fingerprint": "^",
+    "maxmin": "<",
+    "scaffold": ">",
+    "weight": "D",
+}
+
 
 def get_single_time(path):
     if not os.path.exists(path / "train.csv"):
@@ -56,13 +67,15 @@ def get_tool_times(path, ax=None):
     times = list(times)
     times[1] = np.concatenate([times[1], np.array([[[0, 0, 0, 0, 0]]])])
     timings = np.concatenate(times, axis=1)
-    labels = ["I1e", "C1e", "LoHi", "Scaffold", "Weight", "MaxMin", "Butina", "Fingerprint"]
+    timings = timings[:, [1, 0, 2, 3, 4, 5, 6, 7]]
+    # labels = ["I1e", "C1e", "LoHi", "Scaffold", "Weight", "MaxMin", "Butina", "Fingerprint"]
+    labels = ["C1e", "I1e", "LoHi", "Butina", "Fingerprint", "MaxMin", "Scaffold", "Weight"]
     x = np.array(list(sorted([6160, 21786, 133885, 1128, 642, 4200, 93087, 41127, 1513, 2039, 7831, 8575, 1427, 1478])))
     for i, label in enumerate(labels):
         tmp = timings[:, i].mean(axis=1)
         tmp_x = x[tmp > 0]
         tmp = tmp[tmp > 0]
-        ax.plot(tmp_x, tmp, label={"I1e": "Random", "C1e": "Sim. based"}.get(label, label), color=colors[label.lower()])
+        ax.plot(tmp_x, tmp, label={"I1e": "Random (I1)", "C1e": "DataSAIL (S1)", "LoHi": "LoHi"}.get(label, "DC - " + label), color=colors[label.lower()], marker=MARKERS[label.lower()])
     ax.hlines(1, x[0], x[-1], linestyles="dashed", colors="black")
     ax.text(x[0], 1, "1 sec", verticalalignment="bottom", horizontalalignment="left")
     ax.hlines(60, x[0], x[-1], linestyles="dashed", colors="black")
@@ -70,12 +83,16 @@ def get_tool_times(path, ax=None):
     ax.hlines(3600, x[0], x[-1], linestyles="dashed", colors="black")
     ax.text(x[0], 3600, "1 h", verticalalignment="bottom", horizontalalignment="left")
 
-    ax.legend(ncol=2, loc="lower right")
-    # ax.xticks([642, 41127, 133885], ["642", "HIV", "QM9"])
+    # ax.legend(ncol=2, loc="lower right")
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("#Molecules in Dataset")
-    ax.set_ylabel("Time for splitting [sec]")
+    ax.set_ylabel("Time for splitting [s] (↓)")
+    ax.set_title("Runtime on MoleculeNet")
     if show:
         plt.tight_layout()
         plt.savefig("timing.png")
@@ -127,7 +144,7 @@ def old():
     plt.xscale("log")
     plt.yscale("log")
     plt.xlabel("#Molecules in Dataset")
-    plt.ylabel("Time for splitting [sec]")
+    plt.ylabel("Time for splitting [s] (↓)")
     plt.tight_layout()
     plt.savefig("stiming.png")
     plt.show()

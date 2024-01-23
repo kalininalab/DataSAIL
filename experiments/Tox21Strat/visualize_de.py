@@ -11,7 +11,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from datasail.reader.read_molecules import read_molecule_data
 from experiments.david import eval, run_ecfp
-from experiments.utils import RUNS, mpp_datasets, dc2pd
+from experiments.utils import RUNS, mpp_datasets, dc2pd, colors
 
 
 def score_split(dataset, delta, epsilon):
@@ -75,12 +75,14 @@ def plot_de_ablation(ax=None, fig=None):
 
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
-    cmap = LinearSegmentedColormap.from_list("Custom", ["#0C7BDC", "#FFC20A"], N=256)
-    tmp = ax.imshow(np.array(qual.values, dtype=float), cmap=cmap, vmin=qual.values.min(), vmax=qual.values.max())
-    ax.set_xticks(list(range(6)), [0.3, 0.25, 0.2, 0.15, 0.1, 0.05])
-    ax.set_yticks(list(range(6)), [0.3, 0.25, 0.2, 0.15, 0.1, 0.05])
-    ax.set_ylabel("Epsilon")
-    ax.set_xlabel("Delta")
+    cmap = LinearSegmentedColormap.from_list("Custom", [colors["r1d"], colors["s1d"]], N=256)
+    q_values = 1 - np.array(qual.values, dtype=float)[::-1, :].T
+    tmp = ax.imshow(q_values, cmap=cmap, vmin=q_values.min(), vmax=q_values.max())
+    ax.set_xticks(list(reversed(range(1, 6, 2))), [0.3, 0.2, 0.1])
+    ax.set_yticks(list(range(0, 6, 2)), [0.3, 0.2, 0.1])
+    ax.set_xlabel("$\epsilon$")
+    ax.set_ylabel("$\delta$")
+    ax.set_title("Effect of $\delta$ and $\epsilon$")
     fig.colorbar(tmp, cax=cax, orientation='vertical')
 
     if show:

@@ -7,10 +7,11 @@ import pandas as pd
 import matplotlib
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from sklearn.manifold import TSNE
 from umap import UMAP
 
-from experiments.utils import USE_UMAP, embed_smiles, get_bounds, RUNS, mpp_datasets, colors, set_subplot_label
+from experiments.utils import USE_UMAP, embed_smiles, get_bounds, RUNS, mpp_datasets, colors, set_subplot_label, HSPACE
 
 SPLITS = ["I1e", "C1e", "lohi", "Butina", "Fingerprint", "M", "Scaffold", "Weight"]
 DATASETS = ["QM7", "QM8", "QM9", "ESOL", "FreeSolv", "Lipophilicity", "MUV", "HIV", "BACE", "BBBP", "Tox21", "ToxCast",
@@ -183,44 +184,34 @@ def plot_double(names):
     root = Path("..") / "DataSAIL" / "experiments" / "MPP"
     fig = plt.figure(figsize=(20, 10.67))
     gs = gridspec.GridSpec(1, 2, figure=fig, width_ratios=[2, 1])
-    gs_left = gs[0].subgridspec(2, 2, hspace=0.17, wspace=0.05)
-    gs_right = gs[1].subgridspec(2, 1, hspace=0.17)
+    gs_left = gs[0].subgridspec(2, 2, hspace=HSPACE, wspace=0.1)
+    gs_right = gs[1].subgridspec(2, 1, hspace=HSPACE)
     ax = [
         [fig.add_subplot(gs_left[0, 0]), fig.add_subplot(gs_left[0, 1]), fig.add_subplot(gs_right[0])],
         [fig.add_subplot(gs_left[1, 0]), fig.add_subplot(gs_left[1, 1]), fig.add_subplot(gs_right[1])],
     ]
     for i, name in enumerate(names):
-        # for s, split in enumerate(SPLITS[:2]):
-        #     filename = root / "datasail_old" / name.lower() / "val_metrics.tsv"
-        #     if not os.path.exists(filename):
-        #         print(filename, "not found")
-        #         continue
-        #     try:
-        #         table = pd.read_csv(filename, sep="\t")
-        #         mask = [split.replace("1", "CS") in col for col in table.columns]
-        #         mean = np.average(table[table.columns[mask]].values, axis=1)
-        #         bounds = get_bounds(table[table.columns[mask]].values, axis=1)
-        #         x = np.arange(0.0, 50, 1)
-        #         ax[i][2].fill_between(x, *bounds, alpha=0.5, color=colors["r1d"] if s == 0 else colors["s1d"])
-        #         ax[i][2].plot(mean, label='random' if s == 0 else 'cluster-based', color=colors["r1d"] if s == 0 else colors["s1d"])
-        #         # ax[i, 2].set_title(f"Performance comp. ({'MAE ↓' if i == 0 else 'ROC-AUC ↑'})")
-        #         set_subplot_label(ax[i][2], fig, ["C", "F"][i])
-        #         if i == 0:
-        #             ax[i][2].legend(loc="lower right")
-        #     except Exception as e:
-        #         print(f"{name} - {split}: {e}")
         viz_sl([name], ax=ax[i][2])
         set_subplot_label(ax[i][2], fig, ["C", "F"][i])
 
         data = pickle.load(open(root / ('umap' if USE_UMAP else 'tsne') / f"embeds_{name}.pkl", "rb"))
         for t, tech in enumerate(SPLITS[:2]):
             ax[i][t].tick_params(left=False, right=False, labelleft=False, labelbottom=False, bottom=False)
-            ax[i][t].scatter(*data[t]["train"].T, s=5, label="train", c=colors["train"])
-            ax[i][t].scatter(*data[t]["test"].T, s=5, label="test", c=colors["test"])
-            # ax[i, t].set_title(
-            #     f"ECFP4 embeddings of the\n{'random' if t == 0 else 'similarity-based'} split using t-SNE")
+            n_train = len(data[t]["train"])
+            n_test = len(data[t]["test"])
+            p = np.concatenate([data[t]["train"], data[t]["test"]])
+            c = np.array([colors["train"]] * n_train + [colors["test"]] * n_test)
+            perm = np.random.permutation(len(p))
+            ax[i][t].scatter(p[perm, 0], p[perm, 1], s=5, c=c[perm])
+            ax[i][t].set_xlabel("tSNE 1")
+            ax[i][t].set_ylabel("tSNE 2")
+            ax[i][t].set_title(f"{['QM8', 'Tox21'][i]} - {['Random baseline (I1)', 'DataSAIL split (S1)'][t]}")
             if i == 0 and t == 0:
-                ax[i][t].legend(loc="lower right", markerscale=3)
+                handles, labels = ax[i][t].get_legend_handles_labels()
+                train_dot = Line2D([0], [0], marker='o', label="train", color=colors["train"], linestyle='None')
+                test_dot = Line2D([0], [0], marker='o', label="test", color=colors["test"], linestyle='None')
+                handles.extend([train_dot, test_dot])
+                ax[i][t].legend(handles=handles, loc="lower right", markerscale=2)
             set_subplot_label(ax[i][t], fig, [["A", "B"], ["D", "E"]][i][t])
     plt.tight_layout()
     plt.savefig(f"QM8_Tox21.png")
@@ -294,10 +285,11 @@ def viz_sl(names, ax=None):
             df = pd.read_csv(root / "datasail_old" / name.lower() / f"val_metrics.tsv", sep="\t")
             values[i].append(df[[c for c in df.columns if c.startswith(split[0])]].values.max(axis=0).mean())
 
-        df = pd.DataFrame(np.array(values).T, columns=["random", "similarity-based"], index=models)
+        df = pd.DataFrame(np.array(values).T, columns=["Random baseline (I1)", "DataSAIL (S1)"], index=models)
         ax = df.plot.bar(ax=ax, rot=0, ylabel=METRICS[DATASETS.index(name)], ylim=(0.5, 0.9), color=[colors["r1d"], colors["s1d"]])
+        ax.set_xlabel("ML Models")
+        ax.set_title(f"{name} - Performance Comparison")
         if show:
-            ax.set_title(name)
             plt.tight_layout()
             plt.savefig(root / f"{name}.png")
             plt.show()

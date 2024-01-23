@@ -3,7 +3,7 @@ import pickle
 import sys
 import time
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Tuple, Optional
 
 import matplotlib
 import cvxpy
@@ -245,15 +245,17 @@ def blub(ds_name: str):
 def eval(assignments, similarity):
     mask = assignments @ assignments.T
     mask[mask == -1] = 0
-    return np.sum(similarity * mask) / np.sum(similarity)
+    return 1 - np.sum(similarity * mask) / np.sum(similarity)
 
 
-def visualize(ds_name: str, clusters: List[int], solvers, ax=None):
+def visualize(ds_name: str, clusters: List[int], solvers, ax: Optional[Tuple] = None):
     if show := ax is None:
         matplotlib.rc('font', **{'size': 16})
         fig = plt.figure(figsize=(10, 8))
-        gs = fig.add_gridspec(1, 1, figure=fig)
-        ax = fig.add_subplot(gs[0])
+        gs = fig.add_gridspec(1, 2, figure=fig)
+        ax_p, ax_t = fig.add_subplot(gs[0]), fig.add_subplot(gs[1])
+    else:
+        ax_p, ax_t = ax
 
     tnb_path = Path("times_and_baselines.pkl")
     if tnb_path.exists():
@@ -300,37 +302,40 @@ def visualize(ds_name: str, clusters: List[int], solvers, ax=None):
     # fig, (axl, axr) = plt.subplots(1, 2)
     # visualize2(axl, times, c_performances, c_random)
     # axl.title.set_text("Unleaked information measured by cluster similarity")
-    visualize2(ax, times, s_performances, s_random, show=show)
+    visualize2(ax_p, ax_t, times, s_performances, s_random, show=show)
 
     # fig.set_size_inches(20, 8)
     if show:
-        ax.title.set_text("Unleaked information measured by sample similarity")
+        ax_p.title.set_text("Unleaked information measured by sample similarity")
         fig.tight_layout()
         plt.savefig("david.png")
         plt.show()
 
 
-def visualize2(ax1, times, performances, random, show=False):
+def visualize2(ax_p, ax_t, times, performances, random, show=False):
     # TODO: Adjust this function to the new data structure
-    ax2 = ax1.twinx()
     if show:
-        ax1.set_xlabel("Number of clusters")
-    ax1.set_ylabel("Time [s]")
-    ax2.set_ylabel("1 - leakage (↑)")
+        ax_p.set_xlabel("Number of clusters")
+        ax_t.set_xlabel("Number of clusters")
+    ax_t.set_ylabel("Time for solving [s] (↓)")
+    ax_p.set_ylabel("$L(\pi)$ (↓)")
 
     N = 25
-    ax1.plot(times["GUROBI"][:N, 0], times["GUROBI"][:N, 1], label="GUROBI", color=colors["train"], linestyle="dashed")
-    ax1.plot(times["MOSEK"][:N, 0], times["MOSEK"][:N, 1], label="MOSEK", color=colors["test"], linestyle="dashed")
-    ax1.plot(times["SCIP"][:N, 0], times["SCIP"][:N, 1], label="SCIP", color=colors["r1d"], linestyle="dashed")
+    ax_t.plot(times["GUROBI"][:N, 0], times["GUROBI"][:N, 1], label="GUROBI", color=colors["train"], linestyle="dashed")
+    ax_t.plot(times["MOSEK"][:N, 0], times["MOSEK"][:N, 1], label="MOSEK", color=colors["test"], linestyle="dashed")
+    ax_t.plot(times["SCIP"][:N, 0], times["SCIP"][:N, 1], label="SCIP", color=colors["r1d"], linestyle="dashed")
 
-    ax2.plot(times["GUROBI"][:N, 0], performances["GUROBI"], label="GUROBI", color=colors["train"])
-    ax2.plot(times["MOSEK"][:N, 0], performances["MOSEK"], label="MOSEK", color=colors["test"])
-    ax2.plot(times["SCIP"][:N, 0], performances["SCIP"], label="SCIP", color=colors["r1d"])
-    ax2.plot(times["GUROBI"][:N, 0], random[:N, 0], color="black", label="Random")
+    ax_p.plot(times["GUROBI"][:N, 0], performances["GUROBI"], label="GUROBI", color=colors["train"])
+    ax_p.plot(times["MOSEK"][:N, 0], performances["MOSEK"], label="MOSEK", color=colors["test"])
+    ax_p.plot(times["SCIP"][:N, 0], performances["SCIP"], label="SCIP", color=colors["r1d"])
+    # ax2.plot(times["GUROBI"][:N, 0], random[:N, 0], color="black", label="Random")
 
-    ax1.legend(loc="center right")
-    ax1.set_yscale("log")
-    ax2.legend(loc="lower right")
+    ax_p.legend()
+    ax_p.set_title("Leaked Information on Tox21")
+
+    ax_t.set_yscale("log")
+    ax_t.legend()
+    ax_t.set_title("Runtime on Tox21")
 
 
 if __name__ == '__main__':
@@ -345,4 +350,4 @@ if __name__ == '__main__':
     # random_baseline()
     visualize("tox21", list(range(10, 50, 5)) + list(range(50, 150, 10)), ["GUROBI", "MOSEK", "SCIP"])
     # run_solver("tox21", list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)), ["MOSEK", "SCIP", "GUROBI"])
-    run_solver("tox21", list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)), ["MOSEK", "SCIP"])
+    # run_solver("tox21", list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)), ["MOSEK", "SCIP"])
