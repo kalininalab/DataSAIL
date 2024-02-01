@@ -27,7 +27,7 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path]) -> None:
     optim_vals = (dataset.args.c,)  # values to be optimized
     extract_fasta(dataset)
 
-    dataset.cluster_names, dataset.cluster_map, dataset.cluster_sim = cluster_param_binary_search(
+    dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity = cluster_param_binary_search(
         dataset,
         optim_vals,
         (0.1,),

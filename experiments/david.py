@@ -18,6 +18,7 @@ from datasail.cluster.clustering import additional_clustering
 from datasail.cluster.utils import read_molecule_encoding
 from datasail.reader.read_molecules import read_molecule_data
 from datasail.solver.utils import solve, compute_limits, cluster_y_constraints
+from experiments.time import MARKERS
 from experiments.utils import dc2pd, telegram, mpp_datasets, biogen_datasets, colors
 
 blocker = rdBase.BlockLogs()
@@ -314,20 +315,19 @@ def visualize(ds_name: str, clusters: List[int], solvers, ax: Optional[Tuple] = 
 
 def visualize2(ax_p, ax_t, times, performances, random, show=False):
     # TODO: Adjust this function to the new data structure
-    if show:
-        ax_p.set_xlabel("Number of clusters")
-        ax_t.set_xlabel("Number of clusters")
+    ax_p.set_xlabel("Number of clusters")
+    ax_t.set_xlabel("Number of clusters")
     ax_t.set_ylabel("Time for solving [s] (↓)")
     ax_p.set_ylabel("$L(\pi)$ (↓)")
 
     N = 25
-    ax_t.plot(times["GUROBI"][:N, 0], times["GUROBI"][:N, 1], label="GUROBI", color=colors["train"], linestyle="dashed")
-    ax_t.plot(times["MOSEK"][:N, 0], times["MOSEK"][:N, 1], label="MOSEK", color=colors["test"], linestyle="dashed")
-    ax_t.plot(times["SCIP"][:N, 0], times["SCIP"][:N, 1], label="SCIP", color=colors["r1d"], linestyle="dashed")
+    ax_t.plot(times["GUROBI"][:N, 0], times["GUROBI"][:N, 1], label="GUROBI", color=colors["train"], marker=MARKERS["gurobi"], markersize=9)
+    ax_t.plot(times["MOSEK"][:N, 0], times["MOSEK"][:N, 1], label="MOSEK", color=colors["test"], marker=MARKERS["mosek"], markersize=9)
+    ax_t.plot(times["SCIP"][:N, 0], times["SCIP"][:N, 1], label="SCIP", color=colors["r1d"], marker=MARKERS["scip"], markersize=9)
 
-    ax_p.plot(times["GUROBI"][:N, 0], performances["GUROBI"], label="GUROBI", color=colors["train"])
-    ax_p.plot(times["MOSEK"][:N, 0], performances["MOSEK"], label="MOSEK", color=colors["test"])
-    ax_p.plot(times["SCIP"][:N, 0], performances["SCIP"], label="SCIP", color=colors["r1d"])
+    ax_p.plot(times["GUROBI"][:N, 0], performances["GUROBI"], label="GUROBI", color=colors["train"], marker=MARKERS["gurobi"], markersize=9)
+    ax_p.plot(times["MOSEK"][:N, 0], performances["MOSEK"], label="MOSEK", color=colors["test"], marker=MARKERS["mosek"], markersize=9)
+    ax_p.plot(times["SCIP"][:N, 0], performances["SCIP"], label="SCIP", color=colors["r1d"], marker=MARKERS["scip"], markersize=9)
     # ax2.plot(times["GUROBI"][:N, 0], random[:N, 0], color="black", label="Random")
 
     ax_p.legend()

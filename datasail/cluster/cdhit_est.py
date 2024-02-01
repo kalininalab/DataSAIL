@@ -27,7 +27,7 @@ def run_cdhit_est(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = 
     vals = (dataset.args.c, dataset.args.n)
     extract_fasta(dataset)
 
-    dataset.cluster_names, dataset.cluster_map, dataset.cluster_sim =  cluster_param_binary_search(
+    dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity =  cluster_param_binary_search(
         dataset,
         vals,
         (0.8, 5),

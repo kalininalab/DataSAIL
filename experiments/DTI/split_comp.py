@@ -30,9 +30,9 @@ def plot_embeds(ax, data, mask, name):
 # gp_proteins = {}
 lohi_ligands = {}
 
-# df = pd.read_csv(Path("experiments") / "PDBBind" / "lppdbbind" / "C1e" / "split_0" / "pdbbind.csv")
+# df = pd.read_csv(Path("experiments") / "DTI" / "lppdbbind" / "C1e" / "split_0" / "pdbbind.csv")
 # ds_ligands = dict(df[["ligands", "split"]].values.tolist())
-path_pdbbind = Path("experiments") / "PDBBind"
+path_pdbbind = Path("experiments") / "DTI"
 
 df = pd.read_csv(path_pdbbind / "lppdbbind" / "C1f" / "split_0" / "pdbbind.csv")
 df["cluster"] = df["split"].apply(lambda x: 0 if x == "train" else 1)

@@ -100,11 +100,17 @@ def run_solver(
                                                          dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]):
                         names = dataset.cluster_names
                         weights = [dataset.cluster_weights.get(x, 0) for x in dataset.cluster_names]
-                        stratification = np.stack([dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes))) for c in dataset.cluster_names])
+                        if dataset.stratification is None:
+                            stratification = None
+                        else:
+                            stratification = np.stack([dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes))) for c in dataset.cluster_names])
                     else:
                         names = dataset.names
                         weights = [dataset.weights.get(x, 0) for x in dataset.names]
-                        stratification = np.stack([dataset.strat2oh(name=n) for n in dataset.names])
+                        if dataset.stratification is None:
+                            stratification = None
+                        else:
+                            stratification = np.stack([dataset.strat2oh(name=n) for n in dataset.names])
 
                     solution = solve_i1(
                         entities=names,
@@ -140,9 +146,9 @@ def run_solver(
                 elif technique.startswith(TEC_I2):
                     solution = solve_i2(
                         e_entities=e_dataset.names,
-                        e_stratification=np.stack([e_dataset.strat2oh(name=n) for n in e_dataset.names]),
+                        e_stratification=np.stack([e_dataset.strat2oh(name=n) for n in e_dataset.names]) if e_dataset.stratification is not None else None,
                         f_entities=f_dataset.names,
-                        f_stratification=np.stack([f_dataset.strat2oh(name=n) for n in f_dataset.names]),
+                        f_stratification=np.stack([f_dataset.strat2oh(name=n) for n in f_dataset.names]) if f_dataset.stratification is not None else None,
                         inter=set(inter),
                         delta=delta,
                         epsilon=epsilon,
@@ -162,7 +168,7 @@ def run_solver(
                         clusters=dataset.cluster_names,
                         weights=[dataset.cluster_weights.get(c, 0) for c in dataset.cluster_names],
                         s_matrix=np.stack([dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
-                                           for c in dataset.cluster_names]),
+                                           for c in dataset.cluster_names]) if dataset.cluster_stratification is not None else None,
                         similarities=dataset.cluster_similarity,
                         distances=dataset.cluster_distance,
                         delta=delta,
@@ -188,12 +194,12 @@ def run_solver(
                     cluster_split = solve_c2(
                         e_clusters=e_dataset.cluster_names,
                         e_s_matrix=np.stack([e_dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
-                                             for c in e_dataset.cluster_names]),
+                                             for c in e_dataset.cluster_names]) if e_dataset.cluster_stratification is not None else None,
                         e_similarities=e_dataset.cluster_similarity,
                         e_distances=e_dataset.cluster_distance,
                         f_clusters=f_dataset.cluster_names,
                         f_s_matrix=np.stack([f_dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
-                                             for c in f_dataset.cluster_names]),
+                                             for c in f_dataset.cluster_names]) if f_dataset.cluster_stratification is not None else None,
                         f_similarities=f_dataset.cluster_similarity,
                         f_distances=f_dataset.cluster_distance,
                         inter=cluster_inter,

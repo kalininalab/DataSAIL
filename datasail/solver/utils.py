@@ -411,7 +411,8 @@ def leakage_loss(
     if uniform:
         return 0
     else:
+        if similarities is None:
+            intra_weights = 1 - intra_weights
         tmp = [intra_weights[c1, c2] * y[c1][c2] for c1 in range(len(clusters)) for c2 in range(c1)]
         e_loss = cvxpy.sum(tmp)
-        if similarities is None:
-            return -e_loss
+        return e_loss

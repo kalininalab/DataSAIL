@@ -27,7 +27,7 @@ def run_cdhit(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None
     vals = (dataset.args.c, dataset.args.n)  # values to be optimized
     extract_fasta(dataset)
 
-    dataset.cluster_names, dataset.cluster_map, dataset.cluster_sim = cluster_param_binary_search(
+    dataset.cluster_names, dataset.cluster_map, dataset.cluster_similar = cluster_param_binary_search(
         dataset,
         vals,
         (0.4, 2),

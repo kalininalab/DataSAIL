@@ -14,6 +14,9 @@ MARKERS = {
     "i1e": "o",
     "c1e": "P",
     "lohi": "X",
+    "gurobi": "o",
+    "mosek": "P",
+    "scip": "X",
     "butina": "v",
     "fingerprint": "^",
     "maxmin": "<",
@@ -75,7 +78,9 @@ def get_tool_times(path, ax=None):
         tmp = timings[:, i].mean(axis=1)
         tmp_x = x[tmp > 0]
         tmp = tmp[tmp > 0]
-        ax.plot(tmp_x, tmp, label={"I1e": "Random (I1)", "C1e": "DataSAIL (S1)", "LoHi": "LoHi"}.get(label, "DC - " + label), color=colors[label.lower()], marker=MARKERS[label.lower()])
+        ax.plot(tmp_x, tmp, label={"I1e": "Random (I1)", "C1e": "DataSAIL (S1)", "LoHi": "LoHi"}.get(label, "DC - " + label), color=colors[label.lower()], marker=MARKERS[label.lower()], markersize=9)
+        if i == 2:
+            ax.plot([tmp_x[-1], x[-1]], [tmp[-1], 22180], color=colors[label.lower()], marker=MARKERS[label.lower()], markersize=9, linestyle='dashed')
     ax.hlines(1, x[0], x[-1], linestyles="dashed", colors="black")
     ax.text(x[0], 1, "1 sec", verticalalignment="bottom", horizontalalignment="left")
     ax.hlines(60, x[0], x[-1], linestyles="dashed", colors="black")

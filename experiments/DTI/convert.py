@@ -7,7 +7,7 @@ from experiments.utils import RUNS
 
 # Convert output of DataSAIL to one file that DeepDTA can use
 
-path = Path("experiments") / "PDBBind"
+path = Path("experiments") / "DTI"
 for tool, techniques in [("deepchem", ["Fingerprint", "MinMax", "Scaffold", "Weight", "Butina"])]:
     for tech in techniques:
         for run in range(RUNS):

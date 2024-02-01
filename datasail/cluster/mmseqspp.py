@@ -60,4 +60,4 @@ def run_mmseqspp(dataset: DataSet, threads: int, log_dir: Optional[Path] = None)
 
     dataset.cluster_names = dataset.names
     dataset.cluster_map = {n: n for n in dataset.names}
-    dataset.cluster_sim = table
+    dataset.cluster_similarity = table

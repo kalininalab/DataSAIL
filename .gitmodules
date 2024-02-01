@@ -1,0 +1,3 @@
+[submodule "experiments/DTI/lppdbbind"]
+	path = experiments/DTI/lppdbbind
+	url = git@github.com:kalininalab/LP-PDBBind.git

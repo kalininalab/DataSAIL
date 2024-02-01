@@ -39,7 +39,7 @@ def run_wlk(dataset: DataSet, n_iter: int = 4) -> None:
 
     # compute similarity metric and the mapping from element names to cluster names
     dataset.cluster_names = dataset.names
-    dataset.cluster_sim = run_wl_kernel(graphs, n_iter)
+    dataset.cluster_similar = run_wl_kernel(graphs, n_iter)
     dataset.cluster_map = dict((name, name) for name in dataset.names)
 
 

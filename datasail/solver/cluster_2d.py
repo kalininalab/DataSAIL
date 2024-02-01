@@ -86,10 +86,10 @@ def solve_c2(
     constraints += cluster_y_constraints(e_clusters, y_e, x_e, splits) + \
         cluster_y_constraints(f_clusters, y_f, x_f, splits)
 
-    inter_loss = (np.sum(inter) - sum(cvxpy.sum(x) for x in x_i.values())) / np.sum(inter)
+    # inter_loss = (np.sum(inter) - sum(cvxpy.sum(x) for x in x_i.values())) / np.sum(inter)
     e_loss = leakage_loss(e_uniform, e_intra_weights, y_e, e_clusters, e_similarities)
     f_loss = leakage_loss(f_uniform, f_intra_weights, y_f, f_clusters, f_similarities)
 
-    problem = solve(inter_loss + e_loss + f_loss, constraints, max_sec, solver, log_file)
+    problem = solve(e_loss + f_loss, constraints, max_sec, solver, log_file)
 
     return collect_results_2d(problem, names, splits, e_clusters, f_clusters, x_e, x_f, x_i, index)

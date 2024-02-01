@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -23,7 +24,7 @@ def plot_perf(ax):
             values[s].append(df.mean(axis=1).values[0])
         values[s].append(pd.read_csv(root / split / "val_metrics.tsv", sep="\t").max(axis=0).values[1:].mean())
     df = pd.DataFrame(np.array(values).T, columns=["Stratified baseline", "DataSAIL split (S1 w/ classes)"], index=models)
-    df.plot.bar(ax=ax, rot=0, ylabel="AUROC", color=[colors["r1d"], colors["s1d"]])
+    df.plot.bar(ax=ax, rot=0, ylabel="ROC-AUC (↑)", color=[colors["r1d"], colors["s1d"]])
     ax.legend(loc="lower right")
     ax.set_title(f"Performance comparison")
 
@@ -46,13 +47,12 @@ def plot_dmpnn_perf(ax):
     # ax.set_title(f"Performance comparison\n(ROC-AUC ↑)")
 
 
-def embed():
+def embed(full_path):
     print("Embedding - read data ...")
-    base = Path("experiments") / "Tox21Strat"
-    dc_tr = pd.read_csv(base / "deepchem" / "split_0" / "train.csv")
-    dc_te = pd.read_csv(base / "deepchem" / "split_0" / "test.csv")
-    ds_tr = pd.read_csv(base / "datasail" / "split_0" / "train.csv")
-    ds_te = pd.read_csv(base / "datasail" / "split_0" / "test.csv")
+    dc_tr = pd.read_csv(full_path / "deepchem" / "split_0" / "train.csv")
+    dc_te = pd.read_csv(full_path / "deepchem" / "split_0" / "test.csv")
+    ds_tr = pd.read_csv(full_path / "datasail" / "d_0.2_e_0.2" / "split_0" / "train.csv")
+    ds_te = pd.read_csv(full_path / "datasail" / "d_0.2_e_0.2" / "split_0" / "test.csv")
 
     print("Embedding - compute fingerprints ...")
     smiles = [(s, embed_smiles(s)) for s in set(list(dc_tr["SMILES"]) + list(dc_te["SMILES"]) +
@@ -89,16 +89,13 @@ def plot_embeds(ax, train, test, title, legend=None):
         ax.legend(handles=handles, loc="lower right", markerscale=2)
 
 
-def main():
+def main(full_path):
     matplotlib.rc('font', **{'size': 16})
     fig = plt.figure(figsize=(20, 5.33))
-    # gs = gridspec.GridSpec(1, 2, figure=fig, width_ratios=[2, 1])
-    # gs_left = gs[0].subgridspec(1, 2, hspace=0.17, wspace=0.05)
-    # ax = [fig.add_subplot(gs_left[0]), fig.add_subplot(gs_left[1]), fig.add_subplot(gs[1])]
     gs = gridspec.GridSpec(1, 3, figure=fig)
     ax = [fig.add_subplot(gs[0]), fig.add_subplot(gs[1]), fig.add_subplot(gs[2])]
 
-    dc_tr, dc_te, ds_tr, ds_te = embed()
+    dc_tr, dc_te, ds_tr, ds_te = embed(full_path)
     plot_embeds(ax[0], dc_tr, dc_te, "Stratified baseline", legend=True)
     set_subplot_label(ax[0], fig, "A")
     plot_embeds(ax[1], ds_tr, ds_te, "DataSAIL split (S1 w/ classes)")
@@ -108,9 +105,9 @@ def main():
     set_subplot_label(ax[2], fig, "C")
 
     fig.tight_layout()
-    plt.savefig("Tox21Strat.png")
+    plt.savefig(full_path / "Tox21Strat.png")
     plt.show()
 
 
 if __name__ == '__main__':
-    main()
+    main(Path(sys.argv[1]))

@@ -8,12 +8,37 @@ import esm
 import numpy as np
 import pandas as pd
 import torch
+from chemprop.train import prc_auc
 from rdkit import Chem
 from rdkit.Chem import AllChem
 import matplotlib.transforms as mtransforms
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, RandomForestClassifier, \
+    GradientBoostingClassifier
+from sklearn.metrics import mean_absolute_error, roc_auc_score, mean_squared_error
+from sklearn.multioutput import MultiOutputRegressor, MultiOutputClassifier
+from sklearn.neural_network import MLPRegressor, MLPClassifier
+from sklearn.svm import LinearSVR, LinearSVC
+
+MPP_EPOCHS = 50
+
+models = {
+    "rf-r": RandomForestRegressor(n_estimators=500, n_jobs=-1, random_state=42),
+    "svm-r": MultiOutputRegressor(LinearSVR(random_state=42)),
+    "xgb-r": MultiOutputRegressor(GradientBoostingRegressor(random_state=42)),
+    "mlp-r": MLPRegressor(hidden_layer_sizes=(512, 256, 64), random_state=42, max_iter=4 * MPP_EPOCHS),
+    "rf-c": RandomForestClassifier(n_estimators=500, n_jobs=-1, random_state=42),
+    "svm-c": MultiOutputClassifier(LinearSVC(random_state=42)),
+    "xgb-c": MultiOutputClassifier(GradientBoostingClassifier(random_state=42)),
+    "mlp-c": MLPClassifier(hidden_layer_sizes=(512, 256, 64), random_state=42, max_iter=4 * MPP_EPOCHS),
+}
+metric = {
+    "mae": mean_absolute_error,
+    "rmse": lambda pred, truth: mean_squared_error(pred, truth, squared=False),
+    "prc-auc": prc_auc,
+    "auc": roc_auc_score,
+}
 
 RUNS = 5
-MPP_EPOCHS = 50
 USE_UMAP = False  # if False uses tSNE
 biogen_datasets = {"HLM", "MDR1_MDCK_ER", "SOLUBILITY", "hPPB", "rPPB", "RLM"}
 colors = {
@@ -144,7 +169,7 @@ def is_valid_smiles(smiles):
 
 
 def load_lp_pdbbind():
-    df = pd.read_csv(Path("experiments") / "PDBBind" / "LP_PDBBind.csv")
+    df = pd.read_csv(Path("experiments") / "DTI" / "LP_PDBBind.csv")
     df.rename(columns={"Unnamed: 0": "ids", "smiles": "Ligand", "seq": "Target", "value": "y"}, inplace=True)
     df = df[["ids", "Ligand", "Target", "y"]]
     df.dropna(inplace=True)
