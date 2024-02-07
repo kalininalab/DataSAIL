@@ -1,25 +1,16 @@
 import os
+import sys
 from pathlib import Path
 
 import chemprop
 import deepchem as dc
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.metrics import roc_auc_score
-from sklearn.multioutput import MultiOutputClassifier
-from sklearn.neural_network import MLPClassifier
-from sklearn.svm import LinearSVC
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
-from experiments.utils import RUNS, MPP_EPOCHS, telegram, embed_smiles, dc2pd
-
-models = {
-    "rf": RandomForestClassifier(n_estimators=500, n_jobs=-1, random_state=42),
-    "svm": MultiOutputClassifier(LinearSVC(random_state=42)),
-    "xgb": MultiOutputClassifier(GradientBoostingClassifier(random_state=42)),
-    "mlp": MLPClassifier(hidden_layer_sizes=(512, 256, 64), random_state=42, max_iter=4 * MPP_EPOCHS),
-}
+from experiments.MPP.train import train_dataset, train_tool, train_model, train_tech
+from experiments.utils import RUNS, MPP_EPOCHS, telegram, embed_smiles, dc2pd, models
 
 count = 0
 
@@ -67,7 +58,7 @@ def train_chemprop(tool):
                     dfs[short][f"{metric}_split_{run}"] = [e.value for e in ea.Scalars(metric)]
             del tb_file
             del ea
-            message(tool, "mpnn", run)
+            message(tool, "d-mpnn", run)
         except Exception as e:
             print("[ERROR]", e)
     for split, df in dfs.items():
@@ -94,9 +85,13 @@ def train_sl_models(model, tool):
     for run in range(RUNS):
         targets = [x for x in df.columns if x not in ["SMILES", "ECFP4", "ID"]]
         root = Path("experiments") / "Tox21Strat" / tool / f"split_{run}"
-        X_train = np.array([rec[1:-1].split(", ") for rec in df[df["ID"].isin(pd.read_csv(root / "train.csv")["ID"])]["ECFP4"].values], dtype=int)
+        X_train = np.array(
+            [rec[1:-1].split(", ") for rec in df[df["ID"].isin(pd.read_csv(root / "train.csv")["ID"])]["ECFP4"].values],
+            dtype=int)
         y_train = df[df["ID"].isin(pd.read_csv(root / "train.csv")["ID"])][targets].to_numpy()
-        X_test = np.array([rec[1:-1].split(", ") for rec in df[df["ID"].isin(pd.read_csv(root / "test.csv")["ID"])]["ECFP4"].values], dtype=int)
+        X_test = np.array(
+            [rec[1:-1].split(", ") for rec in df[df["ID"].isin(pd.read_csv(root / "test.csv")["ID"])]["ECFP4"].values],
+            dtype=int)
         y_test = df[df["ID"].isin(pd.read_csv(root / "test.csv")["ID"])][targets].to_numpy()
 
         if model.startswith("rf"):
@@ -117,9 +112,18 @@ def train_sl_models(model, tool):
     pd.DataFrame(perf, index=[0]).to_csv(Path("experiments") / "Tox21Strat" / tool / f"{model}.csv", index=False)
 
 
-# for splitter in ["datasail", "deepchem"]:
-#     train_chemprop(splitter)
-#     for model in ["rf", "xgb", "mlp", "svm"]:
-#         train_sl_models(model, splitter)
+def main(base_path: Path):
+    dfs = []
+    for tool in ["datasail/d_0.2_e_0.2", "deepchem"]:
+        for model in ["rf", "svm", "xgb", "mlp", "d-mpnn"]:
+            perf = train_tech(base_path / tool, base_path / "data", model, tool.split("/")[0], "tox21")
+            df = pd.DataFrame(list(perf.items()), columns=["name", "perf"])
+            df["model"] = model
+            df["tool"] = tool.split("/")[0]
+            df["run"] = df["name"].apply(lambda x: x.split("_")[1])
+            dfs.append(df)
+    pd.concat(dfs).to_csv(base_path / "Tox21Strat.csv", index=False)
 
-train_chemprop("deepchem")
+
+if __name__ == '__main__':
+    main(Path(sys.argv[1]))

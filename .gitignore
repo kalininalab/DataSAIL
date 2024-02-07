@@ -34,7 +34,7 @@ viz_molnet.py
 /experiments/segfault/
 /experiments/tsne/
 /experiments/umap/
-/experiments/david.py
+/experiments/ablation/david.py
 /experiments/MPP_timing.pkl
 /experiments/stiming.png
 /experiments/timing.png
