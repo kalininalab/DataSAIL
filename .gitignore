@@ -79,9 +79,9 @@ viz_molnet.py
 /experiments/analysis/save_clustering.py
 /experiments/analysis/silhouette_scores.pkl
 /experiments/analysis/Untitled.ipynb
-/ML4Mol_prepare.ipynb
-/ML4Mol_QM8.ipynb
-/ML4Mols_split.ipynb
+/ML4Mol/ML4Mol_prepare.ipynb
+/ML4Mol/ML4Mol_QM8.ipynb
+/ML4Mol/ML4Mols_split.ipynb
 /Untitled.ipynb
 /ML4Mol/
 /experiments/Biogen/datasail/

@@ -19,7 +19,7 @@ def plot_perf(base_path, ax):
         for model in models:
             values[s].append(df[df["tool"] == tool][df["model"] == model]["perf"].mean())
     df = pd.DataFrame(np.array(values).T, columns=["Stratified baseline", "DataSAIL split (S1 w/ classes)"], index=models)
-    df.plot.bar(ax=ax, rot=0, ylabel="ROC-AUC (↑)", color=[COLORS["r1d"], COLORS["s1d"]])
+    df.plot.bar(ax=ax, rot=0, ylabel="AUROC (↑)", color=[colors["r1d"], colors["s1d"]])
     ax.legend(loc="lower right")
     ax.set_title(f"Performance comparison")
 

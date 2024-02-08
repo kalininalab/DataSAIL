@@ -2,6 +2,7 @@ import os
 import pickle
 import sys
 from pathlib import Path
+from typing import Optional
 
 import chemprop
 import numpy as np
@@ -9,7 +10,7 @@ import pandas as pd
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
 from experiments.DTI.train import embed_smiles
-from experiments.utils import DATASETS, RUNS, MPP_EPOCHS, telegram, metric, models, TECHNIQUES
+from experiments.utils import DATASETS, RUNS, MPP_EPOCHS, telegram, metric, models, TECHNIQUES, DRUG_TECHNIQUES
 
 count = 0
 total_number = 5 * 8 * 14
@@ -45,13 +46,25 @@ def clean_dfs(path: Path) -> None:
 
 
 def prepare_sl_data(split_path, data_path, name) -> pd.DataFrame:
+    """
+    Prepare the data for statistical learning.
+
+    Args:
+        split_path: Path to the split
+        data_path: Path to the folder holding the data for embeddings
+        name: Name of the dataset
+
+    Returns:
+        pd.DataFrame: Featurized dataframe
+    """
+    data_path.mkdir(parents=True, exist_ok=True)
     if (drug_path := data_path / f"drug_embeds_{name}.pkl").exists():
         with open(drug_path, "rb") as drugs:
             drug_embeds = pickle.load(drugs)
     else:
         drug_embeds = {}
 
-    df = pd.read_csv(split_path)
+    df = pd.read_csv(split_path, index_col=0)
     df["feat"] = df["SMILES"].apply(lambda x: embed_smiles(x, drug_embeds, n_bits=1024))
     df.dropna(inplace=True)
 
@@ -96,19 +109,19 @@ def train_chemprop_run(base_path, name: str) -> float:
     tb_file = tb_path / list(sorted(filter(lambda x: x.startswith("events"), os.listdir(tb_path))))[-1]
     ea = EventAccumulator(str(tb_file))
     ea.Reload()
-    perf = [next(ea.Scalars(metric)).value for metric in filter(lambda x: x.startswith("test_"), ea.Tags()["scalars"])]
+    perf = [next(iter(ea.Scalars(metric))).value for metric in filter(lambda x: x.startswith("test_"), ea.Tags()["scalars"])]
     if len(perf) > 0:
-        return np.mean(perf)
-    return 0
+        return float(np.mean(perf))
+    return 0.0
 
 
-def train_run(run_path: Path, base_path: Path, name: str, model: str) -> float:
+def train_run(run_path: Path, data_path: Path, name: str, model: str) -> float:
     """
     Train a single run of a split for a given technique and model.
 
     Args:
         run_path: Path to the folder holding the splits for all runs of this tool and technique
-        base_path: Path to the base directory
+        data_path: Path to the data directory
         name: Name of the dataset
         model: Statistical Learning model to fit
 
@@ -117,27 +130,28 @@ def train_run(run_path: Path, base_path: Path, name: str, model: str) -> float:
     """
     if model == "d-mpnn":
         return train_chemprop_run(run_path, name)
-    train_df = prepare_sl_data(run_path / "train.csv", base_path / "data", name)
-    test_df = prepare_sl_data(run_path / "test.csv", base_path / "data", name)
+    model = model + "-" + DATASETS[name][1][0]
+    train_df = prepare_sl_data(run_path / "train.csv", data_path, name)
+    test_df = prepare_sl_data(run_path / "test.csv", data_path, name)
     targets = [x for x in train_df.columns if x not in ["SMILES", "feat", "ID"]]
-    x_train, y_train = np.array(train_df["feat"]), np.array(train_df[targets])
-    x_test, y_test = np.array(test_df["feat"]), np.array(test_df[targets])
+    x_train, y_train = np.stack(train_df["feat"].values), np.stack(train_df[targets].values)
+    x_test, y_test = np.stack(test_df["feat"].values), np.stack(test_df[targets].values)
 
     m = models[model]
     m.fit(x_train, y_train)
 
-    if model.endswith("c") and not model.startswith("mlp") and not model.startswith("svm"):
-        test_predictions = m.predict_proba(x_test)
-        if np.array(y_test).shape != np.array(test_predictions).shape:
-            test_predictions = np.array(test_predictions).argmax(axis=-1).T
-    else:
-        test_predictions = m.predict(x_test)
+    # if model.endswith("c") and not model.startswith("mlp") and not model.startswith("svm"):
+    #     test_predictions = np.array(m.predict_proba(x_test))
+    #     if y_test.shape != test_predictions.shape:
+    #         test_predictions = np.array(test_predictions).argmax(axis=-1).T
+    # else:
+    test_predictions = m.predict(x_test)
 
-    if isinstance(test_predictions, list):
-        test_perf = np.mean([metric[DATASETS[name][2]](y_test[:, i], test_predictions[i][:, 1]) for i in
-                             range(len(test_predictions))])
-    else:
-        test_perf = metric[DATASETS[name][2]](y_test, test_predictions)
+    # if isinstance(test_predictions, list):
+    #     test_perf = np.mean([metric[DATASETS[name][2]](y_test[:, i], test_predictions[i][:, 1]) for i in
+    #                          range(len(test_predictions))])
+    # else:
+    test_perf = metric[DATASETS[name][2]](y_test, test_predictions)
 
     return test_perf
 
@@ -158,7 +172,7 @@ def train_tech(base_path: Path, data_path, model: str, tech: str, name: str) -> 
     """
     perf = {}
     for run in range(RUNS):
-        perf[f"{tech}_{run}"] = train_run(base_path / f"split{run}", data_path, model, name)
+        perf[f"{tech}_{run}"] = train_run(base_path / f"split_{run}", data_path, name, model)
     return perf
 
 
@@ -177,7 +191,7 @@ def train_model(base_path: Path, data_path: Path, model: str, tool: str, name: s
         pd.DataFrame: Dataframe of the performance of the models
     """
     perf = {}
-    for tech in TECHNIQUES[tool]:
+    for tech in set(TECHNIQUES[tool]).intersection(set(DRUG_TECHNIQUES)):
         perf.update(train_tech(base_path / tech, data_path, model, tech, name))
         # message(tool, name, model[:-2], tech)
     df = pd.DataFrame(list(perf.items()), columns=["name", "perf"])
@@ -199,7 +213,8 @@ def train_tool(full_path: Path, tool: str, name: str) -> None:
         name: Name of the dataset
     """
     dfs = []
-    for model in [x[:-2] for x in models.keys()] + ["d-mpnn"]:
+    for model in list(set([x[:-2] for x in models.keys()])) + ["d-mpnn"]:
+        # for model in ["d-mpnn"]:
         dfs.append(train_model(full_path / tool / name, full_path / "data", model, tool, name))
     pd.concat(dfs).to_csv(full_path / tool / name / f"results.csv", index=False)
 
@@ -214,19 +229,25 @@ def train_dataset(full_path: Path, name: str) -> None:
     """
     for tool in ["datasail", "deepchem", "lohi"]:
         train_tool(full_path, tool, name)
-    telegram(f"Finished MPP training {name}")
+    # telegram(f"Finished MPP training {name}")
 
 
-def main(full_path: Path) -> None:
+def train(full_path: Path, name: Optional[str] = None) -> None:
     """
     Train all models for all tools and datasets.
 
     Args:
         full_path: Path to the folder holding the runs for all tools and datasets
     """
-    for name in DATASETS:
+    if name is None:
+        for name in DATASETS:
+            train_dataset(full_path, name)
+    else:
         train_dataset(full_path, name)
 
 
 if __name__ == '__main__':
-    main(Path(sys.argv[1]))
+    if len(sys.argv) == 2:
+        train(Path(sys.argv[1]))
+    elif len(sys.argv) == 3:
+        train_dataset(Path(sys.argv[1]), sys.argv[2])

@@ -51,7 +51,7 @@ def plot_double(full_path: Path, names: List[str]) -> None:
         plot_embeds(ax[i][1], c_tr, c_te, "DataSAIL split (S1)")
         set_subplot_label(ax[i][1], fig, "B")
     plt.tight_layout()
-    plt.savefig(f"{names[0]}_{names[1]}.png")
+    plt.savefig(full_path / f"{names[0]}_{names[1]}.png")
     plt.show()
 
 

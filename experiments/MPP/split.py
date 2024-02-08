@@ -9,7 +9,7 @@ import pandas as pd
 from datasail.sail import datasail
 import lohi_splitter as lohi
 
-from experiments.utils import SPLITTERS, DATASETS, dc2pd, RUNS, telegram, embed_smiles, save_datasail_splits, TECHNIQUES
+from experiments.utils import SPLITTERS, DATASETS, RUNS, dc2pd, telegram, save_datasail_splits, TECHNIQUES
 
 count = 0
 total_number = 14 * 8 * 5  # num_datasets * num_techs * num_runs
@@ -173,17 +173,19 @@ def split_all(path):
     # telegram("Finished splitting MoleculeNet")
 
 
-def split():
+def split(full_path, name, solver="GUROBI"):
     """
     Split the MoleculeNet datasets using different techniques.
     """
-    if len(sys.argv) == 2:
-        split_all(Path(sys.argv[1]))
-    elif len(sys.argv) == 3:
-        split_w_datasail(Path(sys.argv[1]) / "datasail" / sys.argv[2], sys.argv[2], techniques=["I1e", "C1e"])
-        split_w_deepchem(Path(sys.argv[1]) / "deepchem" / sys.argv[2], sys.argv[2], techniques=SPLITTERS.keys())
-        split_w_lohi(Path(sys.argv[1]) / "lohi" / sys.argv[2], sys.argv[2])
+    split_w_datasail(full_path / "datasail" / name, name, techniques=["I1e", "C1e"], solver=solver)
+    split_w_deepchem(full_path / "deepchem" / name, name, techniques=SPLITTERS.keys())
+    split_w_lohi(full_path / "lohi" / name, name)
 
 
 if __name__ == '__main__':
-    split()
+    if len(sys.argv) == 2:
+        split_all(Path(sys.argv[1]))
+    elif len(sys.argv) >= 3:
+        split(Path(sys.argv[1]), sys.argv[2])
+    elif len(sys.argv) >= 4:
+        split(Path(sys.argv[1]), sys.argv[2], sys.argv[3])

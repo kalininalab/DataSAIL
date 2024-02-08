@@ -42,9 +42,9 @@ def split_w_datasail(base_path: Path, techniques: List[str], solver: str = "GURO
         solver=solver,
         inter=[(x[0], x[0]) for x in df[["ids"]].values.tolist()],
         e_type="M",
-        e_data=dict(df[["ids", "Ligand"]].values.tolist()),
+        e_data=dict(df[["ids", "smiles"]].values.tolist()),
         f_type="P",
-        f_data=dict(df[["ids", "Target"]].values.tolist()),
+        f_data=dict(df[["ids", "seq"]].values.tolist()),
         f_sim="mmseqs",
         verbose="I",
         max_sec=1000,
@@ -104,7 +104,7 @@ def split_w_lohi(base_path: Path) -> None:
                 print("Start", file=start)
 
             train_test_partition = lohi.hi_train_test_split(
-                smiles=list(df["Ligand"]),
+                smiles=list(df["smiles"]),
                 similarity_threshold=0.4,
                 train_min_frac=0.7,
                 test_min_frac=0.1,
