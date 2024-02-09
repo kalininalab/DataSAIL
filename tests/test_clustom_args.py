@@ -124,6 +124,26 @@ def test_mash_cargs():
     shutil.rmtree(out, ignore_errors=True)
 
 
+def test_diamond_cargs():
+    out = Path("data/pipeline/output")
+    sail([
+        "-o", str(out),
+        "-t", "C1e",
+        "-s", "0.7", "0.3",
+        "--e-type", "P",
+        "--e-data", str(Path('data') / 'pipeline' / 'seqs.fasta'),
+        "--e-sim", "mmseqs",
+        "--e-args", "--masking seg"
+    ])
+
+    assert out.is_dir()
+    assert (out / "C1e").is_dir()
+    assert (out / "logs").is_dir()
+    assert (out / "logs" / "seqs_diamond_masking_seg.log")
+
+    shutil.rmtree(out, ignore_errors=True)
+
+
 def test_mmseqs_cargs():
     out = Path("data/pipeline/output")
     sail([

@@ -6,6 +6,7 @@ import pytest
 
 from datasail.cluster.cdhit import run_cdhit
 from datasail.cluster.clustering import additional_clustering, cluster
+from datasail.cluster.diamond import run_diamond
 from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
@@ -16,8 +17,9 @@ from datasail.cluster.wlk import run_wlk
 from datasail.reader.read_proteins import parse_fasta, read_folder
 from datasail.reader.utils import DataSet, read_csv
 from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
-    check_mash_arguments, check_mmseqspp_arguments
-from datasail.settings import P_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN, MMSEQSPP
+    check_mash_arguments, check_mmseqspp_arguments, check_diamond_arguments
+from datasail.settings import P_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN, MMSEQSPP, \
+    DIAMOND
 
 
 @pytest.mark.todo
@@ -98,6 +100,8 @@ def protein_fasta_data(algo):
         args = check_mmseqs_arguments("")
     elif algo == MMSEQSPP:
         args = check_mmseqspp_arguments("")
+    elif algo == DIAMOND:
+        args = check_diamond_arguments("")
     else:
         raise ValueError(f"Unknown algorithm: {algo}")
     return DataSet(
@@ -177,6 +181,14 @@ def test_mash_genomic(genome_fasta_data):
     if platform.system() == "Windows":
         pytest.skip("MASH is not supported on Windows")
     check_clustering(*run_mash(genome_fasta_data, 1, Path()), dataset=genome_fasta_data)
+
+
+@pytest.mark.nowin
+def test_diamond_protein():
+    data = protein_fasta_data(DIAMOND)
+    if platform.system() == "Windows":
+        pytest.skip("DIAMOND is not supported on Windows")
+    check_clustering(*run_diamond(data, 1, Path()), dataset=data)
 
 
 @pytest.mark.nowin

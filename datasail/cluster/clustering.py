@@ -6,6 +6,7 @@ from sklearn.cluster import AgglomerativeClustering, SpectralClustering
 from datasail.cluster.caching import load_from_cache, store_to_cache
 from datasail.cluster.cdhit import run_cdhit
 from datasail.cluster.cdhit_est import run_cdhit_est
+from datasail.cluster.diamond import run_diamond
 from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
@@ -15,7 +16,8 @@ from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
+    FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND
 
 
 def cluster(dataset: DataSet, **kwargs) -> DataSet:
@@ -90,19 +92,21 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
           - Symmetric matrix of pairwise similarities between the current clusters
           - Mapping from current clusters to their weights
     """
-    if dataset.similarity.lower() == "wlk":
+    if dataset.similarity.lower() == WLK:
         run_wlk(dataset)
-    elif dataset.similarity.lower() == "mmseqs":
+    elif dataset.similarity.lower() in [MMSEQS, MMSEQS2]:
         run_mmseqs(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "mmseqspp":
+    elif dataset.similarity.lower() == MMSEQSPP:
         run_mmseqspp(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "foldseek":
+    elif dataset.similarity.lower() == FOLDSEEK:
         run_foldseek(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "cdhit":
+    elif dataset.similarity.lower() == DIAMOND:
+        run_diamond(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == CDHIT:
         run_cdhit(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "cdhit_est":
+    elif dataset.similarity.lower() == CDHIT_EST:
         run_cdhit_est(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "ecfp":
+    elif dataset.similarity.lower() == ECFP:
         run_ecfp(dataset)
     else:
         raise ValueError(f"Unknown cluster method: {dataset.similarity}")

@@ -1,4 +1,3 @@
-import os
 from argparse import Namespace
 from dataclasses import dataclass, fields
 from pathlib import Path

@@ -1,7 +1,7 @@
 import pytest
 
 from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
-    check_mmseqspp_arguments, check_mash_arguments
+    check_mmseqspp_arguments, check_mash_arguments, check_diamond_arguments
 
 
 @pytest.mark.parametrize("args", [
@@ -21,6 +21,55 @@ def test_cdhit_parser_invalid(args):
 ])
 def test_cdhit_parser_valid(args):
     assert check_cdhit_arguments(args) is not None
+
+
+@pytest.mark.parametrize("args", [
+    "--comp-based-stats 5", "--masking unknown", "--soft-masking invalid", "--evalue -0.001", "--motif-masking 2",
+    "--approx-id 110", "--ext invalid", "--max-target-seqs -5", "--top 110", "--faster 2", "--fast 2", "--mid-sensitive 2",
+    "--sensitive 2", "--more-sensitive 2", "--very-sensitive 2", "--ultra-sensitive 2", "--shapes -3", "--query invalid.fasta",
+    "--strand neither", "--un missing_unaligned.fasta", "--al missing_aligned.fasta", "--unfmt invalid_format", "--alfmt invalid_format",
+    "--unal 2", "--max-hsps -2", "--range-culling 2", "--compress 2", "--min-score -10", "--id 110", "--query-cover 120",
+    "--subject-cover 110", "--swipe 2", "--iterate 2", "--global-ranking -50", "--block-size -2.0",
+    "--index-chunks -4", "--parallel-tmpdir /invalid_tmp", "--gapopen -1.5", "--gapextend -2.5", "--matrix unknown_matrix",
+    "--custom-matrix invalid_matrix.txt", "--frameshift enabled", "--long-reads 2", "--query-gencode 23",
+    "--salltitles 2", "--sallseqid 2", "--no-self-hits 2", "--taxonlist non_existing_taxon_list.txt",
+    "--taxon-exclude non_existing_exclude_list.txt", "--seqidlist non_existing_seqid_list.txt", "--skip-missing-seqids 2",
+    "--file-buffer-size -67108864", "--bin invalid_bin", "--ext-chunk-size -auto", "--no-ranking 2", "--dbsize invalid_size",
+    "--no-auto-append 2", "--tantan-minMaskProb 1.5", "--algo unknown-algorithm", "--min-orf -30", "--seed-cut -5",
+    "--freq-masking 2", "--freq-sd -3", "--id2 -10", "--linsearch 2", "--lin-stage1 2", "--xdrop -10",
+    "--gapped-filter-evalue invalid_value", "--band -20", "--shape-mask invalid_shape", "--multiprocessing 2", "--mp-init 2",
+    "--mp-recover 2", "--mp-query-chunk 2", "--culling-overlap -10", "--taxon-k -5", "--range-cover 110",
+    "--xml-blord-format 2", "--sam-query-len 2", "--stop-match-score -0.5", "--target-indexed 2", "--daa invalid_output.daa",
+    "--window 0", "--ungapped-score -5", "--hit-band -10", "--hit-score -50", "--gapped-xdrop -20", "--rank-ratio2 -0.8",
+    "--rank-ratio -0.9", "--lambda -0.5", "--K -10"
+])
+def test_diamond_args_checker_invalid(args):
+    with pytest.raises(ValueError):
+        check_diamond_arguments(args)
+
+
+@pytest.mark.parametrize("args", [
+    "--comp-based-stats 2", "--masking seg", "--soft-masking tantan", "--evalue 0.001", "--motif-masking 1",
+    "--approx-id 80", "--ext full", "--max-target-seqs 25", "--top 10", "--faster 1", "--fast 1", "--mid-sensitive 1",
+    "--sensitive 1", "--more-sensitive 1", "--very-sensitive 1", "--ultra-sensitive 1", "--shapes 5", "--query input.fasta",
+    "--strand both", "--un unaligned.fasta", "--al aligned.fasta", "--unfmt fasta", "--alfmt fastq", "--unal 1",
+    "--max-hsps 1", "--range-culling 1", "--compress 1", "--min-score 50", "--id 90", "--query-cover 80",
+    "--subject-cover 70", "--swipe 1", "--iterate 1", "--global-ranking 100", "--block-size 2.0",
+    "--index-chunks 4", "--parallel-tmpdir /tmp", "--gapopen -1", "--gapextend -2", "--matrix BLOSUM62",
+    "--custom-matrix custom_matrix.txt", "--frameshift disabled", "--long-reads 1", "--query-gencode 11",
+    "--salltitles 1", "--sallseqid 1", "--no-self-hits 1", "--taxonlist taxon_list.txt", "--taxon-exclude exclude_list.txt",
+    "--seqidlist seqid_list.txt", "--skip-missing-seqids 1", "--file-buffer-size 67108864", "--bin 10",
+    "--ext-chunk-size auto", "--no-ranking 1", "--dbsize 1000000000", "--no-auto-append 1", "--tantan-minMaskProb 0.9",
+    "--algo double-indexed", "--min-orf 50", "--seed-cut 10", "--freq-masking 1", "--freq-sd 3", "--id2 50",
+    "--linsearch 1", "--lin-stage1 1", "--xdrop 10", "--gapped-filter-evalue auto", "--band 50",
+    "--shape-mask AACGT,GGTCA", "--multiprocessing 1", "--mp-init 1", "--mp-recover 1", "--mp-query-chunk 1",
+    "--culling-overlap 50", "--taxon-k 5", "--range-cover 50", "--xml-blord-format 1", "--sam-query-len 1",
+    "--stop-match-score 0.5", "--target-indexed 1", "--daa output.daa", "--window 5", "--ungapped-score 30",
+    "--hit-band 10", "--hit-score 50", "--gapped-xdrop 20", "--rank-ratio2 0.8", "--rank-ratio 0.9", "--lambda 0.5",
+    "--K 10"
+])
+def test_diamond_args_checker_valid(args):
+    assert check_diamond_arguments(args) is not None
 
 
 @pytest.mark.parametrize("args", [

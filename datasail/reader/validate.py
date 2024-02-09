@@ -3,8 +3,7 @@ from argparse import Namespace
 from typing import Tuple, Union, Optional
 
 from datasail.parsers import MultiYAMLParser
-from datasail.settings import CDHIT, MMSEQS2, MASH, MASH_SKETCH, MASH_DIST, FOLDSEEK, MMSEQS, get_default, CDHIT_EST, \
-    MMSEQSPP
+from datasail.settings import CDHIT, MMSEQS2, MASH, FOLDSEEK, MMSEQS, get_default, CDHIT_EST, MMSEQSPP, DIAMOND
 
 
 def validate_user_args(
@@ -34,6 +33,9 @@ def validate_user_args(
         return check_cdhit_est_arguments(tool_args)
     elif (sim_on and similarity.lower().startswith(CDHIT)) or (both_none and get_default(dtype, dformat)[0] == CDHIT):
         return check_cdhit_arguments(tool_args)
+    elif (sim_on and similarity.lower().startswith(DIAMOND)) or \
+            (both_none and get_default(dtype, dformat)[0] == DIAMOND):
+        return check_diamond_arguments(tool_args)
     elif (sim_on and similarity.lower().startswith(MMSEQSPP)) or \
             (both_none and get_default(dtype, dformat)[0] == MMSEQSPP):
         return check_mmseqspp_arguments(tool_args)
@@ -206,6 +208,393 @@ def check_cdhit_arguments(args: str = "") -> Namespace:
         raise ValueError("Option -A is incompatible with -aL and -AL.")
     if args.A != 0 and (args.aS != 0.0 or args.AS != 99999999):
         raise ValueError("Option -A is incompatible with -aS and -AS.")
+    return args
+
+
+def check_diamond_arguments(args: str = "") -> Optional[Namespace]:
+    """
+    Validate the custom arguments provided to DataSAIL for executing DIAMOND.
+
+    Args:
+        args: String of the arguments that can be set by user
+
+    Returns:
+        The namespace containing the parsed and validated arguments
+    """
+    args = MultiYAMLParser(CDHIT).parse_args(args)
+
+    # Checking --comp-based-stats
+    if not (0 <= args.comp_based_stats <= 4):
+        raise ValueError("Invalid value for --comp-based-stats. It should be between 0 and 4.")
+
+    # Checking --masking
+    valid_masking_values = ["none", "seg", "tantan"]
+    if args.masking not in valid_masking_values:
+        raise ValueError(f"Invalid value for --masking. It should be one of {valid_masking_values}.")
+
+    # Checking --soft-masking
+    valid_soft_masking_values = ["none", "seg", "tantan"]
+    if args.soft_masking not in valid_soft_masking_values:
+        raise ValueError(f"Invalid value for --soft-masking. It should be one of {valid_soft_masking_values}.")
+
+    # Checking --evalue
+    if args.evalue < 0:
+        raise ValueError("Invalid value for --evalue. It should be greater than or equal to 0.")
+
+    # Checking --motif-masking
+    if args.motif_masking not in [0, 1]:
+        raise ValueError("Invalid value for --motif-masking. It should be 0 or 1.")
+
+    # Checking --approx-id
+    if not (0 <= args.approx_id <= 100):
+        raise ValueError("Invalid value for --approx-id. It should be between 0 and 100.")
+
+    # Checking --ext
+    valid_ext_values = ["banded-fast", "banded-slow", "full"]
+    if args.ext not in valid_ext_values:
+        raise ValueError(f"Invalid value for --ext. It should be one of {valid_ext_values}.")
+
+    # Checking --max-target-seqs
+    if args.max_target_seqs < 0:
+        raise ValueError("Invalid value for --max-target-seqs. It should be greater than or equal to 0.")
+
+    # Checking --top
+    if args.top is not None and (args.top <= 0 or args.top > 100):
+        raise ValueError("Invalid value for --top. It should be between 0 and 100.")
+
+    # Checking --faster
+    if args.faster not in [0, 1]:
+        raise ValueError("Invalid value for --faster. It should be 0 or 1.")
+
+    # Checking --fast
+    if args.fast not in [0, 1]:
+        raise ValueError("Invalid value for --fast. It should be 0 or 1.")
+
+    # Checking --mid-sensitive
+    if args.mid_sensitive not in [0, 1]:
+        raise ValueError("Invalid value for --mid-sensitive. It should be 0 or 1.")
+
+    # Checking --sensitive
+    if args.sensitive not in [0, 1]:
+        raise ValueError("Invalid value for --sensitive. It should be 0 or 1.")
+
+    # Checking --more-sensitive
+    if args.more_sensitive not in [0, 1]:
+        raise ValueError("Invalid value for --more-sensitive. It should be 0 or 1.")
+
+    # Checking --very-sensitive
+    if args.very_sensitive not in [0, 1]:
+        raise ValueError("Invalid value for --very-sensitive. It should be 0 or 1.")
+
+    # Checking --ultra-sensitive
+    if args.ultra_sensitive not in [0, 1]:
+        raise ValueError("Invalid value for --ultra-sensitive. It should be 0 or 1.")
+
+    # Checking --shapes
+    if args.shapes is not None and args.shapes <= 0:
+        raise ValueError("Invalid value for --shapes. It should be greater than 0.")
+
+    # Checking --query
+    if args.query is not None and not isinstance(args.query, str):
+        raise ValueError("Invalid value for --query. It should be a string.")
+
+    # Checking --strand
+    valid_strand_values = ["both", "minus", "plus"]
+    if args.strand not in valid_strand_values:
+        raise ValueError(f"Invalid value for --strand. It should be one of {valid_strand_values}.")
+
+    # Checking --un
+    if args.un is not None and not isinstance(args.un, str):
+        raise ValueError("Invalid value for --un. It should be a string.")
+
+    # Checking --al
+    if args.al is not None and not isinstance(args.al, str):
+        raise ValueError("Invalid value for --al. It should be a string.")
+
+    # Checking --unfmt
+    valid_unfmt_values = ["fasta", "fastq"]
+    if args.unfmt not in valid_unfmt_values:
+        raise ValueError(f"Invalid value for --unfmt. It should be one of {valid_unfmt_values}.")
+
+    # Checking --alfmt
+    valid_alfmt_values = ["fasta", "fastq"]
+    if args.alfmt not in valid_alfmt_values:
+        raise ValueError(f"Invalid value for --alfmt. It should be one of {valid_alfmt_values}.")
+
+    # Checking --unal
+    if args.unal not in [0, 1]:
+        raise ValueError("Invalid value for --unal. It should be 0 or 1.")
+
+    # Checking --max-hsps
+    if args.max_hsps < 0:
+        raise ValueError("Invalid value for --max-hsps. It should be greater than or equal to 0.")
+
+    # Checking --range-culling
+    if args.range_culling not in [0, 1]:
+        raise ValueError("Invalid value for --range-culling. It should be 0 or 1.")
+
+    # Checking --compress
+    if args.compress not in [0, 1]:
+        raise ValueError("Invalid value for --compress. It should be 0 or 1.")
+
+    # Checking --min-score
+    if args.min_score is not None and args.min_score < 0:
+        raise ValueError("Invalid value for --min-score. It should be greater than or equal to 0.")
+
+    # Checking --id
+    if args.id is not None and (args.id < 0 or args.id > 100):
+        raise ValueError("Invalid value for --id. It should be between 0 and 100.")
+
+    # Checking --query-cover
+    if args.query_cover is not None and (args.query_cover < 0 or args.query_cover > 100):
+        raise ValueError("Invalid value for --query-cover. It should be between 0 and 100.")
+
+    # Checking --subject-cover
+    if args.subject_cover is not None and (args.subject_cover < 0 or args.subject_cover > 100):
+        raise ValueError("Invalid value for --subject-cover. It should be between 0 and 100.")
+
+    # Checking --swipe
+    if args.swipe not in [0, 1]:
+        raise ValueError("Invalid value for --swipe. It should be 0 or 1.")
+
+    # Checking --iterate
+    if args.iterate not in [0, 1]:
+        raise ValueError("Invalid value for --iterate. It should be 0 or 1.")
+
+    # Checking --global-ranking
+    if args.global_ranking is not None and args.global_ranking <= 0:
+        raise ValueError("Invalid value for --global-ranking. It should be greater than 0.")
+
+    # Checking --block-size
+    if args.block_size is not None and args.block_size <= 0:
+        raise ValueError("Invalid value for --block-size. It should be greater than 0.")
+
+    # Checking --index-chunks
+    if args.index_chunks is not None and args.index_chunks <= 0:
+        raise ValueError("Invalid value for --index-chunks. It should be greater than 0.")
+
+    # Checking --parallel-tmpdir
+    if args.parallel_tmpdir is not None and not isinstance(args.parallel_tmpdir, str):
+        raise ValueError("Invalid value for --parallel-tmpdir. It should be a string.")
+
+    # Checking --gapopen
+    if args.gapopen is not None and args.gapopen < 0:
+        raise ValueError("Invalid value for --gapopen. It should be greater than or equal to 0.")
+
+    # Checking --gapextend
+    if args.gapextend is not None and args.gapextend < 0:
+        raise ValueError("Invalid value for --gapextend. It should be greater than or equal to 0.")
+
+    # Checking --matrix
+    if args.matrix is not None and not isinstance(args.matrix, str):
+        raise ValueError("Invalid value for --matrix. It should be a string.")
+
+    # Checking --custom-matrix
+    if args.custom_matrix is not None and not isinstance(args.custom_matrix, str):
+        raise ValueError("Invalid value for --custom-matrix. It should be a string.")
+
+    # Checking --frameshift
+    valid_frameshift_values = ["disabled"]
+    if args.frameshift not in valid_frameshift_values:
+        raise ValueError(f"Invalid value for --frameshift. It should be one of {valid_frameshift_values}.")
+
+    # Checking --long-reads
+    if args.long_reads not in [0, 1]:
+        raise ValueError("Invalid value for --long-reads. It should be 0 or 1.")
+
+    # Checking --query-gencode
+    if args.query_gencode is not None and not isinstance(args.query_gencode, str):
+        raise ValueError("Invalid value for --query-gencode. It should be a string.")
+
+    # Checking --salltitles
+    if args.salltitles not in [0, 1]:
+        raise ValueError("Invalid value for --salltitles. It should be 0 or 1.")
+
+    # Checking --sallseqid
+    if args.sallseqid not in [0, 1]:
+        raise ValueError("Invalid value for --sallseqid. It should be 0 or 1.")
+
+    # Checking --no-self-hits
+    if args.no_self_hits not in [0, 1]:
+        raise ValueError("Invalid value for --no-self-hits. It should be 0 or 1.")
+
+    # Checking --taxonlist
+    if args.taxonlist is not None and not isinstance(args.taxonlist, str):
+        raise ValueError("Invalid value for --taxonlist. It should be a string.")
+
+    # Checking --taxon-exclude
+    if args.taxon_exclude is not None and not isinstance(args.taxon_exclude, str):
+        raise ValueError("Invalid value for --taxon-exclude. It should be a string.")
+
+    # Checking --seqidlist
+    if args.seqidlist is not None and not isinstance(args.seqidlist, str):
+        raise ValueError("Invalid value for --seqidlist. It should be a string.")
+
+    # Checking --skip-missing-seqids
+    if args.skip_missing_seqids not in [0, 1]:
+        raise ValueError("Invalid value for --skip-missing-seqids. It should be 0 or 1.")
+
+    # Checking --file-buffer-size
+    if args.file_buffer_size is not None and args.file_buffer_size <= 0:
+        raise ValueError("Invalid value for --file-buffer-size. It should be greater than 0.")
+
+    # Checking --bin
+    if args.bin is not None and not isinstance(args.bin, str):
+        raise ValueError("Invalid value for --bin. It should be a string.")
+
+    # Checking --ext-chunk-size
+    if args.ext_chunk_size is not None and args.ext_chunk_size <= 0:
+        raise ValueError("Invalid value for --ext-chunk-size. It should be greater than 0.")
+
+    # Checking --no-ranking
+    if args.no_ranking not in [0, 1]:
+        raise ValueError("Invalid value for --no-ranking. It should be 0 or 1.")
+
+    # Checking --dbsize
+    if args.dbsize is not None and not args.dbsize.isdigit():
+        raise ValueError("Invalid value for --dbsize. It should be a positive integer.")
+
+    # Checking --no-auto-append
+    if args.no_auto_append not in [0, 1]:
+        raise ValueError("Invalid value for --no-auto-append. It should be 0 or 1.")
+
+    # Checking --tantan-minMaskProb
+    if args.tantan_minMaskProb is not None and (args.tantan_minMaskProb < 0 or args.tantan_minMaskProb > 1):
+        raise ValueError("Invalid value for --tantan-minMaskProb. It should be between 0 and 1.")
+
+    # Checking --algo
+    valid_algo_values = ["double-indexed", "query-indexed", "ctg"]
+    if args.algo not in valid_algo_values:
+        raise ValueError(f"Invalid value for --algo. It should be one of {valid_algo_values}.")
+
+    # Checking --min-orf
+    if args.min_orf is not None and not args.min_orf.isdigit():
+        raise ValueError("Invalid value for --min-orf. It should be a positive integer.")
+
+    # Checking --seed-cut
+    if args.seed_cut is not None and not args.seed_cut.isdigit():
+        raise ValueError("Invalid value for --seed-cut. It should be a positive integer.")
+
+    # Checking --freq-masking
+    if args.freq_masking not in [0, 1]:
+        raise ValueError("Invalid value for --freq-masking. It should be 0 or 1.")
+
+    # Checking --freq-sd
+    if args.freq_sd is not None and not args.freq_sd.isdigit():
+        raise ValueError("Invalid value for --freq-sd. It should be a positive integer.")
+
+    # Checking --id2
+    if args.id2 is not None and not args.id2.isdigit():
+        raise ValueError("Invalid value for --id2. It should be a positive integer.")
+
+    # Checking --linsearch
+    if args.linsearch not in [0, 1]:
+        raise ValueError("Invalid value for --linsearch. It should be 0 or 1.")
+
+    # Checking --lin-stage1
+    if args.lin_stage1 not in [0, 1]:
+        raise ValueError("Invalid value for --lin-stage1. It should be 0 or 1.")
+
+    # Checking --xdrop
+    if args.xdrop is not None and args.xdrop <= 0:
+        raise ValueError("Invalid value for --xdrop. It should be greater than 0.")
+
+    # Checking --gapped-filter-evalue
+    if args.gapped_filter_evalue is not None and args.gapped_filter_evalue != "auto" and args.gapped_filter_evalue < 0:
+        raise ValueError("Invalid value for --gapped-filter-evalue. It should be greater than or equal to 0 or 'auto'.")
+
+    # Checking --band
+    if args.band is not None and args.band <= 0:
+        raise ValueError("Invalid value for --band. It should be greater than 0.")
+
+    # Checking --shape-mask
+    if args.shape_mask is not None and not isinstance(args.shape_mask, str):
+        raise ValueError("Invalid value for --shape-mask. It should be a string.")
+
+    # Checking --multiprocessing
+    if args.multiprocessing not in [0, 1]:
+        raise ValueError("Invalid value for --multiprocessing. It should be 0 or 1.")
+
+    # Checking --mp-init
+    if args.mp_init not in [0, 1]:
+        raise ValueError("Invalid value for --mp-init. It should be 0 or 1.")
+
+    # Checking --mp-recover
+    if args.mp_recover not in [0, 1]:
+        raise ValueError("Invalid value for --mp-recover. It should be 0 or 1.")
+
+    # Checking --mp-query-chunk
+    if args.mp_query_chunk not in [0, 1]:
+        raise ValueError("Invalid value for --mp-query-chunk. It should be 0 or 1.")
+
+    # Checking --culling-overlap
+    if args.culling_overlap is not None and (args.culling_overlap < 0 or args.culling_overlap > 100):
+        raise ValueError("Invalid value for --culling-overlap. It should be between 0 and 100.")
+
+    # Checking --taxon-k
+    if args.taxon_k is not None and not args.taxon_k.isdigit():
+        raise ValueError("Invalid value for --taxon-k. It should be a positive integer.")
+
+    # Checking --range-cover
+    if args.range_cover is not None and (args.range_cover < 0 or args.range_cover > 100):
+        raise ValueError("Invalid value for --range-cover. It should be between 0 and 100.")
+
+    # Checking --xml-blord-format
+    if args.xml_blord_format not in [0, 1]:
+        raise ValueError("Invalid value for --xml-blord-format. It should be 0 or 1.")
+
+    # Checking --sam-query-len
+    if args.sam_query_len not in [0, 1]:
+        raise ValueError("Invalid value for --sam-query-len. It should be 0 or 1.")
+
+    # Checking --stop-match-score
+    if args.stop_match_score is not None and args.stop_match_score < 0:
+        raise ValueError("Invalid value for --stop-match-score. It should be greater than or equal to 0.")
+
+    # Checking --target-indexed
+    if args.target_indexed not in [0, 1]:
+        raise ValueError("Invalid value for --target-indexed. It should be 0 or 1.")
+
+    # Checking --daa
+    if args.daa is not None and not isinstance(args.daa, str):
+        raise ValueError("Invalid value for --daa. It should be a string.")
+
+    # Checking --window
+    if args.window is not None and args.window <= 0:
+        raise ValueError("Invalid value for --window. It should be greater than 0.")
+
+    # Checking --ungapped-score
+    if args.ungapped_score is not None and args.ungapped_score < 0:
+        raise ValueError("Invalid value for --ungapped-score. It should be greater than or equal to 0.")
+
+    # Checking --hit-band
+    if args.hit_band is not None and args.hit_band <= 0:
+        raise ValueError("Invalid value for --hit-band. It should be greater than 0.")
+
+    # Checking --hit-score
+    if args.hit_score is not None and args.hit_score < 0:
+        raise ValueError("Invalid value for --hit-score. It should be greater than or equal to 0.")
+
+    # Checking --gapped-xdrop
+    if args.gapped_xdrop is not None and args.gapped_xdrop <= 0:
+        raise ValueError("Invalid value for --gapped-xdrop. It should be greater than 0.")
+
+    # Checking --rank-ratio2
+    if args.rank_ratio2 is not None and args.rank_ratio2 <= 0:
+        raise ValueError("Invalid value for --rank-ratio2. It should be greater than 0.")
+
+    # Checking --rank-ratio
+    if args.rank_ratio is not None and args.rank_ratio <= 0:
+        raise ValueError("Invalid value for --rank-ratio. It should be greater than 0.")
+
+    # Checking --lambda
+    if args["lambda"] is not None and args["lambda"] <= 0:
+        raise ValueError("Invalid value for --lambda. It should be greater than 0.")
+
+    # Checking --K
+    if args.K is not None and args.K <= 0:
+        raise ValueError("Invalid value for --K. It should be greater than 0.")
+
     return args
 
 
