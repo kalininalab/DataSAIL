@@ -1,5 +1,5 @@
 package:
-  name: "datasail"
+  name: "datasail-lite"
   version: '0.3.0'
 
 source:
