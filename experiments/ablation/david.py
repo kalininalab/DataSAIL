@@ -1,5 +1,6 @@
 import copy
 import pickle
+import sys
 import time
 from pathlib import Path
 from typing import List, Tuple, Optional
@@ -8,7 +9,7 @@ import matplotlib
 import cvxpy
 import deepchem as dc
 import numpy as np
-from rdkit import rdBase, Chem, DataStructs
+from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
@@ -18,9 +19,7 @@ from datasail.cluster.utils import read_molecule_encoding
 from datasail.reader.read_molecules import read_molecule_data
 from datasail.solver.utils import solve, compute_limits, cluster_y_constraints
 from experiments.ablation.time import MARKERS
-from experiments.utils import dc2pd, telegram, DATASETS, COLORS
-
-blocker = rdBase.BlockLogs()
+from experiments.utils import dc2pd, DATASETS, COLORS
 
 
 def solve_ccs_blp(
@@ -31,7 +30,6 @@ def solve_ccs_blp(
         splits,
         names,
         max_sec,
-        max_sol,
         solver,
         log_file,
         threads,
@@ -102,17 +100,17 @@ def run_ecfp(dataset):
     return cluster_names, cluster_map, sim_matrix, cluster_weights
 
 
-def run_solver(ds_name: str, clusters: List[int], solvers: List[str]):
-    root = Path("/scratch") / "SCRATCH_SAS" / "roman" / "DataSAIL" / "time" / "time" / ds_name
-    root.mkdir(parents=True, exist_ok=True)
+def run_solver(full_path: Path, ds_name: str, clusters: List[int], solvers: List[str]):
+    full_path.mkdir(parents=True, exist_ok=True)
 
-    ds_path = root / "data.pkl"
+    ds_path = full_path / "data.pkl"
     if not ds_path.exists():
         dataset = DATASETS[ds_name][0](featurizer=dc.feat.DummyFeaturizer(), splitter=None)[1][0]
         df = dc2pd(dataset, ds_name)
         dataset = read_molecule_data(dict(df[["ID", "SMILES"]].values.tolist()), sim="ecfp")
         dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity, dataset.cluster_weights = run_ecfp(
-            dataset)
+            dataset
+        )
         with open(ds_path, "wb") as f:
             pickle.dump(dataset, f)
     else:
@@ -120,17 +118,15 @@ def run_solver(ds_name: str, clusters: List[int], solvers: List[str]):
             dataset = pickle.load(f)
 
     for nc, num_clusters in enumerate(clusters):
-        # if nc + 1 < len(clusters) and (root / "GUROBI" / f"data_{clusters[nc + 1]}.pkl").exists():
-        #     continue
-        if (root / "GUROBI" / f"data_{num_clusters}.pkl").exists():
-            with open(root / "GUROBI" / f"data_{num_clusters}.pkl", "rb") as pkl:
+        if (full_path / "GUROBI" / f"data_{num_clusters}.pkl").exists():
+            with open(full_path / "GUROBI" / f"data_{num_clusters}.pkl", "rb") as pkl:
                 ds, _ = pickle.load(pkl)
         else:
             ds = copy.deepcopy(dataset)
             ds = additional_clustering(ds, n_clusters=num_clusters)
 
         for solver_name in solvers:
-            solver_path = root / solver_name
+            solver_path = full_path / solver_name
             solver_path.mkdir(parents=True, exist_ok=True)
 
             try:
@@ -142,18 +138,17 @@ def run_solver(ds_name: str, clusters: List[int], solvers: List[str]):
                     splits=[0.8, 0.2],
                     names=["train", "test"],
                     max_sec=7200,
-                    max_sol=-1,
                     solver=solver_name,
-                    log_file=root / solver_name / f"solve_{num_clusters}.log",
+                    log_file=full_path / solver_name / f"solve_{num_clusters}.log",
                     threads=16,
                 )
             except cvxpy.error.SolverError as e:
                 print(e)
-                with open(root / "log.txt", "a") as log:
+                with open(full_path / "log.txt", "a") as log:
                     print(f"{num_clusters} - SolverError", file=log)
                 return
 
-            with open(root / solver_name / f"data_{num_clusters}.pkl", "wb") as f:
+            with open(full_path / solver_name / f"data_{num_clusters}.pkl", "wb") as f:
                 pickle.dump((ds, assignment), f)
             tmp = np.array([1 if assignment[n] == "train" else -1 for n in range(num_clusters)]).reshape(-1, 1)
             leakage = eval(tmp, ds.cluster_similarity)
@@ -161,14 +156,13 @@ def run_solver(ds_name: str, clusters: List[int], solvers: List[str]):
                 solver_time = problem.solver_stats.solve_time
             except:
                 solver_time = 0
-            with open(root / "log.txt", "a") as log:
+            with open(full_path / "log.txt", "a") as log:
                 print(solver_name, num_clusters, leakage, solver_time, ttime, sep=" | ", file=log)
-            telegram(f"[Timing] {solver_name} - {ds_name} - {num_clusters} - {ttime:.1f}s - {leakage:.4f}")
 
 
-def time_overhead(ds_name: str):
+def time_overhead(full_path):
     times = {}
-    with open(Path("/scratch") / "SCRATCH_SAS" / "roman" / "DataSAIL" / "time" / "time" / ds_name / "log.txt", "r") as data:
+    with open(full_path / "log.txt", "r") as data:
         for line in data:
             parts = line.split(" | ")
             if parts[0] not in times:
@@ -191,7 +185,7 @@ def eval(assignments, similarity):
     return 1 - np.sum(similarity * mask) / np.sum(similarity)
 
 
-def visualize(ds_name: str, clusters: List[int], solvers, ax: Optional[Tuple] = None):
+def visualize(full_path: Path, clusters: List[int], solvers, ax: Optional[Tuple] = None):
     if show := ax is None:
         matplotlib.rc('font', **{'size': 16})
         fig = plt.figure(figsize=(10, 8))
@@ -200,7 +194,7 @@ def visualize(ds_name: str, clusters: List[int], solvers, ax: Optional[Tuple] = 
     else:
         ax_p, ax_t = ax
 
-    times = time_overhead(ds_name)
+    times = time_overhead(full_path)
 
     perf_path = Path("performances.pkl")
     if perf_path.exists():
@@ -208,17 +202,17 @@ def visualize(ds_name: str, clusters: List[int], solvers, ax: Optional[Tuple] = 
             performances = pickle.load(f)
     else:
         performances = {"MOSEK": [], "SCIP": [], "GUROBI": []}
-        base = Path("/scratch") / "SCRATCH_SAS" / "roman" / "DataSAIL" / "time" / "time" / ds_name
-        with open(base / "data.pkl", "rb") as f:
+        with open(full_path / "data.pkl", "rb") as f:
             dataset = pickle.load(f)
 
         for solver in solvers:
             for num_clusters in clusters:
                 print(f"\r{solver} - {num_clusters}", end="")
                 try:
-                    with open(base / solver / f"data_{num_clusters}.pkl", "rb") as f:
+                    with open(full_path / solver / f"data_{num_clusters}.pkl", "rb") as f:
                         ds, assi = pickle.load(f)
-                    tmp2 = np.array([1 if assi[ds.cluster_map[n]] == "train" else -1 for n in dataset.names]).reshape(-1, 1)
+                    tmp2 = np.array([1 if assi[ds.cluster_map[n]] == "train" else -1 for n in dataset.names]).reshape(
+                        -1, 1)
                     s_value = eval(tmp2, dataset.cluster_similarity)
                 except Exception:
                     s_value = 1
@@ -254,12 +248,16 @@ def visualize(ds_name: str, clusters: List[int], solvers, ax: Optional[Tuple] = 
     if show:
         ax_p.title.set_text("Unleaked information measured by sample similarity")
         fig.tight_layout()
-        plt.savefig("david.png")
+        plt.savefig(full_path / "clusters.png")
         plt.show()
 
 
-if __name__ == '__main__':
-    # run_solver(sys.argv[1], list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)),
-    #                  ["GUROBI", "MOSEK", "SCIP"])
-    visualize("tox21", list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)),
+def run_cluster_ablation(full_path: Path):
+    run_solver(full_path, "tox21", list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)),
+               ["GUROBI", "MOSEK", "SCIP"])
+    visualize(full_path, list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)),
               ["GUROBI", "MOSEK", "SCIP"])
+
+
+if __name__ == '__main__':
+    run_cluster_ablation(Path(sys.argv[1]))

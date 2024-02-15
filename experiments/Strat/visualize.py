@@ -12,14 +12,12 @@ from experiments.utils import set_subplot_label, COLORS, embed, plot_embeds
 
 def plot_perf(base_path, ax):
     models = ["RF", "SVM", "XGB", "MLP", "D-MPNN"]
-    values = [[] for _ in range(2)]
-    df = pd.read_csv(base_path / "Tox21Strat.csv")
-
-    for s, tool in enumerate(["deepchem", "datasail"]):
-        for model in models:
-            values[s].append(df[df["tool"] == tool][df["model"] == model]["perf"].mean())
-    df = pd.DataFrame(np.array(values).T, columns=["Stratified baseline", "DataSAIL split (S1 w/ classes)"], index=models)
-    df.plot.bar(ax=ax, rot=0, ylabel="AUROC (↑)", color=[colors["r1d"], colors["s1d"]])
+    df = pd.read_csv(base_path / "results.csv")
+    values = df[["tool", "model", "perf"]].groupby(["model", "tool"])["perf"].mean().reset_index() \
+        .pivot(index="model", columns="tool", values="perf")
+    values = np.array(values.reindex(["rf", "svm", "xgb", "mlp", "d-mpnn"])[["deepchem", "datasail"]], dtype=float)
+    df = pd.DataFrame(values, columns=["Stratified baseline", "DataSAIL split (S1 w/ classes)"], index=models)
+    df.plot.bar(ax=ax, rot=0, ylabel="AUROC (↑)", color=[COLORS["r1d"], COLORS["s1d"]])
     ax.legend(loc="lower right")
     ax.set_title(f"Performance comparison")
 
@@ -39,7 +37,7 @@ def main(full_path):
     set_subplot_label(ax[2], fig, "C")
 
     fig.tight_layout()
-    plt.savefig(full_path / "Tox21Strat.png")
+    plt.savefig(full_path / "Strat.png")
     plt.show()
 
 

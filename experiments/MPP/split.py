@@ -5,20 +5,10 @@ from typing import List
 
 import deepchem as dc
 import pandas as pd
-
-from datasail.sail import datasail
 import lohi_splitter as lohi
 
-from experiments.utils import SPLITTERS, DATASETS, RUNS, dc2pd, telegram, save_datasail_splits, TECHNIQUES
-
-count = 0
-total_number = 14 * 8 * 5  # num_datasets * num_techs * num_runs
-
-
-def message(tool, name, tech, run):
-    global count
-    count += 1
-    telegram(f"[MPP Splitting {count}/{total_number}] {tool} - {name} - {tech} - {run + 1}/5")
+from datasail.sail import datasail
+from experiments.utils import SPLITTERS, DATASETS, RUNS, dc2pd, save_datasail_splits, TECHNIQUES
 
 
 def prep_moleculenet(name) -> pd.DataFrame:
@@ -46,9 +36,9 @@ def split_w_datasail(base_path: Path, name: str, techniques: List[str], solver: 
         solver: Solver to use for DataSAIL
     """
     base_path.mkdir(parents=True, exist_ok=True)
-    if (base_path / "time.txt").exists():
-        print("DataSAIL skipping", name)
-        return
+    # if (base_path / "time.txt").exists():
+    #     print("DataSAIL skipping", name)
+    #     return
 
     with open(base_path / "time.txt", "w") as time:
         print("Start", file=time)
@@ -59,7 +49,7 @@ def split_w_datasail(base_path: Path, name: str, techniques: List[str], solver: 
         techniques=techniques,
         splits=[8, 2],
         names=["train", "test"],
-        runs=RUNS,
+        runs=1,
         solver=solver,
         e_type="M",
         e_data=dict(df[["ID", "SMILES"]].values.tolist()),
@@ -69,8 +59,7 @@ def split_w_datasail(base_path: Path, name: str, techniques: List[str], solver: 
     with open(base_path / "time.txt", "a") as time:
         print("I1+C1", T.time() - start, file=time)
 
-    save_datasail_splits(base_path, df, "ID", techniques, e_splits=e_splits)
-    # message("DataSAIL", name, "I1+C1", 4)
+    save_datasail_splits(base_path, df, "ID", [(t, t) for t in techniques], e_splits=e_splits)
 
 
 def split_w_deepchem(base_path, name, techniques):
@@ -105,7 +94,6 @@ def split_w_deepchem(base_path, name, techniques):
 
                 df[df["ID"].isin(set(train_set.X))].to_csv(path / "train.csv", index=False)
                 df[df["ID"].isin(set(test_set.X))].to_csv(path / "test.csv", index=False)
-                # message("DeepChem", name, tech, run)
             except Exception as e:
                 print("=" * 80 + f"\n{e}\n" + "=" * 80)
         dataset = dataset.complete_shuffle()
@@ -150,7 +138,6 @@ def split_w_lohi(base_path: Path, name: str) -> None:
 
             df.loc[dataset.X[train_test_partition[0]]].to_csv(path / "train.csv", index=False)
             df.loc[dataset.X[train_test_partition[1]]].to_csv(path / "test.csv", index=False)
-            # message("LoHi", name, "lohi", run)
         except Exception as e:
             print("=" * 80 + f"\n{e}\n" + "=" * 80)
         dataset = dataset.complete_shuffle()
@@ -170,7 +157,6 @@ def split_all(path):
         split_w_datasail(path / "datasail" / name, name, techniques=TECHNIQUES["datasail"])
         split_w_deepchem(path / "deepchem" / name, name, techniques=TECHNIQUES["deepchem"])
         split_w_lohi(path / "lohi" / name, name)
-    # telegram("Finished splitting MoleculeNet")
 
 
 def split(full_path, name, solver="GUROBI"):
@@ -182,7 +168,20 @@ def split(full_path, name, solver="GUROBI"):
     split_w_lohi(full_path / "lohi" / name, name)
 
 
+def specific():
+    for run in [0, 1]:
+        for name in DATASETS.keys():
+            if name.lower() == "pcba":
+                continue
+            if name in ["qm7", "qm8", "qm9", "esol", "lipophilicity", "freesolv"] and run == 0:
+                continue
+            for tech in [["I1e"], ["C1e"]]:
+                split_w_datasail(Path("/scratch") / "SCRATCH_SAS" / "roman" / "DataSAIL" / "timing" / f"{name}_{run}_{tech[0]}", name, tech)
+
+
 if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        specific()
     if len(sys.argv) == 2:
         split_all(Path(sys.argv[1]))
     elif len(sys.argv) >= 3:

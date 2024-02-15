@@ -3,21 +3,9 @@ from pathlib import Path
 
 import deepchem as dc
 import pandas as pd
-from rdkit import rdBase
 
 from datasail.sail import datasail
-from experiments.utils import RUNS, dc2pd, telegram, smiles2mol
-
-blocker = rdBase.BlockLogs()
-
-count = 0
-total_number = 1 * 2 * 5  # num_datasets * num_techs * num_runs
-
-
-def message(tool, run):
-    global count
-    count += 1
-    telegram(f"[Tox21 Splitting {count}/{total_number}] {tool} - {run + 1}/5")
+from experiments.utils import RUNS, dc2pd, smiles2mol, save_datasail_splits
 
 
 def tox2pd(ds: dc.data.DiskDataset) -> pd.DataFrame:
@@ -65,16 +53,7 @@ def split_w_datasail(full_base: Path, df: pd.DataFrame, delta: float, epsilon: f
         max_sec=1000,
     )
 
-    for run in range(RUNS):
-        path = full_base / 'Tox21Strat' / 'datasail' / f"d_{delta}_e_{epsilon}" / f"split_{run}"
-        path.mkdir(parents=True, exist_ok=True)
-        train = list(df["ID"].apply(lambda x: e_splits["C1e"][run].get(x, "") == "train"))
-        test = list(df["ID"].apply(lambda x: e_splits["C1e"][run].get(x, "") == "test"))
-        df[train].to_csv(path / "train.csv", index=False)
-        df[test].to_csv(path / "test.csv", index=False)
-    # global count
-    # count += 4
-    # message("DataSAIL", 4)
+    save_datasail_splits(full_base / 'datasail', df, "ID", [(f"d_{delta}_e_{epsilon}", "C1e")], e_splits)
 
 
 def split_w_deepchem(full_base: Path, df: pd.DataFrame) -> None:
@@ -91,13 +70,12 @@ def split_w_deepchem(full_base: Path, df: pd.DataFrame) -> None:
         ids=df["ID"].values.reshape(-1, 1)
     )
     for run in range(RUNS):
-        path = full_base / 'Tox21Strat' / 'deepchem' / f"split_{run}"
+        path = full_base / 'deepchem' / f"split_{run}"
         path.mkdir(parents=True, exist_ok=True)
         train_set, test_set = dc.splits.SingletaskStratifiedSplitter(task_number=0).train_test_split(ds, frac_train=0.8)
         dc2pd(train_set, "tox21").to_csv(path / "train.csv", index=False)
         dc2pd(test_set, "tox21").to_csv(path / "test.csv", index=False)
         ds = ds.complete_shuffle()
-        # message("DeepChem", run)
 
 
 def main(path):
@@ -112,10 +90,10 @@ def main(path):
     tox = tox2pd(tox)
     for e in [0.3, 0.25, 0.2, 0.15, 0.1, 0.05]:
         for d in [0.3, 0.25, 0.2, 0.15, 0.1, 0.05]:
+            print(f"Splitting Tox21 SR-ARE with delta={d} and epsilon={e}")
             split_w_datasail(path, tox, d, e)
 
     split_w_deepchem(path, tox)
-    # telegram("Finished splitting Tox21 SR-ARE")
 
 
 if __name__ == '__main__':

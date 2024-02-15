@@ -9,17 +9,8 @@ import numpy as np
 import pandas as pd
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
-from experiments.DTI.train import embed_smiles
-from experiments.utils import DATASETS, RUNS, MPP_EPOCHS, telegram, metric, models, TECHNIQUES, DRUG_TECHNIQUES
-
-count = 0
-total_number = 5 * 8 * 14
-
-
-def message(tool, name, algo, tech):
-    global count
-    count += 1
-    telegram(f"[Training {count}/{total_number}] {tool.split('_')[0]} - {name} - {algo.upper()} - {tech}")
+from experiments.utils import DATASETS, RUNS, MPP_EPOCHS, telegram, metric, models, TECHNIQUES, DRUG_TECHNIQUES, \
+    embed_smiles
 
 
 def clean_dfs(path: Path) -> None:
@@ -95,7 +86,6 @@ def train_chemprop_run(base_path, name: str) -> float:
         "--save_dir", str(base_path),
         "--quiet",
         "--epochs", str(MPP_EPOCHS),
-        # "--epochs", str(3),
         "--smiles_columns", "SMILES",
         "--target_columns", *targets,
         "--metric", DATASETS[name][2],
@@ -128,8 +118,11 @@ def train_run(run_path: Path, data_path: Path, name: str, model: str) -> float:
     Returns:
         float: Performance of the model
     """
+    clean_dfs(run_path)
+
     if model == "d-mpnn":
         return train_chemprop_run(run_path, name)
+
     model = model + "-" + DATASETS[name][1][0]
     train_df = prepare_sl_data(run_path / "train.csv", data_path, name)
     test_df = prepare_sl_data(run_path / "test.csv", data_path, name)
@@ -140,17 +133,7 @@ def train_run(run_path: Path, data_path: Path, name: str, model: str) -> float:
     m = models[model]
     m.fit(x_train, y_train)
 
-    # if model.endswith("c") and not model.startswith("mlp") and not model.startswith("svm"):
-    #     test_predictions = np.array(m.predict_proba(x_test))
-    #     if y_test.shape != test_predictions.shape:
-    #         test_predictions = np.array(test_predictions).argmax(axis=-1).T
-    # else:
     test_predictions = m.predict(x_test)
-
-    # if isinstance(test_predictions, list):
-    #     test_perf = np.mean([metric[DATASETS[name][2]](y_test[:, i], test_predictions[i][:, 1]) for i in
-    #                          range(len(test_predictions))])
-    # else:
     test_perf = metric[DATASETS[name][2]](y_test, test_predictions)
 
     return test_perf
@@ -214,7 +197,6 @@ def train_tool(full_path: Path, tool: str, name: str) -> None:
     """
     dfs = []
     for model in list(set([x[:-2] for x in models.keys()])) + ["d-mpnn"]:
-        # for model in ["d-mpnn"]:
         dfs.append(train_model(full_path / tool / name, full_path / "data", model, tool, name))
     pd.concat(dfs).to_csv(full_path / tool / name / f"results.csv", index=False)
 
@@ -229,7 +211,6 @@ def train_dataset(full_path: Path, name: str) -> None:
     """
     for tool in ["datasail", "deepchem", "lohi"]:
         train_tool(full_path, tool, name)
-    # telegram(f"Finished MPP training {name}")
 
 
 def train(full_path: Path, name: Optional[str] = None) -> None:

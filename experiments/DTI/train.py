@@ -7,21 +7,13 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 
-from experiments.utils import RUNS, telegram, models, embed_sequence, embed_smiles, TECHNIQUES
+from experiments.utils import RUNS, models, embed_sequence, embed_smiles, TECHNIQUES
 
 try:
     from experiments.DTI.lppdbbind.model_retraining.deepdta.retrain_script import train_deepdta as deepdta
-except:
-    print("LP-PDBBind is not installed, please clone the repo to use DeepDTA for model training.")
-
-count = 0
-total_number = 5 * 14
-
-
-def message(tool, algo, tech):
-    global count
-    count += 1
-    telegram(f"[Training {count}/{total_number}] {tool.split('_')[0]} - DTI - {algo} - {tech}")
+except ImportError as e:
+    print("LP-PDBBind is not installed, please clone the repo to use DeepDTA for model training.", file=sys.stderr)
+    raise e
 
 
 def prepare_sl_data(file_path: Path, data_path: Path) -> pd.DataFrame:
@@ -35,6 +27,7 @@ def prepare_sl_data(file_path: Path, data_path: Path) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Featurized dataframe
     """
+    data_path.mkdir(parents=True, exist_ok=True)
     # Load embeddings for proteins
     if (prot_path := data_path / "prot_embeds.pkl").exists():
         with open(prot_path, "rb") as prots:
@@ -51,8 +44,8 @@ def prepare_sl_data(file_path: Path, data_path: Path) -> pd.DataFrame:
 
     # featurize the dataframe
     df = pd.read_csv(file_path)
-    df["seq_feat"] = df["Target"].apply(lambda x: embed_sequence(x, prot_embeds))
-    df["smiles_feat"] = df["Ligand"].apply(lambda x: embed_smiles(x, drug_embeds))
+    df["seq_feat"] = df["seq"].apply(lambda x: embed_sequence(x, prot_embeds))
+    df["smiles_feat"] = df["smiles"].apply(lambda x: embed_smiles(x, drug_embeds))
     df.dropna(inplace=True)
     df["feat"] = df[['seq_feat', 'smiles_feat']].apply(lambda x: np.concatenate([x["seq_feat"], x["smiles_feat"]]), axis=1)
 
@@ -81,11 +74,12 @@ def train_deepdta_run(run_path: Path) -> float:
         (run_path / "train.csv", run_path / "test.csv"),
         run_path / "results",
         split_names=("train", "test"),
-        column_map={"Target": "proteins", "Ligand": "ligands", "y": "affinity"},
+        column_map={"seq": "proteins", "smiles": "ligands", "value": "affinity"},
     )
 
     df = pd.read_csv(run_path / "results" / "test_predictions.csv")
     labels, pred = df["Label"], df["Pred"]
+    print("Trained DeepDTA on", run_path)
     return mean_squared_error(labels, pred, squared=False)
 
 
@@ -105,21 +99,16 @@ def train_run(run_path: Path, base_path, model: Literal["rf", "svm", "xgb", "mlp
         return train_deepdta_run(run_path)
     train_df = prepare_sl_data(run_path / "train.csv", base_path / "data")
     test_df = prepare_sl_data(run_path / "test.csv", base_path / "data")
-    x_train = np.array([np.array(x) for x in train_df["feat"].values])
-    y_train = train_df["y"].to_numpy().reshape(-1, 1)
-    x_test = np.array([np.array(x) for x in test_df["feat"].values])
-    y_test = test_df["y"].to_numpy().reshape(-1, 1)
-
-    if model.startswith("rf"):
-        y_train = y_train.squeeze()
-        y_test = y_test.squeeze()
-        x_train = x_train.squeeze()
-        x_test = x_test.squeeze()
+    x_train = np.stack(train_df["feat"].values)
+    y_train = np.stack(train_df["value"].values).reshape(-1, 1)
+    x_test = np.stack(test_df["feat"].values)
+    y_test = np.stack(test_df["value"].values).reshape(-1, 1)
 
     m = models[f"{model}-r"]
     m.fit(x_train, y_train)
 
     test_predictions = m.predict(x_test)
+    print("Trained", model, "on", run_path)
     return mean_squared_error(y_test, test_predictions, squared=False)
 
 
@@ -137,7 +126,7 @@ def train_tech(base_path: Path, model: Literal["rf", "svm", "xgb", "mlp", "deepd
     """
     perf = {}
     for run in range(RUNS):
-        perf[f"{tech}_{run}"] = train_run(base_path / tech / f"split{run}", base_path.parent, model)
+        perf[f"{tech}_{run}"] = train_run(base_path / tech / f"split_{run}", base_path.parent, model)
     return perf
 
 
@@ -156,7 +145,6 @@ def train_model(base_path: Path, model: Literal["rf", "svm", "xgb", "mlp", "deep
     perf = {}
     for tech in TECHNIQUES[tool]:
         perf.update(train_tech(base_path / tool, model, tech))
-        # message(tool, model.upper(), tech)
     df = pd.DataFrame(list(perf.items()), columns=["name", "perf"])
     df["model"] = model
     df["tool"] = tool
@@ -174,7 +162,7 @@ def train_tool(full_path: Path, tool: Literal["datasail", "deepchem", "lohi", "g
         tool: Tool to take techniques from for the splits
     """
     dfs = []
-    for model in [x[:-2] for x in models.keys()] + ["deepdta"]:
+    for model in list(set([x[:-2] for x in models.keys()])) + ["deepdta"]:
         dfs.append(train_model(full_path, model, tool))
     pd.concat(dfs, ignore_index=True).to_csv(full_path / f"{tool}.csv", index=False)
 

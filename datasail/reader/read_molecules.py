@@ -100,7 +100,7 @@ def remove_molecule_duplicates(dataset: DataSet) -> DataSet:
     non_mols = []
     valid_mols = dict()
     for k, mol in dataset.data.items():
-        if mol != mol:
+        if mol != mol or mol is None:
             non_mols.append(k)
             continue
         molecule = Chem.MolFromSmiles(mol)

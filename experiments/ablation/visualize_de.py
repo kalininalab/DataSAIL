@@ -108,4 +108,3 @@ def plot_de_ablation(full_path: Path, ax=None, fig=None) -> None:
 
 if __name__ == '__main__':
     plot_de_ablation(Path(sys.argv[1]))
-    # print(read_quality())

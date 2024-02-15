@@ -12,30 +12,12 @@ from matplotlib.colors import LinearSegmentedColormap
 import matplotlib
 from matplotlib.lines import Line2D
 from sklearn.manifold import TSNE
-
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from datasail.reader import read
 from datasail.settings import *
-from experiments.utils import RUNS, USE_UMAP, embed_smiles, COLORS, set_subplot_label, embed_sequence, TECHNIQUES, \
+from experiments.utils import USE_UMAP, embed_smiles, COLORS, set_subplot_label, embed_sequence, TECHNIQUES, \
     DRUG_TECHNIQUES, PROTEIN_TECHNIQUES
-
-LINES = {
-    "Random baseline": (COLORS["0d"], "solid"),
-    "Random drug baseline (I1)": (COLORS["r1d"], "solid"),
-    "Random protein baseline (I1)": (COLORS["r1d"], "dashed"),
-    "DataSAIL drug-based (S1)": (COLORS["s1d"], "solid"),
-    "DataSAIL protein-based (S1)": (COLORS["s1d"], "dashed"),
-    "ID-based baseline (I2)": (COLORS["i2"], "solid"),
-    "DataSAIL 2D split (S2)": (COLORS["c2"], "dashed"),
-    "LoHi": (COLORS["lohi"], "solid"),
-    "DeepChem Butina Splits": (COLORS["butina"], "solid"),
-    "DeepChem Fingerprint Splits": (COLORS["fingerprint"], "solid"),
-    "DeepChem MaxMin Splits": (COLORS["maxmin"], "solid"),
-    "DeepChem Scaffold Splits": (COLORS["scaffold"], "solid"),
-    "DeepChem Weight Splits": (COLORS["weight"], "solid"),
-    "GraphPart": (COLORS["graphpart"], "solid"),
-}
 
 
 def read_lp_pdbbind():
@@ -107,8 +89,8 @@ def read_single_data(tech, path, encodings, data_path) -> dict:
     full = read_lp_pdbbind()
     train = pd.read_csv(path / "split_0" / "train.csv")
     test = pd.read_csv(path / "split_0" / "test.csv")
-    smiles = {"train": train["Ligand"].tolist(), "test": test["Ligand"].tolist()}
-    aaseqs = {"train": train["Target"].tolist(), "test": test["Target"].tolist()}
+    smiles = {"train": train["smiles"].tolist(), "test": test["smiles"].tolist()}
+    aaseqs = {"train": train["seq"].tolist(), "test": test["seq"].tolist()}
 
     if tech in PROTEIN_TECHNIQUES + [TEC_C2]:
         prot_embeds = load_embed(data_path / "prot_embeds.pkl")
@@ -117,9 +99,10 @@ def read_single_data(tech, path, encodings, data_path) -> dict:
             if x not in encodings["p_map"]:
                 x = x.replace(":", "G")[:1022]
                 prot_embeds[x] = embed_sequence(x, prot_embeds)
-                encodings["p_map"][x] = len(encodings["prots"])
-                encodings["prots"].append(prot_embeds[x])
-            return encodings["p_map"][x]
+                if prot_embeds[x] is not None:
+                    encodings["p_map"][x] = len(encodings["prots"])
+                    encodings["prots"].append(prot_embeds[x])
+            return encodings["p_map"].get(x, None)
 
         for split in ["train", "test"]:
             for aa_seq in aaseqs[split]:
@@ -129,15 +112,16 @@ def read_single_data(tech, path, encodings, data_path) -> dict:
         with open(data_path / "prot_embeds.pkl", "wb") as prots:
             pickle.dump(prot_embeds, prots)
 
-    if tech in DRUG_TECHNIQUES + TEC_C2:
+    if tech in DRUG_TECHNIQUES + [TEC_C2]:
         drug_embeds = load_embed(data_path / "drug_embeds.pkl")
 
         def register_drug(x):
             if x not in encodings["d_map"]:
                 drug_embeds[x] = embed_smiles(x, drug_embeds)
-                encodings["d_map"][x] = len(encodings["drugs"])
-                encodings["drugs"].append(drug_embeds[x])
-            return encodings["d_map"][x]
+                if drug_embeds[x] is not None:
+                    encodings["d_map"][x] = len(encodings["drugs"])
+                    encodings["drugs"].append(drug_embeds[x])
+            return encodings["d_map"].get(x, None)
 
         for split in ["train", "test"]:
             for smile in smiles[split]:
@@ -166,7 +150,7 @@ def read_data(base_path: Path) -> dict:
         "p_map": {},
     }
     data = {tech: read_single_data(tech, base_path / tool / tech, encodings, base_path / "data")
-            for tool, techniques in TECHNIQUES for tech in techniques}
+            for tool, techniques in TECHNIQUES.items() for tech in techniques}
 
     if USE_UMAP:
         prot_umap, drug_umap = umap.UMAP(), umap.UMAP()
@@ -184,14 +168,10 @@ def read_data(base_path: Path) -> dict:
     ]:
         for tech in techniques:
             for split in ["train", "test", "drop"]:
-                data[tech][f"{split}_coord_{'drug' if d == 'e' else 'prot'}"] = trans[
-                    data[tech][f"{split}_ids_{'drug' if d == 'e' else 'prot'}"]]
-    # data[TEC_C2]["train_coord_drug"] = d_trans[data[TEC_C2]["train_ids_drug"]]
-    # data[TEC_C2]["test_coord_drug"] = d_trans[data[TEC_C2]["test_ids_drug"]]
-    # data[TEC_C2]["drop_coord_drug"] = d_trans[data[TEC_C2]["drop_ids_drug"]]
-    # data[TEC_C2]["train_coord_prot"] = p_trans[data[TEC_C2]["train_ids_prot"]]
-    # data[TEC_C2]["test_coord_prot"] = p_trans[data[TEC_C2]["test_ids_prot"]]
-    # data[TEC_C2]["drop_coord_prot"] = p_trans[data[TEC_C2]["drop_ids_prot"]]
+                tmp = data[tech][f"{split}_ids_{'drug' if d == 'e' else 'prot'}"]
+                tmp = np.array(list(filter(lambda v: v == v and v is not None, tmp)))
+                if len(tmp) > 0:
+                    data[tech][f"{split}_coord_{'drug' if d == 'e' else 'prot'}"] = trans[tmp]
     return data
 
 
@@ -270,16 +250,15 @@ def viz_sl_models(
     for s, (tool, _, t) in enumerate(techniques):
         for model in models:
             try:
-                df = pd.read_csv(base_path / f"{model.lower()}.csv")
-                df = df[df["tool"] == tool]
-                values[s].append(df[['perf', 'tech']].groupby("tech").mean().loc[t].values[0])
+                df = pd.read_csv(base_path / f"{tool}.csv")
+                values[s].append(df[(df["model"] == model.lower()) & (df["tech"] == t)][["perf"]].mean().values[0])
             except Exception as e:
                 print(e)
                 values[s].append(0)
     if ptype == "bar":
         df = pd.DataFrame(np.array(values).T, columns=[x[1] for x in techniques], index=models)
         c_map = {"I1f": "I1e", "C1f": "C1e", "R": "0d"}
-        df.plot.bar(ax=ax, rot=0, ylabel="RMSE (↓)", color=[COLORS[c_map.get(x[2], x[1]).lower()] for x in techniques])
+        df.plot.bar(ax=ax, rot=0, ylabel="RMSE (↓)", color=[COLORS[c_map.get(x[2], x[2]).lower()] for x in techniques])
         if legend and ptype == "bar":
             ax.legend(loc=legend, ncol=ncol)
     elif ptype == "htm":

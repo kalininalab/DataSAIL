@@ -9,16 +9,7 @@ from deepchem.data import DiskDataset
 import lohi_splitter as lohi
 
 from datasail.sail import datasail
-from experiments.utils import load_lp_pdbbind, SPLITTERS, RUNS, telegram, TECHNIQUES, save_datasail_splits
-
-count = 0
-total_number = 1 * 14 * 5  # num_datasets * num_techs * num_runs
-
-
-def message(tool, tech, run):
-    global count
-    count += 1
-    telegram(f"[DTI Splitting {count}/{total_number}] {tool} - {tech} - {run + 1}/5")
+from experiments.utils import load_lp_pdbbind, SPLITTERS, RUNS, TECHNIQUES, save_datasail_splits
 
 
 def split_w_datasail(base_path: Path, techniques: List[str], solver: str = "GUROBI") -> None:
@@ -35,7 +26,7 @@ def split_w_datasail(base_path: Path, techniques: List[str], solver: str = "GURO
     df = load_lp_pdbbind()
 
     e_splits, f_splits, inter_splits = datasail(
-        techniques=techniques,  # ["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"],
+        techniques=techniques,
         splits=[8, 2],
         names=["train", "test"],
         runs=RUNS,
@@ -51,8 +42,7 @@ def split_w_datasail(base_path: Path, techniques: List[str], solver: str = "GURO
         epsilon=0.1,
     )
 
-    save_datasail_splits(base, df, "ids", techniques, inter_splits=inter_splits)
-    # message("DataSAIL", "all 7", 4)
+    save_datasail_splits(base, df, "ids", [(t, t) for t in techniques], inter_splits=inter_splits)
 
 
 def split_w_deepchem(base_path: Path, techniques: List[str]) -> None:
@@ -78,7 +68,6 @@ def split_w_deepchem(base_path: Path, techniques: List[str]) -> None:
 
                 df[df["smiles"].isin(set(train_set.ids))].to_csv(path / "train.csv", index=False)
                 df[df["smiles"].isin(set(test_set.ids))].to_csv(path / "test.csv", index=False)
-                # message("DeepChem", tech, run)
             except Exception as e:
                 print("=" * 80 + f"\n{e}\n" + "=" * 80)
         ds = ds.complete_shuffle()
@@ -115,7 +104,6 @@ def split_w_lohi(base_path: Path) -> None:
 
             df.iloc[train_test_partition[0]].to_csv(path / "train.csv", index=False)
             df.iloc[train_test_partition[1]].to_csv(path / "test.csv", index=False)
-            # message("LoHi", "lohi", run)
         except Exception as e:
             print("=" * 80 + f"\n{e}\n" + "=" * 80)
         df = df.sample(frac=1)
@@ -139,7 +127,7 @@ def split_w_graphpart(base_path: Path) -> None:
 
             with open(path / "seqs.fasta", "w") as out:
                 for _, row in df.iterrows():
-                    print(f">{row['ids']}\n{row['sequence']}", file=out)
+                    print(f">{row['ids']}\n{row['seq']}", file=out)
 
             cmd = f"cd {os.path.abspath(path)} && graphpart mmseqs2 -ff seqs.fasta -th 0.3 -te 0.15"
             os.system(cmd)
@@ -151,7 +139,6 @@ def split_w_graphpart(base_path: Path) -> None:
 
             df[df["ids"].isin(train_ids)].to_csv(path / "train.csv", index=False)
             df[df["ids"].isin(test_ids)].to_csv(path / "test.csv", index=False)
-            # message("GraphPart", "graphpart", run)
         except Exception as e:
             print("=" * 80 + f"\n{e}\n" + "=" * 80)
         df = df.sample(frac=1)
@@ -162,7 +149,6 @@ def main(path):
     split_w_deepchem(path, TECHNIQUES["deepchem"])
     split_w_lohi(path)
     split_w_graphpart(path)
-    # telegram("Finished splitting DTI")
 
 
 if __name__ == '__main__':
