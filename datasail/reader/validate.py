@@ -221,7 +221,7 @@ def check_diamond_arguments(args: str = "") -> Optional[Namespace]:
     Returns:
         The namespace containing the parsed and validated arguments
     """
-    args = MultiYAMLParser(CDHIT).parse_args(args)
+    args = MultiYAMLParser(DIAMOND).parse_args(args)
 
     # Checking --comp-based-stats
     if not (0 <= args.comp_based_stats <= 4):

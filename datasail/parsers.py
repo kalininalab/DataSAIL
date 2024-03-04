@@ -113,12 +113,20 @@ def parse_datasail_args(args) -> Dict[str, object]:
         help="Names of the splits in order of the -s argument. If left empty, splits will be called Split1, Split2, ..."
     )
     split.add_argument(
+        "-d",
+        "--delta",
+        default=0.3,
+        type=int,
+        dest=KW_DELTA,
+        help="Relative error for stratification. This is only used if stratification is provided."
+    )
+    split.add_argument(
         "-e",
         "--epsilon",
-        default=0.05,
+        default=0.3,
         type=float,
         dest=KW_EPSILON,
-        help="Multiplicative factor by how much the limits of the splits can be exceeded.",
+        help="Relative error how much the limits of the splits can be exceeded.",
     )
     split.add_argument(
         "-r",
@@ -200,6 +208,20 @@ def parse_datasail_args(args) -> Dict[str, object]:
         default="",
         help="Additional arguments for the clustering algorithm used in --e-dist or --e-sim."
     )
+    e_ent.add_argument(
+        "--e-strat",
+        type=str,
+        dest=KW_E_STRAT,
+        default=None,
+        help="Provide the filename of a CSV file specifying the classes for the samples of the E-Dataset."
+    )
+    e_ent.add_argument(
+        "--e-num-classes",
+        type=int,
+        dest=KW_E_NUM_CLUSTERS,
+        default=50,
+        help="Number of classes to use for clustering the e-data."
+    )
     f_ent = parser.add_argument_group("Second Input Arguments")
     f_ent.add_argument(
         "--f-type",
@@ -247,6 +269,20 @@ def parse_datasail_args(args) -> Dict[str, object]:
         default="",
         help="Additional arguments for the clustering algorithm used in --f-dist or --f-sim."
     )
+    e_ent.add_argument(
+        "--f-strat",
+        type=str,
+        dest=KW_F_STRAT,
+        default=None,
+        help="Provide the filename of a CSV file specifying the classes for the samples of the F-Dataset."
+    )
+    e_ent.add_argument(
+        "--f-num-classes",
+        type=int,
+        dest=KW_F_NUM_CLUSTERS,
+        default=50,
+        help="Number of classes to use for clustering the f-data."
+    )
     args = insert_patch(args)
     return vars(parser.parse_args(args))
 
@@ -275,7 +311,6 @@ class MultiYAMLParser(argparse.ArgumentParser):
         Returns:
             Namespace of the parsed arguments.
         """
-        # args = args.split(" ") if " " in args else (args if isinstance(args, list) else [args])
         if isinstance(args, str):
             if " " in args:
                 args = args.split(" ")

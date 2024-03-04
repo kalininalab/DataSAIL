@@ -2,25 +2,22 @@ comp-based-stats:
   description: composition based statistics mode (0-4)
   type: int
   cardinality: "?"
-  default: null
+  default: 1
   calls: ["--comp-based-stats"]
-  fos: 0
 
 masking:
-  description: masking algorithm (none, seg, tantan=default)
+  description: masking algorithm (0, 1 (=tantan), seg)
   type: str
   cardinality: "?"
-  default: null
+  default: "1"
   calls: ["--masking"]
-  fos: 0
 
 soft-masking:
   description: soft masking (none=default, seg, tantan)
   type: str
   cardinality: "?"
-  default: null
+  default: "none"
   calls: ["--soft-masking"]
-  fos: 0
 
 evalue:
   description: maximum e-value to report alignments (default=0.001)
@@ -28,31 +25,27 @@ evalue:
   cardinality: "?"
   default: 0.001
   calls: ["--evalue"]
-  fos: 0
 
 motif-masking:
   description: softmask abundant motifs (0/1)
   type: int
   cardinality: "?"
-  default: null
+  default: 1
   calls: ["--motif-masking"]
-  fos: 0
 
 approx-id:
   description: minimum approx. identity% to report an alignment/to cluster sequences
   type: str
   cardinality: "?"
-  default: null
+  default: 0
   calls: ["--approx-id"]
-  fos: 0
 
 ext:
   description: Extension mode (banded-fast/banded-slow/full)
   type: str
   cardinality: "?"
-  default: null
+  default: "banded-fast"
   calls: ["--ext"]
-  fos: 0
 
 max-target-seqs:
   description: maximum number of target sequences to report alignments for (default=25)
@@ -60,79 +53,62 @@ max-target-seqs:
   cardinality: "?"
   default: 25
   calls: ["--max-target-seqs"]
-  fos: 0
 
 top:
   description: report alignments within this percentage range of top alignment score (overrides --max-target-seqs)
-  type: str
+  type: int
   cardinality: "?"
-  default: null
+  default: 100
   calls: ["--top"]
-  fos: 0
 
 faster:
   description: enable faster mode
   type: bool
   cardinality: "0"
-  default: null
   calls: ["--faster"]
-  fos: 0
 
 fast:
   description: enable fast mode
   type: bool
   cardinality: "0"
-  default: null
   calls: ["--fast"]
-  fos: 0
 
 mid-sensitive:
   description: enable mid-sensitive mode
   type: bool
   cardinality: "0"
-  default: null
   calls: ["--mid-sensitive"]
-  fos: 0
 
 sensitive:
   description: enable sensitive mode)
   type: bool
   cardinality: "0"
-  default: null
   calls: ["--sensitive"]
-  fos: 0
 
 more-sensitive:
   description: enable more sensitive mode
   type: bool
   cardinality: "0"
-  default: null
   calls: ["--more-sensitive"]
-  fos: 0
 
 very-sensitive:
   description: enable very sensitive mode
   type: bool
   cardinality: "0"
-  default: null
   calls: ["--very-sensitive"]
-  fos: 0
 
 ultra-sensitive:
   description: enable ultra sensitive mode
   type: bool
   cardinality: "0"
-  default: null
   calls: ["--ultra-sensitive"]
-  fos: 0
 
 shapes:
   description: number of seed shapes (default=all available)
   type: str
   cardinality: "?"
-  default: null
+  default: ""
   calls: ["--shapes"]
-  fos: 0
 
 query:
   description: input query file
@@ -140,47 +116,13 @@ query:
   cardinality: "?"
   default: null
   calls: ["--query"]
-  fos: 0
 
 strand:
   description: query strands to search (both/minus/plus)
   type: str
   cardinality: "?"
-  default: null
+  default: "both"
   calls: ["--strand"]
-  fos: 0
-
-un:
-  description: file for unaligned queries
-  type: str
-  cardinality: "?"
-  default: null
-  calls: ["--un"]
-  fos: 0
-
-al:
-  description: file or aligned queries
-  type: str
-  cardinality: "?"
-  default: null
-  calls: ["--al"]
-  fos: 0
-
-unfmt:
-  description: format of unaligned query file (fasta/fastq)
-  type: str
-  cardinality: "?"
-  default: null
-  calls: ["--unfmt"]
-  fos: 0
-
-alfmt:
-  description: format of aligned query file (fasta/fastq)
-  type: str
-  cardinality: "?"
-  default: null
-  calls: ["--alfmt"]
-  fos: 0
 
 unal:
   description: report unaligned queries (0=no, 1=yes)
@@ -188,7 +130,6 @@ unal:
   cardinality: "?"
   default: null
   calls: ["--unal"]
-  fos: 0
 
 max-hsps:
   description: maximum number of HSPs per target sequence to report for each query (default=1)
@@ -196,39 +137,33 @@ max-hsps:
   cardinality: "?"
   default: 1
   calls: ["--max-hsps"]
-  fos: 0
 
 range-culling:
   description: restrict hit culling to overlapping query ranges
   type: bool
   cardinality: "0"
-  default: null
   calls: ["--range-culling"]
-  fos: 0
 
 compress:
   description: compression for output files (0=none, 1=gzip, zstd)
-  type: int
+  type: str
   cardinality: "?"
-  default: null
+  default: "0"
   calls: ["--compress"]
-  fos: 0
 
 min-score:
   description: minimum bit score to report alignments (overrides e-value setting)
-  type: str
+  type: int
   cardinality: "?"
-  default: null
+  default: 0
   calls: ["--min-score"]
-  fos: 0
 
 id:
   description: minimum identity% to report an alignment
-  type: str
+  type: int
   cardinality: "?"
-  default: null
+  default: 0
   calls: ["--id"]
-  fos: 0
 
 query-cover:
   description: minimum query cover% to report an alignment
@@ -240,7 +175,7 @@ query-cover:
 
 subject-cover:
   description: minimum subject cover% to report an alignment
-  type: str
+  type: s
   cardinality: "?"
   default: null
   calls: ["--subject-cover"]
