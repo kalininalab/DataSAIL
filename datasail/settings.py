@@ -100,7 +100,7 @@ FORM_OTHER = "Other"
 FORM_PDB = "PDB"
 FORM_SMILES = "SMILES"
 NOT_ASSIGNED = "not selected"
-MAX_CLUSTERS = 50
+# MAX_CLUSTERS = 50
 
 YAML_FILE_NAMES = {
     MMSEQS: "args/mmseqs2.yaml",
@@ -130,6 +130,7 @@ KW_E_WEIGHTS = "e_weights"
 KW_E_STRAT = "e_strat"
 KW_E_SIM = "e_sim"
 KW_E_TYPE = "e_type"
+KW_E_CLUSTERS = "e_clusters"
 
 KW_F_ARGS = "f_args"
 KW_F_DATA = "f_data"
@@ -139,6 +140,7 @@ KW_F_WEIGHTS = "f_weights"
 KW_F_STRAT = "f_strat"
 KW_F_SIM = "f_sim"
 KW_F_TYPE = "f_type"
+KW_F_CLUSTERS = "f_clusters"
 
 KW_INTER = "inter"
 KW_LOGDIR = "logdir"
@@ -152,6 +154,7 @@ KW_SPLITS = "splits"
 KW_TECHNIQUES = "techniques"
 KW_THREADS = "threads"
 KW_VERBOSE = "verbosity"
+KW_LINKAGE = "linkage"
 
 SOLVER_CBC = "CBC"
 SOLVER_CPLEX = "CPLEX"

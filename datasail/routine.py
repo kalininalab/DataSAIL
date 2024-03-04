@@ -7,7 +7,8 @@ from datasail.reader.read import read_data
 from datasail.reader.utils import DataSet
 from datasail.report import report
 from datasail.settings import LOGGER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
-    KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL, KW_DELTA
+    KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL, KW_DELTA, \
+    KW_E_CLUSTERS, KW_F_CLUSTERS
 from datasail.solver.solve import run_solver, insert
 
 
@@ -32,10 +33,10 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
 
     if cluster_e:
         LOGGER.info("Cluster first set of entities.")
-        e_dataset = cluster(e_dataset, **kwargs)
+        e_dataset = cluster(e_dataset, kwargs[KW_E_CLUSTERS], **kwargs)
     if cluster_f:
         LOGGER.info("Cluster second set of entities.")
-        f_dataset = cluster(f_dataset, **kwargs)
+        f_dataset = cluster(f_dataset, kwargs[KW_F_CLUSTERS], **kwargs)
 
     if inter is not None:
         if e_dataset.type is not None and f_dataset.type is not None:

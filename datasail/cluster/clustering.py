@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, List, Union, Optional
+from typing import Dict, Tuple, List, Union, Optional, Literal
 
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering, SpectralClustering
@@ -15,15 +15,16 @@ from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, KW_LINKAGE
 
 
-def cluster(dataset: DataSet, **kwargs) -> DataSet:
+def cluster(dataset: DataSet, num_clusters: int, **kwargs) -> DataSet:
     """
     Cluster molecules based on a similarity or distance metric.
 
     Args:
         dataset: Dataset to cluster
+        num_clusters: Number of clusters to reduce to
 
     Returns:
         A dataset with modified properties according to clustering the data
@@ -56,7 +57,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         num_old_cluster = len(dataset.cluster_names) + 1
         while MAX_CLUSTERS < len(dataset.cluster_names) < num_old_cluster:
             num_old_cluster = len(dataset.cluster_names)
-            dataset = additional_clustering(dataset)
+            dataset = additional_clustering(dataset, num_clusters, kwargs[KW_LINKAGE])
 
         if isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
             whatever(dataset.names, dataset.cluster_map, dataset.distance, dataset.similarity)
@@ -66,7 +67,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
                 heatmap(metric, kwargs[KW_OUTDIR] / (dataset.get_name() + f"_{form}.png"))
 
     if len(dataset.cluster_names) > MAX_CLUSTERS:
-        dataset = force_clustering(dataset)
+        dataset = force_clustering(dataset, kwargs[KW_LINKAGE])
 
     store_to_cache(dataset, **kwargs)
 
@@ -160,7 +161,8 @@ def finish_clustering(dataset: DataSet):
 
 def additional_clustering(
         dataset: DataSet,
-        n_clusters: int = MAX_CLUSTERS,
+        n_clusters: int,
+        linkage: Literal["average", "single", "complete"],
 ) -> DataSet:
     """
     Perform additional cluster based on a distance or similarity matrix. This is done to reduce the number of
@@ -169,6 +171,7 @@ def additional_clustering(
     Args:
         dataset: DataSet to perform additional clustering on
         n_clusters: Number of clusters to reduce to
+        linkage: List of linkage methods to use for the agglomerative clustering
 
     Returns:
         The dataset with updated clusters and a bool flag indicating convergence of the used clustering algorithm
@@ -185,25 +188,25 @@ def additional_clustering(
         )
     else:
         cluster_matrix = np.array(dataset.cluster_distance, dtype=float)
-        kwargs = {
-            "n_clusters": n_clusters,
-            "metric": 'precomputed',
-            "linkage": 'average',
-        }
-        ca = AgglomerativeClustering(**kwargs)
+        ca = AgglomerativeClustering(
+            n_clusters=n_clusters,
+            affinity="precomputed",
+            linkage=linkage,
+        )
         LOGGER.info(
             f"Clustering based on distances. "
             f"Distances above {np.average(dataset.cluster_distance) * 0.9} cannot end up in same cluster."
         )
     # cluster the clusters into new, fewer, and bigger clusters
     labels = ca.fit_predict(cluster_matrix)
-    return labels2clusters(labels, dataset, cluster_matrix)
+    return labels2clusters(labels, dataset, cluster_matrix, linkage)
 
 
 def labels2clusters(
         labels: Union[List, np.ndarray],
         dataset: DataSet,
-        cluster_matrix: np.ndarray
+        cluster_matrix: np.ndarray,
+        linkage: Literal["average", "single", "complete"],
 ) -> DataSet:
     """
     Convert a list of labels to a clustering and insert it into the dataset. This also updates cluster_weights and
@@ -213,6 +216,7 @@ def labels2clusters(
         labels: List of labels
         dataset: The dataset that is clustered
         cluster_matrix: Matrix storing distance or similarity values
+        linkage: List of linkage methods to use for the agglomerative clustering
 
     Returns:
         The updated dataset and the converged-flag
@@ -223,17 +227,19 @@ def labels2clusters(
     new_cluster_map = dict((n, labels[old_cluster_map[c]]) for n, c in dataset.cluster_map.items())
 
     # compute the distance or similarity matrix for the new clusters as the average sim/dist between their members
-    new_cluster_matrix = np.zeros((len(new_cluster_names), len(new_cluster_names)))
-    cluster_count = np.zeros((len(new_cluster_names), len(new_cluster_names)))
+    # new_cluster_matrix = np.zeros((len(new_cluster_names), len(new_cluster_names)))
+    new_cluster_matrix = [[[] for _ in new_cluster_names] for _ in new_cluster_names]
     for i in range(len(dataset.cluster_names)):
+        new_cluster_matrix[labels[i]][labels[i]].append(cluster_matrix[i, i])
         for j in range(i + 1, len(dataset.cluster_names)):
             if labels[i] != labels[j]:
-                new_cluster_matrix[labels[i], labels[j]] += cluster_matrix[i, j]
-                cluster_count[labels[i], labels[j]] += 1
-
-                new_cluster_matrix[labels[j], labels[i]] += cluster_matrix[i, j]
-                cluster_count[labels[j], labels[i]] += 1
-    new_cluster_matrix /= (cluster_count + np.eye(max(labels) + 1))
+                new_cluster_matrix[labels[i]][labels[j]] += cluster_matrix[i, j]
+                new_cluster_matrix[labels[j]][labels[i]] += cluster_matrix[j, i]
+    # new_cluster_matrix /= (cluster_count + np.eye(max(labels) + 1))
+    links = {"average": np.mean, "single": np.min, "complete": np.max}
+    for i in range(len(dataset.cluster_names)):
+        for j in range(len(dataset.cluster_names)):
+            new_cluster_matrix[labels[i]][labels[j]] = links[linkage](new_cluster_matrix[labels[i]][labels[j]])
 
     # compute the mapping of new clusters to their weights as the sum of their members weights
     new_cluster_weights = {}
@@ -261,7 +267,7 @@ def labels2clusters(
     return dataset
 
 
-def force_clustering(dataset: DataSet) -> DataSet:
+def force_clustering(dataset: DataSet, linkage: Literal["average", "single", "complete"] = "average") -> DataSet:
     """
     Enforce a clustering to reduce the number of clusters to a reasonable amount. This is only done if the other
     clustering algorithms did not detect any reasonable similarity or distance in the dataset. The cluster assignment
@@ -270,6 +276,7 @@ def force_clustering(dataset: DataSet) -> DataSet:
 
     Args:
         dataset: The dataset to be clustered
+        linkage: List of linkage methods to use for the agglomerative clustering
 
     Returns:
         The clustered dataset
@@ -303,7 +310,7 @@ def force_clustering(dataset: DataSet) -> DataSet:
 
     # cluster the dataset based on the list of new clusters and return
     matrix = dataset.cluster_similarity if dataset.cluster_similarity is not None else dataset.cluster_distance
-    return labels2clusters(labels, dataset, matrix)
+    return labels2clusters(labels, dataset, matrix, linkage)
 
 
 def cluster_interactions(
