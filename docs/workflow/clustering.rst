@@ -30,7 +30,7 @@ of entities of "other" input type is to provide them as a matrix in a file and t
 on these matrices.
 
 .. list-table:: Input molecule types and their available clustering algorithms
-    :widths: 25 20 15 15 15 15 15 15
+    :widths: 25 20 15 15 15 15 15
     :header-rows: 1
 
     * - Clust. Algo
