@@ -14,3 +14,4 @@ grakel
 nbsphinx
 nbsphinx-link
 pyyaml
+pandoc==2.14.2
