@@ -11,7 +11,7 @@ rdkit>=2022.09.1
 pytest-cases
 scikit-learn
 grakel
+nbconvert==7.0.0
 nbsphinx
 nbsphinx-link
 pyyaml
-pandoc==2.14.2
