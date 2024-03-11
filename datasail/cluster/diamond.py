@@ -33,9 +33,9 @@ def run_diamond(dataset: DataSet, threads: int, log_dir: Optional[Path] = None) 
 
     cmd = lambda x: f"mkdir {result_folder} && " \
                     f"cd {result_folder} && " \
-                    f"diamond makedb --in seqs.fasta --db seqs.dmnd {makedb_args} {x} && " \
+                    f"diamond makedb --in seqs.fasta --db seqs.dmnd {makedb_args} {x} --threads {threads} && " \
                     f"diamond blastp --db seqs.dmnd --query alis.fasta --out seqs.tsv --outfmt 6 qseqid sseqid pident " \
-                    f"--threads 8 {blastp_args} {x}"
+                    f"--threads {threads} {blastp_args} {x}"
 
     if log_dir is None:
         cmd = cmd("> /dev/null 2>&1")

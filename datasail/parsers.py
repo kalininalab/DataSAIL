@@ -338,7 +338,7 @@ class MultiYAMLParser(argparse.ArgumentParser):
             else:
                 if values["cardinality"] != 0:
                     kwargs["nargs"] = values["cardinality"]
-                if values["default"] is not None:
+                if "default" in values:
                     kwargs["default"] = values["default"]
             self.fos_map[name.replace("-", "_")] = values.get("fos", 0)
             super().add_argument(
