@@ -10,7 +10,7 @@ import pandas as pd
 from datasail.reader.validate import validate_user_args
 from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS
 
-DATA_INPUT = Optional[Union[str, Path, Dict[str, str], Callable[..., Dict[str, str]], Generator[Tuple[str, str], None, None]]]
+DATA_INPUT = Optional[Union[str, Path, Dict[str, Union[str, np.ndarray]], Callable[..., Dict[str, Union[str, np.ndarray]]], Generator[Tuple[str, Union[str, np.ndarray]], None, None]]]
 MATRIX_INPUT = Optional[Union[str, Path, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
 DictMap = Dict[str, List[Dict[str, str]]]
 
@@ -23,7 +23,7 @@ class DataSet:
     names: Optional[List[str]] = None
     id_map: Optional[Dict[str, str]] = None
     cluster_names: Optional[List[str]] = None
-    data: Optional[Dict[str, str]] = None
+    data: Optional[Dict[str, Union[str, np.ndarray]]] = None
     cluster_map: Optional[Dict[str, str]] = None
     location: Optional[Path] = None
     weights: Optional[Dict[str, float]] = None
@@ -180,17 +180,18 @@ def read_clustering_file(filepath: Path, sep: str = "\t") -> Tuple[List[str], np
     return names, np.array(measures)
 
 
-def read_csv(filepath: Path) -> Generator[Tuple[str, str], None, None]:
+def read_csv(filepath: Path, sep: str = ",") -> Generator[Tuple[str, str], None, None]:
     """
     Read in a CSV file as pairs of data.
 
     Args:
         filepath: Path to the CSV file to read 2-tuples from
+        sep: Separator used to separate the values in the CSV file
 
     Yields:
         Pairs of strings from the file
     """
-    df = pd.read_csv(filepath, sep="\t")
+    df = pd.read_csv(filepath, sep=sep)
     for index in df.index:
         yield df.iloc[index, :2]
 

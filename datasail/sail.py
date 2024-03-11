@@ -10,7 +10,7 @@ from datasail.settings import *
 
 def error(msg: str, error_code: int, cli: bool) -> None:
     """
-    Print an error message with an individual error code to the commandline. Afterward, the program is stopped.
+    Print an error message with an individual error code to the commandline. Afterward, the program is ended.
 
     Args:
         msg: Error message

@@ -11,11 +11,13 @@ from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
 from datasail.cluster.mmseqspp import run_mmseqspp
+from datasail.cluster.tanimoto import run_tanimoto
 from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, KW_LINKAGE
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, KW_LINKAGE, MMSEQS, MMSEQS2, \
+    MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, TANIMOTO
 
 
 def cluster(dataset: DataSet, num_clusters: int, **kwargs) -> DataSet:
@@ -93,18 +95,20 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
     """
     if dataset.similarity.lower() == "wlk":
         run_wlk(dataset)
-    elif dataset.similarity.lower() == "mmseqs":
-        run_mmseqs(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "mmseqspp":
-        run_mmseqspp(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "foldseek":
-        run_foldseek(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "cdhit":
+    elif dataset.similarity.lower() == CDHIT:
         run_cdhit(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "cdhit_est":
+    elif dataset.similarity.lower() == CDHIT_EST:
         run_cdhit_est(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "ecfp":
+    elif dataset.similarity.lower() == ECFP:
         run_ecfp(dataset)
+    elif dataset.similarity.lower() == FOLDSEEK:
+        run_foldseek(dataset, threads, log_dir)
+    elif dataset.similarity.lower() in [MMSEQS, MMSEQS2]:
+        run_mmseqs(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == MMSEQSPP:
+        run_mmseqspp(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == TANIMOTO:
+        run_tanimoto(dataset)
     else:
         raise ValueError(f"Unknown cluster method: {dataset.similarity}")
 
