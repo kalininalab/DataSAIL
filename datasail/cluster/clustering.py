@@ -233,13 +233,17 @@ def labels2clusters(
         new_cluster_matrix[labels[i]][labels[i]].append(cluster_matrix[i, i])
         for j in range(i + 1, len(dataset.cluster_names)):
             if labels[i] != labels[j]:
-                new_cluster_matrix[labels[i]][labels[j]] += cluster_matrix[i, j]
-                new_cluster_matrix[labels[j]][labels[i]] += cluster_matrix[j, i]
-    # new_cluster_matrix /= (cluster_count + np.eye(max(labels) + 1))
+                new_cluster_matrix[labels[i]][labels[j]].append(cluster_matrix[i, j])
+                new_cluster_matrix[labels[j]][labels[i]].append(cluster_matrix[j, i])
+
     links = {"average": np.mean, "single": np.min, "complete": np.max}
-    for i in range(len(dataset.cluster_names)):
-        for j in range(len(dataset.cluster_names)):
-            new_cluster_matrix[labels[i]][labels[j]] = links[linkage](new_cluster_matrix[labels[i]][labels[j]])
+    for i in range(len(new_cluster_matrix)):
+        for j in range(len(new_cluster_matrix[i])):
+            if len(new_cluster_matrix[i][j]) > 0:
+                new_cluster_matrix[i][j] = links[linkage](new_cluster_matrix[i][j])
+            else:
+                new_cluster_matrix[i][j] = 0
+    new_cluster_matrix = np.array(new_cluster_matrix)
 
     # compute the mapping of new clusters to their weights as the sum of their members weights
     new_cluster_weights = {}

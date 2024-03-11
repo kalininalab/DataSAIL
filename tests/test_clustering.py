@@ -63,7 +63,7 @@ def test_additional_clustering():
     d_dataset.cluster_similarity = None
     d_dataset.cluster_distance = distance
 
-    s_dataset = additional_clustering(s_dataset, n_clusters=5)
+    s_dataset = additional_clustering(s_dataset, n_clusters=5, linkage="average")
     assert len(s_dataset.cluster_names) == 5
     assert set(s_dataset.cluster_names) == set(s_dataset.cluster_map.values())
     assert set(s_dataset.cluster_names) == set(s_dataset.cluster_weights.keys())
@@ -76,7 +76,7 @@ def test_additional_clustering():
     assert s_dataset.cluster_distance is None
     # assert [s_dataset.cluster_weights[i] for i in s_dataset.cluster_names] == [18, 12, 6, 12, 4]
 
-    d_dataset = additional_clustering(d_dataset, n_clusters=5)
+    d_dataset = additional_clustering(d_dataset, n_clusters=5, linkage="average")
     assert len(d_dataset.cluster_names) == 5
     assert set(d_dataset.cluster_names) == set(d_dataset.cluster_map.values())
     assert set(d_dataset.cluster_names) == set(d_dataset.cluster_weights.keys())
@@ -217,15 +217,18 @@ def test_wlkernel_molecule(molecule_data):
 @pytest.mark.parametrize("algo", [CDHIT, MMSEQS])
 def test_force_clustering(algo):
     base = Path("data") / "rw_data"
-    dataset = cluster(DataSet(
-        type=P_TYPE,
-        format=FORM_FASTA,
-        names=[f"Seq{i + 1:04d}" for i in range(len(open(base / "pdbbind_clean.fasta", "r").readlines()))],
-        location=base / "pdbbind_clean.fasta",
-        similarity=algo,
-        args=check_cdhit_arguments("") if algo == CDHIT else check_mmseqs_arguments(""),
-
-    ), **{KW_THREADS: 1, KW_LOGDIR: Path()})
+    dataset = cluster(
+        DataSet(
+            type=P_TYPE,
+            format=FORM_FASTA,
+            names=[f"Seq{i + 1:04d}" for i in range(len(open(base / "pdbbind_clean.fasta", "r").readlines()))],
+            location=base / "pdbbind_clean.fasta",
+            similarity=algo,
+            args=check_cdhit_arguments("") if algo == CDHIT else check_mmseqs_arguments(""),
+        ),
+        num_clusters=50,
+        linkage="average",
+        **{KW_THREADS: 1, KW_LOGDIR: Path()})
     assert len(dataset.cluster_names) <= 100
 
 

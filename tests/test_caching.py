@@ -21,7 +21,8 @@ def test_caching(size):
         index=0,
     )
 
-    original_dataset = cluster(dataset, **{"output": base / "splits", "threads": 1, "log_dir": Path() / "log.txt"})
+    original_dataset = cluster(dataset, num_clusters=50, output=base / "splits", threads=1, log_dir=Path("log.txt"),
+                               linkage="average")
 
     # test caching
     store_to_cache(dataset, **{"cache": True, "cache_dir": Path("test_cache")})

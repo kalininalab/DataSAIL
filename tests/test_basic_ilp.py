@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 
 from datasail.solver.id_1d import solve_i1
@@ -10,13 +12,15 @@ def test_ics():
     solution = solve_i1(
         entities=["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10"],
         weights=[6, 6, 6, 6, 6, 6, 4, 4, 4, 4],
+        stratification=None,
         epsilon=0.05,
+        delta=0.05,
         splits=[0.7, 0.3],
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
         solver="SCIP",
-        log_file="./solver.log",
+        log_file=Path("solver.log"),
     )
     assert isinstance(solution, dict)
     weights = {"train": 0, "test": 0}
@@ -29,7 +33,9 @@ def test_ics():
 def test_icd():
     solution = solve_i2(
         e_entities=["D1", "D2", "D3", "D4", "D5"],
+        e_stratification=None,
         f_entities=["P1", "P2", "P3", "P4", "P5"],
+        f_stratification=None,
         inter={
             ("D1", "P1"), ("D1", "P2"), ("D1", "P3"),
             ("D2", "P1"), ("D2", "P2"), ("D2", "P3"),
@@ -38,12 +44,13 @@ def test_icd():
             ("D5", "P4"), ("D5", "P5"),
         },
         epsilon=0.01,
+        delta=0.01,
         splits=[0.69, 0.31],
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
         solver="SCIP",
-        log_file="./solver.log",
+        log_file=Path("solver.log"),
     )
     assert isinstance(solution, tuple)
     assert all([isinstance(solution[i], dict) for i in range(3)])
@@ -71,6 +78,7 @@ def test_ccd():
             [0, 0, 5],
         ]),
         e_distances=None,
+        e_s_matrix=None,
         f_clusters=["P1", "P2", "P3"],
         f_similarities=np.asarray([
             [5, 5, 0],
@@ -78,18 +86,20 @@ def test_ccd():
             [0, 0, 5],
         ]),
         f_distances=None,
+        f_s_matrix=None,
         inter=np.asarray([
             [9, 9, 0],
             [9, 9, 0],
             [0, 0, 9],
         ]),
         epsilon=0.05,
+        delta=0.05,
         splits=[0.8, 0.2],
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
         solver="SCIP",
-        log_file="./solver.log",
+        log_file=Path("solver.log"),
     )
     assert isinstance(solution, tuple)
     assert all([isinstance(solution[i], dict) for i in range(3)])
@@ -118,14 +128,16 @@ def test_ccs_sim():
             [0.2, 0.2, 0.2, 1.0, 1.0],
             [0.2, 0.2, 0.2, 1.0, 1.0],
         ]),
+        s_matrix=None,
         distances=None,
         epsilon=0.2,
+        delta=0.2,
         splits=[0.7, 0.3],
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
         solver="SCIP",
-        log_file="./solver.log",
+        log_file=Path("solver.log"),
     )
     assert isinstance(solution, dict)
     for i in range(1, 6):
@@ -143,14 +155,16 @@ def test_ccs_sim_3c():
             [0.2, 0.2, 0.2, 1.0, 1.0],
             [0.2, 0.2, 0.2, 1.0, 1.0],
         ]),
+        s_matrix=None,
         distances=None,
         epsilon=0.05,
+        delta=0.05,
         splits=[0.4, 0.33, 0.27],
         names=["train", "val", "test"],
         max_sec=10,
         max_sol=0,
         solver="SCIP",
-        log_file="./solver.log",
+        log_file=Path("solver.log"),
     )
     assert isinstance(solution, dict)
     assert solution["1"] == "train"
@@ -172,13 +186,15 @@ def test_ccs_dist():
             [4, 4, 4, 0, 0],
             [4, 4, 4, 0, 0],
         ]),
+        s_matrix=None,
         epsilon=0.2,
+        delta=0.2,
         splits=[0.7, 0.3],
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
         solver="SCIP",
-        log_file="./solver.log",
+        log_file=Path("solver.log"),
     )
     assert isinstance(solution, dict)
     for i in range(1, 6):

@@ -110,7 +110,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
             LOGGER.warning("Cache directory does not exist, DataSAIL creates it automatically")
         kwargs[KW_CACHE_DIR].mkdir(parents=True, exist_ok=True)
 
-    if kwargs[KW_LINKAGE] not in ["mean", "single", "complete"]:
+    if kwargs[KW_LINKAGE] not in ["average", "single", "complete"]:
         error("The linkage method has to be one of 'mean', 'single', or 'complete'.", 26, kwargs[KW_CLI])
 
     # syntactically parse the input data for the E-dataset
@@ -250,6 +250,7 @@ def sail(args=None, **kwargs) -> None:
     """
     if kwargs is None or len(kwargs) == 0:
         kwargs = parse_datasail_args(args or sys.argv[1:])
+    kwargs = {key: (kwargs[key] if key in kwargs else val) for key, val in DEFAULT_KWARGS.items()}
     kwargs[KW_CLI] = True
     kwargs = validate_args(**kwargs)
     datasail_main(**kwargs)

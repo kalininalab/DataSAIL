@@ -100,7 +100,7 @@ FORM_OTHER = "Other"
 FORM_PDB = "PDB"
 FORM_SMILES = "SMILES"
 NOT_ASSIGNED = "not selected"
-# MAX_CLUSTERS = 50
+MAX_CLUSTERS = 50
 
 YAML_FILE_NAMES = {
     MMSEQS: "args/mmseqs2.yaml",
@@ -118,7 +118,6 @@ YAML_FILE_NAMES = {
 KW_CACHE = "cache"
 KW_CACHE_DIR = "cache_dir"
 KW_CLI = "cli"
-KW_DATA = "data"
 KW_DELTA = "delta"
 KW_EPSILON = "epsilon"
 
@@ -155,6 +154,48 @@ KW_TECHNIQUES = "techniques"
 KW_THREADS = "threads"
 KW_VERBOSE = "verbosity"
 KW_LINKAGE = "linkage"
+
+DEFAULT_KWARGS = {
+    KW_CACHE: False,
+    KW_CACHE_DIR: None,
+    KW_CLI: False,
+    KW_DELTA: 0.1,
+    KW_EPSILON: 0.1,
+
+    KW_E_ARGS: None,
+    KW_E_CLUSTERS: 50,
+    KW_E_DATA: None,
+    KW_E_DIST: None,
+    KW_E_ID_MAP: None,
+    KW_E_WEIGHTS: None,
+    KW_E_STRAT: None,
+    KW_E_SIM: None,
+    KW_E_TYPE: None,
+
+    KW_F_ARGS: None,
+    KW_F_CLUSTERS: 50,
+    KW_F_DATA: None,
+    KW_F_DIST: None,
+    KW_F_ID_MAP: None,
+    KW_F_WEIGHTS: None,
+    KW_F_STRAT: None,
+    KW_F_SIM: None,
+    KW_F_TYPE: None,
+
+    KW_INTER: None,
+    KW_LOGDIR: None,
+    KW_MAX_SEC: 1000,
+    KW_MAX_SOL: 1000,
+    KW_NAMES: ["train", "val", "test"],
+    KW_OUTDIR: None,
+    KW_RUNS: 1,
+    KW_SOLVER: "SCIP",
+    KW_SPLITS: [0.7, 0.2, 0.1],
+    KW_TECHNIQUES: None,
+    KW_THREADS: 1,
+    KW_VERBOSE: "E",
+    KW_LINKAGE: "average",
+}
 
 SOLVER_CBC = "CBC"
 SOLVER_CPLEX = "CPLEX"
