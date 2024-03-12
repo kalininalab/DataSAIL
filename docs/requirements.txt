@@ -15,3 +15,4 @@ nbconvert==7.0.0
 nbsphinx
 nbsphinx-link
 pyyaml
+notebook

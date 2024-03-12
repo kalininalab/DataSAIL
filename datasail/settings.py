@@ -74,7 +74,8 @@ MASH = "mash"
 MASH_SKETCH = "mash_sketch"
 MASH_DIST = "mash_dist"
 TMALIGN = "tmalign"
-SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, ]
+TANIMOTO = "tanimoto"
+SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, TANIMOTO, ]
 DIST_ALGOS = [MASH, ]
 ALGOS = SIM_ALGOS + DIST_ALGOS
 INSTALLED = {
@@ -118,7 +119,7 @@ YAML_FILE_NAMES = {
 KW_CACHE = "cache"
 KW_CACHE_DIR = "cache_dir"
 KW_CLI = "cli"
-KW_DATA = "data"
+KW_DELTA = "delta"
 KW_EPSILON = "epsilon"
 
 KW_E_ARGS = "e_args"
@@ -126,16 +127,20 @@ KW_E_DATA = "e_data"
 KW_E_DIST = "e_dist"
 KW_E_ID_MAP = "e_id_map"
 KW_E_WEIGHTS = "e_weights"
+KW_E_STRAT = "e_strat"
 KW_E_SIM = "e_sim"
 KW_E_TYPE = "e_type"
+KW_E_CLUSTERS = "e_clusters"
 
 KW_F_ARGS = "f_args"
 KW_F_DATA = "f_data"
 KW_F_DIST = "f_dist"
 KW_F_ID_MAP = "f_id_map"
 KW_F_WEIGHTS = "f_weights"
+KW_F_STRAT = "f_strat"
 KW_F_SIM = "f_sim"
 KW_F_TYPE = "f_type"
+KW_F_CLUSTERS = "f_clusters"
 
 KW_INTER = "inter"
 KW_LOGDIR = "logdir"
@@ -149,11 +154,57 @@ KW_SPLITS = "splits"
 KW_TECHNIQUES = "techniques"
 KW_THREADS = "threads"
 KW_VERBOSE = "verbosity"
+KW_LINKAGE = "linkage"
 
-SOLVER_SCIP = "SCIP"
+DEFAULT_KWARGS = {
+    KW_CACHE: False,
+    KW_CACHE_DIR: None,
+    KW_CLI: False,
+    KW_DELTA: 0.1,
+    KW_EPSILON: 0.1,
+
+    KW_E_ARGS: None,
+    KW_E_CLUSTERS: 50,
+    KW_E_DATA: None,
+    KW_E_DIST: None,
+    KW_E_ID_MAP: None,
+    KW_E_WEIGHTS: None,
+    KW_E_STRAT: None,
+    KW_E_SIM: None,
+    KW_E_TYPE: None,
+
+    KW_F_ARGS: None,
+    KW_F_CLUSTERS: 50,
+    KW_F_DATA: None,
+    KW_F_DIST: None,
+    KW_F_ID_MAP: None,
+    KW_F_WEIGHTS: None,
+    KW_F_STRAT: None,
+    KW_F_SIM: None,
+    KW_F_TYPE: None,
+
+    KW_INTER: None,
+    KW_LOGDIR: None,
+    KW_MAX_SEC: 1000,
+    KW_MAX_SOL: 1000,
+    KW_NAMES: ["train", "val", "test"],
+    KW_OUTDIR: None,
+    KW_RUNS: 1,
+    KW_SOLVER: "SCIP",
+    KW_SPLITS: [0.7, 0.2, 0.1],
+    KW_TECHNIQUES: None,
+    KW_THREADS: 1,
+    KW_VERBOSE: "E",
+    KW_LINKAGE: "average",
+}
+
+SOLVER_CBC = "CBC"
 SOLVER_CPLEX = "CPLEX"
+SOLVER_GLPK = "GLPK"
+SOLVER_GLPK_MI = "GLPK_MI"
 SOLVER_GUROBI = "GUROBI"
 SOLVER_MOSEK = "MOSEK"
+SOLVER_SCIP = "SCIP"
 SOLVER_XPRESS = "XPRESS"
 TEC_R = "R"
 SRC_ID = "I"
@@ -174,9 +225,10 @@ N_CLUSTERS = 10
 # 2 Hardly installable
 # 3 Not installable
 SOLVERS = {
-    # "CBC": cvxpy.CBC,  # extra: CBC
+    SOLVER_CBC: cvxpy.CBC,  # extra: CBC
     # "COPT": cvxpy.COPT,
-    # SOLVER_GLPK: cvxpy.GLPK_MI,  # not powerful enough
+    SOLVER_GLPK: cvxpy.GLPK_MI,
+    SOLVER_GLPK_MI: cvxpy.GLPK_MI,
     SOLVER_SCIP: cvxpy.SCIP,
     SOLVER_CPLEX: cvxpy.CPLEX,
     SOLVER_GUROBI: cvxpy.GUROBI,

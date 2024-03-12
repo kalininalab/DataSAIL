@@ -2,6 +2,7 @@ import functools
 import logging
 import operator
 import sys
+from collections import Counter
 from pathlib import Path
 
 from typing import List, Optional, Union, Tuple, Collection, Dict, Callable
@@ -11,8 +12,9 @@ from cvxpy import Variable
 from cvxpy.constraints.constraint import Constraint
 import numpy as np
 
+from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, SOLVER_CPLEX, SOLVER_XPRESS, SOLVER_SCIP, SOLVER_MOSEK, \
-    SOLVER_GUROBI, SOLVERS, NOT_ASSIGNED
+    SOLVER_GUROBI, SOLVERS, NOT_ASSIGNED, SOLVER_GLPK_MI, SOLVER_CBC
 
 
 def compute_limits(epsilon: float, total: int, splits: List[float]) -> List[float]:
@@ -27,7 +29,30 @@ def compute_limits(epsilon: float, total: int, splits: List[float]) -> List[floa
     Returns:
         lower and upper limits for the splits
     """
-    return [int((split - epsilon) * total) for split in splits]
+    return [int(split * (1 - epsilon) * total) for split in splits]
+
+
+def stratification_constraints(
+        s_matrix: np.ndarray,
+        splits: List[float],
+        delta: float,
+        x: Variable,
+) -> Constraint:
+    """
+    Generate the stratification constraints for the given dataset.
+
+    Args:
+        s_matrix: Stratification matrix for the entities
+        splits: list of splitting fractions
+        delta: Additive bound for stratification imbalance
+        x: Optimization variables
+
+    Returns:
+        A constraint checking the lower bound for each pair of split and class
+    """
+    c = np.sum(s_matrix, axis=0)
+    slbo = np.array([[c[e] * split * (1 - delta) for e in range(s_matrix.shape[1])] for split in splits])
+    return (x * s_matrix) >= slbo
 
 
 class LoggerRedirect:
@@ -52,17 +77,13 @@ class LoggerRedirect:
         if self.silent:
             return
         for name, logger in logging.root.manager.loggerDict.items():
-            if isinstance(logger, logging.Logger) and len(logger.handlers) > 0:
+            if hasattr(logger, "handlers") and len(logger.handlers) != 0:
                 for handler in logger.handlers:
-                    if not hasattr(handler, "stream"):
-                        continue
-                    if handler.stream.name == "<stdout>":
-                        if name not in self.disabled:
-                            self.disabled[name] = []
-                        self.disabled[name].append(handler)
-                if name in self.disabled:
-                    for handler in self.disabled[name]:
-                        logger.removeHandler(handler)
+                    if name not in self.disabled:
+                        self.disabled[name] = []
+                    self.disabled[name].append(handler)
+                for handler in self.disabled[name]:
+                    logger.removeHandler(handler)
                 logger.addHandler(self.file_handler)
         sys.stdout = self.file_handler.stream
 
@@ -85,7 +106,7 @@ class LoggerRedirect:
         sys.stdout = self.old_stdout
 
 
-def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path) -> Optional[cvxpy.Problem]:
+def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path, num_threads: int = 14) -> Optional[cvxpy.Problem]:
     """
     Minimize the loss function based on the constraints with the timelimit specified by max_sec.
 
@@ -105,19 +126,51 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path) ->
         f"The problem has {sum([functools.reduce(operator.mul, v.shape, 1) for v in problem.variables()])} variables "
         f"and {sum([functools.reduce(operator.mul, c.shape, 1) for c in problem.constraints])} constraints.")
 
-    if solver == SOLVER_SCIP:
-        kwargs = {"scip_params": {"limits/time": max_sec}}
+    if solver == SOLVER_CBC:
+        kwargs = {
+            "maximumSeconds": max_sec,
+            "numberThreads": num_threads,
+        }
     elif solver == SOLVER_CPLEX:
-        kwargs = {"cplex_params": {}}
+        # TODO: Find valid license and activate it (free version has problem size limits)
+        kwargs = {"cplex_params": {
+            "timelimit": max_sec,
+            "threads": num_threads,
+            "mip.display": 0,
+        }}
+    elif solver == SOLVER_GLPK_MI:
+        kwargs = {
+            "tm_lim": max_sec,
+            "threads": num_threads,
+        }
     elif solver == SOLVER_GUROBI:
-        kwargs = {"gurobi_params": {}}
+        kwargs = {
+            "TimeLimit": max_sec,
+            "LogToConsole": 0,
+            "Threads": num_threads,
+            "MemLimit": 800,  # [GB]
+        }
     elif solver == SOLVER_MOSEK:
         kwargs = {"mosek_params": {
             "MSK_DPAR_OPTIMIZER_MAX_TIME": max_sec,
-            "MSK_IPAR_NUM_THREADS": 14,
+            "MSK_IPAR_NUM_THREADS": num_threads,
+            "MSK_IPAR_LOG_SIM": 2,
+            "MSK_IPAR_LOG_SENSITIVITY": 0,
+        }}
+    elif solver == SOLVER_SCIP:
+        kwargs = {"scip_params": {
+            "limits/time": max_sec,
+            "display/verblevel": 2,
+            "lp/threads": num_threads,
+            "parallel/maxnthreads": num_threads
         }}
     elif solver == SOLVER_XPRESS:
-        kwargs = {"xpress_params": {}}
+        # TODO: find valid license and activate it
+        kwargs = {
+            "maxcuttime": max_sec,
+            "miplog": 0,
+            "concurrentthreads": num_threads,
+        }
     else:
         raise ValueError("Unknown solver error")
     with LoggerRedirect(log_file):
@@ -264,7 +317,6 @@ def interaction_contraints(
 
 
 def cluster_y_constraints(
-        uniform: bool,
         clusters: List[str],
         y: List[List[Variable]],
         x: Variable,
@@ -274,7 +326,6 @@ def cluster_y_constraints(
     Generate constraints for the helper variables y in the cluster-based double-cold splitting.
 
     Args:
-        uniform: Boolean flag if the cluster metric is uniform
         clusters: List of cluster names
         y: List of helper variables
         x: Optimization variables
@@ -283,8 +334,6 @@ def cluster_y_constraints(
     Returns:
         List of constraints for the helper variables y
     """
-    if uniform:
-        return []
     return [y[c1][c2] >= cvxpy.max(cvxpy.vstack([x[s, c1] - x[s, c2] for s in range(len(splits))]))
             for c1 in range(len(clusters)) for c2 in range(c1)]
 
@@ -362,7 +411,8 @@ def leakage_loss(
     if uniform:
         return 0
     else:
+        if similarities is None:
+            intra_weights = 1 - intra_weights
         tmp = [intra_weights[c1, c2] * y[c1][c2] for c1 in range(len(clusters)) for c2 in range(c1)]
         e_loss = cvxpy.sum(tmp)
-        if similarities is None:
-            return -e_loss
+        return e_loss

@@ -2,7 +2,7 @@ import os
 from argparse import Namespace
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
+from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable, Set
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,7 @@ import pandas as pd
 from datasail.reader.validate import validate_user_args
 from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS
 
-DATA_INPUT = Optional[Union[str, Path, Dict[str, str], Callable[..., Dict[str, str]], Generator[Tuple[str, str], None, None]]]
+DATA_INPUT = Optional[Union[str, Path, Dict[str, Union[str, np.ndarray]], Callable[..., Dict[str, Union[str, np.ndarray]]], Generator[Tuple[str, Union[str, np.ndarray]], None, None]]]
 MATRIX_INPUT = Optional[Union[str, Path, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
 DictMap = Dict[str, List[Dict[str, str]]]
 
@@ -23,11 +23,15 @@ class DataSet:
     names: Optional[List[str]] = None
     id_map: Optional[Dict[str, str]] = None
     cluster_names: Optional[List[str]] = None
-    data: Optional[Dict[str, str]] = None
+    data: Optional[Dict[str, Union[str, np.ndarray]]] = None
     cluster_map: Optional[Dict[str, str]] = None
     location: Optional[Path] = None
     weights: Optional[Dict[str, float]] = None
     cluster_weights: Optional[Dict[str, float]] = None
+    classes: Optional[Dict[Any, int]] = None
+    class_oh: Optional[np.ndarray] = None
+    stratification: Optional[Dict[str, Any]] = None
+    cluster_stratification: Optional[Dict[str, np.ndarray]] = None
     similarity: Optional[Union[np.ndarray, str]] = None
     cluster_similarity: Optional[Union[np.ndarray, str]] = None
     distance: Optional[Union[np.ndarray, str]] = None
@@ -81,6 +85,25 @@ class DataSet:
         if self.location.exists():
             return self.location.stem
         return str(self.location)
+
+    def strat2oh(self, name: Optional[str] = None, class_: Optional[str] = None) -> Optional[np.ndarray]:
+        """
+        Convert the stratification to a one-hot encoding.
+
+        Args:
+            name: Name of the sample to get the onehot encoding for
+            class_: Class to get the onehot encoding for
+
+        Returns:
+            A one-hot encoding of the stratification
+        """
+        if class_ is None:
+            if name is None:
+                raise ValueError("Either name or class must be provided.")
+            class_ = self.stratification[name]
+        if self.classes is not None:
+            return self.class_oh[self.classes[class_]]
+        return None
 
     def shuffle(self):
         """
@@ -157,17 +180,18 @@ def read_clustering_file(filepath: Path, sep: str = "\t") -> Tuple[List[str], np
     return names, np.array(measures)
 
 
-def read_csv(filepath: Path) -> Generator[Tuple[str, str], None, None]:
+def read_csv(filepath: Path, sep: str = ",") -> Generator[Tuple[str, str], None, None]:
     """
     Read in a CSV file as pairs of data.
 
     Args:
         filepath: Path to the CSV file to read 2-tuples from
+        sep: Separator used to separate the values in the CSV file
 
     Yields:
         Pairs of strings from the file
     """
-    df = pd.read_csv(filepath, sep="\t")
+    df = pd.read_csv(filepath, sep=sep)
     for index in df.index:
         yield df.iloc[index, :2]
 
@@ -203,6 +227,7 @@ def read_matrix_input(
 
 def read_data(
         weights: DATA_INPUT,
+        strats: DATA_INPUT,
         sim: MATRIX_INPUT,
         dist: MATRIX_INPUT,
         inter: Optional[List[Tuple[str, str]]],
@@ -215,6 +240,7 @@ def read_data(
 
     Args:
         weights: Weight file for the data
+        strats: Stratification for the data
         sim: Similarity file or metric
         dist: Distance file or metric
         inter: Interaction, alternative way to compute weights
@@ -239,6 +265,9 @@ def read_data(
     else:
         dataset.weights = dict((p, 1) for p in list(dataset.data.keys()))
 
+    dataset.classes, dataset.stratification = read_stratification(strats)
+    dataset.class_oh = np.eye(len(dataset.classes))
+
     # parse the protein similarity measure
     if sim is None and dist is None:
         dataset.similarity, dataset.distance = get_default(dataset.type, dataset.format)
@@ -257,6 +286,32 @@ def read_data(
     dataset.args = validate_user_args(dataset.type, dataset.format, sim, dist, tool_args)
 
     return dataset
+
+
+def read_stratification(strats: DATA_INPUT) -> Tuple[Dict[Any, int], Optional[Dict[str, np.ndarray]]]:
+    """
+    Read in the stratification for the data.
+
+    Args:
+        strats: Stratification input
+
+    Returns:
+        Set of all classes and a dictionary mapping the entity names to their class
+    """
+    # parse the stratification
+    if isinstance(strats, Path):
+        stratification = dict(read_csv(strats))
+    elif isinstance(strats, dict):
+        stratification = strats
+    elif isinstance(strats, Callable):
+        stratification = strats()
+    elif isinstance(strats, Generator):
+        stratification = dict(strats)
+    else:
+        return {0: 0}, None
+
+    classes = {s: i for i, s in enumerate(set(stratification.values()))}
+    return classes, stratification
 
 
 def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Generator[Tuple[str, str], None, None]:

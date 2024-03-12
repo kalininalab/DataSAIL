@@ -1,8 +1,9 @@
-import os
+import pickle
 from pathlib import Path
 from typing import Generator, Tuple, Dict, List, Optional, Set, Callable, Union, Iterable
 
 import numpy as np
+import h5py
 
 from datasail.reader.read_molecules import remove_duplicate_values
 from datasail.reader.utils import read_csv, DataSet, read_data, read_folder, DATA_INPUT, MATRIX_INPUT
@@ -12,6 +13,7 @@ from datasail.settings import P_TYPE, UNK_LOCATION, FORM_PDB, FORM_FASTA, FASTA_
 def read_protein_data(
         data: DATA_INPUT,
         weights: DATA_INPUT = None,
+        strats: DATA_INPUT = None,
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
         inter: Optional[List[Tuple[str, str]]] = None,
@@ -24,6 +26,7 @@ def read_protein_data(
     Args:
         data: Where to load the data from
         weights: Weight file for the data
+        strats: Stratification for the data
         sim: Similarity file or metric
         dist: Distance file or metric
         inter: Interaction, alternative way to compute weights
@@ -35,10 +38,21 @@ def read_protein_data(
     """
     dataset = DataSet(type=P_TYPE, location=UNK_LOCATION)
     if isinstance(data, Path):
-        if data.suffix[1:] in FASTA_FORMATS:
-            dataset.data = parse_fasta(data)
-        elif data.is_file():
-            dataset.data = dict(read_csv(data))
+        if data.is_file():
+            if data.suffix[1:] in FASTA_FORMATS:
+                dataset.data = parse_fasta(data)
+            elif data.suffix[1:].lower() == "tsv":
+                dataset.data = dict(read_csv(data, sep="\t"))
+            elif data.suffix[1:].lower() == "csv":
+                dataset.data = dict(read_csv(data, sep=","))
+            elif data.suffix[1:].lower() == "pkl":
+                with open(data, "rb") as file:
+                    dataset.data = dict(pickle.load(file))
+            elif data.suffix[1:].lower() == "h5":
+                with h5py.File(data) as file:
+                    dataset.data = dict(file[k] for k in file.keys())
+            else:
+                raise ValueError()
         elif data.is_dir():
             dataset.data = dict(read_folder(data, "pdb"))
         else:
@@ -57,7 +71,7 @@ def read_protein_data(
 
     dataset.format = FORM_PDB if str(next(iter(dataset.data.values()))).endswith(".pdb") else FORM_FASTA
 
-    dataset = read_data(weights, sim, dist, inter, index, tool_args, dataset)
+    dataset = read_data(weights, strats, sim, dist, inter, index, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)
 
     return dataset

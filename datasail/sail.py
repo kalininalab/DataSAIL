@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict, List, Callable, Generator, Union
+from typing import Dict, List, Callable, Generator, Union, Literal
 
 from datasail.parsers import parse_datasail_args
 from datasail.reader.utils import DATA_INPUT, MATRIX_INPUT
@@ -10,7 +10,7 @@ from datasail.settings import *
 
 def error(msg: str, error_code: int, cli: bool) -> None:
     """
-    Print an error message with an individual error code to the commandline. Afterward, the program is stopped.
+    Print an error message with an individual error code to the commandline. Afterward, the program is ended.
 
     Args:
         msg: Error message
@@ -92,6 +92,10 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The interaction filepath is not valid.", 5, kwargs[KW_CLI])
 
     # check the epsilon value
+    if 1 < kwargs[KW_DELTA] < 0:
+        error("The delta value has to be a real value between 0 and 1.", 6, kwargs[KW_CLI])
+
+    # check the epsilon value
     if 1 < kwargs[KW_EPSILON] < 0:
         error("The epsilon value has to be a real value between 0 and 1.", 6, kwargs[KW_CLI])
 
@@ -106,11 +110,16 @@ def validate_args(**kwargs) -> Dict[str, object]:
             LOGGER.warning("Cache directory does not exist, DataSAIL creates it automatically")
         kwargs[KW_CACHE_DIR].mkdir(parents=True, exist_ok=True)
 
+    if kwargs[KW_LINKAGE] not in ["average", "single", "complete"]:
+        error("The linkage method has to be one of 'mean', 'single', or 'complete'.", 26, kwargs[KW_CLI])
+
     # syntactically parse the input data for the E-dataset
     if kwargs[KW_E_DATA] and isinstance(kwargs[KW_E_DATA], Path) and not kwargs[KW_E_DATA].exists():
         error("The filepath to the E-data is invalid.", 7, kwargs[KW_CLI])
     if kwargs[KW_E_WEIGHTS] and isinstance(kwargs[KW_E_WEIGHTS], Path) and not kwargs[KW_E_WEIGHTS].is_file():
         error("The filepath to the weights of the E-data is invalid.", 8, kwargs[KW_CLI])
+    if kwargs[KW_E_STRAT] and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
+        error("The filepath to the stratification of the E-data is invalid.", 11, kwargs[KW_CLI])
     if kwargs[KW_E_SIM] and isinstance(kwargs[KW_E_SIM], str) and kwargs[KW_E_SIM].lower() not in SIM_ALGOS:
         kwargs[KW_E_SIM] = Path(kwargs[KW_E_SIM])
         if not kwargs[KW_E_SIM].is_file():
@@ -121,12 +130,16 @@ def validate_args(**kwargs) -> Dict[str, object]:
         if not kwargs[KW_E_DIST].is_file():
             error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10,
                   kwargs[KW_CLI])
+    if kwargs[KW_E_CLUSTERS] < 1:
+        error("The number of clusters to find in the E-data has to be a positive integer.", 12, kwargs[KW_CLI])
 
     # syntactically parse the input data for the F-dataset
     if kwargs[KW_F_DATA] and isinstance(kwargs[KW_F_DATA], Path) and not kwargs[KW_F_DATA].exists():
         error("The filepath to the F-data is invalid.", 13, kwargs[KW_CLI])
     if kwargs[KW_F_WEIGHTS] and isinstance(kwargs[KW_F_WEIGHTS], Path) and not kwargs[KW_F_WEIGHTS].is_file():
         error("The filepath to the weights of the F-data is invalid.", 14, kwargs[KW_CLI])
+    if kwargs[KW_E_STRAT] and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
+        error("The filepath to the stratification of the E-data is invalid.", 20, kwargs[KW_CLI])
     if kwargs[KW_F_SIM] and isinstance(kwargs[KW_F_SIM], str) and kwargs[KW_F_SIM].lower() not in SIM_ALGOS:
         kwargs[KW_F_SIM] = Path(kwargs[KW_F_SIM])
         if not kwargs[KW_F_SIM].is_file():
@@ -136,6 +149,8 @@ def validate_args(**kwargs) -> Dict[str, object]:
         if not kwargs[KW_F_DIST].is_file():
             error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16,
                   kwargs[KW_CLI])
+    if kwargs[KW_F_CLUSTERS] < 1:
+        error("The number of clusters to find in the F-data has to be a positive integer.", 17, kwargs[KW_CLI])
 
     return kwargs
 
@@ -148,23 +163,29 @@ def datasail(
         verbose: str = "W",
         splits: List[float] = None,
         names: List[str] = None,
+        delta: float = 0.05,
         epsilon: float = 0.05,
         runs: int = 1,
         solver: str = SOLVER_SCIP,
         cache: bool = False,
         cache_dir: Union[str, Path] = None,
+        linkage: Literal["average", "single", "complete"] = "average",
         e_type: str = None,
         e_data: DATA_INPUT = None,
         e_weights: DATA_INPUT = None,
+        e_strat: DATA_INPUT = None,
         e_sim: MATRIX_INPUT = None,
         e_dist: MATRIX_INPUT = None,
         e_args: str = "",
+        e_clusters: int = 50,
         f_type: str = None,
         f_data: DATA_INPUT = None,
         f_weights: DATA_INPUT = None,
+        f_strat: DATA_INPUT = None,
         f_sim: MATRIX_INPUT = None,
         f_dist: MATRIX_INPUT = None,
         f_args: str = "",
+        f_clusters: int = 50,
         threads: int = 1,
 ) -> Tuple[Dict, Dict, Dict]:
     """
@@ -178,23 +199,29 @@ def datasail(
         verbose: Verbosity level for logging.
         splits: List of splits, have to add up to one, otherwise scaled accordingly.
         names: List of names of the splits.
-        epsilon: Fraction by how much the provided split sizes may be exceeded
+        epsilon: Fraction by how much the provided split sizes may be undercut
+        delta: Fraction by how much the stratification may be undercut
         runs: Number of runs to perform per split. This may introduce some variance in the splits.
         solver: Solving algorithm to use.
         cache: Boolean flag indicating to store or load results from cache.
         cache_dir: Directory to store the cache in if not the default location.
+        linkage: Linkage method to use to compute metrics between merged clusters.
         e_type: Data format of the first batch of data
         e_data: Data file of the first batch of data
-        e_weights: Weighting of the datapoints from e_data as TSV format
+        e_weights: Weighting of the datapoints from e_data
+        e_strat: Stratification of the datapoints from e_data
         e_sim: Similarity measure to apply for the e-data
         e_dist: Distance measure to apply for the e-data
         e_args: Additional arguments for the tools in e_sim or e_dist
+        e_clusters: Number of clusters to find in the e-data
         f_type: Data format of the second batch of data
         f_data: Data file of the second batch of data
-        f_weights: Weighting of the datapoints from f-data as TSV format
+        f_weights: Weighting of the datapoints from f-data
+        f_strat: Stratification of the datapoints from f-data
         f_sim: Similarity measure to apply for the f-data
         f_dist: Distance measure to apply for the f-data
         f_args: Additional arguments for the tools in f_sim or f-dist
+        f_clusters: Number of clusters to find in the f-data
         threads: number of threads to use for one CD-HIT run
 
     Returns:
@@ -206,11 +233,12 @@ def datasail(
 
     kwargs = validate_args(
         output=None, techniques=techniques, inter=to_path(inter), max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
-        splits=splits, names=names, epsilon=epsilon, runs=runs, solver=solver, cache=cache,
-        cache_dir=to_path(cache_dir), e_type=e_type, e_data=to_path(e_data), e_weights=to_path(e_weights),
-        e_sim=to_path(e_sim), e_dist=to_path(e_dist), e_args=e_args, f_type=f_type, f_data=to_path(f_data),
-        f_weights=to_path(f_weights), f_sim=to_path(f_sim), f_dist=to_path(f_dist), f_args=f_args, threads=threads,
-        cli=False,
+        splits=splits, names=names, delta=delta, epsilon=epsilon, runs=runs, solver=solver, cache=cache,
+        cache_dir=to_path(cache_dir), linkage=linkage, e_type=e_type, e_data=to_path(e_data),
+        e_weights=to_path(e_weights), e_strat=to_path(e_strat), e_sim=to_path(e_sim), e_dist=to_path(e_dist),
+        e_args=e_args, e_clusters=e_clusters, f_type=f_type, f_data=to_path(f_data), f_weights=to_path(f_weights),
+        f_strat=to_path(f_strat), f_sim=to_path(f_sim), f_dist=to_path(f_dist), f_args=f_args, f_clusters=f_clusters,
+        threads=threads, cli=False,
     )
     return datasail_main(**kwargs)
 
@@ -222,6 +250,7 @@ def sail(args=None, **kwargs) -> None:
     """
     if kwargs is None or len(kwargs) == 0:
         kwargs = parse_datasail_args(args or sys.argv[1:])
+    kwargs = {key: (kwargs[key] if key in kwargs else val) for key, val in DEFAULT_KWARGS.items()}
     kwargs[KW_CLI] = True
     kwargs = validate_args(**kwargs)
     datasail_main(**kwargs)

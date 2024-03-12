@@ -28,8 +28,10 @@ def sabdab_ag_dataset():
     return cluster(
         read_protein_data(base / "sabdab_full" / "ag.fasta", None, None, None,
                           list(read_csv(base / "sabdab_full" / "inter.tsv")), 0),
+        num_clusters=50,
         threads=1,
         logdir=Path(),
+        linkage="average",
     )
 
 
@@ -38,8 +40,10 @@ def sabdab_vh_dataset():
     return cluster(
         read_protein_data(base / "sabdab_full" / "vh.fasta", None, None, None,
                           list(read_csv(base / "sabdab_full" / "inter.tsv")), 1),
+        num_clusters=50,
         threads=1,
         logdir=Path(),
+        linkage="average",
     )
 
 
@@ -49,8 +53,10 @@ def mave_dataset():
         read_protein_data(base / "mave" / "mave_db_gold_standard_only_sequences.fasta",
                           base / "mave" / "mave_db_gold_standard_weights.tsv", None, None, None, None
         ),
+        num_clusters=50,
         threads=1,
         logdir=Path(),
+        linkage="average",
     )
 
 
@@ -60,8 +66,10 @@ def mibig_dataset():
         read_molecule_data(
             base / "mibig" / "compounds.tsv", None, None, None, None, None
         ),
+        num_clusters=50,
         threads=1,
         logdir=Path(),
+        linkage="average",
     )
 
 

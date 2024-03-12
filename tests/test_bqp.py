@@ -10,7 +10,6 @@ from tests.utils import check_folder, run_sail
 @pytest.mark.parametrize("mode", [("R", "random"), ("I1e", "id_cold_single"), ("I2", "id_cold_double")])
 def test_perf_bin_2(root_dir, mode):
     base = root_dir / mode[1]
-    # shutil.rmtree(base, ignore_errors=True)
 
     run_sail(
         output=base,
@@ -28,3 +27,5 @@ def test_perf_bin_2(root_dir, mode):
     )
 
     check_folder(base / mode[0], 0.25, None, None, "Molecule_lig_splits.tsv", "Protein_prot_splits.tsv")
+
+    shutil.rmtree(base / mode[0], ignore_errors=True)

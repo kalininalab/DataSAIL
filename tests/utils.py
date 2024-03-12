@@ -1,7 +1,6 @@
-import os
 import shutil
 from pathlib import Path
-from typing import List
+from typing import List, Literal
 
 from datasail.sail import sail
 
@@ -15,19 +14,20 @@ def read_tsv(filepath: Path):
 
 def run_sail(
         inter=None, output: Path = "", max_sec: int = 100, max_sol: int = 1000, verbosity: str = "I",
-        splits: List[float] = None, names: List[str] = None, epsilon: float = 0.05, runs: int = 1, solver: str = "SCIP",
-        techniques: List[str] = None, cache: bool = False, cache_dir: str = None,
-        e_type: str = None, e_data=None, e_weights=None, e_sim=None, e_dist=None, e_args: str = "",
-        e_max_sim: float = 1.0, e_max_dist: float = 1.0, f_type: str = None, f_data=None, f_weights=None, f_sim=None,
-        f_dist=None, f_args: str = "", f_max_sim: float = 1.0, f_max_dist: float = 1.0, threads: int = 1,
+        splits: List[float] = None, names: List[str] = None, epsilon: float = 0.05, delta: float = 0.05, runs: int = 1,
+        linkage: Literal["single", "complete", "average"] = "average", solver: str = "SCIP",
+        techniques: List[str] = None, cache: bool = False, cache_dir: str = None, e_type: str = None, e_data=None,
+        e_strat=None, e_weights=None, e_sim=None, e_dist=None, e_args: str = "", e_clusters: int = 50,
+        f_type: str = None, f_data=None, f_strat=None, f_weights=None, f_sim=None,
+        f_dist=None, f_args: str = "", f_clusters: int = 50, threads: int = 1,
 ):
     sail(
         inter=inter, output=output, max_sec=max_sec, max_sol=max_sol, verbosity=verbosity, techniques=techniques,
-        splits=splits, names=names, epsilon=epsilon, runs=runs, e_type=e_type, e_data=e_data,
-        e_weights=e_weights, e_sim=e_sim, e_dist=e_dist, e_max_sim=e_max_sim, e_max_dist=e_max_dist,
-        e_args=e_args, f_type=f_type, f_data=f_data, f_weights=f_weights, f_sim=f_sim, f_dist=f_dist,
-        f_max_sim=f_max_sim, f_max_dist=f_max_dist, f_args=f_args, cache=cache, cache_dir=cache_dir,
-        solver=solver, threads=threads,
+        splits=splits, names=names, epsilon=epsilon, delta=delta, runs=runs, linkage=linkage, e_type=e_type,
+        e_data=e_data, e_strat=e_strat, e_weights=e_weights, e_sim=e_sim, e_dist=e_dist, e_args=e_args,
+        e_clusters=e_clusters, f_type=f_type, f_data=f_data, f_strat=f_strat, f_weights=f_weights, f_sim=f_sim,
+        f_dist=f_dist, f_args=f_args, f_clusters=f_clusters, cache=cache, cache_dir=cache_dir, solver=solver,
+        threads=threads,
     )
 
 

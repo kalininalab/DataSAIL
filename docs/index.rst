@@ -46,7 +46,7 @@ Usability
 DataSAIL is available for Linux, MacOS, and Windows. As DataSAIL relies on MMMseqs2, MASH, and FoldSeek, this cannot 
 be used on Windows. Therefore, DataSAIL on Windows is limited to ECFP++ and user-specific datatypes.
 
-DataSAIL is avaliable for all modern Python versions, i.e., 3.8-3.12.
+DataSAIL is available for all modern Python versions, i.e., 3.8-3.12.
 
 .. toctree::
     :maxdepth: 3
@@ -56,6 +56,7 @@ DataSAIL is avaliable for all modern Python versions, i.e., 3.8-3.12.
     workflow/clustering
     workflow/splits
     workflow/solvers
+    posters
 
 .. toctree::
     :maxdepth: 0

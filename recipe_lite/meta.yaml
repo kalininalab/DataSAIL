@@ -1,0 +1,41 @@
+package:
+  name: "datasail-lite"
+  version: '0.3.0'
+
+source:
+  path: ..
+
+build:
+  entry_points:
+    - datasail = datasail.sail:sail
+  script: python setup.py install
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - setuptools_scm
+    - pip
+  run:
+    - python
+    - numpy
+    - pandas
+    - networkx
+    - matplotlib
+    - pytest
+    - setuptools
+    - pyscipopt<4.0.0
+    - scikit-learn
+    - cvxpy
+    - pytest-cov
+    - rdkit>=2022.09.1
+    - pytest-cases
+    - pyyaml
+    - cvxopt
+    - h5py
+
+about:
+  home: https://github.com/kalininalab/DataSAIL
+  license: MIT
+  license_file: LICENSE
+  summary: DataSAIL is a tool to split datasets while reducing information leakage.

@@ -12,11 +12,15 @@ from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, MMSEQS2, INSTALLED, MMSEQSPP
 
 
-def run_mmseqspp(
-        dataset: DataSet,
-        threads: int,
-        log_dir: Optional[Path] = None,
-) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_mmseqspp(dataset: DataSet, threads: int, log_dir: Optional[Path] = None) -> None:
+    """
+    Run MMseqs2 on a dataset in clustering mode.
+
+    Args:
+        dataset: Dataset to be clustered.
+        threads: Number of threads to be used by the clustering algorithm.
+        log_dir: Directory to store the logs.
+    """
     if not INSTALLED[MMSEQS2]:
         raise ValueError("MMseqs is not installed.")
 
@@ -54,4 +58,6 @@ def run_mmseqspp(
 
     shutil.rmtree(result_folder, ignore_errors=True)
 
-    return dataset.names, {n: n for n in dataset.names}, table
+    dataset.cluster_names = dataset.names
+    dataset.cluster_map = {n: n for n in dataset.names}
+    dataset.cluster_similarity = table

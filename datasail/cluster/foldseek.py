@@ -10,11 +10,7 @@ from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, FOLDSEEK, INSTALLED
 
 
-def run_foldseek(
-        dataset: DataSet,
-        threads: int = 1,
-        log_dir: Optional[Path] = None,
-) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
     """
     Run FoldSeek to cluster the proteins based on their structure.
 
@@ -22,12 +18,6 @@ def run_foldseek(
         dataset: DataSet holding all information on the dta to be clustered
         threads: number of threads to use for one CD-HIT run
         log_dir: Absolute path to the directory to store all the logs in
-
-    Returns:
-        A tuple containing
-          - the names of the clusters (cluster representatives)
-          - the mapping from cluster members to the cluster names (cluster representatives)
-          - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
     if not INSTALLED[FOLDSEEK]:
         raise ValueError("Foldseek is not installed.")
@@ -79,4 +69,6 @@ def run_foldseek(
 
     shutil.rmtree(results_folder, ignore_errors=True)
 
-    return dataset.names, dict((n, n) for n in dataset.names), cluster_sim
+    dataset.cluster_names = dataset.names
+    dataset.cluster_map = dict((n, n) for n in dataset.names)
+    dataset.cluster_similarity = cluster_sim
