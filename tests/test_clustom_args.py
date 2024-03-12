@@ -133,13 +133,13 @@ def test_diamond_cargs():
         "--e-type", "P",
         "--e-data", str(Path('data') / 'pipeline' / 'seqs.fasta'),
         "--e-sim", "diamond",
-        "--e-args", "--faster"
+        "--e-args", "--gapopen 10"
     ])
 
     assert out.is_dir()
     assert (out / "C1e").is_dir()
     assert (out / "logs").is_dir()
-    assert (out / "logs" / "seqs_diamond_faster.log")
+    assert (out / "logs" / "seqs_diamond_gapopen_10.log")
 
     shutil.rmtree(out, ignore_errors=True)
 

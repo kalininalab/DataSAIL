@@ -33,8 +33,8 @@ def run_diamond(dataset: DataSet, threads: int, log_dir: Optional[Path] = None) 
 
     cmd = lambda x: f"mkdir {result_folder} && " \
                     f"cd {result_folder} && " \
-                    f"diamond makedb --in seqs.fasta --db seqs.dmnd {makedb_args} {x} --threads {threads} && " \
-                    f"diamond blastp --db seqs.dmnd --query alis.fasta --out seqs.tsv --outfmt 6 qseqid sseqid pident " \
+                    f"diamond makedb --in {str(Path('..') / dataset.location)} --db seqs.dmnd {makedb_args} {x} --threads {threads} && " \
+                    f"diamond blastp --db seqs.dmnd --query {str(Path('..') / dataset.location)} --out alis.tsv --outfmt 6 qseqid sseqid pident " \
                     f"--threads {threads} {blastp_args} {x}"
 
     if log_dir is None:
@@ -52,7 +52,7 @@ def run_diamond(dataset: DataSet, threads: int, log_dir: Optional[Path] = None) 
     if not (result_folder / "alis.tsv").is_file():
         raise ValueError("Something went wront with DIAMOND alignment. The output file does not exist.")
 
-    df = pd.read_csv(result_folder / "seqs.tsv", sep="\t")
+    df = pd.read_csv(result_folder / "alis.tsv", sep="\t")
     df.columns = ["query", "target", "pident"]
     df["fident"] = df["pident"] / 100
     table = df.pivot(index="query", columns="target", values="fident").fillna(0).to_numpy()
