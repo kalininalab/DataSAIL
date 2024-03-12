@@ -1,7 +1,7 @@
 import pytest
 
 from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
-    check_mmseqspp_arguments, check_mash_arguments
+    check_mmseqspp_arguments, check_mash_arguments, check_diamond_arguments
 
 
 @pytest.mark.parametrize("args", [
@@ -21,6 +21,39 @@ def test_cdhit_parser_invalid(args):
 ])
 def test_cdhit_parser_valid(args):
     assert check_cdhit_arguments(args) is not None
+
+
+@pytest.mark.parametrize("args", [
+    "--comp-based-stats 5", "--masking unknown", "--soft-masking invalid", "--evalue -0.001", "--motif-masking 2",
+    "--approx-id 110", "--ext invalid", "--max-target-seqs -5", "--top 110", "--shapes -3",
+    "--strand neither", "--unal 2", "--max-hsps -2", "--compress 2", "--min-score -10", "--id 110", "--query-cover 120",
+    "--subject-cover 110", "--global-ranking -50", "--block-size -2.0",
+    "--index-chunks -4", "--gapopen -15", "--gapextend -25", "--matrix unknown_matrix", "--frameshift enabled",
+    "--file-buffer-size -67108864", "--bin -1", "--ext-chunk-size -10", "--dbsize invalid_size",
+    "--tantan-minMaskProb 1.5", "--algo unknown-algorithm", "--min-orf -30", "--seed-cut -5", "--freq-sd -3",
+    "--gapped-filter-evalue -0.1", "--culling-overlap -10", "--taxon-k -5", "--range-cover 110",
+    "--stop-match-score -0.5", "--window 0", "--ungapped-score -5", "--rank-ratio2 -0.8", "--rank-ratio -0.9"
+])
+def test_diamond_args_checker_invalid(args):
+    with pytest.raises(ValueError):
+        check_diamond_arguments(args)
+
+
+@pytest.mark.parametrize("args", [
+    "--comp-based-stats 2", "--masking seg", "--soft-masking tantan", "--evalue 0.001", "--motif-masking 1",
+    "--approx-id 80", "--ext full", "--max-target-seqs 25", "--top 10", "--shapes 5", "--query input.fasta",
+    "--strand both", "--unal 1", "--max-hsps 1", # "--range-culling \"1%\"",
+    "--compress 1", "--min-score 50", "--id 90", "--query-cover 80", "--subject-cover 70", "--global-ranking 100",
+    "--block-size 2.0", "--index-chunks 4", "--parallel-tmpdir /tmp", # "--gapopen \"-1\"", "--gapextend \"-2\"",
+    "--matrix BLOSUM62", "--custom-matrix custom_matrix.txt", "--frameshift disabled", "--file-buffer-size 67108864", "--bin 10",
+    "--ext-chunk-size auto", "--dbsize 1000000000", "--tantan-minMaskProb 0.9", "--algo double-indexed", "--min-orf 50",
+    "--seed-cut 10", "--freq-masking 1", "--freq-sd 3", "--id2 50", "--gapped-filter-evalue 0.5", "--band 50",
+    "--shape-mask AACGT,GGTCA", "--taxon-k 5", # "--culling-overlap 50%", "--range-cover 50%",
+    "--stop-match-score 0.5", "--window 5", "--ungapped-score 30", "--hit-band 10", "--hit-score 50", "--gapped-xdrop 20",
+    "--rank-ratio2 0.8", "--rank-ratio 0.9", "--lambda 0.5", "--K 10"
+])
+def test_diamond_args_checker_valid(args):
+    assert check_diamond_arguments(args) is not None
 
 
 @pytest.mark.parametrize("args", [

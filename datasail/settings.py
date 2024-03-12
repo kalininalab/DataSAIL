@@ -23,11 +23,10 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
         if data_format == FORM_PDB:
             return FOLDSEEK, None
         elif data_format == FORM_FASTA:
-            # Check if cd-hit is installed or neither of cd-hit and mmseqs are
-            if INSTALLED[MMSEQS] or not INSTALLED[CDHIT]:
-                return MMSEQS, None
-            else:
-                return CDHIT, None
+            order = [DIAMOND, MMSEQS2, CDHIT, MMSEQSPP]
+            for method in order:
+                if INSTALLED[method]:
+                    return method, None
     if data_type == M_TYPE and data_format == FORM_SMILES:
         return ECFP, None
     if data_type == G_TYPE:
@@ -67,6 +66,7 @@ MMSEQS = "mmseqs"
 MMSEQS2 = "mmseqs2"
 MMSEQSPP = "mmseqspp"
 FOLDSEEK = "foldseek"
+DIAMOND = "diamond"
 CDHIT = "cdhit"
 CDHIT_EST = "cdhit_est"
 ECFP = "ecfp"
@@ -75,12 +75,17 @@ MASH_SKETCH = "mash_sketch"
 MASH_DIST = "mash_dist"
 TMALIGN = "tmalign"
 TANIMOTO = "tanimoto"
-SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, TANIMOTO, ]
+
+# List of all available algorithms
+SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND, ]
 DIST_ALGOS = [MASH, ]
 ALGOS = SIM_ALGOS + DIST_ALGOS
+
+# Check if the tools are installed
 INSTALLED = {
     CDHIT: shutil.which("cd-hit") is not None,
     CDHIT_EST: shutil.which("cd-hit-est") is not None,
+    DIAMOND: shutil.which("diamond") is not None,
     MMSEQS: shutil.which("mmseqs") is not None,
     MMSEQS2: shutil.which("mmseqs") is not None,
     MMSEQSPP: shutil.which("mmseqs") is not None,
@@ -103,12 +108,14 @@ FORM_SMILES = "SMILES"
 NOT_ASSIGNED = "not selected"
 MAX_CLUSTERS = 50
 
+# YAML-files storing the arguments to the tools
 YAML_FILE_NAMES = {
     MMSEQS: "args/mmseqs2.yaml",
     MMSEQS2: "args/mmseqs2.yaml",
     MMSEQSPP: "args/mmseqspp.yaml",
     CDHIT: "args/cdhit.yaml",
     CDHIT_EST: "args/cdhit_est.yaml",
+    DIAMOND: "args/diamond.yaml",
     FOLDSEEK: "args/foldseek.yaml",
     ECFP: "args/.yaml",
     MASH: "args/mash.yaml",

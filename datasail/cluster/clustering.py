@@ -6,6 +6,7 @@ from sklearn.cluster import AgglomerativeClustering, SpectralClustering
 from datasail.cluster.caching import load_from_cache, store_to_cache
 from datasail.cluster.cdhit import run_cdhit
 from datasail.cluster.cdhit_est import run_cdhit_est
+from datasail.cluster.diamond import run_diamond
 from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
@@ -18,6 +19,8 @@ from datasail.reader.utils import DataSet
 from datasail.report import whatever
 from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, KW_LINKAGE, MMSEQS, MMSEQS2, \
     MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, TANIMOTO
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
+    FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND
 
 
 def cluster(dataset: DataSet, num_clusters: int, **kwargs) -> DataSet:
@@ -93,7 +96,7 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
           - Symmetric matrix of pairwise similarities between the current clusters
           - Mapping from current clusters to their weights
     """
-    if dataset.similarity.lower() == "wlk":
+    if dataset.similarity.lower() == WLK:
         run_wlk(dataset)
     elif dataset.similarity.lower() == CDHIT:
         run_cdhit(dataset, threads, log_dir)
