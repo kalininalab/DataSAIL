@@ -1,7 +1,7 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Tuple, List, Dict, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -25,18 +25,24 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
 
     results_folder = Path("fs_results")
 
+    tmp = Path("tmp")
+    tmp.mkdir(parents=True, exist_ok=True)
+    for name, filepath in dataset.data.items():
+        shutil.copy(filepath, tmp)
+
     cmd = f"mkdir {results_folder} && " \
           f"cd {results_folder} && " \
           f"foldseek " \
           f"easy-search " \
-          f"{Path('..') / dataset.location} " \
-          f"{Path('..') / dataset.location} " \
+          f"../tmp " \
+          f"../tmp " \
           f"aln.m8 " \
           f"tmp " \
           f"--format-output 'query,target,fident' " \
           f"-e inf " \
           f"--threads {threads} " \
-          f"{user_args}"
+          f"{user_args}"  # && " \
+          # f"rm -rf ../tmp"
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"

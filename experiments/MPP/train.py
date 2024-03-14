@@ -219,6 +219,7 @@ def train(full_path: Path, name: Optional[str] = None) -> None:
 
     Args:
         full_path: Path to the folder holding the runs for all tools and datasets
+        name: Name of the dataset to train
     """
     if name is None:
         for name in DATASETS:

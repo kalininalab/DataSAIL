@@ -1,7 +1,8 @@
-import os
+import pickle
 from pathlib import Path
-from typing import List, Tuple, Optional, Callable, Generator, Union, Iterable
+from typing import List, Tuple, Optional, Callable, Generator, Iterable
 
+import h5py
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import MolFromMol2File, MolFromMolFile, MolFromPDBFile, MolFromTPLFile, MolFromXYZFile
@@ -33,6 +34,7 @@ def read_molecule_data(
         dist: MATRIX_INPUT = None,
         inter: Optional[List[Tuple[str, str]]] = None,
         index: Optional[int] = None,
+        num_clusters: Optional[int] = None,
         tool_args: str = "",
 ) -> DataSet:
     """
@@ -46,6 +48,7 @@ def read_molecule_data(
         dist: Distance file or metric
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
+        num_clusters: Number of clusters to compute for this dataset
         tool_args: Additional arguments for the tool
 
     Returns:
@@ -53,8 +56,19 @@ def read_molecule_data(
     """
     dataset = DataSet(type=M_TYPE, format=FORM_SMILES, location=UNK_LOCATION)
     if isinstance(data, Path):
-        if data.suffix[1:].lower() == "tsv":
-            dataset.data = dict(read_csv(data))
+        if data.is_file():
+            if data.suffix[1:].lower() == "tsv":
+                dataset.data = dict(read_csv(data, sep="\t"))
+            elif data.suffix[1:].lower() == "csv":
+                dataset.data = dict(read_csv(data, sep=","))
+            elif data.suffix[1:].lower() == "pkl":
+                with open(data, "rb") as file:
+                    dataset.data = dict(pickle.load(file))
+            elif data.suffix[1:].lower() == "h5":
+                with h5py.File(data) as file:
+                    dataset.data = dict(file[k] for k in file.keys())
+            else:
+                raise ValueError()
         elif data.is_dir():
             dataset.data = {}
             for file in data.iterdir():
@@ -78,7 +92,7 @@ def read_molecule_data(
     else:
         raise ValueError()
 
-    dataset = read_data(weights, strats, sim, dist, inter, index, tool_args, dataset)
+    dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
     dataset = remove_molecule_duplicates(dataset)
 
     return dataset

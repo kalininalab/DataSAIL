@@ -131,7 +131,7 @@ def save_datasail_splits(base: Path, df: pd.DataFrame, key: str, techniques: Lis
                 df[sub].to_csv(path / f"{label}.csv", index=False)
 
 
-class ESM2_t12:
+class ESM2T12:
     _instance = None
     _model, _alphabet, _batch_converter = None, None, None
 
@@ -183,7 +183,7 @@ def embed_sequence(aa_seq: str, prot_embeds: Dict[str, Optional[np.ndarray]] = N
     aa_seq = amino_acids_pattern.sub('G', aa_seq)[:1022]
     if aa_seq not in prot_embeds:
         try:
-            prot_embeds[aa_seq] = ESM2_t12().instance().embed_aaseqs(aa_seq)
+            prot_embeds[aa_seq] = ESM2T12().instance().embed_aaseqs(aa_seq)
         except:
             prot_embeds[aa_seq] = None
     return prot_embeds[aa_seq]

@@ -25,7 +25,7 @@ requirements:
     - pytest
     - setuptools
     - pyscipopt<4.0.0
-    - scikit-learn
+    - scikit-learn>=1.2,<1.6
     - foldseek
     - mmseqs2
     - cd-hit

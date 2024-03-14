@@ -185,7 +185,7 @@ def eval(assignments, similarity):
     return 1 - np.sum(similarity * mask) / np.sum(similarity)
 
 
-def visualize(full_path: Path, clusters: List[int], solvers, ax: Optional[Tuple] = None):
+def visualize(full_path: Path, clusters: List[int], solvers, ax: Optional[Tuple] = None, fig=None):
     if show := ax is None:
         matplotlib.rc('font', **{'size': 16})
         fig = plt.figure(figsize=(10, 8))

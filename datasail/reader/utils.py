@@ -1,13 +1,13 @@
 from argparse import Namespace
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable, Set
+from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
 
 import numpy as np
 import pandas as pd
 
 from datasail.reader.validate import validate_user_args
-from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS
+from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS, UNK_LOCATION, format2ending
 
 DATA_INPUT = Optional[Union[str, Path, Dict[str, Union[str, np.ndarray]], Callable[..., Dict[str, Union[str, np.ndarray]]], Generator[Tuple[str, Union[str, np.ndarray]], None, None]]]
 MATRIX_INPUT = Optional[Union[str, Path, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
@@ -55,7 +55,7 @@ class DataSet:
             elif isinstance(obj, list):
                 hv = hash(tuple(obj))
             elif isinstance(obj, np.ndarray):
-                hv = 0  # hash(str(obj.data))
+                hv = 0
             elif isinstance(obj, Namespace):
                 hv = hash(tuple(obj.__dict__.items()))
             else:
@@ -82,9 +82,24 @@ class DataSet:
         Returns:
             Name of the dataset
         """
-        if self.location.exists():
-            return self.location.stem
+        if self.location is None or self.location == UNK_LOCATION:
+            return "unknown"
+        if isinstance(self.location, Path):
+            if self.location.is_file():
+                return self.location.stem
+            return self.location.name
         return str(self.location)
+
+    def get_location_path(self) -> Path:
+        """
+        Get the location of the dataset.
+
+        Returns:
+            The location of the dataset
+        """
+        if self.location is None or self.location == UNK_LOCATION or not self.location.exists():
+            return Path("unknown." + format2ending(self.format))
+        return self.location
 
     def strat2oh(self, name: Optional[str] = None, class_: Optional[str] = None) -> Optional[np.ndarray]:
         """
@@ -254,8 +269,13 @@ def read_data(
         A dataset storing all information on that datatype
     """
     # parse the protein weights
-    if isinstance(weights, Path):
-        dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
+    if isinstance(weights, Path) and weights.is_file():
+        if weights.suffix[1:].lower() == "csv":
+            dataset.weights = dict((n, float(w)) for n, w in read_csv(weights, ","))
+        elif weights.suffix[1:].lower() == "tsv":
+            dataset.weights = dict((n, float(w)) for n, w in read_csv(weights, "\t"))
+        else:
+            raise ValueError()
     elif isinstance(weights, dict):
         dataset.weights = weights
     elif isinstance(weights, Callable):
@@ -269,6 +289,7 @@ def read_data(
 
     dataset.classes, dataset.stratification = read_stratification(strats)
     dataset.class_oh = np.eye(len(dataset.classes))
+    dataset.num_clusters = num_clusters
 
     # parse the protein similarity measure
     if sim is None and dist is None:
@@ -301,8 +322,13 @@ def read_stratification(strats: DATA_INPUT) -> Tuple[Dict[Any, int], Optional[Di
         Set of all classes and a dictionary mapping the entity names to their class
     """
     # parse the stratification
-    if isinstance(strats, Path):
-        stratification = dict(read_csv(strats))
+    if isinstance(strats, Path) and strats.is_file():
+        if strats.suffix[1:].lower() == "csv":
+            stratification = dict(read_csv(strats, ","))
+        elif strats.suffix[1:].lower() == "tsv":
+            stratification = dict(read_csv(strats, "\t"))
+        else:
+            raise ValueError()
     elif isinstance(strats, dict):
         stratification = strats
     elif isinstance(strats, Callable):

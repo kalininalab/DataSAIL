@@ -18,6 +18,7 @@ def read_genome_data(
         dist: MATRIX_INPUT = None,
         inter: Optional[List[Tuple[str, str]]] = None,
         index: Optional[int] = None,
+        num_clusters: Optional[int] = None,
         tool_args: str = "",
 ) -> DataSet:
     """
@@ -31,6 +32,7 @@ def read_genome_data(
         dist: Distance file or metric
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
+        num_clusters: Number of clusters to compute for this dataset
         tool_args: Additional arguments for the tool
 
     Returns:
@@ -70,6 +72,6 @@ def read_genome_data(
     else:
         raise ValueError()
 
-    dataset = read_data(weights, strats, sim, dist, inter, index, tool_args, dataset)
+    dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)
     return dataset

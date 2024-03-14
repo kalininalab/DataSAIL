@@ -5,7 +5,7 @@ from typing import Tuple, List, Dict, Optional
 
 import numpy as np
 
-from datasail.cluster.utils import cluster_param_binary_search, extract_fasta
+from datasail.cluster.utils import cluster_param_binary_search
 from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, INSTALLED, CDHIT_EST
@@ -25,7 +25,7 @@ def run_cdhit_est(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = 
 
     user_args = MultiYAMLParser(CDHIT_EST).get_user_arguments(dataset.args, ["c", "n"])
     vals = (dataset.args.c, dataset.args.n)
-    extract_fasta(dataset)
+    # extract_fasta(dataset)
 
     dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity =  cluster_param_binary_search(
         dataset,
@@ -65,15 +65,21 @@ def cdhit_est_trial(
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
     results_folder = Path("cdhit_est_results")
+
+    with open("cdhitest.fasta", "w") as out:
+        for name, seq in dataset.data.items():
+            out.write(f">{name}\n{seq}\n")
+
     cmd = f"mkdir {results_folder} && " \
           f"cd {results_folder} && " \
           f"cd-hit-est " \
-          f"-i {Path('..') / dataset.location} " \
+          f"-i ../cdhitest.fasta " \
           f"-o clusters " \
           f"-d 0 " \
           f"-T {threads} " \
           f"{tune_args} " \
-          f"{user_args} "
+          f"{user_args} && " \
+          f"rm ../cdhitest.fasta"
 
     if log_file is None:
         cmd += "> /dev/null 2>&1"

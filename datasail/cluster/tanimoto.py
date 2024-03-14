@@ -14,7 +14,7 @@ def run_tanimoto(dataset: DataSet) -> None:
     """
     LOGGER.info("Start Tanimoto clustering")
 
-    if not isinstance(list(dataset.data.values)[0], np.ndarray):
+    if not isinstance(list(dataset.data.values())[0], np.ndarray):
         raise ValueError("Tanimoto-Clustering can only be applied to already computed embeddings.")
 
     count = len(dataset.cluster_names)

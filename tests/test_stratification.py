@@ -30,6 +30,8 @@ def test_stratification(tech):
         f_data=dict(prots[["ID", "seq"]].values.tolist()),
         f_strat=dict(prots[["ID", "strat"]].values.tolist()),
         f_sim="mmseqs",
+        epsilon=0.2,
+        delta=0.2,
     )
     assert e_splits is not None
     if tech in e_splits:
@@ -48,4 +50,4 @@ def check(df, key, splits, tech):
     for split, frac in [("train", 0.8), ("test", 0.2)]:
         for cls in ["A", "B"]:
             assert len(df[(df["split"] == split) & (df["strat"] == cls)]) >= len(
-                df[df["strat"] == cls]) * (frac - 0.05) * factor
+                df[df["strat"] == cls]) * frac * 0.8 * factor

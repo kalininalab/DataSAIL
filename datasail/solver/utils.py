@@ -2,17 +2,15 @@ import functools
 import logging
 import operator
 import sys
-from collections import Counter
 from pathlib import Path
 
-from typing import List, Optional, Union, Tuple, Collection, Dict, Callable
+from typing import List, Optional, Union, Tuple, Dict, Callable
 
 import cvxpy
 from cvxpy import Variable
 from cvxpy.constraints.constraint import Constraint
 import numpy as np
 
-from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, SOLVER_CPLEX, SOLVER_XPRESS, SOLVER_SCIP, SOLVER_MOSEK, \
     SOLVER_GUROBI, SOLVERS, NOT_ASSIGNED, SOLVER_GLPK_MI, SOLVER_CBC
 
@@ -116,6 +114,7 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path, nu
         max_sec: Maximal number of seconds to optimize the initial solution
         solver: Solving algorithm to use to solve the formulated program
         log_file: File to store the detailed log from the solver to
+        num_threads: Number of threads to use for the solver
 
     Returns:
         The problem object after solving. None if the problem could not be solved.

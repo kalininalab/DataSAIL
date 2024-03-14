@@ -6,6 +6,7 @@ from sklearn.cluster import AgglomerativeClustering, SpectralClustering
 from datasail.cluster.caching import load_from_cache, store_to_cache
 from datasail.cluster.cdhit import run_cdhit
 from datasail.cluster.cdhit_est import run_cdhit_est
+from datasail.cluster.diamond import run_diamond
 from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
@@ -16,20 +17,16 @@ from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, KW_LINKAGE, MMSEQS, MMSEQS2, \
-    MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, TANIMOTO
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, KW_LINKAGE
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
-    FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
+    FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND,TANIMOTO, KW_LINKAGE
 
 
-def cluster(dataset: DataSet, num_clusters: int, **kwargs) -> DataSet:
+def cluster(dataset: DataSet, **kwargs) -> DataSet:
     """
     Cluster molecules based on a similarity or distance metric.
 
     Args:
         dataset: Dataset to cluster
-        num_clusters: Number of clusters to reduce to
 
     Returns:
         A dataset with modified properties according to clustering the data
@@ -102,6 +99,8 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
         run_cdhit(dataset, threads, log_dir)
     elif dataset.similarity.lower() == CDHIT_EST:
         run_cdhit_est(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == DIAMOND:
+        run_diamond(dataset, threads, log_dir)
     elif dataset.similarity.lower() == ECFP:
         run_ecfp(dataset)
     elif dataset.similarity.lower() == FOLDSEEK:
@@ -292,17 +291,17 @@ def force_clustering(dataset: DataSet, linkage: Literal["average", "single", "co
     Returns:
         The clustered dataset
     """
-    LOGGER.info(f"Enforce clustering from {len(dataset.cluster_names)} clusters to {MAX_CLUSTERS} clusters")
+    LOGGER.info(f"Enforce clustering from {len(dataset.cluster_names)} clusters to {dataset.num_clusters} clusters")
 
     # define the list of clusters, the current sizes of the individual clusters, and how big they shall become
     labels = []
-    sizes = np.zeros(MAX_CLUSTERS)
-    fraction = sum(dataset.cluster_weights.values()) / MAX_CLUSTERS
+    sizes = np.zeros(dataset.num_clusters, dtype=float)
+    fraction = sum(dataset.cluster_weights.values()) / dataset.num_clusters
 
     for name, weight in sorted(dataset.cluster_weights.items(), key=lambda x: x[1], reverse=True):
         assigned = False
-        overlap = np.zeros(MAX_CLUSTERS)
-        for i in range(MAX_CLUSTERS):
+        overlap = np.zeros(dataset.num_clusters)
+        for i in range(dataset.num_clusters):
             # if the entity can be assigned to cluster i without exceeding the target size, assign it there, ...
             if sizes[i] + weight < fraction:
                 labels.append(i)

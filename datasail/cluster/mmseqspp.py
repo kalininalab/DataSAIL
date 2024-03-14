@@ -5,7 +5,6 @@ import shutil
 
 import pandas as pd
 
-from datasail.cluster.utils import extract_fasta
 from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, MMSEQS2, INSTALLED, MMSEQSPP
@@ -26,16 +25,20 @@ def run_mmseqspp(dataset: DataSet, threads: int, log_dir: Optional[Path] = None)
     parser = MultiYAMLParser(MMSEQSPP)
     prefilter_args = parser.get_user_arguments(dataset.args, [], 0)
     align_args = parser.get_user_arguments(dataset.args, [], 1)
-    extract_fasta(dataset)
+
+    with open("mmseqs.fasta", "w") as out:
+        for name, seq in dataset.data.items():
+            out.write(f">{name}\n{seq}\n")
 
     result_folder = Path("mmseqspp_results")
 
     cmd = lambda x: f"mkdir {result_folder} && " \
                     f"cd {result_folder} && " \
-                    f"mmseqs createdb {str(Path('..') / dataset.location)} seqs.db {x} && " \
+                    f"mmseqs createdb ../mmseqs.fasta seqs.db {x} && " \
                     f"mmseqs prefilter seqs.db seqs.db seqs.pref --threads {threads} {prefilter_args} {x} && " \
                     f"mmseqs align seqs.db seqs.db seqs.pref seqs.ali -e inf --threads {threads} {align_args} {x} && " \
-                    f"mmseqs convertalis seqs.db seqs.db seqs.ali alis.tsv --format-mode 4 --format-output query,target,fident --threads {threads} {x}"
+                    f"mmseqs convertalis seqs.db seqs.db seqs.ali alis.tsv --format-mode 4 --format-output query,target,fident --threads {threads} {x} && " \
+                    f"rm ../mmseqs.fasta"
 
     if log_dir is None:
         cmd = cmd("> /dev/null 2>&1")

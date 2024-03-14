@@ -5,7 +5,7 @@ from typing import Tuple, List, Dict, Optional
 
 import numpy as np
 
-from datasail.cluster.utils import cluster_param_binary_search, extract_fasta
+from datasail.cluster.utils import cluster_param_binary_search
 from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, CDHIT, INSTALLED
@@ -25,9 +25,8 @@ def run_cdhit(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None
 
     user_args = MultiYAMLParser(CDHIT).get_user_arguments(dataset.args, ["c", "n"])
     vals = (dataset.args.c, dataset.args.n)  # values to be optimized
-    extract_fasta(dataset)
 
-    dataset.cluster_names, dataset.cluster_map, dataset.cluster_similar = cluster_param_binary_search(
+    dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity = cluster_param_binary_search(
         dataset,
         vals,
         (0.4, 2),
@@ -65,10 +64,15 @@ def cdhit_trial(
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
     results_folder = Path("cdhit_results")
+
+    with open("cdhit.fasta", "w") as out:
+        for name, seq in dataset.data.items():
+            out.write(f">{name}\n{seq}\n")
+
     cmd = f"mkdir {results_folder} && " \
           f"cd {results_folder} && " \
           f"cd-hit " \
-          f"-i {Path('..') / dataset.location} " \
+          f"-i ../cdhit.fasta " \
           f"-o clusters " \
           f"-d 0 " \
           f"-T {threads} " \

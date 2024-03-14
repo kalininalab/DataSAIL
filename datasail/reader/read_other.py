@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import List, Tuple, Optional, Generator, Callable
 
@@ -14,9 +13,9 @@ def read_other_data(
         strats: DATA_INPUT = None,
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
-        id_map: Optional[str] = None,
         inter: Optional[List[Tuple[str, str]]] = None,
         index: Optional[int] = None,
+        num_clusters: Optional[int] = None,
         tool_args: str = "",
 ) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
     """
@@ -32,6 +31,7 @@ def read_other_data(
         id_map: Mapping of ids in case of duplicates in the dataset
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
+        num_clusters: Number of clusters to compute for this dataset
         tool_args: Additional arguments for the tool
 
     Returns:
@@ -53,7 +53,7 @@ def read_other_data(
     else:
         raise ValueError()
 
-    dataset, inter = read_data(weights, strats, sim, dist, inter, index, tool_args, dataset)
+    dataset, inter = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)
 
     return dataset, inter

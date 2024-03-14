@@ -23,7 +23,7 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
         if data_format == FORM_PDB:
             return FOLDSEEK, None
         elif data_format == FORM_FASTA:
-            order = [DIAMOND, MMSEQS2, CDHIT, MMSEQSPP]
+            order = [MMSEQS2, CDHIT, DIAMOND, MMSEQSPP]
             for method in order:
                 if INSTALLED[method]:
                     return method, None
@@ -93,6 +93,26 @@ INSTALLED = {
     FOLDSEEK: shutil.which("foldseek") is not None,
     TMALIGN: shutil.which("TMalign") is not None,
 }
+
+def format2ending(fmt: str) -> str:
+    """
+    Return the file ending for a specific format.
+
+    Args:
+        fmt: Format encoded as string
+
+    Returns:
+        File ending as string
+    """
+    if fmt in FASTA_FORMATS:
+        return "fasta"
+    if fmt == FORM_PDB:
+        return "pdb"
+    if fmt == FORM_SMILES:
+        return "csv"
+    if fmt == FORM_GENOMES:
+        return "fna"
+    return "txt"
 
 UNK_LOCATION = "unknown"
 P_TYPE = "P"

@@ -18,7 +18,7 @@ def plot_ablations(full_path):
     gs_lower = gs[1].subgridspec(1, 3, width_ratios=[1, 1.5, 0.25], wspace=0.4)
     ax = [fig.add_subplot(gs_upper[0]), fig.add_subplot(gs_upper[1]), fig.add_subplot(gs_lower[0]), fig.add_subplot(gs_lower[1])]
 
-    visualize(full_path, list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)), ["GUROBI", "MOSEK", "SCIP"], ax=(ax[0], ax[1]))
+    visualize(full_path, list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)), ["GUROBI", "MOSEK", "SCIP"], ax=(ax[0], ax[1]), fig=fig)
     set_subplot_label(ax[0], fig, "A")
     set_subplot_label(ax[1], fig, "B")
 

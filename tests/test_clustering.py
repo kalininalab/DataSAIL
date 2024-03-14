@@ -2,6 +2,7 @@ import platform
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from datasail.cluster.cdhit import run_cdhit
@@ -18,6 +19,7 @@ from datasail.reader.read_proteins import parse_fasta, read_folder
 from datasail.reader.utils import DataSet, read_csv
 from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
     check_mash_arguments, check_mmseqspp_arguments, check_diamond_arguments
+from datasail.sail import datasail
 from datasail.settings import P_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN, MMSEQSPP, \
     DIAMOND
 
@@ -58,12 +60,16 @@ def test_additional_clustering():
     s_dataset.cluster_weights = weights
     s_dataset.cluster_similarity = similarity
     s_dataset.cluster_distance = None
+    s_dataset.classes = {0: 0}
+    s_dataset.stratification = None
     d_dataset = DataSet()
     d_dataset.cluster_names = names
     d_dataset.cluster_map = base_map
     d_dataset.cluster_weights = weights
     d_dataset.cluster_similarity = None
     d_dataset.cluster_distance = distance
+    d_dataset.classes = {0: 0}
+    d_dataset.stratification = None
 
     s_dataset = additional_clustering(s_dataset, n_clusters=5, linkage="average")
     assert len(s_dataset.cluster_names) == 5
@@ -126,7 +132,7 @@ def protein_pdb_data(algo):
 
 @pytest.fixture
 def molecule_data():
-    data = dict((k, v) for k, v in read_csv(Path("data") / "pipeline" / "drugs.tsv"))
+    data = dict((k, v) for k, v in read_csv(Path("data") / "pipeline" / "drugs.tsv", "\t"))
     return DataSet(
         type="M",
         data=data,
@@ -152,7 +158,8 @@ def test_cdhit_protein():
     data = protein_fasta_data(CDHIT)
     if platform.system() == "Windows":
         pytest.skip("CD-HIT is not supported on Windows")
-    check_clustering(*run_cdhit(data, 1, Path()), dataset=data)
+    run_cdhit(data, 1, Path())
+    check_clustering(data)
 
 
 @pytest.mark.todo
@@ -160,12 +167,13 @@ def test_cdhit_protein():
 def test_cdhit_genome(genome_fasta_data):
     if platform.system() == "Windows":
         pytest.skip("CD-HIT is not supported on Windows")
-    output = run_cdhit(genome_fasta_data, 1, Path())
-    check_clustering(*output, dataset=genome_fasta_data)
+    run_cdhit(genome_fasta_data, 1, Path())
+    check_clustering(genome_fasta_data)
 
 
 def test_ecfp_molecule(molecule_data):
-    check_clustering(*run_ecfp(molecule_data), dataset=molecule_data)
+    run_ecfp(molecule_data)
+    check_clustering(molecule_data)
 
 
 @pytest.mark.nowin
@@ -173,14 +181,16 @@ def test_foldseek_protein():
     data = protein_pdb_data(FOLDSEEK)
     if platform.system() == "Windows":
         pytest.skip("Foldseek is not supported on Windows")
-    check_clustering(*run_foldseek(data, 1, Path()), dataset=data)
+    run_foldseek(data, 1, Path())
+    check_clustering(data)
 
 
 @pytest.mark.nowin
 def test_mash_genomic(genome_fasta_data):
     if platform.system() == "Windows":
         pytest.skip("MASH is not supported on Windows")
-    check_clustering(*run_mash(genome_fasta_data, 1, Path()), dataset=genome_fasta_data)
+    run_mash(genome_fasta_data, 1, Path())
+    check_clustering(genome_fasta_data)
 
 
 @pytest.mark.nowin
@@ -188,7 +198,8 @@ def test_diamond_protein():
     data = protein_fasta_data(DIAMOND)
     if platform.system() == "Windows":
         pytest.skip("DIAMOND is not supported on Windows")
-    check_clustering(*run_diamond(data, 1, Path()), dataset=data)
+    run_diamond(data, 1, Path())
+    check_clustering(data)
 
 
 @pytest.mark.nowin
@@ -196,7 +207,8 @@ def test_mmseqs2_protein():
     data = protein_fasta_data(MMSEQS)
     if platform.system() == "Windows":
         pytest.skip("MMseqs2 is not supported on Windows")
-    check_clustering(*run_mmseqs(data, 1, Path()), dataset=data)
+    run_mmseqs(data, 1, Path())
+    check_clustering(data)
 
 
 @pytest.mark.nowin
@@ -204,7 +216,8 @@ def test_mmseqspp_protein():
     data = protein_fasta_data(MMSEQSPP)
     if platform.system() == "Windows":
         pytest.skip("MMseqs2 is not supported on Windows")
-    check_clustering(*run_mmseqspp(data, 1, Path()), dataset=data)
+    run_mmseqspp(data, 1, Path())
+    check_clustering(data)
 
 
 @pytest.mark.nowin
@@ -213,30 +226,37 @@ def test_tmalign_protein():
     data = protein_pdb_data(TMALIGN)
     if platform.system() == "Windows":
         pytest.skip("TM-align is not supported on Windows")
-    check_clustering(*run_tmalign(data), dataset=data)
+    run_tmalign(data)
+    check_clustering(data)
 
 
 @pytest.mark.nowin
 def test_wlkernel_protein():
     protein_data = protein_pdb_data(FOLDSEEK)
-    check_clustering(*run_wlk(protein_data), dataset=protein_data)
+    run_wlk(protein_data)
+    check_clustering(protein_data)
 
 
 def test_wlkernel_molecule(molecule_data):
-    check_clustering(*run_wlk(molecule_data), dataset=molecule_data)
+    run_wlk(molecule_data)
+    check_clustering(molecule_data)
 
 
 @pytest.mark.parametrize("algo", [CDHIT, MMSEQS])
 def test_force_clustering(algo):
     base = Path("data") / "rw_data"
+    seqs = parse_fasta(base / "pdbbind_clean.fasta")
     dataset = cluster(
         DataSet(
             type=P_TYPE,
             format=FORM_FASTA,
-            names=[f"Seq{i + 1:04d}" for i in range(len(open(base / "pdbbind_clean.fasta", "r").readlines()))],
+            names=list(seqs.keys()),
+            data=seqs,
+            weights={k: 1 for k in seqs.keys()},
             location=base / "pdbbind_clean.fasta",
             similarity=algo,
             args=check_cdhit_arguments("") if algo == CDHIT else check_mmseqs_arguments(""),
+            classes={0: 0},
         ),
         num_clusters=50,
         linkage="average",
@@ -244,10 +264,31 @@ def test_force_clustering(algo):
     assert len(dataset.cluster_names) <= 100
 
 
-def check_clustering(names, mapping, matrix, dataset):
-    assert list(sorted(names)) == list(sorted(set(mapping.values())))
-    assert list(sorted(mapping.keys())) == list(sorted(dataset.names))
-    assert tuple(matrix.shape) == (len(names), len(names))
+def test_distance_input():
+    names = list(pd.read_csv(Path("data") / "rw_data" / "distance_matrix.tsv", sep="\t", header=0, index_col=0).columns)
+    e_splits, _, _ = datasail(
+        techniques=["C1e"],
+        e_type=P_TYPE,
+        e_data=[(name, "A" * i) for i, name in enumerate(names)],
+        e_dist=Path("data") / "rw_data" / "distance_matrix.tsv",
+        splits=[0.7, 0.3],
+        names=["train", "test"],
+    )
+    assert "C1e" in e_splits
+    print(e_splits["C1e"][0])
+
+
+def check_clustering(dataset):
+    if dataset.cluster_similarity is not None:
+        matrix = dataset.cluster_similarity
+    elif dataset.cluster_distance is not None:
+        matrix = dataset.cluster_distance
+    else:
+        raise ValueError("No similarity or distance matrix found")
+
+    assert list(sorted(dataset.cluster_names)) == list(sorted(set(dataset.cluster_map.values())))
+    assert list(sorted(dataset.cluster_map.keys())) == list(sorted(dataset.names))
+    assert tuple(matrix.shape) == (len(dataset.cluster_names), len(dataset.cluster_names))
     assert np.min(matrix) >= 0
     assert np.max(matrix) <= 1
-    assert len(names) <= len(dataset.names)
+    assert len(dataset.cluster_names) <= len(dataset.names)

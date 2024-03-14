@@ -1,5 +1,4 @@
 import argparse
-import os
 from pathlib import Path
 from pydoc import locate
 from typing import Dict, List, Sequence, Literal
@@ -218,7 +217,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     e_ent.add_argument(
         "--e-num-classes",
         type=int,
-        dest=KW_E_NUM_CLUSTERS,
+        dest=KW_E_CLUSTERS,
         default=50,
         help="Number of classes to use for clustering the e-data."
     )
@@ -279,7 +278,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     e_ent.add_argument(
         "--f-num-classes",
         type=int,
-        dest=KW_F_NUM_CLUSTERS,
+        dest=KW_F_CLUSTERS,
         default=50,
         help="Number of classes to use for clustering the f-data."
     )
@@ -316,6 +315,8 @@ class MultiYAMLParser(argparse.ArgumentParser):
                 args = args.split(" ")
             elif len(args) > 0:
                 args = [args]
+        elif args is None:
+            args = ""
         return super().parse_args(args)
 
     def add_yaml_arguments(self, yaml_filepath: Path) -> None:

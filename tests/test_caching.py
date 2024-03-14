@@ -17,8 +17,9 @@ def test_caching(size):
     dataset = read_molecule_data(
         data=base / "lig.tsv",
         sim=base / "lig_sim.tsv",
-        inter=list(read_csv(base / "inter.tsv")),
+        inter=list(read_csv(base / "inter.tsv", "\t")),
         index=0,
+        num_clusters=50,
     )
 
     original_dataset = cluster(dataset, num_clusters=50, output=base / "splits", threads=1, log_dir=Path("log.txt"),

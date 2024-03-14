@@ -5,7 +5,7 @@ import shutil
 
 import numpy as np
 
-from datasail.cluster.utils import cluster_param_binary_search, extract_fasta
+from datasail.cluster.utils import cluster_param_binary_search
 from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, MMSEQS2, INSTALLED
@@ -25,7 +25,6 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path]) -> None:
 
     user_args = MultiYAMLParser(MMSEQS2).get_user_arguments(dataset.args, ["c"])
     optim_vals = (dataset.args.c,)  # values to be optimized
-    extract_fasta(dataset)
 
     dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity = cluster_param_binary_search(
         dataset,
@@ -67,16 +66,21 @@ def mmseqs_trial(
 
     results_folder = Path("mmseqs_results")
 
+    with open("mmseqs.fasta", "w") as out:
+        for name, seq in dataset.data.items():
+            out.write(f">{name}\n{seq}\n")
+
     cmd = f"mkdir {results_folder} && " \
           f"cd {results_folder} && " \
           f"mmseqs " \
           f"easy-cluster " \
-          f"{Path('..') / dataset.location} " \
+          f"../mmseqs.fasta " \
           f"mmseqs_out " \
           f"mmseqs_tmp " \
           f"--threads {threads} " \
           f"{tune_args} " \
-          f"{user_args} "
+          f"{user_args} && " \
+          f"rm ../mmseqs.fasta"
 
     if log_file is None:
         cmd += "> /dev/null 2>&1"

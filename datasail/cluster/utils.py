@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Tuple, List, Dict, Callable, Optional
 
@@ -145,20 +144,6 @@ def heatmap(matrix: np.ndarray, output_file: Path) -> None:
     fig.tight_layout()
     plt.savefig(output_file)
     plt.clf()
-
-
-def extract_fasta(dataset: DataSet) -> None:
-    """
-    Extract the protein sequences from the dataset into a FASTA file that serves as input for CD-HIT or MMseqs2.
-
-    Args:
-        dataset: The dataset to extract the amino acid sequences from
-    """
-    if dataset.location == UNK_LOCATION or not dataset.location.exists():
-        dataset.location = Path(f"{dataset.location}{'.fasta' if str(dataset.location).endswith(UNK_LOCATION) else ''}")
-        with open(dataset.location, "w") as out:
-            for idx, seq in dataset.data.items():
-                print(f">{idx}\n{seq}", file=out)
 
 
 def read_molecule_encoding(encoding: str) -> Optional[rdkit.Chem.rdchem.Mol]:

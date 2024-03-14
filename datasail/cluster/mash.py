@@ -1,13 +1,13 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Tuple, List, Dict, Optional
+from typing import Optional
 
 import numpy as np
 
 from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, INSTALLED, MASH, MASH_DIST, MASH_SKETCH
+from datasail.settings import LOGGER, INSTALLED, MASH
 
 
 def run_mash(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
@@ -26,10 +26,17 @@ def run_mash(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None)
     dist_args = parser.get_user_arguments(dataset.args, [], 1)
 
     results_folder = Path("mash_results")
+
+    tmp = Path("tmp")
+    tmp.mkdir(parents=True, exist_ok=True)
+    for name, filepath in dataset.data.items():
+        shutil.copy(filepath, tmp)
+
     cmd = f"mkdir {results_folder} && " \
           f"cd mash_results && " \
-          f"mash sketch -p {threads} -o ./cluster {Path('..') / dataset.location / '*.fna'} {sketch_args} && " \
-          f"mash dist -p {threads} {dist_args} -t cluster.msh cluster.msh > cluster.tsv"
+          f"mash sketch -p {threads} -o ./cluster ../tmp/*.fna {sketch_args} && " \
+          f"mash dist -p {threads} {dist_args} -t cluster.msh cluster.msh > cluster.tsv && " \
+          f"rm -rf ../tmp"
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"
