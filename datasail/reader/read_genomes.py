@@ -1,6 +1,8 @@
-import os
+import pickle
 from pathlib import Path
-from typing import List, Tuple, Optional, Generator, Callable, Iterable, Union
+from typing import List, Tuple, Optional, Generator, Callable, Iterable
+
+import h5py
 
 from datasail.reader.read_molecules import remove_duplicate_values
 from datasail.reader.read_proteins import parse_fasta
@@ -36,10 +38,21 @@ def read_genome_data(
     """
     dataset = DataSet(type=G_TYPE, location=UNK_LOCATION, format=FORM_FASTA)
     if isinstance(data, Path):
-        if data.suffix[1:].lower() in FASTA_FORMATS:
-            dataset.data = parse_fasta(data)
-        elif data.is_file():
-            dataset.data = dict(read_csv(data))
+        if data.is_file():
+            if data.suffix[1:].lower() in FASTA_FORMATS:
+                dataset.data = parse_fasta(data)
+            elif data.suffix[1:].lower() == "tsv":
+                dataset.data = dict(read_csv(data, sep="\t"))
+            elif data.suffix[1:].lower() == "csv":
+                dataset.data = dict(read_csv(data, sep=","))
+            elif data.suffix[1:].lower() == "pkl":
+                with open(data, "rb") as file:
+                    dataset.data = dict(pickle.load(file))
+            elif data.suffix[1:].lower() == "h5":
+                with h5py.File(data) as file:
+                    dataset.data = dict(file[k] for k in file.keys())
+            else:
+                raise ValueError()
         elif data.is_dir():
             dataset.data = dict(read_folder(data))
             dataset.format = FORM_GENOMES

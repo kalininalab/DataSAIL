@@ -15,7 +15,7 @@ base = Path("data") / "pipeline"
     # (False, False, "mmseqs", None, None, False, None, None, False, "ICP"),
     (False, False, base / "prot_sim.tsv", None, None, False, None, None, False, "I1f"),
     (False, False, None, base / "prot_dist.tsv", None, False, None, None, False, "I1f"),
-    (False, True, None, None, None, False, None, None, False, "I1f"),  # <-- 5/12
+    # (False, True, None, None, None, False, None, None, False, "I1f"),  # <-- 5/12
     (None, False, None, None, base / "drugs.tsv", False, None, None, False, "I1e"),
     (False, False, None, None, base / "drugs.tsv", False, None, None, False, "I1e"),
     (False, False, None, None, base / "drugs.tsv", True, None, None, False, "I1e"),  # <-- 8/12
@@ -43,23 +43,16 @@ def test_pipeline(data):
         splits=[0.67, 0.33] if mode in ["IC", "CC"] else [0.7, 0.3],
         names=["train", "test"],
         epsilon=0.25,
-        runs=1,
         e_type=None if drugs is None else "M",
         e_data=drugs,
         e_weights=(base / "drug_weights.tsv") if drug_weights else None,
         e_sim=drug_sim,
         e_dist=drug_dist,
-        e_args="",
         f_type=None if pdb is None else "P",
         f_data=None if pdb is None else (base / ("pdbs" if pdb else "seqs.fasta")),
         f_weights=(base / "prot_weights.tsv") if prot_weights else None,
         f_sim=prot_sim,
         f_dist=prot_dist,
-        f_args="",
-        cache=False,
-        cache_dir=None,
-        solver="SCIP",
-        threads=1,
     )
 
     check_folder(

@@ -32,6 +32,7 @@ requirements:
     - pytest-cases
     - pyyaml
     - cvxopt
+    - h5py
 
 about:
   home: https://github.com/kalininalab/DataSAIL

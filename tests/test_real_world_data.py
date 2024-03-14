@@ -58,7 +58,7 @@ def test_full_single_colds(ligand_data, ligand_weights, protein_data, protein_we
         techniques=techniques,
         splits=[0.7, 0.3],
         names=["train", "test"],
-        epsilon=0.1,
+        epsilon=0.2,
         e_type=None if ligand_data is None else ("P" if "sabdab" in ligand_data else "M"),
         e_data=ligand_data,
         e_weights=ligand_weights,

@@ -1,5 +1,3 @@
-from typing import Tuple, List, Dict
-
 import numpy as np
 from rdkit import Chem, DataStructs, RDLogger
 from rdkit.Chem import AllChem

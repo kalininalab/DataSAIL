@@ -11,10 +11,13 @@ from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
 from datasail.cluster.mmseqspp import run_mmseqspp
+from datasail.cluster.tanimoto import run_tanimoto
 from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, KW_LINKAGE, MMSEQS, MMSEQS2, \
+    MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, TANIMOTO
 from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, KW_LINKAGE
 
 
@@ -92,18 +95,20 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
     """
     if dataset.similarity.lower() == "wlk":
         run_wlk(dataset)
-    elif dataset.similarity.lower() == "mmseqs":
-        run_mmseqs(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "mmseqspp":
-        run_mmseqspp(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "foldseek":
-        run_foldseek(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "cdhit":
+    elif dataset.similarity.lower() == CDHIT:
         run_cdhit(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "cdhit_est":
+    elif dataset.similarity.lower() == CDHIT_EST:
         run_cdhit_est(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == "ecfp":
+    elif dataset.similarity.lower() == ECFP:
         run_ecfp(dataset)
+    elif dataset.similarity.lower() == FOLDSEEK:
+        run_foldseek(dataset, threads, log_dir)
+    elif dataset.similarity.lower() in [MMSEQS, MMSEQS2]:
+        run_mmseqs(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == MMSEQSPP:
+        run_mmseqspp(dataset, threads, log_dir)
+    elif dataset.similarity.lower() == TANIMOTO:
+        run_tanimoto(dataset)
     else:
         raise ValueError(f"Unknown cluster method: {dataset.similarity}")
 
@@ -232,13 +237,17 @@ def labels2clusters(
         new_cluster_matrix[labels[i]][labels[i]].append(cluster_matrix[i, i])
         for j in range(i + 1, len(dataset.cluster_names)):
             if labels[i] != labels[j]:
-                new_cluster_matrix[labels[i]][labels[j]] += cluster_matrix[i, j]
-                new_cluster_matrix[labels[j]][labels[i]] += cluster_matrix[j, i]
-    # new_cluster_matrix /= (cluster_count + np.eye(max(labels) + 1))
+                new_cluster_matrix[labels[i]][labels[j]].append(cluster_matrix[i, j])
+                new_cluster_matrix[labels[j]][labels[i]].append(cluster_matrix[j, i])
+
     links = {"average": np.mean, "single": np.min, "complete": np.max}
-    for i in range(len(dataset.cluster_names)):
-        for j in range(len(dataset.cluster_names)):
-            new_cluster_matrix[labels[i]][labels[j]] = links[linkage](new_cluster_matrix[labels[i]][labels[j]])
+    for i in range(len(new_cluster_matrix)):
+        for j in range(len(new_cluster_matrix[i])):
+            if len(new_cluster_matrix[i][j]) > 0:
+                new_cluster_matrix[i][j] = links[linkage](new_cluster_matrix[i][j])
+            else:
+                new_cluster_matrix[i][j] = 0
+    new_cluster_matrix = np.array(new_cluster_matrix)
 
     # compute the mapping of new clusters to their weights as the sum of their members weights
     new_cluster_weights = {}

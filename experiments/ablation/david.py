@@ -123,7 +123,7 @@ def run_solver(full_path: Path, ds_name: str, clusters: List[int], solvers: List
                 ds, _ = pickle.load(pkl)
         else:
             ds = copy.deepcopy(dataset)
-            ds = additional_clustering(ds, n_clusters=num_clusters)
+            ds = additional_clustering(ds, n_clusters=num_clusters, linkage="average")
 
         for solver_name in solvers:
             solver_path = full_path / solver_name
