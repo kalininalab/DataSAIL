@@ -23,6 +23,7 @@ class DataSet:
     names: Optional[List[str]] = None
     id_map: Optional[Dict[str, str]] = None
     cluster_names: Optional[List[str]] = None
+    num_clusters: int = 50
     data: Optional[Dict[str, str]] = None
     cluster_map: Optional[Dict[str, str]] = None
     location: Optional[Path] = None
@@ -231,6 +232,7 @@ def read_data(
         dist: MATRIX_INPUT,
         inter: Optional[List[Tuple[str, str]]],
         index: Optional[int],
+        num_clusters: int,
         tool_args: str,
         dataset: DataSet,
 ) -> DataSet:
@@ -244,6 +246,7 @@ def read_data(
         dist: Distance file or metric
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
+        num_clusters: Number of clusters to compute
         tool_args: Additional arguments for the tool
         dataset: A dataset object storing information on the read
 

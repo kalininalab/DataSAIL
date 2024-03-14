@@ -15,16 +15,15 @@ from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, KW_LINKAGE
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, KW_LINKAGE
 
 
-def cluster(dataset: DataSet, num_clusters: int, **kwargs) -> DataSet:
+def cluster(dataset: DataSet, **kwargs) -> DataSet:
     """
     Cluster molecules based on a similarity or distance metric.
 
     Args:
         dataset: Dataset to cluster
-        num_clusters: Number of clusters to reduce to
 
     Returns:
         A dataset with modified properties according to clustering the data
@@ -55,9 +54,9 @@ def cluster(dataset: DataSet, num_clusters: int, **kwargs) -> DataSet:
     if any(isinstance(m, np.ndarray) for m in
            [dataset.similarity, dataset.cluster_similarity, dataset.cluster_distance]):
         num_old_cluster = len(dataset.cluster_names) + 1
-        while MAX_CLUSTERS < len(dataset.cluster_names) < num_old_cluster:
+        while dataset.num_clusters < len(dataset.cluster_names) < num_old_cluster:
             num_old_cluster = len(dataset.cluster_names)
-            dataset = additional_clustering(dataset, num_clusters, kwargs[KW_LINKAGE])
+            dataset = additional_clustering(dataset, dataset.num_clusters, kwargs[KW_LINKAGE])
 
         if isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
             whatever(dataset.names, dataset.cluster_map, dataset.distance, dataset.similarity)
@@ -66,7 +65,7 @@ def cluster(dataset: DataSet, num_clusters: int, **kwargs) -> DataSet:
             if kwargs[KW_OUTDIR] is not None:
                 heatmap(metric, kwargs[KW_OUTDIR] / (dataset.get_name() + f"_{form}.png"))
 
-    if len(dataset.cluster_names) > MAX_CLUSTERS:
+    if len(dataset.cluster_names) > dataset.num_clusters:
         dataset = force_clustering(dataset, kwargs[KW_LINKAGE])
 
     store_to_cache(dataset, **kwargs)
