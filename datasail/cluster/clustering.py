@@ -6,7 +6,6 @@ from sklearn.cluster import AgglomerativeClustering, SpectralClustering
 from datasail.cluster.caching import load_from_cache, store_to_cache
 from datasail.cluster.cdhit import run_cdhit
 from datasail.cluster.cdhit_est import run_cdhit_est
-from datasail.cluster.diamond import run_diamond
 from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
@@ -19,6 +18,7 @@ from datasail.reader.utils import DataSet
 from datasail.report import whatever
 from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, KW_LINKAGE, MMSEQS, MMSEQS2, \
     MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, TANIMOTO
+from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, KW_LINKAGE
 from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, MAX_CLUSTERS, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
     FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND
 
@@ -60,9 +60,9 @@ def cluster(dataset: DataSet, num_clusters: int, **kwargs) -> DataSet:
     if any(isinstance(m, np.ndarray) for m in
            [dataset.similarity, dataset.cluster_similarity, dataset.cluster_distance]):
         num_old_cluster = len(dataset.cluster_names) + 1
-        while MAX_CLUSTERS < len(dataset.cluster_names) < num_old_cluster:
+        while dataset.num_clusters < len(dataset.cluster_names) < num_old_cluster:
             num_old_cluster = len(dataset.cluster_names)
-            dataset = additional_clustering(dataset, num_clusters, kwargs[KW_LINKAGE])
+            dataset = additional_clustering(dataset, dataset.num_clusters, kwargs[KW_LINKAGE])
 
         if isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
             whatever(dataset.names, dataset.cluster_map, dataset.distance, dataset.similarity)
@@ -71,7 +71,7 @@ def cluster(dataset: DataSet, num_clusters: int, **kwargs) -> DataSet:
             if kwargs[KW_OUTDIR] is not None:
                 heatmap(metric, kwargs[KW_OUTDIR] / (dataset.get_name() + f"_{form}.png"))
 
-    if len(dataset.cluster_names) > MAX_CLUSTERS:
+    if len(dataset.cluster_names) > dataset.num_clusters:
         dataset = force_clustering(dataset, kwargs[KW_LINKAGE])
 
     store_to_cache(dataset, **kwargs)
