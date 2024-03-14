@@ -54,7 +54,7 @@ def run_mash(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None)
         raise ValueError("Something went wrong with MASH. The output file does not exist.")
 
     dataset.cluster_map = dict((n, n) for n in dataset.names)
-    dataset.cluster_dist = read_mash_tsv(results_folder / "cluster.tsv", len(dataset.names))
+    dataset.cluster_distance = read_mash_tsv(results_folder / "cluster.tsv", len(dataset.names))
     dataset.cluster_names = dataset.names
 
     shutil.rmtree(results_folder, ignore_errors=True)
