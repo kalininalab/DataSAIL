@@ -194,11 +194,12 @@ def test_foldseek_protein():
 
 
 @pytest.mark.nowin
-def test_mash_genomic(genome_fasta_data):
+def test_mash_genomic():
+    data = genome_fasta_data(MASH)
     if platform.system() == "Windows":
         pytest.skip("MASH is not supported on Windows")
-    run_mash(genome_fasta_data, 1, Path())
-    check_clustering(genome_fasta_data)
+    run_mash(data, 1, Path())
+    check_clustering(data)
 
 
 @pytest.mark.nowin
