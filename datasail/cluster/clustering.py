@@ -1,6 +1,7 @@
 from typing import Dict, Tuple, List, Union, Optional, Literal
 
 import numpy as np
+import sklearn
 from sklearn.cluster import AgglomerativeClustering, SpectralClustering
 
 from datasail.cluster.caching import load_from_cache, store_to_cache
@@ -194,11 +195,18 @@ def additional_clustering(
         )
     else:
         cluster_matrix = np.array(dataset.cluster_distance, dtype=float)
-        ca = AgglomerativeClustering(
-            n_clusters=n_clusters,
-            affinity="precomputed",
-            linkage=linkage,
-        )
+        if sklearn.__version__ < '1.4':
+            ca = AgglomerativeClustering(
+                n_clusters=n_clusters,
+                affinity="precomputed",
+                linkage=linkage,
+            )
+        else:
+            ca = AgglomerativeClustering(
+                n_clusters=n_clusters,
+                metric="precomputed",
+                linkage=linkage,
+            )
         LOGGER.info(
             f"Clustering based on distances. "
             f"Distances above {np.average(dataset.cluster_distance) * 0.9} cannot end up in same cluster."
