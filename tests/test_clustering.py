@@ -26,7 +26,7 @@ from datasail.reader.validate import check_cdhit_arguments, check_foldseek_argum
     check_mash_arguments, check_mmseqspp_arguments, check_diamond_arguments
 from datasail.sail import datasail
 from datasail.settings import P_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN, MMSEQSPP, \
-    DIAMOND
+    DIAMOND, MASH
 
 
 @pytest.fixture()
@@ -148,14 +148,14 @@ def molecule_data():
     )
 
 
-def genome_fasta_data():
+def genome_fasta_data(mode):
     data = dict((k, v) for k, v in read_folder(Path("data") / "genomes", "fna"))
     return DataSet(
         type="M",
         data=data,
         names=list(sorted(data.keys())),
         location=Path("data") / "genomes",
-        args=check_mash_arguments(""),
+        args=check_mash_arguments("") if mode == MASH else check_cdhit_arguments(""),
     )
 
 
@@ -171,7 +171,7 @@ def test_cdhit_protein():
 @pytest.mark.todo
 @pytest.mark.nowin
 def test_cdhit_genome():
-    data = genome_fasta_data()
+    data = genome_fasta_data(CDHIT)
     if platform.system() == "Windows":
         pytest.skip("CD-HIT is not supported on Windows")
     run_cdhit(data, 1, Path())
@@ -268,9 +268,10 @@ def test_wlkernel_protein():
     check_clustering(protein_data)
 
 
-def test_wlkernel_molecule(molecule_data):
-    run_wlk(molecule_data)
-    check_clustering(molecule_data)
+def test_wlkernel_molecule():
+    data = molecule_data()
+    run_wlk(data)
+    check_clustering(data)
 
 
 @pytest.mark.parametrize("algo", [CDHIT, MMSEQS])

@@ -125,8 +125,8 @@ def run(dataset, fps, method):
         method: The similarity measure to use.
     """
     fct = get_rdkit_fct(method)
-    dataset.cluster_similarity = np.zeros((len(dataset.data), len(dataset.data)))
-    for i in range(len(dataset.data)):
+    dataset.cluster_similarity = np.zeros((len(fps), len(fps)))
+    for i in range(len(fps)):
         dataset.cluster_similarity[i, i] = 1
         dataset.cluster_similarity[i, :i] = fct(fps[i], fps[:i])
         dataset.cluster_similarity[:i, i] = dataset.cluster_similarity[i, :i]
