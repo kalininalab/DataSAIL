@@ -5,8 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from datasail.reader.read_proteins import parse_fasta
-from datasail.reader.utils import read_csv
+from datasail.reader.utils import read_csv, parse_fasta
 from datasail.settings import NOT_ASSIGNED
 from tests.utils import run_sail
 
@@ -76,7 +75,7 @@ def test_full_single_colds(ligand_data, ligand_weights, protein_data, protein_we
             assert (output / "I1e" / "inter.tsv").is_file()
             assert check_inter_completeness(interactions, output / "I1e" / "inter.tsv", ["train", "test"])
         assert (output / "I1e" / name_prefix + "_splits.tsv").is_file()
-        assert check_split_completeness(ligand_data, output / "I1e"/ name_prefix + "_splits.tsv", ["train", "test"])
+        assert check_split_completeness(ligand_data, output / "I1e" / name_prefix + "_splits.tsv", ["train", "test"])
 
         assert (output / "C1e").is_dir()
         if interactions is not None:
@@ -104,7 +103,7 @@ def test_full_single_colds(ligand_data, ligand_weights, protein_data, protein_we
         assert (output / "C1f" / "Protein_f_seqs_clusters.png").is_file()
         assert (output / "C1f" / "Protein_f_seqs_clusters.tsv").is_file()
         assert (output / "C1f" / "Protein_f_seqs_splits.tsv").is_file()
-        assert check_split_completeness(protein_data, output /"C1f" / "Protein_f_seqs_splits.tsv", ["train", "test"])
+        assert check_split_completeness(protein_data, output / "C1f" / "Protein_f_seqs_splits.tsv", ["train", "test"])
 
     assert (output / "logs").is_dir()
     assert (output / "tmp").is_dir()

@@ -3,10 +3,10 @@ from pathlib import Path
 import pytest
 
 from datasail.cluster.clustering import cluster
-from datasail.reader.utils import read_csv
+from datasail.reader.utils import read_csv, parse_fasta
 
 from datasail.reader.read_molecules import read_molecule_data
-from datasail.reader.read_proteins import read_protein_data, parse_fasta
+from datasail.reader.read_proteins import read_protein_data
 
 base = Path("data") / "rw_data"
 
