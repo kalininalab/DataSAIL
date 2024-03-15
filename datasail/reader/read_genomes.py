@@ -1,13 +1,8 @@
-import pickle
-from pathlib import Path
-from typing import List, Tuple, Optional, Generator, Callable, Iterable
-
-import h5py
+from typing import List, Tuple, Optional
 
 from datasail.reader.read_molecules import remove_duplicate_values
-from datasail.reader.read_proteins import parse_fasta
-from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_folder, read_csv
-from datasail.settings import G_TYPE, UNK_LOCATION, FORM_FASTA, FASTA_FORMATS, FORM_GENOMES
+from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_folder, read_data_input
+from datasail.settings import G_TYPE, UNK_LOCATION, FORM_FASTA, FORM_GENOMES
 
 
 def read_genome_data(
@@ -39,38 +34,12 @@ def read_genome_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=G_TYPE, location=UNK_LOCATION, format=FORM_FASTA)
-    if isinstance(data, Path):
-        if data.is_file():
-            if data.suffix[1:].lower() in FASTA_FORMATS:
-                dataset.data = parse_fasta(data)
-            elif data.suffix[1:].lower() == "tsv":
-                dataset.data = dict(read_csv(data, sep="\t"))
-            elif data.suffix[1:].lower() == "csv":
-                dataset.data = dict(read_csv(data, sep=","))
-            elif data.suffix[1:].lower() == "pkl":
-                with open(data, "rb") as file:
-                    dataset.data = dict(pickle.load(file))
-            elif data.suffix[1:].lower() == "h5":
-                with h5py.File(data) as file:
-                    dataset.data = dict(file[k] for k in file.keys())
-            else:
-                raise ValueError()
-        elif data.is_dir():
-            dataset.data = dict(read_folder(data))
-            dataset.format = FORM_GENOMES
-        else:
-            raise ValueError()
-        dataset.location = data
-    elif (isinstance(data, list) or isinstance(data, tuple)) and isinstance(data[0], Iterable) and len(data[0]) == 2:
-        dataset.data = dict(data)
-    elif isinstance(data, dict):
-        dataset.data = data
-    elif isinstance(data, Callable):
-        dataset.data = data()
-    elif isinstance(data, Generator):
-        dataset.data = dict(data)
-    else:
-        raise ValueError()
+
+    def read_dir(ds):
+        ds.data = dict(read_folder(data))
+        ds.format = FORM_GENOMES
+
+    read_data_input(data, dataset, read_dir)
 
     dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)

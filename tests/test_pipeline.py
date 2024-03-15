@@ -1,8 +1,15 @@
+import pickle
 import shutil
 from pathlib import Path
 
+import h5py
+import pandas as pd
 import pytest
+from rdkit import Chem
+from rdkit.Chem import AllChem, Descriptors
+from rdkit.ML.Descriptors import MoleculeDescriptors
 
+from datasail.reader.read_molecules import read_molecule_data
 from datasail.sail import sail, datasail
 from tests.utils import check_folder, run_sail
 
@@ -217,6 +224,47 @@ def test_report_repeat():
 
         assert (c2 := out / f"C2_{i}").is_dir()
         assert len(list(c2.iterdir())) == 11
+
+
+@pytest.fixture()
+def md_calculator():
+    descriptor_names = [desc[0] for desc in Descriptors._descList]
+    return MoleculeDescriptors.MolecularDescriptorCalculator(descriptor_names)
+
+
+@pytest.mark.parametrize("mode", ["CSV", "TSV", "PKL", "H5PY"])
+def test_input_formats(mode, md_calculator):
+    base = Path("data") / "pipeline"
+    drugs = pd.read_csv(base / "drugs.tsv", sep="\t")
+    ddict = {row["Drug_ID"]: row["SMILES"] for index, row in drugs.iterrows()}
+    (base / "input_forms").mkdir(exist_ok=True, parents=True)
+
+    if mode == "CSV":
+        filepath = base / "input_forms" / "drugs.csv"
+        drugs.to_csv(filepath, sep=",", index=False)
+    elif mode == "TSV":
+        filepath = base / "input_forms" / "drugs.tsv"
+        drugs.to_csv(filepath, sep="\t", index=False)
+    elif mode == "PKL":
+        data = {}
+        for k, v in ddict.items():
+            data[k] = AllChem.MolToSmiles(Chem.MolFromSmiles(v))
+        filepath = base / "input_forms" / "drugs.pkl"
+        with open(filepath, "wb") as f:
+            pickle.dump(data, f)
+    elif mode == "H5PY":
+        filepath = base / "input_forms" / "drugs.h5"
+        with h5py.File(filepath, "w") as f:
+            for k, v in ddict.items():
+                f[k] = list(md_calculator.CalcDescriptors(Chem.MolFromSmiles(v)))
+    else:
+        raise ValueError(f"Unknown mode: {mode}")
+
+    dataset = read_molecule_data(filepath)
+
+    shutil.rmtree(base / "input_forms", ignore_errors=True)
+
+    assert set(dataset.names) == set(ddict.keys())
 
 
 @pytest.mark.todo

@@ -1,13 +1,15 @@
+import pickle
 from argparse import Namespace
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
+from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable, Iterable
 
+import h5py
 import numpy as np
 import pandas as pd
 
 from datasail.reader.validate import validate_user_args
-from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS, UNK_LOCATION, format2ending
+from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS, UNK_LOCATION, format2ending, FASTA_FORMATS
 
 DATA_INPUT = Optional[Union[str, Path, Dict[str, Union[str, np.ndarray]], Callable[..., Dict[str, Union[str, np.ndarray]]], Generator[Tuple[str, Union[str, np.ndarray]], None, None]]]
 MATRIX_INPUT = Optional[Union[str, Path, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
@@ -356,6 +358,74 @@ def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Gene
     for filename in folder_path.iterdir():
         if file_extension is None or filename.suffix[1:].lower() == file_extension.lower():
             yield filename.stem, filename
+
+
+def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[DataSet], None]):
+    """
+    Read in the data from different sources and store it in the dataset.
+
+    Args:
+        data: Data input
+        dataset: Dataset to store the data in
+        read_dir: Function to read in a directory
+    """
+    if isinstance(data, Path):
+        if data.is_file():
+            if data.suffix[1:] in FASTA_FORMATS:
+                dataset.data = parse_fasta(data)
+            elif data.suffix[1:].lower() == "tsv":
+                dataset.data = dict(read_csv(data, sep="\t"))
+            elif data.suffix[1:].lower() == "csv":
+                dataset.data = dict(read_csv(data, sep=","))
+            elif data.suffix[1:].lower() == "pkl":
+                with open(data, "rb") as file:
+                    dataset.data = dict(pickle.load(file))
+            elif data.suffix[1:].lower() == "h5":
+                with h5py.File(data) as file:
+                    dataset.data = {k: np.array(file[k]) for k in file.keys()}
+            else:
+                raise ValueError("Unknown file format. Supported formats are: .fasta, .fna, .fa, tsv, .csv, .pkl, .h5")
+        elif data.is_dir():
+            read_dir(dataset)
+        else:
+            raise ValueError("Unknown data input type. Path encodes neither a file nor a directory.")
+        dataset.location = data
+    elif (isinstance(data, list) or isinstance(data, tuple)) and isinstance(data[0], Iterable) and len(data[0]) == 2:
+        dataset.data = dict(data)
+    elif isinstance(data, dict):
+        dataset.data = data
+    elif isinstance(data, Callable):
+        dataset.data = data()
+    elif isinstance(data, Generator):
+        dataset.data = dict(data)
+    else:
+        raise ValueError("Unknown data input type.")
+
+
+def parse_fasta(path: Path = None) -> Dict[str, str]:
+    """
+    Parse a FASTA file and do some validity checks if requested.
+
+    Args:
+        path: Path to the FASTA file
+
+    Returns:
+        Dictionary mapping sequences IDs to amino acid sequences
+    """
+    seq_map = {}
+
+    with open(path, "r") as fasta:
+        for line in fasta.readlines():
+            line = line.strip()
+            if len(line) == 0:
+                continue
+            if line[0] == '>':
+                entry_id = line[1:]  # .replace(" ", "_")
+                seq_map[entry_id] = ''
+            else:
+                seq_map[entry_id] += line
+
+    return seq_map
 
 
 def get_prefix_args(prefix, **kwargs) -> Dict[str, Any]:

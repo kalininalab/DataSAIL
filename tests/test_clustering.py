@@ -4,6 +4,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from rdkit import Chem
+from rdkit.Chem import AllChem, Descriptors
+from rdkit.ML.Descriptors import MoleculeDescriptors
 
 from datasail.cluster.cdhit import run_cdhit
 from datasail.cluster.clustering import additional_clustering, cluster
@@ -13,10 +16,12 @@ from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
 from datasail.cluster.mmseqspp import run_mmseqspp
+from datasail.cluster.vectors import run_tanimoto
 from datasail.cluster.tmalign import run_tmalign
 from datasail.cluster.wlk import run_wlk
-from datasail.reader.read_proteins import parse_fasta, read_folder
-from datasail.reader.utils import DataSet, read_csv
+
+from datasail.reader.read_proteins import read_folder
+from datasail.reader.utils import DataSet, read_csv, parse_fasta
 from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
     check_mash_arguments, check_mmseqspp_arguments, check_diamond_arguments
 from datasail.sail import datasail
@@ -24,7 +29,12 @@ from datasail.settings import P_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_T
     DIAMOND
 
 
-@pytest.mark.todo
+@pytest.fixture()
+def md_calculator():
+    descriptor_names = [desc[0] for desc in Descriptors._descList]
+    return MoleculeDescriptors.MolecularDescriptorCalculator(descriptor_names)
+
+
 def test_additional_clustering():
     names = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
     base_map = dict((n, n) for n in names)
@@ -82,7 +92,6 @@ def test_additional_clustering():
     assert np.min(s_dataset.cluster_similarity) == 0
     assert np.max(s_dataset.cluster_similarity) == 1
     assert s_dataset.cluster_distance is None
-    # assert [s_dataset.cluster_weights[i] for i in s_dataset.cluster_names] == [18, 12, 6, 12, 4]
 
     d_dataset = additional_clustering(d_dataset, n_clusters=5, linkage="average")
     assert len(d_dataset.cluster_names) == 5
@@ -95,7 +104,6 @@ def test_additional_clustering():
     assert d_dataset.cluster_similarity is None
     assert np.min(d_dataset.cluster_distance) == 0
     assert np.max(d_dataset.cluster_distance) == 1
-    # assert [d_dataset.cluster_weights[i] for i in d_dataset.cluster_names] == [16, 36]
 
 
 def protein_fasta_data(algo):
@@ -130,7 +138,6 @@ def protein_pdb_data(algo):
     )
 
 
-@pytest.fixture
 def molecule_data():
     data = dict((k, v) for k, v in read_csv(Path("data") / "pipeline" / "drugs.tsv", "\t"))
     return DataSet(
@@ -141,7 +148,6 @@ def molecule_data():
     )
 
 
-@pytest.fixture
 def genome_fasta_data():
     data = dict((k, v) for k, v in read_folder(Path("data") / "genomes", "fna"))
     return DataSet(
@@ -164,16 +170,18 @@ def test_cdhit_protein():
 
 @pytest.mark.todo
 @pytest.mark.nowin
-def test_cdhit_genome(genome_fasta_data):
+def test_cdhit_genome():
+    data = genome_fasta_data()
     if platform.system() == "Windows":
         pytest.skip("CD-HIT is not supported on Windows")
-    run_cdhit(genome_fasta_data, 1, Path())
-    check_clustering(genome_fasta_data)
+    run_cdhit(data, 1, Path())
+    check_clustering(data)
 
 
-def test_ecfp_molecule(molecule_data):
-    run_ecfp(molecule_data)
-    check_clustering(molecule_data)
+def test_ecfp_molecule():
+    data = molecule_data()
+    run_ecfp(data)
+    check_clustering(data)
 
 
 @pytest.mark.nowin
@@ -217,6 +225,29 @@ def test_mmseqspp_protein():
     if platform.system() == "Windows":
         pytest.skip("MMseqs2 is not supported on Windows")
     run_mmseqspp(data, 1, Path())
+    check_clustering(data)
+
+
+@pytest.mark.parametrize("algo", ["FP", "MD"])
+@pytest.mark.parametrize("in_type", ["Original", "List", "Numpy"])
+@pytest.mark.parametrize("method", ["AllBit", "Asymmetric", "BraunBlanquet", "Cosine", "Dice", "Kulczynski",
+                                    "McConnaughey", "OnBit", "RogotGoldberg", "Russel", "Sokal", "Tanimoto"])
+def test_tanimoto(algo, in_type, method, md_calculator):
+    if algo == "MD" and in_type == "Original":
+        pytest.skip("Molecular descriptors cannot directly be used as input.")
+    data = molecule_data()
+    if algo == "FP":
+        embed = lambda x: AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(x), 2, nBits=1024)
+    else:
+        embed = lambda x: md_calculator.CalcDescriptors(Chem.MolFromSmiles(x))
+    if in_type == "Original":
+        wrap = lambda x: x
+    elif in_type == "List":
+        wrap = lambda x: [int(y) for y in x]
+    else:
+        wrap = lambda x: np.array(list(x)).astype(int)
+    data.data = dict((k, wrap(embed(v))) for k, v in data.data.items())
+    run_tanimoto(data, method)
     check_clustering(data)
 
 

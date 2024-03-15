@@ -12,7 +12,7 @@ from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
 from datasail.cluster.mmseqspp import run_mmseqspp
-from datasail.cluster.tanimoto import run_tanimoto
+from datasail.cluster.vectors import run_tanimoto
 from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet

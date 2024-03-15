@@ -1,13 +1,11 @@
-import pickle
 from pathlib import Path
-from typing import Generator, Tuple, Dict, List, Optional, Set, Callable, Iterable
+from typing import Tuple, Dict, List, Optional, Set
 
 import numpy as np
-import h5py
 
 from datasail.reader.read_molecules import remove_duplicate_values
-from datasail.reader.utils import read_csv, DataSet, read_data, read_folder, DATA_INPUT, MATRIX_INPUT
-from datasail.settings import P_TYPE, UNK_LOCATION, FORM_PDB, FORM_FASTA, FASTA_FORMATS
+from datasail.reader.utils import DataSet, read_data, read_folder, DATA_INPUT, MATRIX_INPUT, read_data_input
+from datasail.settings import P_TYPE, UNK_LOCATION, FORM_PDB, FORM_FASTA
 
 
 def read_protein_data(
@@ -39,37 +37,11 @@ def read_protein_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=P_TYPE, location=UNK_LOCATION)
-    if isinstance(data, Path):
-        if data.is_file():
-            if data.suffix[1:] in FASTA_FORMATS:
-                dataset.data = parse_fasta(data)
-            elif data.suffix[1:].lower() == "tsv":
-                dataset.data = dict(read_csv(data, sep="\t"))
-            elif data.suffix[1:].lower() == "csv":
-                dataset.data = dict(read_csv(data, sep=","))
-            elif data.suffix[1:].lower() == "pkl":
-                with open(data, "rb") as file:
-                    dataset.data = dict(pickle.load(file))
-            elif data.suffix[1:].lower() == "h5":
-                with h5py.File(data) as file:
-                    dataset.data = dict(file[k] for k in file.keys())
-            else:
-                raise ValueError()
-        elif data.is_dir():
-            dataset.data = dict(read_folder(data, "pdb"))
-        else:
-            raise ValueError()
-        dataset.location = data
-    elif (isinstance(data, list) or isinstance(data, tuple)) and isinstance(data[0], Iterable) and len(data[0]) == 2:
-        dataset.data = dict(data)
-    elif isinstance(data, dict):
-        dataset.data = data
-    elif isinstance(data, Callable):
-        dataset.data = data()
-    elif isinstance(data, Generator):
-        dataset.data = dict(data)
-    else:
-        raise ValueError()
+
+    def read_dir(ds):
+        ds.data = dict(read_folder(data, "pdb"))
+
+    read_data_input(data, dataset, read_dir)
 
     dataset.format = FORM_PDB if str(next(iter(dataset.data.values()))).endswith(".pdb") else FORM_FASTA
 
@@ -77,32 +49,6 @@ def read_protein_data(
     dataset = remove_duplicate_values(dataset, dataset.data)
 
     return dataset
-
-
-def parse_fasta(path: Path = None) -> Dict[str, str]:
-    """
-    Parse a FASTA file and do some validity checks if requested.
-
-    Args:
-        path: Path to the FASTA file
-
-    Returns:
-        Dictionary mapping sequences IDs to amino acid sequences
-    """
-    seq_map = {}
-
-    with open(path, "r") as fasta:
-        for line in fasta.readlines():
-            line = line.strip()
-            if len(line) == 0:
-                continue
-            if line[0] == '>':
-                entry_id = line[1:]  # .replace(" ", "_")
-                seq_map[entry_id] = ''
-            else:
-                seq_map[entry_id] += line
-
-    return seq_map
 
 
 def check_pdb_pair(pdb_seqs1: List[str], pdb_seqs2: List[str]) -> bool:

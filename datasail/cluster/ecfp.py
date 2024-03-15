@@ -1,20 +1,21 @@
-import numpy as np
-from rdkit import Chem, DataStructs, RDLogger
+from rdkit import Chem, RDLogger
 from rdkit.Chem import AllChem
 from rdkit.Chem.Scaffolds.MurckoScaffold import MakeScaffoldGeneric
 from rdkit.Chem.rdchem import MolSanitizeException
 
 from datasail.cluster.utils import read_molecule_encoding
+from datasail.cluster.vectors import run, SIM_OPTIONS
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER
 
 
-def run_ecfp(dataset: DataSet) -> None:
+def run_ecfp(dataset: DataSet, method: SIM_OPTIONS = "Tanimoto") -> None:
     """
     Compute 1024Bit-ECPFs for every molecule in the dataset and then compute pairwise Tanimoto-Scores of them.
 
     Args:
         dataset: The dataset to compute pairwise, elementwise similarities for
+        method: The similarity measure to use. Default is "Tanimoto".
     """
     lg = RDLogger.logger()
     lg.setLevel(RDLogger.CRITICAL)
@@ -54,14 +55,8 @@ def run_ecfp(dataset: DataSet) -> None:
         fps.append(AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(scaffold), 2, nBits=1024))
 
     LOGGER.info(f"Reduced {len(dataset.names)} molecules to {len(dataset.cluster_names)}")
-
     LOGGER.info("Compute Tanimoto Coefficients")
 
-    count = len(dataset.cluster_names)
-    dataset.cluster_similarity = np.zeros((count, count))
-    for i in range(count):
-        dataset.cluster_similarity[i, i] = 1
-        dataset.cluster_similarity[i, :i] = DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])
-        dataset.cluster_similarity[:i, i] = dataset.cluster_similarity[i, :i]
+    run(dataset, fps, method)
 
     dataset.cluster_map = dict((name, Chem.MolToSmiles(scaffolds[name])) for name in dataset.names)

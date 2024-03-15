@@ -1,8 +1,5 @@
-import pickle
-from pathlib import Path
-from typing import List, Tuple, Optional, Callable, Generator, Iterable
+from typing import List, Tuple, Optional
 
-import h5py
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import MolFromMol2File, MolFromMolFile, MolFromPDBFile, MolFromTPLFile, MolFromXYZFile
@@ -11,7 +8,7 @@ try:
 except ImportError:
     MolFromMrvFile = None
 
-from datasail.reader.utils import read_csv, DataSet, read_data, DATA_INPUT, MATRIX_INPUT
+from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_data_input
 from datasail.settings import M_TYPE, UNK_LOCATION, FORM_SMILES
 
 
@@ -55,42 +52,18 @@ def read_molecule_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=M_TYPE, format=FORM_SMILES, location=UNK_LOCATION)
-    if isinstance(data, Path):
-        if data.is_file():
-            if data.suffix[1:].lower() == "tsv":
-                dataset.data = dict(read_csv(data, sep="\t"))
-            elif data.suffix[1:].lower() == "csv":
-                dataset.data = dict(read_csv(data, sep=","))
-            elif data.suffix[1:].lower() == "pkl":
-                with open(data, "rb") as file:
-                    dataset.data = dict(pickle.load(file))
-            elif data.suffix[1:].lower() == "h5":
-                with h5py.File(data) as file:
-                    dataset.data = dict(file[k] for k in file.keys())
+
+    def read_dir(ds: DataSet):
+        ds.data = {}
+        for file in data.iterdir():
+            if file.suffix[1:].lower() != "sdf" and mol_reader[file.suffix[1:].lower()] is not None:
+                ds.data[file.stem] = mol_reader[file.suffix[1:].lower()](file)
             else:
-                raise ValueError()
-        elif data.is_dir():
-            dataset.data = {}
-            for file in data.iterdir():
-                if file.suffix[1:].lower() != "sdf" and mol_reader[file.suffix[1:].lower()] is not None:
-                    dataset.data[file.stem] = mol_reader[file.suffix[1:].lower()](file)
-                else:
-                    suppl = Chem.SDMolSupplier(file)
-                    for i, mol in enumerate(suppl):
-                        dataset.data[f"{file.stem}_{i}"] = mol
-        else:
-            raise ValueError()
-        dataset.location = data
-    elif (isinstance(data, list) or isinstance(data, tuple)) and isinstance(data[0], Iterable) and len(data[0]) == 2:
-        dataset.data = dict(data)
-    elif isinstance(data, dict):
-        dataset.data = data
-    elif isinstance(data, Callable):
-        dataset.data = data()
-    elif isinstance(data, Generator):
-        dataset.data = dict(data)
-    else:
-        raise ValueError()
+                suppl = Chem.SDMolSupplier(file)
+                for i, mol in enumerate(suppl):
+                    ds.data[f"{file.stem}_{i}"] = mol
+
+    read_data_input(data, dataset, read_dir)
 
     dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
     dataset = remove_molecule_duplicates(dataset)
@@ -109,6 +82,10 @@ def remove_molecule_duplicates(dataset: DataSet) -> DataSet:
     Returns:
         Update arguments as teh location of the data might change and an ID-Map file might be added.
     """
+    if isinstance(dataset.data[dataset.names[0]], (list, tuple, np.ndarray)):
+        # TODO: proper check for duplicate embeddings
+        dataset.id_map = {n: n for n in dataset.names}
+        return dataset
 
     # Extract invalid molecules
     non_mols = []

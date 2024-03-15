@@ -1,9 +1,8 @@
-from pathlib import Path
-from typing import List, Tuple, Optional, Generator, Callable
+from typing import List, Tuple, Optional
 
 from datasail.reader.read_genomes import read_folder
 from datasail.reader.read_molecules import remove_duplicate_values
-from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT
+from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_data_input
 from datasail.settings import O_TYPE, UNK_LOCATION, FORM_OTHER
 
 
@@ -28,7 +27,6 @@ def read_other_data(
         strats: Stratification for the data
         sim: Similarity file or metric
         dist: Distance file or metric
-        id_map: Mapping of ids in case of duplicates in the dataset
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
         num_clusters: Number of clusters to compute for this dataset
@@ -38,20 +36,11 @@ def read_other_data(
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=O_TYPE, location=UNK_LOCATION, format=FORM_OTHER)
-    if isinstance(data, Path):
-        if data.exists():
-            dataset.data = read_folder(data)
-            dataset.location = data
-        else:
-            raise ValueError()
-    elif isinstance(data, dict):
-        dataset.data = data
-    elif isinstance(data, Callable):
-        dataset.data = data()
-    elif isinstance(data, Generator):
-        dataset.data = dict(data)
-    else:
-        raise ValueError()
+
+    def read_dir(ds):
+        ds.data = dict(read_folder(data))
+
+    read_data_input(data, dataset, read_dir)
 
     dataset, inter = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)
