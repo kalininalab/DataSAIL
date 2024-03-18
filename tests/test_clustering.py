@@ -9,7 +9,7 @@ from rdkit.Chem import AllChem, Descriptors
 from rdkit.ML.Descriptors import MoleculeDescriptors
 
 from datasail.cluster.cdhit import run_cdhit
-from datasail.cluster.clustering import additional_clustering, cluster
+from datasail.cluster.clustering import additional_clustering, cluster, force_clustering
 from datasail.cluster.diamond import run_diamond
 from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
@@ -104,6 +104,29 @@ def test_additional_clustering():
     assert d_dataset.cluster_similarity is None
     assert np.min(d_dataset.cluster_distance) == 0
     assert np.max(d_dataset.cluster_distance) == 1
+
+
+def test_force_clustering():
+    # Create a mock DataSet object
+    dataset = DataSet()
+    dataset.cluster_names = ["cluster1", "cluster2", "cluster3", "cluster4", "cluster5"]
+    dataset.cluster_map = {"item1": "cluster1", "item2": "cluster2", "item3": "cluster3", "item4": "cluster4", "item5": "cluster5"}
+    dataset.cluster_weights = {"cluster1": 10, "cluster2": 20, "cluster3": 30, "cluster4": 40, "cluster5": 50}
+    dataset.cluster_similarity = np.array([
+        [1, 0.5, 0.3, 0.2, 0.1],
+        [0.5, 1, 0.4, 0.3, 0.2],
+        [0.3, 0.4, 1, 0.5, 0.4],
+        [0.2, 0.3, 0.5, 1, 0.6],
+        [0.1, 0.2, 0.4, 0.6, 1]
+    ])
+    dataset.classes = {0: 0}
+    dataset.num_clusters = 3
+
+    # Call the force_clustering function
+    result_dataset = force_clustering(dataset)
+
+    # Assert that the number of clusters in the returned DataSet object is equal to the expected number of clusters
+    assert len(result_dataset.cluster_names) == dataset.num_clusters
 
 
 def protein_fasta_data(algo):
@@ -276,7 +299,7 @@ def test_wlkernel_molecule():
 
 
 @pytest.mark.parametrize("algo", [CDHIT, MMSEQS])
-def test_force_clustering(algo):
+def test_clustering(algo):
     base = Path("data") / "rw_data"
     seqs = parse_fasta(base / "pdbbind_clean.fasta")
     dataset = cluster(

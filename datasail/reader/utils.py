@@ -7,6 +7,7 @@ from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable,
 import h5py
 import numpy as np
 import pandas as pd
+from rdkit import Chem
 
 from datasail.reader.validate import validate_user_args
 from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS, UNK_LOCATION, format2ending, FASTA_FORMATS
@@ -383,6 +384,8 @@ def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[Data
             elif data.suffix[1:].lower() == "h5":
                 with h5py.File(data) as file:
                     dataset.data = {k: np.array(file[k]) for k in file.keys()}
+            elif data.suffix[1:].lower() == "sdf":
+                dataset.data = read_sdf_file(data)
             else:
                 raise ValueError("Unknown file format. Supported formats are: .fasta, .fna, .fa, tsv, .csv, .pkl, .h5")
         elif data.is_dir():
@@ -400,6 +403,27 @@ def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[Data
         dataset.data = dict(data)
     else:
         raise ValueError("Unknown data input type.")
+
+
+def read_sdf_file(file: Path) -> Dict[str, str]:
+    """
+    Read in a SDF file and return the data as a dataset.
+
+    Args:
+        file: The file to read in
+
+    Returns:
+        The dataset containing the data
+    """
+    data = {}
+    suppl = Chem.SDMolSupplier(str(file))
+    for i, mol in enumerate(suppl):
+        try:
+            name = mol.GetProp("_Name") if mol.HasProp("_Name") else f"{file.stem}_{i}"
+            data[name] = Chem.MolToSmiles(mol)
+        except:
+            pass
+    return data
 
 
 def parse_fasta(path: Path = None) -> Dict[str, str]:

@@ -1,4 +1,5 @@
-from typing import List, Tuple, Optional
+from pathlib import Path
+from typing import List, Tuple, Optional, Dict
 
 import numpy as np
 from rdkit import Chem
@@ -8,7 +9,7 @@ try:
 except ImportError:
     MolFromMrvFile = None
 
-from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_data_input
+from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_data_input, read_sdf_file
 from datasail.settings import M_TYPE, UNK_LOCATION, FORM_SMILES
 
 
@@ -53,15 +54,13 @@ def read_molecule_data(
     """
     dataset = DataSet(type=M_TYPE, format=FORM_SMILES, location=UNK_LOCATION)
 
-    def read_dir(ds: DataSet):
+    def read_dir(ds: DataSet, path: Path):
         ds.data = {}
-        for file in data.iterdir():
+        for file in path.iterdir():
             if file.suffix[1:].lower() != "sdf" and mol_reader[file.suffix[1:].lower()] is not None:
                 ds.data[file.stem] = mol_reader[file.suffix[1:].lower()](file)
             else:
-                suppl = Chem.SDMolSupplier(file)
-                for i, mol in enumerate(suppl):
-                    ds.data[f"{file.stem}_{i}"] = mol
+                ds.data = read_sdf_file(file)
 
     read_data_input(data, dataset, read_dir)
 

@@ -225,57 +225,57 @@ def sample_categorical(
     return output
 
 
-def generate_baseline(
-        splits: List[float],
-        weights: Union[np.ndarray, List[float]],
-        similarities: Optional[np.ndarray],
-        distances: Optional[np.ndarray],
-) -> float:
-    """
-    Generate a baseline solution for the double-cold splitting problem.
-
-    Args:
-        splits: List of relative sizes of the splits
-        weights: List of weights of the entities
-        similarities: Pairwise similarity matrix of entities in the order of their names
-        distances: Pairwise distance matrix of entities in the order of their names
-
-    Returns:
-        The amount of information leakage in a random double-cold splitting
-    """
-    indices = sorted(list(range(len(weights))), key=lambda i: -weights[i])
-    max_sizes = np.array(splits) * sum(weights)
-    sizes = [0] * len(splits)
-    assignments = [-1] * len(weights)
-    oh_val, oh_idx = float("inf"), -1
-    for idx in indices:
-        for s in range(len(splits)):
-            if sizes[s] + weights[idx] <= max_sizes[s]:
-                assignments[idx] = s
-                sizes[s] += weights[idx]
-                break
-            elif (sizes[s] + weights[idx]) / max_sizes[s] < oh_val:
-                oh_val = (sizes[s] + weights[idx]) / max_sizes[s]
-                oh_idx = s
-        if assignments[idx] == -1:
-            assignments[idx] = oh_idx
-            sizes[oh_idx] += weights[idx]
-    x = np.zeros((len(assignments), max(assignments) + 1))
-    x[np.arange(len(assignments)), assignments] = 1
-    ones = np.ones((1, len(weights)))
-
-    if distances is not None:
-        hit_matrix = np.sum([np.maximum(
-            (np.expand_dims(x[:, s], axis=1) @ ones) + (np.expand_dims(x[:, s], axis=1) @ ones).T - (ones.T @ ones), 0)
-                             for s in range(len(splits))], axis=0)
-        leak_matrix = np.multiply(hit_matrix, distances)
-    else:
-        hit_matrix = np.sum(
-            [((np.expand_dims(x[:, s], axis=1) @ ones) - (np.expand_dims(x[:, s], axis=1) @ ones).T) ** 2 for s in
-             range(len(splits))], axis=0) / (len(splits) - 1)
-        leak_matrix = np.multiply(hit_matrix, similarities)
-
-    return float(np.sum(leak_matrix))
+# def generate_baseline(
+#         splits: List[float],
+#         weights: Union[np.ndarray, List[float]],
+#         similarities: Optional[np.ndarray],
+#         distances: Optional[np.ndarray],
+# ) -> float:
+#     """
+#     Generate a baseline solution for the double-cold splitting problem.
+#
+#     Args:
+#         splits: List of relative sizes of the splits
+#         weights: List of weights of the entities
+#         similarities: Pairwise similarity matrix of entities in the order of their names
+#         distances: Pairwise distance matrix of entities in the order of their names
+#
+#     Returns:
+#         The amount of information leakage in a random double-cold splitting
+#     """
+#     indices = sorted(list(range(len(weights))), key=lambda i: -weights[i])
+#     max_sizes = np.array(splits) * sum(weights)
+#     sizes = [0] * len(splits)
+#     assignments = [-1] * len(weights)
+#     oh_val, oh_idx = float("inf"), -1
+#     for idx in indices:
+#         for s in range(len(splits)):
+#             if sizes[s] + weights[idx] <= max_sizes[s]:
+#                 assignments[idx] = s
+#                 sizes[s] += weights[idx]
+#                 break
+#             elif (sizes[s] + weights[idx]) / max_sizes[s] < oh_val:
+#                 oh_val = (sizes[s] + weights[idx]) / max_sizes[s]
+#                 oh_idx = s
+#         if assignments[idx] == -1:
+#             assignments[idx] = oh_idx
+#             sizes[oh_idx] += weights[idx]
+#     x = np.zeros((len(assignments), max(assignments) + 1))
+#     x[np.arange(len(assignments)), assignments] = 1
+#     ones = np.ones((1, len(weights)))
+#
+#     if distances is not None:
+#         hit_matrix = np.sum([np.maximum((np.expand_dims(x[:, s], axis=1) @ ones) +
+#                                         (np.expand_dims(x[:, s], axis=1) @ ones).T -
+#                                         (ones.T @ ones), 0) for s in range(len(splits))], axis=0)
+#         leak_matrix = np.multiply(hit_matrix, distances)
+#     else:
+#         hit_matrix = np.sum(
+#             [((np.expand_dims(x[:, s], axis=1) @ ones) - (np.expand_dims(x[:, s], axis=1) @ ones).T) ** 2 for s in
+#              range(len(splits))], axis=0) / (len(splits) - 1)
+#         leak_matrix = np.multiply(hit_matrix, similarities)
+#
+#     return float(np.sum(leak_matrix))
 
 
 def interaction_contraints(

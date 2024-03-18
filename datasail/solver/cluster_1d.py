@@ -64,11 +64,7 @@ def solve_c1(
     loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
     if distances is not None:
         loss = -loss
-    start = time.time()
     problem = solve(loss, constraints, max_sec, solver, log_file)
-    ttime = time.time() - start
-    with open("strat_timing.txt", "a") as out:
-        print(delta, epsilon, ttime, sep=",", file=out)
 
     return None if problem is None else {
         e: names[s] for s in range(len(splits)) for i, e in enumerate(clusters) if x[s, i].value > 0.1

@@ -39,14 +39,14 @@ def validate_args(**kwargs) -> Dict[str, object]:
     """
     # create output directory
     output_created = False
-    if kwargs[KW_OUTDIR] and not kwargs[KW_OUTDIR].is_dir():
+    if kwargs[KW_OUTDIR] is not None and not kwargs[KW_OUTDIR].is_dir():
         output_created = True
         kwargs[KW_OUTDIR].mkdir(parents=True, exist_ok=True)
 
     LOGGER.setLevel(VERB_MAP[kwargs[KW_VERBOSE]])
     LOGGER.handlers[0].setLevel(level=VERB_MAP[kwargs[KW_VERBOSE]])
 
-    if kwargs[KW_OUTDIR]:
+    if kwargs[KW_OUTDIR] is not None:
         kwargs[KW_LOGDIR] = kwargs[KW_OUTDIR] / "logs"
         kwargs[KW_LOGDIR].mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(kwargs[KW_LOGDIR] / "general.log")
@@ -65,7 +65,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
     if len(kwargs[KW_SPLITS]) < 2:
         error("Less then two splits required. This is no useful input, please check the input again.", 1,
               kwargs[KW_CLI])
-    if not kwargs[KW_NAMES]:
+    if kwargs[KW_NAMES] is None:
         kwargs[KW_NAMES] = [f"Split{x:03d}" for x in range(len(kwargs[KW_SPLITS]))]
     elif len(kwargs[KW_SPLITS]) != len(kwargs[KW_NAMES]):
         error("Different number of splits and names. You have to give the same number of splits and names for them.",
@@ -88,15 +88,15 @@ def validate_args(**kwargs) -> Dict[str, object]:
         kwargs[KW_THREADS] = min(kwargs[KW_THREADS], os.cpu_count())
 
     # check the interaction file
-    if kwargs[KW_INTER] and isinstance(kwargs[KW_INTER], Path) and not kwargs[KW_INTER].is_file():
+    if kwargs[KW_INTER] is not None and isinstance(kwargs[KW_INTER], Path) and not kwargs[KW_INTER].is_file():
         error("The interaction filepath is not valid.", 5, kwargs[KW_CLI])
 
     # check the epsilon value
-    if 1 < kwargs[KW_DELTA] < 0:
+    if 1 < kwargs[KW_DELTA] or kwargs[KW_DELTA] < 0:
         error("The delta value has to be a real value between 0 and 1.", 6, kwargs[KW_CLI])
 
     # check the epsilon value
-    if 1 < kwargs[KW_EPSILON] < 0:
+    if 1 < kwargs[KW_EPSILON] or kwargs[KW_EPSILON] < 0:
         error("The epsilon value has to be a real value between 0 and 1.", 6, kwargs[KW_CLI])
 
     # check number of runs to be a positive integer
@@ -104,7 +104,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The number of runs cannot be lower than 1.", 25, kwargs[KW_CLI])
 
     # check the input regarding the caching
-    if kwargs[KW_CACHE] and kwargs[KW_CACHE_DIR]:
+    if kwargs[KW_CACHE] and kwargs[KW_CACHE_DIR] is not None:
         kwargs[KW_CACHE_DIR] = Path(kwargs[KW_CACHE_DIR])
         if not kwargs[KW_CACHE_DIR].is_dir():
             LOGGER.warning("Cache directory does not exist, DataSAIL creates it automatically")
@@ -114,18 +114,18 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The linkage method has to be one of 'mean', 'single', or 'complete'.", 26, kwargs[KW_CLI])
 
     # syntactically parse the input data for the E-dataset
-    if kwargs[KW_E_DATA] and isinstance(kwargs[KW_E_DATA], Path) and not kwargs[KW_E_DATA].exists():
+    if kwargs[KW_E_DATA] is not None and isinstance(kwargs[KW_E_DATA], Path) and not kwargs[KW_E_DATA].exists():
         error("The filepath to the E-data is invalid.", 7, kwargs[KW_CLI])
-    if kwargs[KW_E_WEIGHTS] and isinstance(kwargs[KW_E_WEIGHTS], Path) and not kwargs[KW_E_WEIGHTS].is_file():
+    if kwargs[KW_E_WEIGHTS] is not None and isinstance(kwargs[KW_E_WEIGHTS], Path) and not kwargs[KW_E_WEIGHTS].is_file():
         error("The filepath to the weights of the E-data is invalid.", 8, kwargs[KW_CLI])
-    if kwargs[KW_E_STRAT] and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
+    if kwargs[KW_E_STRAT] is not None and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
         error("The filepath to the stratification of the E-data is invalid.", 11, kwargs[KW_CLI])
-    if kwargs[KW_E_SIM] and isinstance(kwargs[KW_E_SIM], str) and kwargs[KW_E_SIM].lower() not in SIM_ALGOS:
+    if kwargs[KW_E_SIM] is not None and isinstance(kwargs[KW_E_SIM], str) and kwargs[KW_E_SIM].lower() not in SIM_ALGOS:
         kwargs[KW_E_SIM] = Path(kwargs[KW_E_SIM])
         if not kwargs[KW_E_SIM].is_file():
             error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", 9,
                   kwargs[KW_CLI])
-    if kwargs[KW_E_DIST] and isinstance(kwargs[KW_E_DIST], str) and kwargs[KW_E_DIST].lower() not in DIST_ALGOS:
+    if kwargs[KW_E_DIST] is not None and isinstance(kwargs[KW_E_DIST], str) and kwargs[KW_E_DIST].lower() not in DIST_ALGOS:
         kwargs[KW_E_DIST] = Path(kwargs[KW_E_DIST])
         if not kwargs[KW_E_DIST].is_file():
             error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10,
@@ -134,18 +134,18 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The number of clusters to find in the E-data has to be a positive integer.", 12, kwargs[KW_CLI])
 
     # syntactically parse the input data for the F-dataset
-    if kwargs[KW_F_DATA] and isinstance(kwargs[KW_F_DATA], Path) and not kwargs[KW_F_DATA].exists():
+    if kwargs[KW_F_DATA] is not None and isinstance(kwargs[KW_F_DATA], Path) and not kwargs[KW_F_DATA].exists():
         error("The filepath to the F-data is invalid.", 13, kwargs[KW_CLI])
-    if kwargs[KW_F_WEIGHTS] and isinstance(kwargs[KW_F_WEIGHTS], Path) and not kwargs[KW_F_WEIGHTS].is_file():
+    if kwargs[KW_F_WEIGHTS] is not None and isinstance(kwargs[KW_F_WEIGHTS], Path) and not kwargs[KW_F_WEIGHTS].is_file():
         error("The filepath to the weights of the F-data is invalid.", 14, kwargs[KW_CLI])
-    if kwargs[KW_E_STRAT] and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
+    if kwargs[KW_E_STRAT] is not None and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
         error("The filepath to the stratification of the E-data is invalid.", 20, kwargs[KW_CLI])
-    if kwargs[KW_F_SIM] and isinstance(kwargs[KW_F_SIM], str) and kwargs[KW_F_SIM].lower() not in SIM_ALGOS:
+    if kwargs[KW_F_SIM] is not None and isinstance(kwargs[KW_F_SIM], str) and kwargs[KW_F_SIM].lower() not in SIM_ALGOS:
         kwargs[KW_F_SIM] = Path(kwargs[KW_F_SIM])
         if not kwargs[KW_F_SIM].is_file():
             error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", 15,
                   kwargs[KW_CLI])
-    if kwargs[KW_F_DIST] and isinstance(kwargs[KW_F_DIST], str) and kwargs[KW_F_DIST].lower() not in DIST_ALGOS:
+    if kwargs[KW_F_DIST] is not None and isinstance(kwargs[KW_F_DIST], str) and kwargs[KW_F_DIST].lower() not in DIST_ALGOS:
         if not kwargs[KW_F_DIST].is_file():
             error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16,
                   kwargs[KW_CLI])

@@ -232,7 +232,7 @@ def md_calculator():
     return MoleculeDescriptors.MolecularDescriptorCalculator(descriptor_names)
 
 
-@pytest.mark.parametrize("mode", ["CSV", "TSV", "PKL", "H5PY"])
+@pytest.mark.parametrize("mode", ["CSV", "TSV", "PKL", "H5PY", "SDF"])
 def test_input_formats(mode, md_calculator):
     base = Path("data") / "pipeline"
     drugs = pd.read_csv(base / "drugs.tsv", sep="\t")
@@ -257,6 +257,13 @@ def test_input_formats(mode, md_calculator):
         with h5py.File(filepath, "w") as f:
             for k, v in ddict.items():
                 f[k] = list(md_calculator.CalcDescriptors(Chem.MolFromSmiles(v)))
+    elif mode == "SDF":
+        filepath = base / "input_forms" / "drugs.sdf"
+        with Chem.SDWriter(str(filepath)) as w:
+            for k, v in ddict.items():
+                mol = Chem.MolFromSmiles(v)
+                mol.SetProp("_Name", k)
+                w.write(mol)
     else:
         raise ValueError(f"Unknown mode: {mode}")
 

@@ -2,6 +2,57 @@ import pytest
 
 from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
     check_mmseqspp_arguments, check_mash_arguments, check_diamond_arguments
+from datasail.sail import datasail
+
+
+def test_validate_args():
+    # Test that validate_args raises an error when splits are less than 2
+    with pytest.raises(ValueError):
+        datasail(splits=[0.5])
+
+    # Test that validate_args raises an error when splits and names have different lengths
+    with pytest.raises(ValueError):
+        datasail(splits=[0.5, 0.5], names=['Split1'])
+
+    # Test that validate_args raises an error when splits have the same name
+    with pytest.raises(ValueError):
+        datasail(splits=[0.5, 0.5], names=['Split1', 'Split1'])
+
+    # Test that validate_args raises an error when max_sec is less than 1
+    with pytest.raises(ValueError):
+        datasail(splits=[0.7, 0.3], max_sec=0)
+
+    # Test that validate_args raises an error when max_sol is less than 1
+    with pytest.raises(ValueError):
+        datasail(splits=[0.7, 0.3], max_sol=0)
+
+    # Test that validate_args raises an error when threads is less than 0
+    with pytest.raises(ValueError):
+        datasail(splits=[0.7, 0.3], threads=-1)
+
+    # Test that validate_args raises an error when delta is not between 0 and 1
+    with pytest.raises(ValueError):
+        datasail(splits=[0.7, 0.3], delta=1.5)
+
+    # Test that validate_args raises an error when epsilon is not between 0 and 1
+    with pytest.raises(ValueError):
+        datasail(splits=[0.7, 0.3], epsilon=1.5)
+
+    # Test that validate_args raises an error when runs is less than 1
+    with pytest.raises(ValueError):
+        datasail(splits=[0.7, 0.3], runs=0)
+
+    # Test that validate_args raises an error when linkage is not one of 'average', 'single', or 'complete'
+    with pytest.raises(ValueError):
+        datasail(splits=[0.7, 0.3], linkage='invalid')
+
+    # Test that validate_args raises an error when e_clusters is less than 1
+    with pytest.raises(ValueError):
+        datasail(splits=[0.7, 0.3], e_clusters=0)
+
+    # Test that validate_args raises an error when f_clusters is less than 1
+    with pytest.raises(ValueError):
+        datasail(splits=[0.7, 0.3], f_clusters=0)
 
 
 @pytest.mark.parametrize("args", [
