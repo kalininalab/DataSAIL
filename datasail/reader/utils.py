@@ -216,24 +216,21 @@ def read_csv(filepath: Path, sep: str = ",") -> Generator[Tuple[str, str], None,
 
 def read_matrix_input(
         in_data: MATRIX_INPUT,
-        default_names: Optional[List[str]] = None
 ) -> Tuple[List[str], Union[np.ndarray, str]]:
     """
     Read the data from different types of similarity or distance.
 
     Args:
         in_data: Matrix data encoding the similarities/distances and the names of the samples
-        default_names: Names to use as default
 
     Returns:
         Tuple of names of the data samples and a matrix holding their similarities/distances or a string encoding a
         method to compute the fore-mentioned
     """
+    if isinstance(in_data, str):
+        in_data = Path(in_data)
     if isinstance(in_data, Path) and in_data.is_file():
         names, similarity = read_clustering_file(in_data)
-    elif isinstance(in_data, str):
-        names = default_names
-        similarity = in_data
     elif isinstance(in_data, tuple):
         names, similarity = in_data
     elif isinstance(in_data, Callable):
@@ -299,9 +296,9 @@ def read_data(
         dataset.similarity, dataset.distance = get_default(dataset.type, dataset.format)
         dataset.names = list(dataset.data.keys())
     elif sim is not None and not (isinstance(sim, str) and sim.lower() in SIM_ALGOS):
-        dataset.names, dataset.similarity = read_matrix_input(sim, list(dataset.data.keys()))
+        dataset.names, dataset.similarity = read_matrix_input(sim)
     elif dist is not None and not (isinstance(dist, str) and dist.lower() in DIST_ALGOS):
-        dataset.names, dataset.distance = read_matrix_input(dist, list(dataset.data.keys()))
+        dataset.names, dataset.distance = read_matrix_input(dist)
     else:
         if sim is not None:
             dataset.similarity = sim
