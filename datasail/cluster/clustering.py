@@ -195,7 +195,7 @@ def additional_clustering(
         )
     else:
         cluster_matrix = np.array(dataset.cluster_distance, dtype=float)
-        if sklearn.__version__ < '1.4':
+        if sklearn.__version__ < '1.2':
             ca = AgglomerativeClustering(
                 n_clusters=n_clusters,
                 affinity="precomputed",
