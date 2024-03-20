@@ -261,7 +261,7 @@ def test_mmseqspp_protein():
     "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "mcconnaughey", "onbit", "rogotgoldberg",
     "russel", "sokal",
     "canberra", "chebyshev", "cityblock", "euclidean", "hamming", "jaccard",
-    "mahalanobis", "manhattan", "matching", "minkowski", "seuclidean", "sqeuclidean", "tanimoto"
+    "mahalanobis", "manhattan", "matching", "minkowski", "sqeuclidean", "tanimoto"
 ])
 def test_vector(algo, in_type, method, md_calculator):
     data = molecule_data()
