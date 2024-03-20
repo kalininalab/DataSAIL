@@ -1,5 +1,6 @@
 import platform
 from pathlib import Path
+from typing import get_args
 
 import numpy as np
 import pandas as pd
@@ -16,7 +17,7 @@ from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
 from datasail.cluster.mmseqspp import run_mmseqspp
-from datasail.cluster.vectors import run_tanimoto
+from datasail.cluster.vectors import run_vector, SIM_OPTIONS
 from datasail.cluster.tmalign import run_tmalign
 from datasail.cluster.wlk import run_wlk
 
@@ -254,11 +255,15 @@ def test_mmseqspp_protein():
 
 @pytest.mark.parametrize("algo", ["FP", "MD"])
 @pytest.mark.parametrize("in_type", ["Original", "List", "Numpy"])
-@pytest.mark.parametrize("method", ["AllBit", "Asymmetric", "BraunBlanquet", "Cosine", "Dice", "Kulczynski",
-                                    "McConnaughey", "OnBit", "RogotGoldberg", "Russel", "Sokal", "Tanimoto"])
-def test_tanimoto(algo, in_type, method, md_calculator):
-    if algo == "MD" and in_type == "Original":
-        pytest.skip("Molecular descriptors cannot directly be used as input.")
+# @pytest.mark.parametrize("method", ["AllBit", "Asymmetric", "BraunBlanquet", "Cosine", "Dice", "Kulczynski",
+#                                     "McConnaughey", "OnBit", "RogotGoldberg", "Russel", "Sokal", "Tanimoto"])
+@pytest.mark.parametrize("method", [
+    "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "mcconnaughey", "onbit", "rogotgoldberg",
+    "russel", "sokal",
+    "canberra", "chebyshev", "cityblock", "euclidean", "hamming", "jaccard",
+    "mahalanobis", "manhattan", "matching", "minkowski", "seuclidean", "sqeuclidean", "tanimoto"
+])
+def test_vector(algo, in_type, method, md_calculator):
     data = molecule_data()
     if algo == "FP":
         embed = lambda x: AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(x), 2, nBits=1024)
@@ -271,8 +276,37 @@ def test_tanimoto(algo, in_type, method, md_calculator):
     else:
         wrap = lambda x: np.array(list(x)).astype(int)
     data.data = dict((k, wrap(embed(v))) for k, v in data.data.items())
-    run_tanimoto(data, method)
-    check_clustering(data)
+    if (algo == "MD" and in_type == "Original" and method in get_args(SIM_OPTIONS)) or method == "mahalanobis":
+        with pytest.raises(ValueError):
+            run_vector(data, method)
+    else:
+        run_vector(data, method)
+        check_clustering(data)
+
+
+@pytest.mark.parametrize("method", [
+    "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "mcconnaughey", "onbit", "rogotgoldberg",
+    "russel", "sokal",
+    "canberra", "chebyshev", "cityblock", "euclidean", "hamming", "jaccard",
+    "mahalanobis", "manhattan", "matching", "minkowski", "sqeuclidean", "tanimoto"
+])
+def test_vector_edge(method):
+    dataset = DataSet(
+        names=["A", "B", "C", "D", "E", "F", "G", "H"],
+        data={
+            "A": np.array([1, 1, 1]),
+            "B": np.array([1, 1, 0]),
+            "C": np.array([1, 0, 1]),
+            "D": np.array([0, 1, 1]),
+            "E": np.array([1, 0, 0]),
+            "F": np.array([0, 1, 0]),
+            "G": np.array([0, 0, 1]),
+            "H": np.array([0, 0, 0]),
+        },
+    )
+    run_vector(dataset, method)
+    check_clustering(dataset)
+
 
 
 @pytest.mark.nowin

@@ -13,7 +13,7 @@ from datasail.cluster.foldseek import run_foldseek
 from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
 from datasail.cluster.mmseqspp import run_mmseqspp
-from datasail.cluster.vectors import run_tanimoto
+from datasail.cluster.vectors import run_vector
 from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
@@ -111,7 +111,7 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
     elif dataset.similarity.lower() == MMSEQSPP:
         run_mmseqspp(dataset, threads, log_dir)
     elif dataset.similarity.lower() == TANIMOTO:
-        run_tanimoto(dataset)
+        run_vector(dataset)
     else:
         raise ValueError(f"Unknown cluster method: {dataset.similarity}")
 
