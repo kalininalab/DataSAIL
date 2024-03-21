@@ -38,8 +38,8 @@ def read_protein_data(
     """
     dataset = DataSet(type=P_TYPE, location=UNK_LOCATION)
 
-    def read_dir(ds):
-        ds.data = dict(read_folder(data, "pdb"))
+    def read_dir(ds: DataSet, path: Path) -> None:
+        ds.data = dict(read_folder(path, "pdb"))
 
     read_data_input(data, dataset, read_dir)
 

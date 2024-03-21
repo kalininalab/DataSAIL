@@ -358,7 +358,7 @@ def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Gene
             yield filename.stem, filename
 
 
-def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[DataSet], None]):
+def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[DataSet, Path], None]):
     """
     Read in the data from different sources and store it in the dataset.
 
@@ -386,7 +386,7 @@ def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[Data
             else:
                 raise ValueError("Unknown file format. Supported formats are: .fasta, .fna, .fa, tsv, .csv, .pkl, .h5")
         elif data.is_dir():
-            read_dir(dataset)
+            read_dir(dataset, data)
         else:
             raise ValueError("Unknown data input type. Path encodes neither a file nor a directory.")
         dataset.location = data

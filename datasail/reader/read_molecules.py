@@ -14,13 +14,13 @@ from datasail.settings import M_TYPE, UNK_LOCATION, FORM_SMILES
 
 
 mol_reader = {
-    ".mol": MolFromMolFile,
-    ".mol2": MolFromMol2File,
-    ".mrv": MolFromMrvFile,
+    "mol": MolFromMolFile,
+    "mol2": MolFromMol2File,
+    "mrv": MolFromMrvFile,
     # "sdf": MolFromMol2File,
-    ".pdb": MolFromPDBFile,
-    ".tpl": MolFromTPLFile,
-    ".xyz": MolFromXYZFile,
+    "pdb": MolFromPDBFile,
+    "tpl": MolFromTPLFile,
+    "xyz": MolFromXYZFile,
 }
 
 
@@ -54,11 +54,11 @@ def read_molecule_data(
     """
     dataset = DataSet(type=M_TYPE, format=FORM_SMILES, location=UNK_LOCATION)
 
-    def read_dir(ds: DataSet, path: Path):
+    def read_dir(ds: DataSet, path: Path) -> None:
         ds.data = {}
         for file in path.iterdir():
             if file.suffix[1:].lower() != "sdf" and mol_reader[file.suffix[1:].lower()] is not None:
-                ds.data[file.stem] = mol_reader[file.suffix[1:].lower()](file)
+                ds.data[file.stem] = Chem.MolToSmiles(mol_reader[file.suffix[1:].lower()](str(file)))
             else:
                 ds.data = read_sdf_file(file)
 

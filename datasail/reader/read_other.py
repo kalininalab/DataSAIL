@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Tuple, Optional
 
 from datasail.reader.read_genomes import read_folder
@@ -37,8 +38,8 @@ def read_other_data(
     """
     dataset = DataSet(type=O_TYPE, location=UNK_LOCATION, format=FORM_OTHER)
 
-    def read_dir(ds):
-        ds.data = dict(read_folder(data))
+    def read_dir(ds: DataSet, path: Path) -> None:
+        ds.data = dict(read_folder(path))
 
     read_data_input(data, dataset, read_dir)
 

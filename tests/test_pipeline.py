@@ -234,31 +234,31 @@ def md_calculator():
 
 @pytest.mark.parametrize("mode", ["CSV", "TSV", "PKL", "H5PY", "SDF"])
 def test_input_formats(mode, md_calculator):
-    base = Path("data") / "pipeline"
+    base = Path("data") / "pipeline" / "input_forms"
     drugs = pd.read_csv(base / "drugs.tsv", sep="\t")
     ddict = {row["Drug_ID"]: row["SMILES"] for index, row in drugs.iterrows()}
-    (base / "input_forms").mkdir(exist_ok=True, parents=True)
+    base.mkdir(exist_ok=True, parents=True)
 
     if mode == "CSV":
-        filepath = base / "input_forms" / "drugs.csv"
+        filepath = base / "drugs.csv"
         drugs.to_csv(filepath, sep=",", index=False)
     elif mode == "TSV":
-        filepath = base / "input_forms" / "drugs.tsv"
+        filepath = base / "drugs.tsv"
         drugs.to_csv(filepath, sep="\t", index=False)
     elif mode == "PKL":
         data = {}
         for k, v in ddict.items():
             data[k] = AllChem.MolToSmiles(Chem.MolFromSmiles(v))
-        filepath = base / "input_forms" / "drugs.pkl"
+        filepath = base / "drugs.pkl"
         with open(filepath, "wb") as f:
             pickle.dump(data, f)
     elif mode == "H5PY":
-        filepath = base / "input_forms" / "drugs.h5"
+        filepath = base / "drugs.h5"
         with h5py.File(filepath, "w") as f:
             for k, v in ddict.items():
                 f[k] = list(md_calculator.CalcDescriptors(Chem.MolFromSmiles(v)))
     elif mode == "SDF":
-        filepath = base / "input_forms" / "drugs.sdf"
+        filepath = base / "drugs.sdf"
         with Chem.SDWriter(str(filepath)) as w:
             for k, v in ddict.items():
                 mol = Chem.MolFromSmiles(v)
@@ -269,9 +269,39 @@ def test_input_formats(mode, md_calculator):
 
     dataset = read_molecule_data(filepath)
 
-    shutil.rmtree(base / "input_forms", ignore_errors=True)
+    shutil.rmtree(base, ignore_errors=True)
 
     assert set(dataset.names) == set(ddict.keys())
+
+
+@pytest.mark.parametrize("mode", ["MOL", "MRV", "PDB", "TPL"])  # , "XYZ"])
+def test_molecule_formats(mode):
+    base = Path("data") / "pipeline" / "input_forms"
+    base.mkdir(exist_ok=True, parents=True)
+    mols = {}
+    with open(Path("data") / "molecules.csv", "r") as f:
+        for line in f.readlines()[1:]:
+            k, v = line.strip().split(",")
+            mols[k] = Chem.MolFromSmiles(v)
+
+    for k, mol in mols.items():
+        AllChem.EmbedMultipleConfs(mol, numConfs=1)
+        if mode == "MOL":
+            Chem.MolToMolFile(mol, str(base / f"{k}.mol"))
+        elif mode == "MRV":
+            Chem.MolToMrvFile(mol, str(base / f"{k}.mrv"))
+        elif mode == "PDB":
+            Chem.MolToPDBFile(mol, str(base / f"{k}.pdb"))  # , removeHs=False)
+        elif mode == "TPL":
+            Chem.MolToTPLFile(mol, str(base / f"{k}.tpl"))
+        # elif mode == "XYZ":
+        #     Chem.MolToXYZFile(mol, str(base / f"{k}.xyz"))
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+
+    dataset = read_molecule_data(base)
+    shutil.rmtree(base, ignore_errors=True)
+    assert set(dataset.names) == set(mols.keys())
 
 
 @pytest.mark.todo

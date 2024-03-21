@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Tuple, Optional
 
 from datasail.reader.read_molecules import remove_duplicate_values
@@ -35,8 +36,8 @@ def read_genome_data(
     """
     dataset = DataSet(type=G_TYPE, location=UNK_LOCATION, format=FORM_FASTA)
 
-    def read_dir(ds):
-        ds.data = dict(read_folder(data))
+    def read_dir(ds: DataSet, path: Path) -> None:
+        ds.data = dict(read_folder(path))
         ds.format = FORM_GENOMES
 
     read_data_input(data, dataset, read_dir)
