@@ -235,7 +235,7 @@ def md_calculator():
 @pytest.mark.parametrize("mode", ["CSV", "TSV", "PKL", "H5PY", "SDF"])
 def test_input_formats(mode, md_calculator):
     base = Path("data") / "pipeline" / "input_forms"
-    drugs = pd.read_csv(base / "drugs.tsv", sep="\t")
+    drugs = pd.read_csv(base.parent / "drugs.tsv", sep="\t")
     ddict = {row["Drug_ID"]: row["SMILES"] for index, row in drugs.iterrows()}
     base.mkdir(exist_ok=True, parents=True)
 
