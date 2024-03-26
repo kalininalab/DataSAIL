@@ -83,6 +83,7 @@ arguments are mostly the same.
     examples/bace
     examples/pdbbind
     examples/rna
+    examples/tox21
 
 .. toctree::
     :maxdepth: 1
