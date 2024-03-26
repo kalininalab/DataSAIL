@@ -62,7 +62,6 @@ def run_diamond(dataset: DataSet, threads: int, log_dir: Optional[Path] = None) 
     rev = df.copy(deep=True)
     rev.columns = ["target", "query", "pident", "fident"]
     df = pd.concat([df, rev])
-    # df.drop_duplicates(inplace=True)
     df = df.groupby(["query", "target"]).agg({"fident": "mean"}).reset_index()
     table = df.pivot(index="query", columns="target", values="fident").fillna(0).to_numpy()
 
