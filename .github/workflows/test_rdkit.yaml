@@ -23,7 +23,7 @@ jobs:
   test:
     strategy:
         matrix:
-            rdkit-version: [rdkit"~2022.03.1", rdkit"~2023.03.1"]
+            rdkit-version: [rdkit">=2022.03.1,<2022.09.1", rdkit">=2023.03.1,<2023.09.1"]
     runs-on: 'ubuntu-latest'
     steps:
       - uses: actions/checkout@v3
