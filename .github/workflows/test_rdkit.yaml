@@ -1,0 +1,55 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Testing
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:  # make is manually start-able
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "test"
+  test:
+    strategy:
+        matrix:
+            rdkit-version: [rdkit"==2022.04", rdkit"==2023.04"]
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Mamba
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: '3.10'
+          miniforge-variant: Mambaforge
+          miniforge-version: latest
+          activate-environment: MPP
+          use-mamba: true
+
+      - name: Install environment
+        shell: bash -l {0}
+        run: |
+          mamba install -c conda-forge -c bioconda -y numpy pandas networkx matplotlib pytest setuptools pyscipopt"<4.0.0" foldseek mmseqs2 cd-hit mash tmalign diamond cvxpy pytest-cov ${{ rdkitversion }} pytest-cases scikit-learn pyyaml h5py
+          pip install grakel
+
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          cd tests
+          pytest test_pipeline.py::test_molecule_formats
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+          files: coverage.xml
