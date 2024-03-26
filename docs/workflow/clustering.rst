@@ -1,6 +1,8 @@
-**********
+##########
 Clustering
-**********
+##########
+
+.. _clustering-label:
 
 Clustering is an essential step in DataSAIL as it groups similar samples together such that they cannot be assigned to
 different splits. This reduces the information leakage even more. In the following table you can see which clustering
@@ -21,7 +23,7 @@ Usually in DataSAIL, clustering is performed in multiple rounds and there are tw
    number of clusters or reaches a window as described in 1.
 
 Overview
---------
+########
 
 The following table shows an overview over the different input types and which clustering algorithms are available.
 The ability to cluster "other" data (such as Ferrari cars) is a side effect of the implementation. It is listed in the
@@ -40,13 +42,20 @@ on these matrices.
       - Other
       - Sim or Dist
       - Inter-clust
-    * - CD-HIT
+    * - CD-HIT(-EST)
       - FASTA
       - \-
       - FASTA
       - \-
       - Sim
       - No
+    * - DIAMOND
+      - FASTA
+      - \-
+      - \-
+      - \-
+      - Sim
+      - Yes
     * - ECFP++
       - \-
       - SMILES
@@ -102,7 +111,7 @@ the former case, rounds of additional clustering are conducted next. In case of 
 the algorithm are optimized until the best clustering of the data for DataSAIL has been found.
 
 Default Algorithms
-------------------
+##################
 
 To simplify the task of algorithm and parameter selection and for the (inexperienced) user, DataSAIL provides default
 algorithms and arguments for each type of input.
@@ -121,7 +130,7 @@ algorithms and arguments for each type of input.
       -
       -
     * - FASTA
-      - CD-HIT
+      - MMseqs2
       -
       - MASH
       -
@@ -132,10 +141,13 @@ algorithms and arguments for each type of input.
       -
 
 Details about the clustering algorithms
-=======================================
+#######################################
 
-CD-HIT
-------
+For all algorithms, the given general commands can be extended by user defined arguments according to the specification
+of the respective tool.
+
+CD-HIT(-EST)
+============
 
 CD-HIT is used to cluster protein sequences, for more information on CD-HIT, visit the
 `website <https://sites.google.com/view/cd-hit>`__, checkout the
@@ -156,8 +168,23 @@ where the values for :code:`-n` and :code:`-c` are optimized as described above.
 To run CD-HIT for genomic input, provide the argument :code:`e_sim="cd-hit-est"` when calling from a python script and
 :code:`--e-sim=cd-hit-est` when calling from the command line.
 
-ECFP++
-------
+DIAMOND
+=======
+
+Similar to CD-HIT, DIAMOND can be used to cluster protein sequences. But other than CD-HIT, DIAMOND computed
+inter-sample similarities instead of just clusters. More information about DIAMOND can be found in the
+`GitHub repository <https://github.com/bbuchfink/diamond>`__ and in the
+`paper <https://doi.org/10.1038/s41592-021-01101-x>`__.
+
+The general command to run DIAMOND in DataSAIL is
+
+.. code-block:: shell
+
+    diamond makedb --in <fasta_file> --db seqs.dmnd
+    diamond blastp --db seqs.dmnd --query <fasta_file> --out alis.tsv --outfmt 6 qseqid sseqid pident
+
+ECFP
+====
 
 ECFP++ is a short name for a 3-step process to detect clusters in a dataset of chemical molecules. The first step is to
 compute Scaffolds following `RDKits MakeScaffoldGeneric <https://rdkit.org/docs/source/rdkit.Chem.Scaffolds.MurckoScaffold.html#rdkit.Chem.Scaffolds.MurckoScaffold.MakeScaffoldGeneric>`__.
@@ -168,14 +195,15 @@ Lastly, DataSAIL computes the similarity of these fingerprints as
 of the bit-vectors.
 
 FoldSeek
---------
+========
 
 FoldSeek is used to cluster protein structures based on PDB input. For more information checkout the
 `GitHub repository <https://github.com/steineggerlab/foldseek>`__ and the
 `paper <https://doi.org/10.1101/2022.02.07.479398>`__.
 
 As FoldSeek produces a pairwise similarity matrix, it is not optimizes such as CD-HIT, but will be followed by some
-additional clustering.
+additional clustering. This is very similar to DIAMOND and their scores have a correlation above 0.98 (measured in
+internal experiments).
 
 The general command to run FoldSeek in DataSAIL is
 
@@ -184,7 +212,7 @@ The general command to run FoldSeek in DataSAIL is
     foldseek easy-search <pdb_dir> <pdb_dir> aln.m8 tmp --alignment-type 1 --tmscore-threshold 0.0 --format-output 'query,target,fident' --exhaustive-search 1 -e inf
 
 MASH
-----
+====
 
 To cluster genomes in DataSAIL, the only option so far is MASH (CD-HIT-EST is to be included). Similar to FoldSeek it
 produces a pairwise distance matrix which is used in subsequent rounds of additional clustering. To get more
@@ -223,7 +251,7 @@ significantly slower due to the alignments computed. To get more information on 
 the `GitHub repository <https://github.com/soedinglab/MMseqs2>`__ and the `paper <https://doi.org/10.1038/nbt.3988>`__.
 
 WL-Kernel
----------
+=========
 
 The last method to compute similarities of graph-structured data such as PDB files is to use Weisfeiler-Lehman kernels.
 This method is not established and mostly experimental, therefore there is no literature to link, but you can have a

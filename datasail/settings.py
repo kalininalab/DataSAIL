@@ -94,6 +94,7 @@ INSTALLED = {
     TMALIGN: shutil.which("TMalign") is not None,
 }
 
+
 def format2ending(fmt: str) -> str:
     """
     Return the file ending for a specific format.
@@ -113,6 +114,7 @@ def format2ending(fmt: str) -> str:
     if fmt == FORM_GENOMES:
         return "fna"
     return "txt"
+
 
 UNK_LOCATION = "unknown"
 P_TYPE = "P"

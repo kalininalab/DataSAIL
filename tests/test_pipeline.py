@@ -5,6 +5,7 @@ from pathlib import Path
 import h5py
 import pandas as pd
 import pytest
+import rdkit
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors
 from rdkit.ML.Descriptors import MoleculeDescriptors
@@ -299,9 +300,31 @@ def test_molecule_formats(mode):
         else:
             raise ValueError(f"Unknown mode: {mode}")
 
-    dataset = read_molecule_data(base)
-    shutil.rmtree(base, ignore_errors=True)
-    assert set(dataset.names) == set(mols.keys())
+    if invalid_comb(mode):
+        with pytest.raises(ValueError):
+            read_molecule_data(base)
+            shutil.rmtree(base, ignore_errors=True)
+    else:
+        dataset = read_molecule_data(base)
+        shutil.rmtree(base, ignore_errors=True)
+        assert set(dataset.names) == set(mols.keys())
+
+
+def invalid_comb(mode):
+    """
+    Check if the combination of RDKit version and file format is invalid.
+
+    Args:
+        mode: The file format to check
+
+    Returns:
+        True if the combination is invalid, False otherwise.
+    """
+    if rdkit.__version__ < "2022.09.1":
+        return mode in ["XYZ", "MRV"]
+    if rdkit.__version__ < "2023.09.1":
+        return mode in ["MRV"]
+    return False
 
 
 @pytest.mark.todo
