@@ -1,4 +1,4 @@
-import sys
+import pickle
 from pathlib import Path
 from typing import List
 
@@ -9,8 +9,44 @@ from matplotlib import gridspec
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import deepchem as dc
 
-from experiments.utils import DATASETS, COLORS, set_subplot_label, HSPACE, METRICS, embed, plot_embeds
+from datasail.reader.utils import DataSet
+from experiments.ablation import david
+from experiments.ablation.david import run_ecfp
+from experiments.utils import DATASETS, COLORS, set_subplot_label, HSPACE, METRICS, embed, plot_embeds, dc2pd, RUNS, \
+    TECHNIQUES
+
+
+def compute_il(name, tools, techniques):
+    dataset = DATASETS[name][0](featurizer=dc.feat.DummyFeaturizer(), splitter=None)[1][0]
+    df = dc2pd(dataset, name)
+    dataset = DataSet(
+        names=df["ID"].tolist(),
+        data=dict(df[["ID", "SMILES"]].values.tolist()),
+        id_map={x: x for x in df["ID"].tolist()},
+    )
+    dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity, dataset.cluster_weights = run_ecfp(
+        dataset
+    )
+    output = {}
+    for tool in tools:
+        if tool not in output:
+            output[tool] = {}
+        for technique in techniques:
+            if technique not in TECHNIQUES[tool]:
+                continue
+            if technique not in output[tool]:
+                output[tool][technique] = []
+            for run in range(RUNS):
+                base = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v03" / "MPP" / tool / name / technique / f"split_{run}"
+                train_ids = pd.read_csv(base / "train.csv")["ID"]
+                test_ids = pd.read_csv(base / "test.csv")["ID"]
+                df["assi"] = df["ID"].apply(lambda x: 1 if x in train_ids.values else -1 if x in test_ids.values else None)
+                df.dropna(subset=["assi"], inplace=True)
+                il = david.eval(df["assi"].to_numpy().reshape(-1, 1), dataset.cluster_similarity)
+                output[tool][technique].append(il)
+    return output
 
 
 def plot_double(full_path: Path, names: List[str]) -> None:
@@ -34,6 +70,7 @@ def plot_double(full_path: Path, names: List[str]) -> None:
     ]
     perf = {name: get_perf(full_path, name) for name in names}
     for i, name in enumerate(names):
+        leakage = compute_il(name.lower(), ["datasail"], ["I1e", "C1e"])
         df = perf[name]
         df = df.loc[df["tech"].isin(["I1e", "C1e"]), ["tech", "model", "perf"]].groupby(["model", "tech"])["perf"] \
             .mean().reset_index().pivot(index="model", columns="tech", values="perf")
@@ -134,6 +171,25 @@ def get_perf(full_path: Path, name: str) -> pd.DataFrame:
     return pd.concat(dfs)
 
 
+def comp_all_il():
+    output = {}
+    for name in DATASETS:
+        try:
+            output[name] = compute_il(
+                name=name.lower(),
+                tools=["datasail", "deepchem", "lohi"],
+                techniques=["I1e", "C1e"] + TECHNIQUES["deepchem"] + TECHNIQUES["lohi"]
+            )
+            print(f"Computed for {name}")
+        except Exception as e:
+            print(f"Failed for {name}")
+            print(e)
+    with open("il.pkl", "wb") as f:
+        pickle.dump(output, f)
+
+
 if __name__ == '__main__':
-    plot_double(Path(sys.argv[1]), ["QM8", "Tox21"])
-    heatmap_plot(Path(sys.argv[1]))
+    comp_all_il()
+    # compute_il("esol", ["datasail"], ["I1e", "C1e"])
+    # plot_double(Path(sys.argv[1]), ["QM8", "Tox21"])
+    # heatmap_plot(Path(sys.argv[1]))

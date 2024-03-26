@@ -68,6 +68,7 @@ def run_ecfp(dataset):
         molecules[name] = mol
 
     for invalid_name in invalid_mols:  # obsolete code?
+        print(f"Removing {invalid_name}")
         dataset.names.remove(invalid_name)
         dataset.data.pop(invalid_name)
         poppable = []
@@ -78,11 +79,10 @@ def run_ecfp(dataset):
             dataset.id_map.pop(pop)
 
     fps = []
-    cluster_names = list(set(Chem.MolToSmiles(s) for s in list(molecules.values())))
-    for scaffold in cluster_names:
-        fps.append(AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(scaffold), 2, nBits=1024))
+    for c_name in dataset.names:
+        fps.append(AllChem.GetMorganFingerprintAsBitVect(molecules[c_name], 2, nBits=1024))
 
-    count = len(cluster_names)
+    count = len(dataset.names)
     sim_matrix = np.zeros((count, count))
     for i in range(count):
         sim_matrix[i, i] = 1
@@ -97,7 +97,7 @@ def run_ecfp(dataset):
             cluster_weights[value] = 0
         cluster_weights[value] += 1
 
-    return cluster_names, cluster_map, sim_matrix, cluster_weights
+    return dataset.names, cluster_map, sim_matrix, cluster_weights
 
 
 def run_solver(full_path: Path, ds_name: str, clusters: List[int], solvers: List[str]):
