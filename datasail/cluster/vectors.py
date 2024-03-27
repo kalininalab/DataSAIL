@@ -8,9 +8,10 @@ from rdkit import DataStructs
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER
 
+# TODO: Exclude all those that do not automatically scale between 0 and 1
 SIM_OPTIONS = Literal[
     "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "mcconnaughey", "onbit", "rogotgoldberg",
-    "russel", "sokal"
+    "russel", "sokal", "tanimoto"
 ]
 
 # produces inf or nan: correlation, cosine, jensenshannon, seuclidean, braycurtis
@@ -18,7 +19,7 @@ SIM_OPTIONS = Literal[
 # matching == hamming, manhattan == cityblock (inofficial)
 DIST_OPTIONS = Literal[
     "canberra", "chebyshev", "cityblock", "euclidean", "hamming", "jaccard", "mahalanobis", "manhattan", "matching",
-    "minkowski", "sqeuclidean", "tanimoto"
+    "minkowski", "sqeuclidean"
 ]
 
 
@@ -52,6 +53,8 @@ def get_rdkit_fct(method: SIM_OPTIONS):
         return DataStructs.BulkRogotGoldbergSimilarity
     if method == "russel":
         return DataStructs.BulkRusselSimilarity
+    if method == "tanimoto":
+        return DataStructs.BulkTanimotoSimilarity
     if method == "sokal":
         return DataStructs.BulkSokalSimilarity
     raise ValueError(f"Unknown method {method}")
@@ -182,7 +185,8 @@ def run(
         method: The similarity measure to use.
     """
     if method in get_args(SIM_OPTIONS):
-        dataset.cluster_similarity = scale_min_max(rdkit_sim(fps, method))
+        # dataset.cluster_similarity = scale_min_max(rdkit_sim(fps, method))
+        dataset.cluster_similarity = rdkit_sim(fps, method)
     elif method in get_args(DIST_OPTIONS):
         if method == "mahalanobis" and len(fps) <= len(fps[0]):
             raise ValueError(

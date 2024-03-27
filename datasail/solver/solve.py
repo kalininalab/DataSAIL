@@ -196,11 +196,13 @@ def run_solver(
                                              for c in e_dataset.cluster_names]) if e_dataset.cluster_stratification is not None else None,
                         e_similarities=e_dataset.cluster_similarity,
                         e_distances=e_dataset.cluster_distance,
+                        e_weights=np.ndarray([e_dataset.cluster_weights.get(c, 1) for c in e_dataset.cluster_names]),
                         f_clusters=f_dataset.cluster_names,
                         f_s_matrix=np.stack([f_dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
                                              for c in f_dataset.cluster_names]) if f_dataset.cluster_stratification is not None else None,
                         f_similarities=f_dataset.cluster_similarity,
                         f_distances=f_dataset.cluster_distance,
+                        f_weights=np.ndarray([f_dataset.cluster_weights.get(c, 1) for c in f_dataset.cluster_names]),
                         inter=cluster_inter,
                         delta=delta,
                         epsilon=epsilon,

@@ -118,8 +118,8 @@ def save_datasail_splits(base: Path, df: pd.DataFrame, key: str, techniques: Lis
         inter_splits: Interactions splits
     """
     for name, tech in techniques:
-        # for run in range(RUNS):
-        for run in range(1):
+        for run in range(RUNS):
+            # for run in range(1):
             path = base / name / f"split_{run}"
             path.mkdir(parents=True, exist_ok=True)
 

@@ -12,10 +12,12 @@ def solve_c2(
         e_s_matrix: Optional[np.ndarray],
         e_similarities: Optional[np.ndarray],
         e_distances: Optional[np.ndarray],
+        e_weights: Optional[np.ndarray],
         f_clusters: List[Union[str, int]],
         f_s_matrix: Optional[np.ndarray],
         f_similarities: Optional[np.ndarray],
         f_distances: Optional[np.ndarray],
+        f_weights: Optional[np.ndarray],
         inter: np.ndarray,
         delta: float,
         epsilon: float,
@@ -35,10 +37,12 @@ def solve_c2(
         e_s_matrix: Stratification for the e-dataset
         e_similarities: Pairwise similarity matrix of clusters in the order of their names
         e_distances: Pairwise distance matrix of clusters in the order of their names
+        e_weights: Weights of the clusters in the order of their names in e_clusters
         f_clusters: List of cluster names to split from the f-dataset
         f_s_matrix: Stratification for the f-dataset
         f_similarities: Pairwise similarity matrix of clusters in the order of their names
         f_distances: Pairwise distance matrix of clusters in the order of their names
+        f_weights: Weights of the clusters in the order of their names in f_clusters
         inter: Matrix storing the amount of interactions between the entities in the e-clusters and f-clusters
         delta: Additive bound for stratification imbalance
         epsilon: Additive bound for exceeding the requested split size
@@ -58,14 +62,16 @@ def solve_c2(
     x_f = cvxpy.Variable((len(splits), len(f_clusters)), boolean=True)
     x_i = {(e, f): cvxpy.Variable(len(splits), boolean=True) for e in range(len(e_clusters)) for f in
            range(len(f_clusters)) if inter[e, f] != 0}
-    y_e = [[cvxpy.Variable(1, boolean=True) for _ in range(e)] for e in range(len(e_clusters))]
-    y_f = [[cvxpy.Variable(1, boolean=True) for _ in range(f)] for f in range(len(f_clusters))]
+    # y_e = [[cvxpy.Variable(1, boolean=True) for _ in range(e)] for e in range(len(e_clusters))]
+    # y_f = [[cvxpy.Variable(1, boolean=True) for _ in range(f)] for f in range(len(f_clusters))]
 
     # check if the cluster relations are uniform
-    e_intra_weights = e_similarities if e_similarities is not None else e_distances
-    f_intra_weights = f_similarities if f_similarities is not None else f_distances
-    e_uniform = e_intra_weights is None or np.allclose(e_intra_weights, np.ones_like(e_intra_weights))
-    f_uniform = f_intra_weights is None or np.allclose(f_intra_weights, np.ones_like(f_intra_weights))
+    e_intra_weights = e_similarities if e_similarities is not None else 1 - e_distances
+    f_intra_weights = f_similarities if f_similarities is not None else 1 - f_distances
+    e_uniform = e_intra_weights is None or np.allclose(e_intra_weights, np.ones_like(e_intra_weights)) or \
+        np.allclose(e_intra_weights, np.zeros_like(e_intra_weights))
+    f_uniform = f_intra_weights is None or np.allclose(f_intra_weights, np.ones_like(f_intra_weights)) or \
+        np.allclose(f_intra_weights, np.zeros_like(f_intra_weights))
 
     def index(x, y):
         return (x, y) if (x, y) in x_i else None
@@ -83,12 +89,12 @@ def solve_c2(
     interaction_contraints(e_clusters, f_clusters, x_i, constraints, splits, x_e, x_f, min_lim, lambda key: inter[key],
                            index)
 
-    constraints += cluster_y_constraints(e_clusters, y_e, x_e, splits) + \
-        cluster_y_constraints(f_clusters, y_f, x_f, splits)
+    # constraints += cluster_y_constraints(e_clusters, y_e, x_e, splits) + \
+    #     cluster_y_constraints(f_clusters, y_f, x_f, splits)
 
     # inter_loss = (np.sum(inter) - sum(cvxpy.sum(x) for x in x_i.values())) / np.sum(inter)
-    e_loss = leakage_loss(e_uniform, e_intra_weights, y_e, e_clusters, e_similarities)
-    f_loss = leakage_loss(f_uniform, f_intra_weights, y_f, f_clusters, f_similarities)
+    e_loss = leakage_loss(e_uniform, e_intra_weights, x_e, e_clusters, e_weights, len(splits))
+    f_loss = leakage_loss(f_uniform, f_intra_weights, x_f, f_clusters, f_weights, len(splits))
 
     problem = solve(e_loss + f_loss, constraints, max_sec, solver, log_file)
 
