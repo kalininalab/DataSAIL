@@ -1,0 +1,12 @@
+BioCAD format, all rights reserved
+Output from RDKit
+NAME D017
+PROP 7 1
+3 3
+1 C 0 0.0 80.369 -16.59 6.28316 2 2 3 U
+2 C 0 0.0 -23.9572 78.1067 -2.02174 2 1 3 U
+3 O 0 0.0 -56.4118 -61.5168 -4.26142 2 2 1 U
+1 1.0 1 2 0 0
+2 1.0 2 3 0 0
+3 1.0 3 1 0 0
+CONFS 0

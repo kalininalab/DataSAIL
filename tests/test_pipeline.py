@@ -277,36 +277,35 @@ def test_input_formats(mode, md_calculator):
 
 @pytest.mark.parametrize("mode", ["MOL", "MRV", "PDB", "TPL"])  # , "XYZ"])
 def test_molecule_formats(mode):
-    base = Path("data") / "pipeline" / "input_forms"
-    base.mkdir(exist_ok=True, parents=True)
+    base = Path("data") / "pipeline" / "mol_formats" / mode
+    # base.mkdir(exist_ok=True, parents=True)
     mols = {}
     with open(Path("data") / "molecules.csv", "r") as f:
         for line in f.readlines()[1:]:
             k, v = line.strip().split(",")
             mols[k] = Chem.MolFromSmiles(v)
-
-    for k, mol in mols.items():
-        AllChem.EmbedMultipleConfs(mol, numConfs=1)
-        if mode == "MOL":
-            Chem.MolToMolFile(mol, str(base / f"{k}.mol"))
-        elif mode == "MRV":
-            Chem.MolToMrvFile(mol, str(base / f"{k}.mrv"))
-        elif mode == "PDB":
-            Chem.MolToPDBFile(mol, str(base / f"{k}.pdb"))  # , removeHs=False)
-        elif mode == "TPL":
-            Chem.MolToTPLFile(mol, str(base / f"{k}.tpl"))
-        # elif mode == "XYZ":
-        #     Chem.MolToXYZFile(mol, str(base / f"{k}.xyz"))
-        else:
-            raise ValueError(f"Unknown mode: {mode}")
+            mols[k].SetProp("_Name", k)
+    #
+    # for k, mol in mols.items():
+    #     AllChem.EmbedMultipleConfs(mol, numConfs=1)
+    #     if mode == "MOL":
+    #         Chem.MolToMolFile(mol, str(base / f"{k}.mol"))
+    #     elif mode == "MRV":
+    #         Chem.MolToMrvFile(mol, str(base / f"{k}.mrv"))
+    #     elif mode == "PDB":
+    #         Chem.MolToPDBFile(mol, str(base / f"{k}.pdb"))  # , removeHs=False)
+    #     elif mode == "TPL":
+    #         Chem.MolToTPLFile(mol, str(base / f"{k}.tpl"))
+    #     # elif mode == "XYZ":
+    #     #     Chem.MolToXYZFile(mol, str(base / f"{k}.xyz"))
+    #     else:
+    #         raise ValueError(f"Unknown mode: {mode}")
 
     if invalid_comb(mode):
         with pytest.raises(ValueError):
             read_molecule_data(base)
-            shutil.rmtree(base, ignore_errors=True)
     else:
         dataset = read_molecule_data(base)
-        shutil.rmtree(base, ignore_errors=True)
         assert set(dataset.names) == set(mols.keys())
 
 
