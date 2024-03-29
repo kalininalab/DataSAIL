@@ -8,12 +8,12 @@ from rdkit import DataStructs
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER
 
-# TODO: Exclude all those that do not automatically scale between 0 and 1
 SIM_OPTIONS = Literal[
-    "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "mcconnaughey", "onbit", "rogotgoldberg",
+    "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "onbit", "rogotgoldberg",
     "russel", "sokal", "tanimoto"
 ]
 
+# unbounded: mcconnaughey
 # produces inf or nan: correlation, cosine, jensenshannon, seuclidean, braycurtis
 # boolean only: dice, kulczynski1, rogerstanimoto, russelrao, sokalmichener, sokalsneath, yule
 # matching == hamming, manhattan == cityblock (inofficial)
@@ -45,8 +45,6 @@ def get_rdkit_fct(method: SIM_OPTIONS):
         return DataStructs.BulkDiceSimilarity
     if method == "kulczynski":
         return DataStructs.BulkKulczynskiSimilarity
-    if method == "mcconnaughey":
-        return DataStructs.BulkMcConnaugheySimilarity
     if method == "onbit":
         return DataStructs.BulkOnBitSimilarity
     if method == "rogotgoldberg":
@@ -141,7 +139,8 @@ def run_vector(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
                 f"Unsupported embedding type {type(embed)}. Please use either RDKit datastructures, lists, "
                 f"tuples or one-dimensional numpy arrays.")
     elif method in get_args(DIST_OPTIONS):
-        if isinstance(embed, (list, tuple, DataStructs.ExplicitBitVect, DataStructs.LongSparseIntVect, DataStructs.IntSparseIntVect)):
+        if isinstance(embed, (
+        list, tuple, DataStructs.ExplicitBitVect, DataStructs.LongSparseIntVect, DataStructs.IntSparseIntVect)):
             dataset.data = {k: np.array(list(v), dtype=np.float64) for k, v in dataset.data.items()}
         if not isinstance(dataset.data[dataset.names[0]], np.ndarray):
             raise ValueError(
@@ -173,7 +172,7 @@ def scale_min_max(matrix: np.ndarray) -> np.ndarray:
 def run(
         dataset: DataSet,
         fps: Union[np.ndarray, DataStructs.ExplicitBitVect, DataStructs.LongSparseIntVect,
-            DataStructs.IntSparseIntVect],
+        DataStructs.IntSparseIntVect],
         method: Union[SIM_OPTIONS, DIST_OPTIONS],
 ) -> None:
     """
@@ -187,6 +186,8 @@ def run(
     if method in get_args(SIM_OPTIONS):
         # dataset.cluster_similarity = scale_min_max(rdkit_sim(fps, method))
         dataset.cluster_similarity = rdkit_sim(fps, method)
+        if method == "mcconnaughey":
+            dataset.cluster_similarity = dataset.cluster_similarity + 1 / 2
     elif method in get_args(DIST_OPTIONS):
         if method == "mahalanobis" and len(fps) <= len(fps[0]):
             raise ValueError(
@@ -197,3 +198,29 @@ def run(
         dataset.cluster_distance = scale_min_max(scipy.spatial.distance.cdist(
             fps, fps, metric={"manhattan": "cityblock", "tanimoto": "jaccard"}.get(method, method)
         ))
+
+
+# if __name__ == '__main__':
+#     data = [
+#         np.array([
+#             [0, 0, 0],
+#             [1, 0, 0],
+#             [0, 1, 0],
+#             [0, 0, 1],
+#             [1, 1, 0],
+#             [1, 0, 1],
+#             [0, 1, 1],
+#             [1, 1, 1],
+#         ]),
+#         np.random.randint(-1, 3, size=(8, 3))
+#     ]
+#     for x, a in enumerate(data):
+#         for sim in ["allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "mcconnaughey", "onbit",
+#                     "rogotgoldberg", "russel", "sokal", "tanimoto"]:
+#             run_vector(ds := DataSet(data={chr(97 + i): v for i, v in enumerate(a)}, names=[chr(97 + i) for  i in range(len(a))]), sim)
+#             print(f"{x}\t{sim}\t{np.min(ds.cluster_similarity)}\t{np.max(ds.cluster_similarity)}", ds.cluster_similarity, sep="\n", end="\n\n")
+#
+#         for dist in ["canberra", "chebyshev", "cityblock", "euclidean", "hamming", "jaccard", "mahalanobis", "manhattan",
+#                      "matching", "minkowski", "sqeuclidean"]:
+#             run_vector(ds := DataSet(data={chr(97 + i): v for i, v in enumerate(a)}, names=[chr(97 + i) for  i in range(len(a))]), dist)
+#             print(f"{x}\t{dist}\t{np.min(ds.cluster_distance)}\t{np.max(ds.cluster_distance)}", ds.cluster_distance, sep="\n", end="\n\n")
