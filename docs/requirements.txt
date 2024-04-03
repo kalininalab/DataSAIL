@@ -17,3 +17,4 @@ nbsphinx-link
 pyyaml
 notebook
 lxml_html_clean
+h5py
