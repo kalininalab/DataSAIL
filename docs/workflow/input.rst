@@ -92,3 +92,6 @@ except for :code:`.sdf` files, which can contain multiple molecules. The molecul
 :code:`_Name` or their filename if the property is not set. In case of :code:`.sdf` files and molecules without
 :code:`_Name` property, the index at which they are stored in the file is used as suffix to distinguish between
 molecules in the same file.
+
+Example files for :code:`.mol`, :code:`.mrv`, :code:`.pdb`, and :code:`.tpl` are given in
+:code:`tests/data/pipeline/mol_formats/<FORMAT>/`.

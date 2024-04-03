@@ -1,23 +1,29 @@
 from pathlib import Path
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional
 
 import numpy as np
+import rdkit
 from rdkit import Chem
-from rdkit.Chem import MolFromMol2File, MolFromMolFile, MolFromPDBFile, MolFromTPLFile, MolFromXYZFile
-try:
-    from rdkit.Chem import MolFromMrvFile
-except ImportError:
-    MolFromMrvFile = None
+from rdkit.Chem import MolFromMolFile, MolFromMol2File, MolFromPDBFile, MolFromTPLFile
 
 from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_data_input, read_sdf_file
-from datasail.settings import M_TYPE, UNK_LOCATION, FORM_SMILES
+from datasail.settings import M_TYPE, UNK_LOCATION, FORM_SMILES, LOGGER
 
+if rdkit.__version__ < "2022.09.1":
+    from rdkit.Chem import MolFromMol2File
+    LOGGER.warning("RDKit version is too old, .xyz, and .mrv files are not supported.")
+    MolFromMrvFile, MolFromXYZFile = None, None
+elif rdkit.__version__ < "2023.09.1":
+    from rdkit.Chem import MolFromMol2File, MolFromXYZFile
+    LOGGER.warning("RDKit version is too old, .mrv files are not supported.")
+    MolFromMrvFile = None
+else:
+    from rdkit.Chem import MolFromMol2File, MolFromXYZFile, MolFromMrvFile
 
 mol_reader = {
     "mol": MolFromMolFile,
     "mol2": MolFromMol2File,
     "mrv": MolFromMrvFile,
-    # "sdf": MolFromMol2File,
     "pdb": MolFromPDBFile,
     "tpl": MolFromTPLFile,
     "xyz": MolFromXYZFile,
@@ -58,8 +64,16 @@ def read_molecule_data(
     def read_dir(ds: DataSet, path: Path) -> None:
         ds.data = {}
         for file in path.iterdir():
-            if file.suffix[1:].lower() != "sdf" and mol_reader[file.suffix[1:].lower()] is not None:
-                ds.data[file.stem] = Chem.MolToSmiles(mol_reader[file.suffix[1:].lower()](str(file)))
+            if file.suffix[1:].lower() != "sdf":
+                if (reader := mol_reader[file.suffix[1:].lower()]) is not None:
+                    mol = reader(str(file))
+                    if mol is not None:
+                        if mol.HasProp("_Name"):
+                            ds.data[mol.GetProp("_Name")] = Chem.MolToSmiles(mol)
+                        else:
+                            ds.data[file.stem] = Chem.MolToSmiles(mol)
+                else:
+                    raise ValueError(f"File type {file.suffix[1:]} is not supported.")
             else:
                 ds.data = read_sdf_file(file)
 

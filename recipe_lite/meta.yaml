@@ -28,7 +28,7 @@ requirements:
     - scikit-learn
     - cvxpy
     - pytest-cov
-    - rdkit>=2022.09.1
+    - rdkit
     - pytest-cases
     - pyyaml
     - cvxopt
