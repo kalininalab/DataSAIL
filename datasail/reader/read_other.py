@@ -43,7 +43,7 @@ def read_other_data(
 
     read_data_input(data, dataset, read_dir)
 
-    dataset, inter = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
+    dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)
 
-    return dataset, inter
+    return dataset
