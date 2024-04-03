@@ -26,26 +26,41 @@ def compute_il(name, tools, techniques):
         data=dict(df[["ID", "SMILES"]].values.tolist()),
         id_map={x: x for x in df["ID"].tolist()},
     )
+    # print(len(dataset.names))
     dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity, dataset.cluster_weights = run_ecfp(
         dataset
     )
+    # print(dataset.cluster_similarity.shape)
     output = {}
+    if "deepchem" in tools:
+        print("Use v0.3")
+        root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v03" / "MPP"
+    else:
+        print("Use v1.0")
+        root = Path("/") / "home" / "rjo21" / "Desktop" / "DataSAIL" / "v1.0_test"
     for tool in tools:
         if tool not in output:
             output[tool] = {}
         for technique in techniques:
+            # print(technique)
             if technique not in TECHNIQUES[tool]:
                 continue
             if technique not in output[tool]:
                 output[tool][technique] = []
             for run in range(RUNS):
-                base = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v03" / "MPP" / tool / name / technique / f"split_{run}"
+                base = root / tool / name / technique / f"split_{run}"
                 train_ids = pd.read_csv(base / "train.csv")["ID"]
                 test_ids = pd.read_csv(base / "test.csv")["ID"]
-                df["assi"] = df["ID"].apply(lambda x: 1 if x in train_ids.values else -1 if x in test_ids.values else None)
+                df["assi"] = df["ID"].apply(lambda x: 1 if x in train_ids.values else -1 if x in test_ids.values else 0)
                 df.dropna(subset=["assi"], inplace=True)
-                il = david.eval(df["assi"].to_numpy().reshape(-1, 1), dataset.cluster_similarity)
+                il = david.eval(
+                    df["assi"].to_numpy().reshape(-1, 1),
+                    dataset.cluster_similarity,
+                    [dataset.cluster_weights[c] for c in dataset.cluster_names],
+                )
                 output[tool][technique].append(il)
+                # print(output)
+                # break
     return output
 
 
@@ -184,12 +199,15 @@ def comp_all_il():
         except Exception as e:
             print(f"Failed for {name}")
             print(e)
-    with open("il.pkl", "wb") as f:
+    with open(f"il.pkl", "wb") as f:
         pickle.dump(output, f)
 
 
 if __name__ == '__main__':
-    comp_all_il()
+    # print("ESOL    :", compute_il("esol", ["datasail"], ["I1e", "C1e"]))
+    print("FreeSolv:", compute_il("freesolv", ["datasail"], ["I1e", "C1e"]))
+    print("FreeSolv:", compute_il("freesolv", ["deepchem", "lohi"], TECHNIQUES["deepchem"] + TECHNIQUES["lohi"]))
+    # comp_all_il()
     # compute_il("esol", ["datasail"], ["I1e", "C1e"])
     # plot_double(Path(sys.argv[1]), ["QM8", "Tox21"])
     # heatmap_plot(Path(sys.argv[1]))

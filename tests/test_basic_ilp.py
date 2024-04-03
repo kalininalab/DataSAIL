@@ -79,6 +79,7 @@ def test_ccd():
         ]),
         e_distances=None,
         e_s_matrix=None,
+        e_weights=np.array([3, 3, 3]),
         f_clusters=["P1", "P2", "P3"],
         f_similarities=np.asarray([
             [5, 5, 0],
@@ -87,6 +88,7 @@ def test_ccd():
         ]),
         f_distances=None,
         f_s_matrix=None,
+        f_weights=np.array([3, 3, 3]),
         inter=np.asarray([
             [9, 9, 0],
             [9, 9, 0],

@@ -390,9 +390,10 @@ def collect_results_2d(
 def leakage_loss(
         uniform: bool,
         intra_weights,
-        y,
+        x,
         clusters,
-        similarities
+        weights,
+        num_splits: int,
 ):
     """
     Compute the leakage loss for the cluster-based double-cold splitting.
@@ -400,9 +401,10 @@ def leakage_loss(
     Args:
         uniform: Boolean flag if the cluster metric is uniform
         intra_weights: Weights of the intra-cluster edges
-        y: Helper variables
+        x: Variables of the optimization problem
         clusters: List of cluster names
-        similarities: Pairwise similarity matrix of clusters in the order of their names
+        weights: Weights of the clusters
+        num_splits: Number of splits
 
     Returns:
         Loss describing the leakage between clusters
@@ -410,8 +412,8 @@ def leakage_loss(
     if uniform:
         return 0
     else:
-        if similarities is None:
-            intra_weights = 1 - intra_weights
-        tmp = [intra_weights[c1, c2] * y[c1][c2] for c1 in range(len(clusters)) for c2 in range(c1)]
-        e_loss = cvxpy.sum(tmp)
-        return e_loss
+        # tmp = [intra_weights[c1, c2] * y[c1][c2] for c1 in range(len(clusters)) for c2 in range(c1)]
+        # e_loss = cvxpy.sum(tmp)
+        tmp = [[weights[e1] * weights[e2] * intra_weights[e1, e2] * cvxpy.max(cvxpy.vstack([x[s, e1] - x[s, e2] for s in range(num_splits)])) for e2 in range(e1 + 1, len(clusters))] for e1 in range(len(clusters))]
+        loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
+        return loss

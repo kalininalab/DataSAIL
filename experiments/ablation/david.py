@@ -61,7 +61,8 @@ def run_ecfp(dataset):
     invalid_mols = []
     molecules = {}
     for name in dataset.names:
-        mol = read_molecule_encoding(dataset.data[name])
+        mol = Chem.MolFromSmiles(dataset.data[name])
+        # mol = read_molecule_encoding(dataset.data[name])
         if mol is None:
             invalid_mols.append(name)
             continue
@@ -89,13 +90,8 @@ def run_ecfp(dataset):
         sim_matrix[i, :i] = DataStructs.BulkTanimotoSimilarity(fps[i], fps[:i])
         sim_matrix[:i, i] = sim_matrix[i, :i]
 
-    cluster_map = dict((name, Chem.MolToSmiles(molecules[name])) for name in dataset.names)
-
-    cluster_weights = {}
-    for key, value in cluster_map.items():
-        if value not in cluster_weights:
-            cluster_weights[value] = 0
-        cluster_weights[value] += 1
+    cluster_map = {name: name for name in dataset.names}
+    cluster_weights = {name: 1 for name in dataset.names}
 
     return dataset.names, cluster_map, sim_matrix, cluster_weights
 
@@ -179,10 +175,14 @@ def time_overhead(full_path):
     return times
 
 
-def eval(assignments, similarity):
+def eval(assignments, similarity, weights=None):
+    if weights is None:
+        weights = np.ones_like(similarity)
     mask = assignments @ assignments.T
     mask[mask == -1] = 0
-    return 1 - np.sum(similarity * mask) / np.sum(similarity)
+    mask = (1 - mask) * (1 - np.eye(mask.shape[0], dtype=np.int64))
+    leak = (np.sum(similarity * weights * mask) / np.sum(similarity * weights)) / 2
+    return leak
 
 
 def visualize(full_path: Path, clusters: List[int], solvers, ax: Optional[Tuple] = None, fig=None):

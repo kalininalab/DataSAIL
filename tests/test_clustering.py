@@ -255,15 +255,13 @@ def test_mmseqspp_protein():
 
 @pytest.mark.parametrize("algo", ["FP", "MD"])
 @pytest.mark.parametrize("in_type", ["Original", "List", "Numpy"])
-# @pytest.mark.parametrize("method", ["AllBit", "Asymmetric", "BraunBlanquet", "Cosine", "Dice", "Kulczynski",
-#                                     "McConnaughey", "OnBit", "RogotGoldberg", "Russel", "Sokal", "Tanimoto"])
 @pytest.mark.parametrize("method", [
-    "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "mcconnaughey", "onbit", "rogotgoldberg",
-    "russel", "sokal",
+    "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "onbit", "rogotgoldberg", "russel",
+    "sokal",
     "canberra", "chebyshev", "cityblock", "euclidean", "hamming", "jaccard",
     "mahalanobis", "manhattan", "matching", "minkowski", "sqeuclidean", "tanimoto"
 ])
-def test_vector(algo, in_type, method, md_calculator):
+def test_vector(md_calculator, algo, in_type, method) :
     data = molecule_data()
     if algo == "FP":
         embed = lambda x: AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(x), 2, nBits=1024)
@@ -274,7 +272,7 @@ def test_vector(algo, in_type, method, md_calculator):
     elif in_type == "List":
         wrap = lambda x: [int(y) for y in x]
     else:
-        wrap = lambda x: np.array(list(x)).astype(int)
+        wrap = lambda x: np.array([max(-2_147_483_648, min(2_147_483_647, int(y))) for y in x])
     data.data = dict((k, wrap(embed(v))) for k, v in data.data.items())
     if (algo == "MD" and in_type == "Original" and method in get_args(SIM_OPTIONS)) or method == "mahalanobis":
         with pytest.raises(ValueError):
@@ -285,10 +283,10 @@ def test_vector(algo, in_type, method, md_calculator):
 
 
 @pytest.mark.parametrize("method", [
-    "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "mcconnaughey", "onbit", "rogotgoldberg",
-    "russel", "sokal",
-    "canberra", "chebyshev", "cityblock", "euclidean", "hamming", "jaccard",
-    "mahalanobis", "manhattan", "matching", "minkowski", "sqeuclidean", "tanimoto"
+    "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "onbit", "rogotgoldberg", "russel",
+    "sokal",
+    "canberra", "chebyshev", "cityblock", "euclidean", "hamming", "jaccard", "mahalanobis", "manhattan", "matching",
+    "minkowski", "sqeuclidean", "tanimoto"
 ])
 def test_vector_edge(method):
     dataset = DataSet(

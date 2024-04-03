@@ -19,26 +19,31 @@ def run_ecfp(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
     """
     lg = RDLogger.logger()
     lg.setLevel(RDLogger.CRITICAL)
+
     if dataset.type != "M":
         raise ValueError("ECFP with Tanimoto-scores can only be applied to molecular data.")
 
-    scaffolds = {}
     LOGGER.info("Start ECFP clustering")
 
     invalid_mols = []
+    scaffolds = {}
     for name in dataset.names:
-        scaffold = read_molecule_encoding(dataset.data[name])
-        if scaffold is None:
+        mol = Chem.MolFromSmiles(dataset.data[name])
+        # scaffold = read_molecule_encoding(dataset.data[name])
+        # if scaffold is None:
+        if mol is None:
             bo, bc = "{", "}"
             LOGGER.warning(f"RDKit cannot parse {name} {bo}{dataset.data[name]}{bc}")
             invalid_mols.append(name)
             continue
-        try:
-            scaffolds[name] = MakeScaffoldGeneric(scaffold)
-        except MolSanitizeException:
-            LOGGER.warning(f"RDKit cannot parse {name} ({dataset.data[name]})")
-            invalid_mols.append(name)
-            continue
+        scaffolds[name] = mol
+        # try:
+        #     scaffolds[name] = MakeScaffoldGeneric(scaffold)
+        # except MolSanitizeException:
+        #     LOGGER.warning(f"RDKit cannot parse {name} ({dataset.data[name]})")
+        #     invalid_mols.append(name)
+        #     continue
+
     for invalid_name in invalid_mols:  # obsolete code?
         dataset.names.remove(invalid_name)
         dataset.data.pop(invalid_name)
@@ -48,15 +53,20 @@ def run_ecfp(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
                 poppable.append(key)
         for pop in poppable:
             dataset.id_map.pop(pop)
-
+    
     fps = []
-    dataset.cluster_names = list(set(Chem.MolToSmiles(s) for s in list(scaffolds.values())))
-    for scaffold in dataset.cluster_names:
-        fps.append(AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(scaffold), 2, nBits=1024))
+    # dataset.cluster_names = list(set(Chem.MolToSmiles(s) for s in list(scaffolds.values())))
+    # for scaffold in dataset.cluster_names:
+    #     fps.append(AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(scaffold), 2, nBits=1024))
+    dataset.cluster_names = dataset.names
+    for name in dataset.names:
+        fps.append(AllChem.GetMorganFingerprintAsBitVect(scaffolds[name], 2, nBits=1024))
 
     LOGGER.info(f"Reduced {len(dataset.names)} molecules to {len(dataset.cluster_names)}")
     LOGGER.info("Compute Tanimoto Coefficients")
 
     run(dataset, fps, method)
 
-    dataset.cluster_map = dict((name, Chem.MolToSmiles(scaffolds[name])) for name in dataset.names)
+    dataset.cluster_map = {name: name for name in dataset.names}
+    dataset.cluster_weights = {name: 1 for name in dataset.names}
+

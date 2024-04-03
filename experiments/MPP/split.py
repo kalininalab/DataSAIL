@@ -49,7 +49,7 @@ def split_w_datasail(base_path: Path, name: str, techniques: List[str], solver: 
         techniques=techniques,
         splits=[8, 2],
         names=["train", "test"],
-        runs=1,
+        runs=5,
         solver=solver,
         e_type="M",
         e_data=dict(df[["ID", "SMILES"]].values.tolist()),
@@ -164,8 +164,8 @@ def split(full_path, name, solver="GUROBI"):
     Split the MoleculeNet datasets using different techniques.
     """
     split_w_datasail(full_path / "datasail" / name, name, techniques=["I1e", "C1e"], solver=solver)
-    split_w_deepchem(full_path / "deepchem" / name, name, techniques=SPLITTERS.keys())
-    split_w_lohi(full_path / "lohi" / name, name)
+    # split_w_deepchem(full_path / "deepchem" / name, name, techniques=SPLITTERS.keys())
+    # split_w_lohi(full_path / "lohi" / name, name)
 
 
 def specific():
@@ -182,9 +182,9 @@ def specific():
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         specific()
-    if len(sys.argv) == 2:
+    elif len(sys.argv) == 2:
         split_all(Path(sys.argv[1]))
-    elif len(sys.argv) >= 3:
+    elif len(sys.argv) == 3:
         split(Path(sys.argv[1]), sys.argv[2])
     elif len(sys.argv) >= 4:
         split(Path(sys.argv[1]), sys.argv[2], sys.argv[3])
