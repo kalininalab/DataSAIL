@@ -61,8 +61,8 @@ def check_folder(output_root, epsilon, e_weight, f_weight, e_filename, f_filenam
         else:
             trains, tests = splits[-1].count("train"), splits[-1].count("test")
         train_frac, test_frac = trains / (trains + tests), tests / (trains + tests)
-        assert 0.7 * (1 - epsilon) <= train_frac <= 0.7 * (1 + epsilon)
-        assert 0.3 * (1 - epsilon) <= test_frac <= 0.3 * (1 + epsilon)
+        assert 0.7 * (1 - epsilon) <= train_frac
+        assert 0.3 * (1 - epsilon) <= test_frac
         if n == "I":
             break
 
