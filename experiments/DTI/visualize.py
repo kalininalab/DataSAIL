@@ -15,9 +15,100 @@ from sklearn.manifold import TSNE
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from datasail.reader import read
+from datasail.reader.utils import DataSet
+from datasail.cluster.diamond import run_diamond
+from datasail.cluster.ecfp import run_ecfp
+from experiments.ablation import david
 from datasail.settings import *
 from experiments.utils import USE_UMAP, embed_smiles, COLORS, set_subplot_label, embed_sequence, TECHNIQUES, \
     DRUG_TECHNIQUES, PROTEIN_TECHNIQUES
+
+
+def comp_il():
+    output = {}
+    df = pd.read_csv(Path(__file__).parent / "lppdbbind" / "dataset" / "LP_PDBBind.csv")
+    df.rename(columns={"Unnamed: 0": "ids"}, inplace=True)
+    print(df.head())
+    
+    if Path("lig.pkl").exists():
+        with open("lig.pkl", "rb") as f:
+            lig_dataset = pickle.load(f)
+        print("Loaded pickled ligands")
+    else:
+        lig_dataset = DataSet(
+            type="M",
+            names=df["ids"].tolist(),
+            data=dict(df[["ids", "smiles"]].values.tolist()),
+            id_map={x: x for x in df["ids"].tolist()},
+        )
+        run_ecfp(lig_dataset)
+        print(lig_dataset.cluster_similarity.shape)
+        with open("lig.pkl", "wb") as f:
+            pickle.dump(lig_dataset, f)
+    
+    if Path("tar.pkl").exists():
+        with open("tar.pkl", "rb") as f:
+            tar_dataset = pickle.load(f)
+        print("Loaded pickled targets")
+    else:
+        tar_dataset = DataSet(
+            type="P",
+            names = df["ids"].tolist(),
+            data=dict(df[["ids", "seq"]].values.tolist()),
+            id_map={x: x for x in df["ids"].tolist()},
+        )
+        run_diamond(tar_dataset)
+        print(tar_dataset.cluster_similarity.shape)
+        with open("tar.pkl", "wb") as f:
+            pickle.dump(tar_dataset, f)
+    
+    output["lig_sim"] = np.sum(lig_dataset.cluster_similarity)
+    output["tar_sim"] = np.sum(tar_dataset.cluster_similarity)
+
+    print(len(lig_dataset.cluster_names))
+    print(lig_dataset.cluster_similarity.shape)
+    print(len(tar_dataset.cluster_names))
+    print(tar_dataset.cluster_similarity.shape)
+
+    root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "DTI" / "datasail"
+    for tech in ["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2", "Fingerprint", "lohi", "graphpart"]:
+        if tech in ["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"]:
+            root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "DTI" / "datasail"
+        elif tech == "lohi":
+            root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v03" / "DTI" / "lohi"
+        elif tech == "graphpart":
+            root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v03" / "DTI" / "graphpart"
+        else:
+            root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v03" / "DTI" / "deepchem"
+
+        if tech in ["R", "I2", "C2"]:
+            dss = [(lig_dataset, "_lig"), (tar_dataset, "_tar")]
+        elif tech in ["I1e", "C1e", "Fingerprint", "lohi"]:
+            dss = [(lig_dataset, "_lig")]
+        elif tech in ["I1f", "C1f", "graphpart"]:
+            dss = [(tar_dataset, "_tar")]
+        else:
+            raise ValueError(f"Wrong technique: {tech}")
+        
+        for ds, n in dss:
+            name = tech + n
+            if name not in output:
+                output[name] = []
+            for run in range(5):
+                print(name, run, end="\t")
+                base = root / tech / f"split_{run}"
+                train_ids = pd.read_csv(base / "train.csv")["ids"]
+                test_ids = pd.read_csv(base / "test.csv")["ids"]
+                assi = np.array([1 if x in train_ids.values else -1 if x in test_ids.values else 0 for x in ds.cluster_names])
+                il, total = david.eval(
+                    assi.reshape(-1, 1),
+                    ds.cluster_similarity,
+                    [ds.cluster_weights[c] for c in ds.cluster_names],
+                )
+                print(il)
+                output[name].append((il, total))
+    with open("pdbbind.pkl", "wb") as f:
+        pickle.dump(output, f)
 
 
 def read_lp_pdbbind():
@@ -461,4 +552,6 @@ def plot(full_path: Path):
 
 
 if __name__ == '__main__':
-    plot(Path(sys.argv[1]))
+    # plot(Path(sys.argv[1]))
+    comp_il()
+

@@ -146,9 +146,9 @@ def split_w_graphpart(base_path: Path) -> None:
 
 def main(path):
     split_w_datasail(path, TECHNIQUES["datasail"])
-    split_w_deepchem(path, TECHNIQUES["deepchem"])
-    split_w_lohi(path)
-    split_w_graphpart(path)
+    # split_w_deepchem(path, TECHNIQUES["deepchem"])
+    # split_w_lohi(path)
+    # split_w_graphpart(path)
 
 
 if __name__ == '__main__':

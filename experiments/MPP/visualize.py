@@ -18,7 +18,7 @@ from experiments.utils import DATASETS, COLORS, set_subplot_label, HSPACE, METRI
     TECHNIQUES
 
 
-def compute_il(name, tools, techniques):
+def compute_il(name, tools, techniques, mode="M"):
     dataset = DATASETS[name][0](featurizer=dc.feat.DummyFeaturizer(), splitter=None)[1][0]
     df = dc2pd(dataset, name)
     dataset = DataSet(
@@ -32,35 +32,66 @@ def compute_il(name, tools, techniques):
     )
     # print(dataset.cluster_similarity.shape)
     output = {}
-    if "deepchem" in tools:
-        print("Use v0.3")
-        root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v03" / "MPP"
-    else:
-        print("Use v1.0")
-        root = Path("/") / "home" / "rjo21" / "Desktop" / "DataSAIL" / "v1.0_test"
-    for tool in tools:
-        if tool not in output:
-            output[tool] = {}
-        for technique in techniques:
-            # print(technique)
-            if technique not in TECHNIQUES[tool]:
-                continue
-            if technique not in output[tool]:
-                output[tool][technique] = []
-            for run in range(RUNS):
-                base = root / tool / name / technique / f"split_{run}"
-                train_ids = pd.read_csv(base / "train.csv")["ID"]
-                test_ids = pd.read_csv(base / "test.csv")["ID"]
-                df["assi"] = df["ID"].apply(lambda x: 1 if x in train_ids.values else -1 if x in test_ids.values else 0)
+    if mode == "S":
+        root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "Strat"
+        output["datasail"] = []
+        output["deepchem"] = []
+        for run in range(5):
+            for d in ["datasail", "deepchem"]:
+                if d == "datasail":
+                    base = root / d / "d_0.1_e_0.1" / f"split_{run}"
+                else:
+                    base = root / d / f"split_{run}"
+                train_ids = set(pd.read_csv(base / "train.csv")["SMILES"].values)
+                test_ids = set(pd.read_csv(base / "test.csv")["SMILES"].values)
+                df["assi"] = df["SMILES"].apply(lambda x: 1 if x in train_ids else -1 if x in test_ids else 0)
                 df.dropna(subset=["assi"], inplace=True)
-                il = david.eval(
+                il, total = david.eval(
                     df["assi"].to_numpy().reshape(-1, 1),
                     dataset.cluster_similarity,
                     [dataset.cluster_weights[c] for c in dataset.cluster_names],
                 )
-                output[tool][technique].append(il)
-                # print(output)
-                # break
+                print(il, total)
+                output[d].append((il, total))
+        with open("strat.pkl", "wb") as f:
+            pickle.dump(output, f)
+    else:
+        for tool in tools:
+            if tool not in output:
+                output[tool] = {}
+
+            for technique in techniques:
+                if tool == "datasail" and technique == "C1e":
+                    # print("Use v1.0")
+                    root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "MPP"
+                else:
+                    # print("Use v0.3")
+                    root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v03" / "MPP"
+    
+                # print(technique)
+                if technique not in TECHNIQUES[tool]:
+                    continue
+                if technique not in output[tool]:
+                    output[tool][technique] = []
+                for run in range(RUNS):
+                    base = root / tool / name / technique / f"split_{run}"
+                    train_ids = pd.read_csv(base / "train.csv")["ID"]
+                    test_ids = pd.read_csv(base / "test.csv")["ID"]
+                    df["assi"] = df["ID"].apply(lambda x: 1 if x in train_ids.values else -1 if x in test_ids.values else 0)
+                    # print(" 0:", np.sum(df["assi"].values == 0))
+                    # print(" 1:", np.sum(df["assi"].values == 1))
+                    # print("-1:", np.sum(df["assi"].values == -1))
+                    df.dropna(subset=["assi"], inplace=True)
+                    il, total = david.eval(
+                        df["assi"].to_numpy().reshape(-1, 1),
+                        dataset.cluster_similarity,
+                        [dataset.cluster_weights[c] for c in dataset.cluster_names],
+                    )
+                    # print("IL:", il)
+                    # print("To:", total)
+                    output[tool][technique].append(il)
+                    # print(output)
+                    # break
     return output
 
 
@@ -193,7 +224,9 @@ def comp_all_il():
             output[name] = compute_il(
                 name=name.lower(),
                 tools=["datasail", "deepchem", "lohi"],
-                techniques=["I1e", "C1e"] + TECHNIQUES["deepchem"] + TECHNIQUES["lohi"]
+                # tools=["datasail"],
+                techniques=["I1e", "C1e"] + TECHNIQUES["deepchem"] + TECHNIQUES["lohi"],
+                # techniques=["C1e"],
             )
             print(f"Computed for {name}")
         except Exception as e:
@@ -205,9 +238,10 @@ def comp_all_il():
 
 if __name__ == '__main__':
     # print("ESOL    :", compute_il("esol", ["datasail"], ["I1e", "C1e"]))
-    print("FreeSolv:", compute_il("freesolv", ["datasail"], ["I1e", "C1e"]))
-    print("FreeSolv:", compute_il("freesolv", ["deepchem", "lohi"], TECHNIQUES["deepchem"] + TECHNIQUES["lohi"]))
-    # comp_all_il()
+    # print("FreeSolv:", compute_il("freesolv", ["datasail"], ["I1e", "C1e"]))
+    # print("FreeSolv:", compute_il("freesolv", ["deepchem", "lohi"], TECHNIQUES["deepchem"] + TECHNIQUES["lohi"]))
+    comp_all_il()
+    # compute_il("tox21", [], [], mode="S")
     # compute_il("esol", ["datasail"], ["I1e", "C1e"])
     # plot_double(Path(sys.argv[1]), ["QM8", "Tox21"])
     # heatmap_plot(Path(sys.argv[1]))
