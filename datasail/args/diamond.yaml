@@ -1,0 +1,510 @@
+comp-based-stats:
+  description: composition based statistics mode (0-4)
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["--comp-based-stats"]
+
+masking:
+  description: masking algorithm (0, 1 (=tantan), seg)
+  type: str
+  cardinality: "?"
+  default: "1"
+  calls: ["--masking"]
+
+soft-masking:
+  description: soft masking (none=default, seg, tantan)
+  type: str
+  cardinality: "?"
+  default: "none"
+  calls: ["--soft-masking"]
+
+evalue:
+  description: maximum e-value to report alignments (default=0.001)
+  type: float
+  cardinality: "?"
+  default: 0.001
+  calls: ["--evalue"]
+
+motif-masking:
+  description: softmask abundant motifs (0/1)
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["--motif-masking"]
+
+approx-id:
+  description: minimum approx. identity% to report an alignment/to cluster sequences
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--approx-id"]
+
+ext:
+  description: Extension mode (banded-fast/banded-slow/full)
+  type: str
+  cardinality: "?"
+  default: "banded-fast"
+  calls: ["--ext"]
+
+max-target-seqs:
+  description: maximum number of target sequences to report alignments for (default=25)
+  type: int
+  cardinality: "?"
+  default: 25
+  calls: ["--max-target-seqs"]
+
+top:
+  description: report alignments within this percentage range of top alignment score (overrides --max-target-seqs)
+  type: int
+  cardinality: "?"
+  default: 100
+  calls: ["--top"]
+
+faster:
+  description: enable faster mode
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--faster"]
+
+fast:
+  description: enable fast mode
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--fast"]
+
+mid-sensitive:
+  description: enable mid-sensitive mode
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--mid-sensitive"]
+
+sensitive:
+  description: enable sensitive mode)
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--sensitive"]
+
+more-sensitive:
+  description: enable more sensitive mode
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--more-sensitive"]
+
+very-sensitive:
+  description: enable very sensitive mode
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--very-sensitive"]
+
+ultra-sensitive:
+  description: enable ultra sensitive mode
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--ultra-sensitive"]
+
+shapes:
+  description: number of seed shapes (default=all available)
+  type: int
+  cardinality: "?"
+  default: -1
+  calls: ["--shapes"]
+
+query:
+  description: input query file
+  type: str
+  cardinality: "?"
+  default: null
+  calls: ["--query"]
+
+strand:
+  description: query strands to search (both/minus/plus)
+  type: str
+  cardinality: "?"
+  default: "both"
+  calls: ["--strand"]
+
+unal:
+  description: report unaligned queries (0=no, 1=yes)
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["--unal"]
+
+max-hsps:
+  description: maximum number of HSPs per target sequence to report for each query (default=1)
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["--max-hsps"]
+
+range-culling:
+  description: restrict hit culling to overlapping query ranges
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--range-culling"]
+
+compress:
+  description: compression for output files (0=none, 1=gzip, zstd)
+  type: str
+  cardinality: "?"
+  default: "0"
+  calls: ["--compress"]
+
+min-score:
+  description: minimum bit score to report alignments (overrides e-value setting)
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--min-score"]
+
+id:
+  description: minimum identity% to report an alignment
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--id"]
+
+query-cover:
+  description: minimum query cover% to report an alignment
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--query-cover"]
+
+subject-cover:
+  description: minimum subject cover% to report an alignment
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--subject-cover"]
+
+swipe:
+  description: exhaustive alignment against all database sequences
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--swipe"]
+
+iterate:
+  description: iterated search with increasing sensitivity
+  type: bool
+  cardinality: "0"
+  default: true
+  calls: ["--iterate"]
+
+global-ranking:
+  description: number of targets for global ranking
+  type: int
+  cardinality: "?"
+  default: -1
+  calls: ["--global-ranking"]
+
+block-size:
+  description: sequence block size in billions of letters (default=2.0)
+  type: float
+  cardinality: "?"
+  default: 2.0
+  calls: ["--block-size"]
+
+index-chunks:
+  description: number of chunks for index processing (default=4)
+  type: int
+  cardinality: "?"
+  default: 4
+  calls: ["--index-chunks"]
+
+parallel-tmpdir:
+  description: directory for temporary files used by multiprocessing
+  type: str
+  cardinality: "?"
+  default: "parallel_diamond"
+  calls: ["--parallel-tmpdir"]
+
+gapopen:
+  description: gap open penalty
+  type: int
+  cardinality: "?"
+  default: 10
+  calls: ["--gapopen"]
+
+gapextend:
+  description: gap extension penalty
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["--gapextend"]
+
+matrix:
+  description: score matrix for protein alignment (default=BLOSUM62)
+  type: str
+  cardinality: "?"
+  default: "BLOSUM62"
+  calls: ["--matrix"]
+
+custom-matrix:
+  description: file containing custom scoring matrix
+  type: str
+  cardinality: "?"
+  default: null
+  calls: ["--custom-matrix"]
+
+frameshift:
+  description: frame shift penalty (default=disabled)
+  type: str
+  cardinality: "?"
+  default: "disabled"
+  calls: ["--frameshift"]
+
+long-reads:
+  description: short for --range-culling --top 10 -F 15
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--long-reads"]
+
+no-self-hits:
+  description: suppress reporting of identical self-hits
+  type: bool
+  cardinality: "0"
+  default: true
+  calls: ["--no-self-hits"]
+
+skip-missing-seqids:
+  description: ignore accessions missing in the database
+  type: bool
+  cardinality: "0"
+  default: true
+  calls: ["--skip-missing-seqids"]
+
+file-buffer-size:
+  description: file buffer size in bytes (default=67108864)
+  type: int
+  cardinality: "?"
+  default: 67108864
+  calls: ["--file-buffer-size"]
+
+bin:
+  description: number of query bins for seed search
+  type: int
+  cardinality: "?"
+  default: 16
+  calls: ["--bin"]
+
+ext-chunk-size:
+  description: chunk size for adaptive ranking (default=auto)
+  type: str
+  cardinality: "?"
+  default: "auto"
+  calls: ["--ext-chunk-size"]
+
+dbsize:
+  description: effective database size (in letters)
+  type: str
+  cardinality: "?"
+  default: null
+  calls: ["--dbsize"]
+
+tantan-minMaskProb:
+  description: minimum repeat probability for masking (default=0.9)
+  type: float
+  cardinality: "?"
+  default: 0.9
+  calls: ["--tantan-minMaskProb"]
+
+algo:
+  description: Seed search algorithm (0=double-indexed/1=query-indexed/ctg=contiguous-seed)
+  type: str
+  cardinality: "?"
+  default: "0"
+  calls: ["--algo"]
+
+min-orf:
+  description: ignore translated sequences without an open reading frame of at least this length
+  type: int
+  cardinality: "?"
+  default: 1
+  calls: ["-l", "--min-orf"]
+
+seed-cut:
+  description: cutoff for seed complexity
+  type: float
+  cardinality: "?"
+  default: 0.8
+  calls: ["--seed-cut"]
+
+freq-masking:
+  description: mask seeds based on frequency
+  type: float
+  cardinality: "?"
+  default: 1.0
+  calls: ["--freq-masking"]
+
+freq-sd:
+  description: number of standard deviations for ignoring frequent seeds
+  type: int
+  cardinality: "?"
+  default: 50
+  calls: ["--freq-sd"]
+
+id2:
+  description: minimum number of identities for stage 1 hit
+  type: int
+  cardinality: "?"
+  default: 0
+  calls: ["--id2"]
+
+gapped-filter-evalue:
+  description: E-value threshold for gapped filter (auto)
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["--gapped-filter-evalue"]
+
+band:
+  description: band for dynamic programming computation
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["--band"]
+
+shape-mask:
+  description: seed shapes
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["--shape-mask"]
+
+multiprocessing:
+  description: enable distributed-memory parallel processing
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--multiprocessing"]
+
+mp-init:
+  description: initialize multiprocessing run
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--mp-init"]
+
+mp-recover:
+  description: enable continuation of interrupted multiprocessing run
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--mp-recover"]
+
+mp-query-chunk:
+  description: process only a single query chunk as specified
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--mp-query-chunk"]
+
+culling-overlap:
+  description: minimum range overlap with a higher-scoring hit to delete a hit (default=50%)
+  type: str
+  cardinality: "?"
+  default: "50%"
+  calls: ["--culling-overlap"]
+
+taxon-k:
+  description: maximum number of targets to report per species
+  type: int
+  cardinality: "?"
+  default: -1
+  calls: ["--taxon-k"]
+
+range-cover:
+  description: percentage of query range to be covered for range culling (default=50%)
+  type: str
+  cardinality: "?"
+  default: "50%"
+  calls: ["--range-cover"]
+
+stop-match-score:
+  description: Set the match score of stop codons against each other.
+  type: float
+  cardinality: "?"
+  default: -1
+  calls: ["--stop-match-score"]
+
+target-indexed:
+  description: Enable target-indexed mode
+  type: bool
+  cardinality: "0"
+  default: false
+  calls: ["--target-indexed"]
+
+window:
+  description: window size for local hit search
+  type: int
+  cardinality: "?"
+  default: 10
+  calls: ["--window"]
+
+ungapped-score:
+  description: minimum alignment score to continue local extension
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["--ungapped-score"]
+
+hit-band:
+  description: band for hit verification
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["--hit-band"]
+
+hit-score:
+  description: minimum score to keep a tentative alignment
+  type: float
+  cardinality: "?"
+  default: 0.0
+  calls: ["--hit-score"]
+
+gapped-xdrop:
+  description: xdrop for gapped alignment in bits
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["--gapped-xdrop"]
+
+rank-ratio2:
+  description: include subjects within this ratio of the last hit (stage 2)
+  type: float
+  cardinality: "?"
+  default: 1000000.0
+  calls: ["--rank-ratio2"]
+
+rank-ratio:
+  description: include subjects within this ratio of the last hit
+  type: float
+  cardinality: "?"
+  default: 1000000.0
+  calls: ["--rank-ratio"]
+
+lambda:
+  description: lambda parameter for custom matrix
+  type: str
+  cardinality: "?"
+  default: ""
+  calls: ["--lambda"]
+
+K:
+  description: K parameter for custom matrix
+  type: str
+  cardinality: "?"
+  default: null
+  calls: ["--K"]

@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Dict, Tuple, List, Union
 import math
@@ -18,19 +17,13 @@ node_encoding = {
 }
 
 
-def run_wlk(dataset: DataSet, n_iter: int = 4) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_wlk(dataset: DataSet, n_iter: int = 4) -> None:
     """
     Run Weisfeiler-Lehman kernel-based cluster on the input. As a result, every molecule will form its own cluster
 
     Args:
         dataset: The dataset to compute pairwise, elementwise similarities for
         n_iter: number of iterations in Weisfeiler-Lehman kernels
-
-    Returns:
-        A tuple containing
-          - the names of the clusters (cluster representatives)
-          - the mapping from cluster members to the cluster names (cluster representatives)
-          - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
     if dataset.type != "M":
         raise ValueError("ECFP with Tanimoto-scores can only be applied to molecular data.")
@@ -44,10 +37,9 @@ def run_wlk(dataset: DataSet, n_iter: int = 4) -> Tuple[List[str], Dict[str, str
         graphs = [mol_to_grakel(MolFromSmiles(dataset.data[name])) for name in dataset.names]
 
     # compute similarity metric and the mapping from element names to cluster names
-    cluster_sim = run_wl_kernel(graphs, n_iter)
-    cluster_map = dict((name, name) for name in dataset.names)
-
-    return dataset.names, cluster_map, cluster_sim
+    dataset.cluster_names = dataset.names
+    dataset.cluster_similarity = run_wl_kernel(graphs, n_iter)
+    dataset.cluster_map = dict((name, name) for name in dataset.names)
 
 
 def run_wl_kernel(graph_list: List[Graph], n_iter=4) -> np.ndarray:

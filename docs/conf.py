@@ -21,11 +21,12 @@ extensions = [
     "sphinx.ext.githubpages",
     "nbsphinx",
     "nbsphinx_link",
+    "IPython.sphinxext.ipython_console_highlighting"
 ]
 
 autosummary_generate = True
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "_templates"]
+exclude_patterns = ["_build", "_templates", "**.ipynb_checkpoints"]
 
 source_suffix = ".rst"
 master_doc = "index"
@@ -43,9 +44,8 @@ doctest_default_flags = doctest.NORMALIZE_WHITESPACE
 autodoc_member_order = "bysource"
 intersphinx_mapping = {
     "python": ("https://docs.python.org/", None),
-    "numpy": ("http://docs.scipy.org/doc/numpy", None),
-    # "networkx": ("http://pandas.pydata.org/pandas-docs/dev", None),
-    # "rdkit": ("http://pandas.pydata.org/pandas-docs/dev", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    # "numpy": ("http://docs.scipy.org/doc/numpy", None),
 }
 
 html_theme_options = {

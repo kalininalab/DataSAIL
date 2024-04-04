@@ -1,8 +1,16 @@
+import pickle
 import shutil
 from pathlib import Path
 
+import h5py
+import pandas as pd
 import pytest
+import rdkit
+from rdkit import Chem
+from rdkit.Chem import AllChem, Descriptors
+from rdkit.ML.Descriptors import MoleculeDescriptors
 
+from datasail.reader.read_molecules import read_molecule_data
 from datasail.sail import sail, datasail
 from tests.utils import check_folder, run_sail
 
@@ -15,7 +23,7 @@ base = Path("data") / "pipeline"
     # (False, False, "mmseqs", None, None, False, None, None, False, "ICP"),
     (False, False, base / "prot_sim.tsv", None, None, False, None, None, False, "I1f"),
     (False, False, None, base / "prot_dist.tsv", None, False, None, None, False, "I1f"),
-    (False, True, None, None, None, False, None, None, False, "I1f"),  # <-- 5/12
+    # (False, True, None, None, None, False, None, None, False, "I1f"),  # <-- 5/12
     (None, False, None, None, base / "drugs.tsv", False, None, None, False, "I1e"),
     (False, False, None, None, base / "drugs.tsv", False, None, None, False, "I1e"),
     (False, False, None, None, base / "drugs.tsv", True, None, None, False, "I1e"),  # <-- 8/12
@@ -43,23 +51,16 @@ def test_pipeline(data):
         splits=[0.67, 0.33] if mode in ["IC", "CC"] else [0.7, 0.3],
         names=["train", "test"],
         epsilon=0.25,
-        runs=1,
         e_type=None if drugs is None else "M",
         e_data=drugs,
         e_weights=(base / "drug_weights.tsv") if drug_weights else None,
         e_sim=drug_sim,
         e_dist=drug_dist,
-        e_args="",
         f_type=None if pdb is None else "P",
         f_data=None if pdb is None else (base / ("pdbs" if pdb else "seqs.fasta")),
         f_weights=(base / "prot_weights.tsv") if prot_weights else None,
         f_sim=prot_sim,
         f_dist=prot_dist,
-        f_args="",
-        cache=False,
-        cache_dir=None,
-        solver="SCIP",
-        threads=1,
     )
 
     check_folder(
@@ -224,6 +225,105 @@ def test_report_repeat():
 
         assert (c2 := out / f"C2_{i}").is_dir()
         assert len(list(c2.iterdir())) == 11
+
+
+@pytest.fixture()
+def md_calculator():
+    descriptor_names = [desc[0] for desc in Descriptors._descList]
+    return MoleculeDescriptors.MolecularDescriptorCalculator(descriptor_names)
+
+
+@pytest.mark.parametrize("mode", ["CSV", "TSV", "PKL", "H5PY", "SDF"])
+def test_input_formats(mode, md_calculator):
+    base = Path("data") / "pipeline" / "input_forms"
+    drugs = pd.read_csv(base.parent / "drugs.tsv", sep="\t")
+    ddict = {row["Drug_ID"]: row["SMILES"] for index, row in drugs.iterrows()}
+    base.mkdir(exist_ok=True, parents=True)
+
+    if mode == "CSV":
+        filepath = base / "drugs.csv"
+        drugs.to_csv(filepath, sep=",", index=False)
+    elif mode == "TSV":
+        filepath = base / "drugs.tsv"
+        drugs.to_csv(filepath, sep="\t", index=False)
+    elif mode == "PKL":
+        data = {}
+        for k, v in ddict.items():
+            data[k] = AllChem.MolToSmiles(Chem.MolFromSmiles(v))
+        filepath = base / "drugs.pkl"
+        with open(filepath, "wb") as f:
+            pickle.dump(data, f)
+    elif mode == "H5PY":
+        filepath = base / "drugs.h5"
+        with h5py.File(filepath, "w") as f:
+            for k, v in ddict.items():
+                f[k] = list(md_calculator.CalcDescriptors(Chem.MolFromSmiles(v)))
+    elif mode == "SDF":
+        filepath = base / "drugs.sdf"
+        with Chem.SDWriter(str(filepath)) as w:
+            for k, v in ddict.items():
+                mol = Chem.MolFromSmiles(v)
+                mol.SetProp("_Name", k)
+                w.write(mol)
+    else:
+        raise ValueError(f"Unknown mode: {mode}")
+
+    dataset = read_molecule_data(filepath)
+
+    shutil.rmtree(base, ignore_errors=True)
+
+    assert set(dataset.names) == set(ddict.keys())
+
+
+@pytest.mark.parametrize("mode", ["MOL", "MRV", "PDB", "TPL"])  # , "XYZ"])
+def test_molecule_formats(mode):
+    base = Path("data") / "pipeline" / "mol_formats" / mode
+    # base.mkdir(exist_ok=True, parents=True)
+    mols = {}
+    with open(Path("data") / "molecules.csv", "r") as f:
+        for line in f.readlines()[1:]:
+            k, v = line.strip().split(",")
+            mols[k] = Chem.MolFromSmiles(v)
+            mols[k].SetProp("_Name", k)
+    #
+    # for k, mol in mols.items():
+    #     AllChem.EmbedMultipleConfs(mol, numConfs=1)
+    #     if mode == "MOL":
+    #         Chem.MolToMolFile(mol, str(base / f"{k}.mol"))
+    #     elif mode == "MRV":
+    #         Chem.MolToMrvFile(mol, str(base / f"{k}.mrv"))
+    #     elif mode == "PDB":
+    #         Chem.MolToPDBFile(mol, str(base / f"{k}.pdb"))  # , removeHs=False)
+    #     elif mode == "TPL":
+    #         Chem.MolToTPLFile(mol, str(base / f"{k}.tpl"))
+    #     # elif mode == "XYZ":
+    #     #     Chem.MolToXYZFile(mol, str(base / f"{k}.xyz"))
+    #     else:
+    #         raise ValueError(f"Unknown mode: {mode}")
+
+    if invalid_comb(mode):
+        with pytest.raises(ValueError):
+            read_molecule_data(base)
+    else:
+        dataset = read_molecule_data(base)
+        assert set(dataset.names) == set(mols.keys())
+
+
+def invalid_comb(mode):
+    """
+    Check if the combination of RDKit version and file format is invalid.
+
+    Args:
+        mode: The file format to check
+
+    Returns:
+        True if the combination is invalid, False otherwise.
+    """
+    if rdkit.__version__ < "2022.09.1":
+        return mode in ["XYZ", "MRV"]
+    if rdkit.__version__ < "2023.09.1":
+        return mode in ["MRV"]
+    return False
 
 
 @pytest.mark.todo

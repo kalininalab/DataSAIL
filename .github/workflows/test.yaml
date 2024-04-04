@@ -9,10 +9,14 @@ on:
     branches:
       - main
       - dev
+      - dev_1.0
+      - dev_1.0_weighting
   pull_request:
     branches:
       - main
       - dev
+      - dev_1.0
+      - dev_1.0_weighting
   workflow_dispatch:  # make is manually start-able
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -21,10 +25,10 @@ jobs:
   test:
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Setup Mamba
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: '3.10'
           miniforge-variant: Mambaforge
@@ -35,7 +39,7 @@ jobs:
       - name: Install environment
         shell: bash -l {0}
         run: |
-          mamba install -c conda-forge -c bioconda -y numpy pandas networkx matplotlib pytest setuptools pyscipopt"<4.0.0" foldseek mmseqs2 cd-hit mash tmalign cvxpy pytest-cov rdkit">=2022.09.1" pytest-cases scikit-learn pyyaml
+          mamba install -c conda-forge -c bioconda -y numpy pandas networkx matplotlib pytest setuptools pyscipopt"<4.0.0" foldseek mmseqs2 cd-hit mash tmalign diamond cvxpy pytest-cov rdkit">=2023.09.1" pytest-cases scikit-learn pyyaml h5py
           pip install grakel
         
       - name: Run tests

@@ -4,7 +4,7 @@ import operator
 import sys
 from pathlib import Path
 
-from typing import List, Optional, Union, Tuple, Collection, Dict, Callable
+from typing import List, Optional, Union, Tuple, Dict, Callable
 
 import cvxpy
 from cvxpy import Variable
@@ -12,7 +12,7 @@ from cvxpy.constraints.constraint import Constraint
 import numpy as np
 
 from datasail.settings import LOGGER, SOLVER_CPLEX, SOLVER_XPRESS, SOLVER_SCIP, SOLVER_MOSEK, \
-    SOLVER_GUROBI, SOLVERS, NOT_ASSIGNED
+    SOLVER_GUROBI, SOLVERS, NOT_ASSIGNED, SOLVER_GLPK_MI, SOLVER_CBC
 
 
 def compute_limits(epsilon: float, total: int, splits: List[float]) -> List[float]:
@@ -27,7 +27,30 @@ def compute_limits(epsilon: float, total: int, splits: List[float]) -> List[floa
     Returns:
         lower and upper limits for the splits
     """
-    return [int((split - epsilon) * total) for split in splits]
+    return [int(split * (1 - epsilon) * total) for split in splits]
+
+
+def stratification_constraints(
+        s_matrix: np.ndarray,
+        splits: List[float],
+        delta: float,
+        x: Variable,
+) -> Constraint:
+    """
+    Generate the stratification constraints for the given dataset.
+
+    Args:
+        s_matrix: Stratification matrix for the entities
+        splits: list of splitting fractions
+        delta: Additive bound for stratification imbalance
+        x: Optimization variables
+
+    Returns:
+        A constraint checking the lower bound for each pair of split and class
+    """
+    c = np.sum(s_matrix, axis=0)
+    slbo = np.array([[c[e] * split * (1 - delta) for e in range(s_matrix.shape[1])] for split in splits])
+    return (x * s_matrix) >= slbo
 
 
 class LoggerRedirect:
@@ -52,17 +75,13 @@ class LoggerRedirect:
         if self.silent:
             return
         for name, logger in logging.root.manager.loggerDict.items():
-            if isinstance(logger, logging.Logger) and len(logger.handlers) > 0:
+            if hasattr(logger, "handlers") and len(logger.handlers) != 0:
                 for handler in logger.handlers:
-                    if not hasattr(handler, "stream"):
-                        continue
-                    if handler.stream.name == "<stdout>":
-                        if name not in self.disabled:
-                            self.disabled[name] = []
-                        self.disabled[name].append(handler)
-                if name in self.disabled:
-                    for handler in self.disabled[name]:
-                        logger.removeHandler(handler)
+                    if name not in self.disabled:
+                        self.disabled[name] = []
+                    self.disabled[name].append(handler)
+                for handler in self.disabled[name]:
+                    logger.removeHandler(handler)
                 logger.addHandler(self.file_handler)
         sys.stdout = self.file_handler.stream
 
@@ -85,7 +104,7 @@ class LoggerRedirect:
         sys.stdout = self.old_stdout
 
 
-def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path) -> Optional[cvxpy.Problem]:
+def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path, num_threads: int = 14) -> Optional[cvxpy.Problem]:
     """
     Minimize the loss function based on the constraints with the timelimit specified by max_sec.
 
@@ -95,6 +114,7 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path) ->
         max_sec: Maximal number of seconds to optimize the initial solution
         solver: Solving algorithm to use to solve the formulated program
         log_file: File to store the detailed log from the solver to
+        num_threads: Number of threads to use for the solver
 
     Returns:
         The problem object after solving. None if the problem could not be solved.
@@ -105,19 +125,51 @@ def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path) ->
         f"The problem has {sum([functools.reduce(operator.mul, v.shape, 1) for v in problem.variables()])} variables "
         f"and {sum([functools.reduce(operator.mul, c.shape, 1) for c in problem.constraints])} constraints.")
 
-    if solver == SOLVER_SCIP:
-        kwargs = {"scip_params": {"limits/time": max_sec}}
+    if solver == SOLVER_CBC:
+        kwargs = {
+            "maximumSeconds": max_sec,
+            "numberThreads": num_threads,
+        }
     elif solver == SOLVER_CPLEX:
-        kwargs = {"cplex_params": {}}
+        # TODO: Find valid license and activate it (free version has problem size limits)
+        kwargs = {"cplex_params": {
+            "timelimit": max_sec,
+            "threads": num_threads,
+            "mip.display": 0,
+        }}
+    elif solver == SOLVER_GLPK_MI:
+        kwargs = {
+            "tm_lim": max_sec,
+            "threads": num_threads,
+        }
     elif solver == SOLVER_GUROBI:
-        kwargs = {"gurobi_params": {}}
+        kwargs = {
+            "TimeLimit": max_sec,
+            "LogToConsole": 0,
+            "Threads": num_threads,
+            "MemLimit": 800,  # [GB]
+        }
     elif solver == SOLVER_MOSEK:
         kwargs = {"mosek_params": {
             "MSK_DPAR_OPTIMIZER_MAX_TIME": max_sec,
-            "MSK_IPAR_NUM_THREADS": 14,
+            "MSK_IPAR_NUM_THREADS": num_threads,
+            "MSK_IPAR_LOG_SIM": 2,
+            "MSK_IPAR_LOG_SENSITIVITY": 0,
+        }}
+    elif solver == SOLVER_SCIP:
+        kwargs = {"scip_params": {
+            "limits/time": max_sec,
+            "display/verblevel": 2,
+            "lp/threads": num_threads,
+            "parallel/maxnthreads": num_threads
         }}
     elif solver == SOLVER_XPRESS:
-        kwargs = {"xpress_params": {}}
+        # TODO: find valid license and activate it
+        kwargs = {
+            "maxcuttime": max_sec,
+            "miplog": 0,
+            "concurrentthreads": num_threads,
+        }
     else:
         raise ValueError("Unknown solver error")
     with LoggerRedirect(log_file):
@@ -173,57 +225,57 @@ def sample_categorical(
     return output
 
 
-def generate_baseline(
-        splits: List[float],
-        weights: Union[np.ndarray, List[float]],
-        similarities: Optional[np.ndarray],
-        distances: Optional[np.ndarray],
-) -> float:
-    """
-    Generate a baseline solution for the double-cold splitting problem.
-
-    Args:
-        splits: List of relative sizes of the splits
-        weights: List of weights of the entities
-        similarities: Pairwise similarity matrix of entities in the order of their names
-        distances: Pairwise distance matrix of entities in the order of their names
-
-    Returns:
-        The amount of information leakage in a random double-cold splitting
-    """
-    indices = sorted(list(range(len(weights))), key=lambda i: -weights[i])
-    max_sizes = np.array(splits) * sum(weights)
-    sizes = [0] * len(splits)
-    assignments = [-1] * len(weights)
-    oh_val, oh_idx = float("inf"), -1
-    for idx in indices:
-        for s in range(len(splits)):
-            if sizes[s] + weights[idx] <= max_sizes[s]:
-                assignments[idx] = s
-                sizes[s] += weights[idx]
-                break
-            elif (sizes[s] + weights[idx]) / max_sizes[s] < oh_val:
-                oh_val = (sizes[s] + weights[idx]) / max_sizes[s]
-                oh_idx = s
-        if assignments[idx] == -1:
-            assignments[idx] = oh_idx
-            sizes[oh_idx] += weights[idx]
-    x = np.zeros((len(assignments), max(assignments) + 1))
-    x[np.arange(len(assignments)), assignments] = 1
-    ones = np.ones((1, len(weights)))
-
-    if distances is not None:
-        hit_matrix = np.sum([np.maximum(
-            (np.expand_dims(x[:, s], axis=1) @ ones) + (np.expand_dims(x[:, s], axis=1) @ ones).T - (ones.T @ ones), 0)
-                             for s in range(len(splits))], axis=0)
-        leak_matrix = np.multiply(hit_matrix, distances)
-    else:
-        hit_matrix = np.sum(
-            [((np.expand_dims(x[:, s], axis=1) @ ones) - (np.expand_dims(x[:, s], axis=1) @ ones).T) ** 2 for s in
-             range(len(splits))], axis=0) / (len(splits) - 1)
-        leak_matrix = np.multiply(hit_matrix, similarities)
-
-    return float(np.sum(leak_matrix))
+# def generate_baseline(
+#         splits: List[float],
+#         weights: Union[np.ndarray, List[float]],
+#         similarities: Optional[np.ndarray],
+#         distances: Optional[np.ndarray],
+# ) -> float:
+#     """
+#     Generate a baseline solution for the double-cold splitting problem.
+#
+#     Args:
+#         splits: List of relative sizes of the splits
+#         weights: List of weights of the entities
+#         similarities: Pairwise similarity matrix of entities in the order of their names
+#         distances: Pairwise distance matrix of entities in the order of their names
+#
+#     Returns:
+#         The amount of information leakage in a random double-cold splitting
+#     """
+#     indices = sorted(list(range(len(weights))), key=lambda i: -weights[i])
+#     max_sizes = np.array(splits) * sum(weights)
+#     sizes = [0] * len(splits)
+#     assignments = [-1] * len(weights)
+#     oh_val, oh_idx = float("inf"), -1
+#     for idx in indices:
+#         for s in range(len(splits)):
+#             if sizes[s] + weights[idx] <= max_sizes[s]:
+#                 assignments[idx] = s
+#                 sizes[s] += weights[idx]
+#                 break
+#             elif (sizes[s] + weights[idx]) / max_sizes[s] < oh_val:
+#                 oh_val = (sizes[s] + weights[idx]) / max_sizes[s]
+#                 oh_idx = s
+#         if assignments[idx] == -1:
+#             assignments[idx] = oh_idx
+#             sizes[oh_idx] += weights[idx]
+#     x = np.zeros((len(assignments), max(assignments) + 1))
+#     x[np.arange(len(assignments)), assignments] = 1
+#     ones = np.ones((1, len(weights)))
+#
+#     if distances is not None:
+#         hit_matrix = np.sum([np.maximum((np.expand_dims(x[:, s], axis=1) @ ones) +
+#                                         (np.expand_dims(x[:, s], axis=1) @ ones).T -
+#                                         (ones.T @ ones), 0) for s in range(len(splits))], axis=0)
+#         leak_matrix = np.multiply(hit_matrix, distances)
+#     else:
+#         hit_matrix = np.sum(
+#             [((np.expand_dims(x[:, s], axis=1) @ ones) - (np.expand_dims(x[:, s], axis=1) @ ones).T) ** 2 for s in
+#              range(len(splits))], axis=0) / (len(splits) - 1)
+#         leak_matrix = np.multiply(hit_matrix, similarities)
+#
+#     return float(np.sum(leak_matrix))
 
 
 def interaction_contraints(
@@ -264,7 +316,6 @@ def interaction_contraints(
 
 
 def cluster_y_constraints(
-        uniform: bool,
         clusters: List[str],
         y: List[List[Variable]],
         x: Variable,
@@ -274,7 +325,6 @@ def cluster_y_constraints(
     Generate constraints for the helper variables y in the cluster-based double-cold splitting.
 
     Args:
-        uniform: Boolean flag if the cluster metric is uniform
         clusters: List of cluster names
         y: List of helper variables
         x: Optimization variables
@@ -283,8 +333,6 @@ def cluster_y_constraints(
     Returns:
         List of constraints for the helper variables y
     """
-    if uniform:
-        return []
     return [y[c1][c2] >= cvxpy.max(cvxpy.vstack([x[s, c1] - x[s, c2] for s in range(len(splits))]))
             for c1 in range(len(clusters)) for c2 in range(c1)]
 
@@ -342,9 +390,10 @@ def collect_results_2d(
 def leakage_loss(
         uniform: bool,
         intra_weights,
-        y,
+        x,
         clusters,
-        similarities
+        weights,
+        num_splits: int,
 ):
     """
     Compute the leakage loss for the cluster-based double-cold splitting.
@@ -352,9 +401,10 @@ def leakage_loss(
     Args:
         uniform: Boolean flag if the cluster metric is uniform
         intra_weights: Weights of the intra-cluster edges
-        y: Helper variables
+        x: Variables of the optimization problem
         clusters: List of cluster names
-        similarities: Pairwise similarity matrix of clusters in the order of their names
+        weights: Weights of the clusters
+        num_splits: Number of splits
 
     Returns:
         Loss describing the leakage between clusters
@@ -362,7 +412,8 @@ def leakage_loss(
     if uniform:
         return 0
     else:
-        tmp = [intra_weights[c1, c2] * y[c1][c2] for c1 in range(len(clusters)) for c2 in range(c1)]
-        e_loss = cvxpy.sum(tmp)
-        if similarities is None:
-            return -e_loss
+        # tmp = [intra_weights[c1, c2] * y[c1][c2] for c1 in range(len(clusters)) for c2 in range(c1)]
+        # e_loss = cvxpy.sum(tmp)
+        tmp = [[weights[e1] * weights[e2] * intra_weights[e1, e2] * cvxpy.max(cvxpy.vstack([x[s, e1] - x[s, e2] for s in range(num_splits)])) for e2 in range(e1 + 1, len(clusters))] for e1 in range(len(clusters))]
+        loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
+        return loss

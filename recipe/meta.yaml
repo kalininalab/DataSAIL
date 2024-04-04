@@ -1,6 +1,6 @@
 package:
   name: "datasail"
-  version: '0.2.2'
+  version: '1.0.0'
 
 source:
   path: ..
@@ -17,7 +17,7 @@ requirements:
     - setuptools_scm
     - pip
   run:
-    - python
+    - python>=3.8
     - numpy
     - pandas
     - networkx
@@ -31,12 +31,14 @@ requirements:
     - cd-hit
     - mash
     - tmalign
+    - diamond
     - cvxpy
     - pytest-cov
-    - rdkit>=2022.09.1
+    - rdkit
     - pytest-cases
     - pyyaml
     - cvxopt
+    - h5py
 
 about:
   home: https://github.com/kalininalab/DataSAIL

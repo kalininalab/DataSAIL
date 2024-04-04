@@ -23,11 +23,10 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
         if data_format == FORM_PDB:
             return FOLDSEEK, None
         elif data_format == FORM_FASTA:
-            # Check if cd-hit is installed or neither of cd-hit and mmseqs are
-            if INSTALLED[MMSEQS] or not INSTALLED[CDHIT]:
-                return MMSEQS, None
-            else:
-                return CDHIT, None
+            order = [MMSEQS2, CDHIT, DIAMOND, MMSEQSPP]
+            for method in order:
+                if INSTALLED[method]:
+                    return method, None
     if data_type == M_TYPE and data_format == FORM_SMILES:
         return ECFP, None
     if data_type == G_TYPE:
@@ -67,6 +66,7 @@ MMSEQS = "mmseqs"
 MMSEQS2 = "mmseqs2"
 MMSEQSPP = "mmseqspp"
 FOLDSEEK = "foldseek"
+DIAMOND = "diamond"
 CDHIT = "cdhit"
 CDHIT_EST = "cdhit_est"
 ECFP = "ecfp"
@@ -74,12 +74,18 @@ MASH = "mash"
 MASH_SKETCH = "mash_sketch"
 MASH_DIST = "mash_dist"
 TMALIGN = "tmalign"
-SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, ]
+TANIMOTO = "tanimoto"
+
+# List of all available algorithms
+SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND, ]
 DIST_ALGOS = [MASH, ]
 ALGOS = SIM_ALGOS + DIST_ALGOS
+
+# Check if the tools are installed
 INSTALLED = {
     CDHIT: shutil.which("cd-hit") is not None,
     CDHIT_EST: shutil.which("cd-hit-est") is not None,
+    DIAMOND: shutil.which("diamond") is not None,
     MMSEQS: shutil.which("mmseqs") is not None,
     MMSEQS2: shutil.which("mmseqs") is not None,
     MMSEQSPP: shutil.which("mmseqs") is not None,
@@ -87,6 +93,28 @@ INSTALLED = {
     FOLDSEEK: shutil.which("foldseek") is not None,
     TMALIGN: shutil.which("TMalign") is not None,
 }
+
+
+def format2ending(fmt: str) -> str:
+    """
+    Return the file ending for a specific format.
+
+    Args:
+        fmt: Format encoded as string
+
+    Returns:
+        File ending as string
+    """
+    if fmt in FASTA_FORMATS:
+        return "fasta"
+    if fmt == FORM_PDB:
+        return "pdb"
+    if fmt == FORM_SMILES:
+        return "csv"
+    if fmt == FORM_GENOMES:
+        return "fna"
+    return "txt"
+
 
 UNK_LOCATION = "unknown"
 P_TYPE = "P"
@@ -102,12 +130,14 @@ FORM_SMILES = "SMILES"
 NOT_ASSIGNED = "not selected"
 MAX_CLUSTERS = 50
 
+# YAML-files storing the arguments to the tools
 YAML_FILE_NAMES = {
     MMSEQS: "args/mmseqs2.yaml",
     MMSEQS2: "args/mmseqs2.yaml",
     MMSEQSPP: "args/mmseqspp.yaml",
     CDHIT: "args/cdhit.yaml",
     CDHIT_EST: "args/cdhit_est.yaml",
+    DIAMOND: "args/diamond.yaml",
     FOLDSEEK: "args/foldseek.yaml",
     ECFP: "args/.yaml",
     MASH: "args/mash.yaml",
@@ -118,7 +148,7 @@ YAML_FILE_NAMES = {
 KW_CACHE = "cache"
 KW_CACHE_DIR = "cache_dir"
 KW_CLI = "cli"
-KW_DATA = "data"
+KW_DELTA = "delta"
 KW_EPSILON = "epsilon"
 
 KW_E_ARGS = "e_args"
@@ -126,16 +156,20 @@ KW_E_DATA = "e_data"
 KW_E_DIST = "e_dist"
 KW_E_ID_MAP = "e_id_map"
 KW_E_WEIGHTS = "e_weights"
+KW_E_STRAT = "e_strat"
 KW_E_SIM = "e_sim"
 KW_E_TYPE = "e_type"
+KW_E_CLUSTERS = "e_clusters"
 
 KW_F_ARGS = "f_args"
 KW_F_DATA = "f_data"
 KW_F_DIST = "f_dist"
 KW_F_ID_MAP = "f_id_map"
 KW_F_WEIGHTS = "f_weights"
+KW_F_STRAT = "f_strat"
 KW_F_SIM = "f_sim"
 KW_F_TYPE = "f_type"
+KW_F_CLUSTERS = "f_clusters"
 
 KW_INTER = "inter"
 KW_LOGDIR = "logdir"
@@ -149,11 +183,57 @@ KW_SPLITS = "splits"
 KW_TECHNIQUES = "techniques"
 KW_THREADS = "threads"
 KW_VERBOSE = "verbosity"
+KW_LINKAGE = "linkage"
 
-SOLVER_SCIP = "SCIP"
+DEFAULT_KWARGS = {
+    KW_CACHE: False,
+    KW_CACHE_DIR: None,
+    KW_CLI: False,
+    KW_DELTA: 0.1,
+    KW_EPSILON: 0.1,
+
+    KW_E_ARGS: None,
+    KW_E_CLUSTERS: 50,
+    KW_E_DATA: None,
+    KW_E_DIST: None,
+    KW_E_ID_MAP: None,
+    KW_E_WEIGHTS: None,
+    KW_E_STRAT: None,
+    KW_E_SIM: None,
+    KW_E_TYPE: None,
+
+    KW_F_ARGS: None,
+    KW_F_CLUSTERS: 50,
+    KW_F_DATA: None,
+    KW_F_DIST: None,
+    KW_F_ID_MAP: None,
+    KW_F_WEIGHTS: None,
+    KW_F_STRAT: None,
+    KW_F_SIM: None,
+    KW_F_TYPE: None,
+
+    KW_INTER: None,
+    KW_LOGDIR: None,
+    KW_MAX_SEC: 1000,
+    KW_MAX_SOL: 1000,
+    KW_NAMES: ["train", "val", "test"],
+    KW_OUTDIR: None,
+    KW_RUNS: 1,
+    KW_SOLVER: "SCIP",
+    KW_SPLITS: [0.7, 0.2, 0.1],
+    KW_TECHNIQUES: None,
+    KW_THREADS: 1,
+    KW_VERBOSE: "E",
+    KW_LINKAGE: "average",
+}
+
+SOLVER_CBC = "CBC"
 SOLVER_CPLEX = "CPLEX"
+SOLVER_GLPK = "GLPK"
+SOLVER_GLPK_MI = "GLPK_MI"
 SOLVER_GUROBI = "GUROBI"
 SOLVER_MOSEK = "MOSEK"
+SOLVER_SCIP = "SCIP"
 SOLVER_XPRESS = "XPRESS"
 TEC_R = "R"
 SRC_ID = "I"
@@ -174,9 +254,10 @@ N_CLUSTERS = 10
 # 2 Hardly installable
 # 3 Not installable
 SOLVERS = {
-    # "CBC": cvxpy.CBC,  # extra: CBC
+    SOLVER_CBC: cvxpy.CBC,  # extra: CBC
     # "COPT": cvxpy.COPT,
-    # SOLVER_GLPK: cvxpy.GLPK_MI,  # not powerful enough
+    SOLVER_GLPK: cvxpy.GLPK_MI,
+    SOLVER_GLPK_MI: cvxpy.GLPK_MI,
     SOLVER_SCIP: cvxpy.SCIP,
     SOLVER_CPLEX: cvxpy.CPLEX,
     SOLVER_GUROBI: cvxpy.GUROBI,

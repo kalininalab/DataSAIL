@@ -1,30 +1,97 @@
-************
-Input format
-************
+#############
+Input formats
+#############
 
-DataSAIL has been designed to split biochemical datasets. Therefore, it accepts three different biochemical input
-entities, namely proteins, molecules, and genomic input (either RNA, DNA, or whole genomes).
+DataSAIL has been designed to split biochemical datasets but can be applied to any other type of data if the user can
+provide necessary information. Therefore, DataSAIL accepts different input formats as they are required by different
+types of data.
 
-There are two scenarios of splitting, either interaction data into a cold-double split or a set of entities into a
-single-cold split. In both cases, the entities must be represented either as sequences or as structures. How the
-concrete input has to look like is described in the following.
+CSV and TSV Files
+#################
 
-Data Input
-  - FASTA:
-    A simple fasta file with sequence headers and sequences. An exception is FASTA input to MASH for genomic data.
-    Here, the input has to be a folder of fasta files where each fasta file represents one genome. The identifier in
-    the FASTA files have to be free of whitespaces, otherwise, CD-HIT will have problem and might cause errors.
-  - PDB:
-    This has to be a folder with PDB files. All files not ending with :code:`.pdb` will be ignored.
-  - SMILES:
-    A TSV file with the molecule's ID in the first column and a SMILES string in the second column. Further columns
-    will be ignored.
-  - file:
-    Either a numpy array as a pickle file or a similarity/distance matrix in TSV format. In case of the TSV file, the
-    matrix has to be labeled with identifiers in both, a header row and the first column. If it is a pickle file, the
-    order has to be given as additional argument.
+.. _files-xsv-label:
 
-To now split the data, DataSAIL needs to get the data in one of the formats described above. In case of interaction
-data, both interacting entities need to be stored in either of these formats. In case of interaction data, you
-additionally have to provide the interactions between both entities as TSV file with a header and one interaction per
-row given by the two interacting IDs. Further columns will be ignored.
+The standard way to share data in an effective way are :code:`.csv` and :code:`.tsv` files. In DataSAIL, these formats
+are used to, e. g., transport data about molecules, weights of samples, or stratification. From these files, DataSAIL
+only reads the first two columns. The first column has to contain the names of the samples and the second row the
+according information (SMILES or FASTA string, weighting, stratification, ...). Also, the first row must be column
+names, therefore, DataSAIL ignores the first row. Examples are given in :code:`tests/data/pipline/drug.tsv` and
+:code:`tests/data/pipeline/drugs_weights.tsv`.
+
+But they are also used to ship similarity and distance matrices. An
+example is given in :code:`tests/data/pipeline/drug_sim.csv` and :code:`tests/data/pipeline/drug_dist.csv`. Here, the
+first row and column contain the names of the samples and the rest of the matrix the similarities or distances between
+the samples.
+
+CSV and TSV files can also be used to transport interactions. An example is given in
+:code:`tests/data/pipeline/inter.tsv`. Again, only the first two columns matter which specify which sample from the
+e-entity with which sample from the f-entity interacts.
+
+FASTA files
+###########
+
+.. _files-fasta-label:
+
+FASTA files are widely used for various biological inputs. DataSAIL recognizes all files that end with :code:`.fa`,
+:code:`.fna`, and :code:`.fasta` as FASTA files. In DataSAIL they are used to transport information about protein
+sequences, nucleotide sequences (e.g. DNA or RNA), and whole genomes.
+
+For Protein and Nucleotide Sequences
+====================================
+
+Sequence-based datasets are stored inside a single files. Each sequences must be identified with its name in a line
+starting with a :code:`>`. All following lines are concatenated to form the sequence until there is an empty line, the
+end of the file, or a line that starts with :code:`>` starting the next line. An example with protein sequences is
+given in :code:`tests/data/pipline/seqs.fasta`.
+
+For whole Genomes
+=================
+
+Genome input through FASTA files is a bit different to the format above. Here, each file contains all contigs, or reads
+of one sample and the dataset is represented by a folder. Examples are given in :code:`tests/data/genomes`.
+
+Pickle Files
+############
+
+.. _files-pickle-label:
+
+From version 1.0.0 on, DataSAIL can also take embeddings as input. Here, the pickle file has to contain a dictionary
+mapping the sample names to the embeddings. An example storing Morgan fingerprints of the molecules in
+:code:`tests/data/pipeline/drugs.tsv` in a pickle file is given in :code:`tests/data/pipeline/morgan.pkl`.
+
+HDF5 Files
+##########
+
+.. _files-hdf5-label:
+
+Also, from version 1.0.0 on, DataSAIL supports the :code:`.h5` format. This format is used to store large datasets in
+runtime and memory efficient way. Similar to Pickle files, the HDF5 file has to contain a dictionary mapping the sample
+names to the embeddings. An example storing Morgan fingerprints of the molecules in
+:code:`tests/data/pipeline/drugs.tsv` in a HDF5 file is given in :code:`tests/data/pipeline/morgan.h5`. To open and
+convert it to a dictionary, the following code can be used:
+
+.. code-block:: python
+
+    import h5py
+    import numpy as np
+
+    with h5py.File('tests/data/pipeline/morgan.h5', 'r') as f:
+        morgan = {k: np.array(v) for k, v in f.items()}
+
+Example code for creation and reading of Pickle and HDF5 files can be found in :code:`tests/data/pipeline/embed.py`.
+
+Molecular Input Files
+#####################
+
+.. _files-mol-label:
+
+Molecules can be input as SMILES strings in TSV and CSV format as described above, but also using dedicated
+fileformats. DataSAIL supports the following fileformats: :code:`.mol`, :code:`.mol2`, :code:`.mrv`, :code:`.pdb`,
+:code:`.sdf`, :code:`.tpl`, and :code:`.xyz`. Files may only contain a single molecule (or molecular conformation),
+except for :code:`.sdf` files, which can contain multiple molecules. The molecules are named based on their property
+:code:`_Name` or their filename if the property is not set. In case of :code:`.sdf` files and molecules without
+:code:`_Name` property, the index at which they are stored in the file is used as suffix to distinguish between
+molecules in the same file.
+
+Example files for :code:`.mol`, :code:`.mrv`, :code:`.pdb`, and :code:`.tpl` are given in
+:code:`tests/data/pipeline/mol_formats/<FORMAT>/`.

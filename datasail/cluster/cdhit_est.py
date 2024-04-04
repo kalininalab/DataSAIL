@@ -5,17 +5,13 @@ from typing import Tuple, List, Dict, Optional
 
 import numpy as np
 
-from datasail.cluster.utils import cluster_param_binary_search, extract_fasta
+from datasail.cluster.utils import cluster_param_binary_search
 from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, INSTALLED, CDHIT_EST
 
 
-def run_cdhit_est(
-        dataset: DataSet,
-        threads: int = 1,
-        log_dir: Optional[str] = None
-) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_cdhit_est(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
     """
     Run the CD-HIT-EST tool for DNA or RNA input.
 
@@ -23,21 +19,15 @@ def run_cdhit_est(
         dataset: DataSet holding all information on the dta to be clustered
         log_dir: Absolute path to the directory to store all the logs in
         threads: number of threads to use for one CD-HIT-EST run
-
-    Returns:
-        A tuple containing
-          - the names of the clusters (cluster representatives)
-          - the mapping from cluster members to the cluster names (cluster representatives)
-          - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
     if not INSTALLED[CDHIT_EST]:
         raise ValueError("CD-HIT-EST is not installed.")
 
     user_args = MultiYAMLParser(CDHIT_EST).get_user_arguments(dataset.args, ["c", "n"])
     vals = (dataset.args.c, dataset.args.n)
-    extract_fasta(dataset)
+    # extract_fasta(dataset)
 
-    return cluster_param_binary_search(
+    dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity =  cluster_param_binary_search(
         dataset,
         vals,
         (0.8, 5),
@@ -75,15 +65,21 @@ def cdhit_est_trial(
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
     results_folder = Path("cdhit_est_results")
+
+    with open("cdhitest.fasta", "w") as out:
+        for name, seq in dataset.data.items():
+            out.write(f">{name}\n{seq}\n")
+
     cmd = f"mkdir {results_folder} && " \
           f"cd {results_folder} && " \
           f"cd-hit-est " \
-          f"-i {Path('..') / dataset.location} " \
+          f"-i ../cdhitest.fasta " \
           f"-o clusters " \
           f"-d 0 " \
           f"-T {threads} " \
           f"{tune_args} " \
-          f"{user_args} "
+          f"{user_args} && " \
+          f"rm ../cdhitest.fasta"
 
     if log_file is None:
         cmd += "> /dev/null 2>&1"

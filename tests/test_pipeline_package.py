@@ -86,7 +86,8 @@ def test_pipeline_inputs(
     ) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]]]]:
         kwargs = dict(
             inter=inter, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=None, e_args="",
-            f_type=f_type, f_data=f_data, f_weights=f_weights, f_sim=f_sim, f_dist=None, f_args="",
+            e_strat=None, e_clusters=50, f_type=f_type, f_data=f_data, f_weights=f_weights, f_sim=f_sim, f_dist=None,
+            f_args="", f_strat=None, f_clusters=50,
         )
         # read e-entities and f-entities
         return read_data(**kwargs)
@@ -103,9 +104,9 @@ def test_pipeline_inputs(
         f_type=protein_type, f_data=protein_data, f_weights=protein_weights, f_sim=protein_sim,
     )
     if e_dataset.type is not None:
-        e_dataset = cluster(e_dataset, threads=1, logdir="")
+        e_dataset = cluster(e_dataset, threads=1, logdir="", linkage="average")
     if f_dataset.type is not None:
-        f_dataset = cluster(f_dataset, threads=1, logdir="")
+        f_dataset = cluster(f_dataset, threads=1, logdir="", linkage="average")
 
     parts = combo.split("|")
     if parts[0] == "e":

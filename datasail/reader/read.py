@@ -23,7 +23,15 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
     if kwargs[KW_INTER] is None:
         inter = None
     elif isinstance(kwargs[KW_INTER], Path):
-        inter = list(tuple(x) for x in read_csv(kwargs[KW_INTER]))
+        if kwargs[KW_INTER].is_file():
+            if kwargs[KW_INTER].suffix[1:] == "tsv":
+                inter = list(tuple(x) for x in read_csv(kwargs[KW_INTER], "\t"))
+            elif kwargs[KW_INTER].suffix[1:] == "csv":
+                inter = list(tuple(x) for x in read_csv(kwargs[KW_INTER], ","))
+            else:
+                raise ValueError()
+        else:
+            raise ValueError()
     elif isinstance(kwargs[KW_INTER], list):
         inter = kwargs[KW_INTER]
     elif isinstance(kwargs[KW_INTER], Callable):
@@ -34,10 +42,12 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
         raise ValueError()
 
     e_dataset = read_data_type(kwargs[KW_E_TYPE])(
-        kwargs[KW_E_DATA], kwargs[KW_E_WEIGHTS], kwargs[KW_E_SIM], kwargs[KW_E_DIST], inter, 0, kwargs[KW_E_ARGS],
+        kwargs[KW_E_DATA], kwargs[KW_E_WEIGHTS], kwargs[KW_E_STRAT], kwargs[KW_E_SIM], kwargs[KW_E_DIST], inter, 0,
+        kwargs[KW_E_CLUSTERS], kwargs[KW_E_ARGS],
     )
     f_dataset = read_data_type(kwargs[KW_F_TYPE])(
-        kwargs[KW_F_DATA], kwargs[KW_F_WEIGHTS], kwargs[KW_F_SIM], kwargs[KW_F_DIST], inter, 1, kwargs[KW_F_ARGS],
+        kwargs[KW_F_DATA], kwargs[KW_F_WEIGHTS], kwargs[KW_F_STRAT], kwargs[KW_F_SIM], kwargs[KW_F_DIST], inter, 1,
+        kwargs[KW_F_CLUSTERS], kwargs[KW_F_ARGS],
     )
 
     return e_dataset, f_dataset, inter
@@ -53,13 +63,13 @@ def read_data_type(data_type: chr) -> Callable:
     Returns:
         full name of the type of data
     """
-    if data_type == "P":
+    if data_type == P_TYPE:
         return read_protein_data
-    elif data_type == "M":
+    elif data_type == M_TYPE:
         return read_molecule_data
-    elif data_type == "G":
+    elif data_type == G_TYPE:
         return read_genome_data
-    elif data_type == "O":
+    elif data_type == O_TYPE:
         return read_other_data
     else:
         return read_none_data

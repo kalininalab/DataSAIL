@@ -1,5 +1,4 @@
 import math
-import os
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Set
 
@@ -117,7 +116,7 @@ def individual_report(
         save_cluster_hist(save_dir, dataset)
 
     # print statistics on how the sizes of the splits are distributed
-    split_counts = dict((n, 0) for n in split_names)
+    # split_counts = dict((n, 0) for n in split_names)
     # print(name_split_map[technique])
     # for name in dataset.names:
     #     split_counts[name_split_map[technique][name]] += dataset.weights.get(name, 0)
@@ -153,7 +152,7 @@ def save_assignment(save_dir: Path, dataset: DataSet, name_split_map: Optional[D
     if name_split_map is None:
         return
 
-    filepath = save_dir / f"{char2name(dataset.type)}_{dataset.location.stem}_splits.tsv"
+    filepath = save_dir / f"{char2name(dataset.type)}_{dataset.get_name()}_splits.tsv"
 
     pd.DataFrame(
         [(x1, name_split_map.get(x2, "")) for x1, x2 in dataset.id_map.items()],
@@ -171,7 +170,7 @@ def save_clusters(save_dir: Path, dataset: DataSet) -> None:
     """
     if dataset.cluster_map is None:
         return
-    filepath = save_dir / f"{char2name(dataset.type)}_{dataset.location.stem}_clusters.tsv"
+    filepath = save_dir / f"{char2name(dataset.type)}_{dataset.get_name()}_clusters.tsv"
 
     pd.DataFrame(
         [(x1, dataset.cluster_map.get(x2, "")) for x1, x2 in dataset.id_map.items()],
@@ -234,7 +233,7 @@ def save_matrix_tsne(
         postfix: Postfix for the filename
     """
     distances = distances if distances is not None else 1 - similarities
-    output_file_name = save_dir / f"{char2name(dataset.type)}_{dataset.location.stem}_{postfix}.png"
+    output_file_name = save_dir / f"{char2name(dataset.type)}_{dataset.get_name()}_{postfix}.png"
     # compute t-SNE embeddings
     embeds = TSNE(
         n_components=2,
@@ -279,7 +278,7 @@ def save_cluster_hist(save_dir: Path, dataset: DataSet) -> None:
     plt.xlabel("Size of Cluster")
     plt.ylabel("Number of Clusters")
     plt.title("Size distribution of clusters")
-    plt.savefig(save_dir / f"{char2name(dataset.type)}_{dataset.location.stem}_cluster_hist.png")
+    plt.savefig(save_dir / f"{char2name(dataset.type)}_{dataset.get_name()}_cluster_hist.png")
     plt.clf()
 
 

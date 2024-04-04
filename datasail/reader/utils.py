@@ -1,16 +1,18 @@
-import os
+import pickle
 from argparse import Namespace
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable
+from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable, Iterable
 
+import h5py
 import numpy as np
 import pandas as pd
+from rdkit import Chem
 
 from datasail.reader.validate import validate_user_args
-from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS
+from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS, UNK_LOCATION, format2ending, FASTA_FORMATS
 
-DATA_INPUT = Optional[Union[str, Path, Dict[str, str], Callable[..., Dict[str, str]], Generator[Tuple[str, str], None, None]]]
+DATA_INPUT = Optional[Union[str, Path, Dict[str, Union[str, np.ndarray]], Callable[..., Dict[str, Union[str, np.ndarray]]], Generator[Tuple[str, Union[str, np.ndarray]], None, None]]]
 MATRIX_INPUT = Optional[Union[str, Path, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
 DictMap = Dict[str, List[Dict[str, str]]]
 
@@ -23,11 +25,16 @@ class DataSet:
     names: Optional[List[str]] = None
     id_map: Optional[Dict[str, str]] = None
     cluster_names: Optional[List[str]] = None
-    data: Optional[Dict[str, str]] = None
+    num_clusters: int = 50
+    data: Optional[Dict[str, Union[str, np.ndarray]]] = None
     cluster_map: Optional[Dict[str, str]] = None
     location: Optional[Path] = None
     weights: Optional[Dict[str, float]] = None
     cluster_weights: Optional[Dict[str, float]] = None
+    classes: Optional[Dict[Any, int]] = None
+    class_oh: Optional[np.ndarray] = None
+    stratification: Optional[Dict[str, Any]] = None
+    cluster_stratification: Optional[Dict[str, np.ndarray]] = None
     similarity: Optional[Union[np.ndarray, str]] = None
     cluster_similarity: Optional[Union[np.ndarray, str]] = None
     distance: Optional[Union[np.ndarray, str]] = None
@@ -51,7 +58,7 @@ class DataSet:
             elif isinstance(obj, list):
                 hv = hash(tuple(obj))
             elif isinstance(obj, np.ndarray):
-                hv = 0  # hash(str(obj.data))
+                hv = 0
             elif isinstance(obj, Namespace):
                 hv = hash(tuple(obj.__dict__.items()))
             else:
@@ -78,9 +85,43 @@ class DataSet:
         Returns:
             Name of the dataset
         """
-        if self.location.exists():
-            return self.location.stem
+        if self.location is None or self.location == UNK_LOCATION:
+            return "unknown"
+        if isinstance(self.location, Path):
+            if self.location.is_file():
+                return self.location.stem
+            return self.location.name
         return str(self.location)
+
+    def get_location_path(self) -> Path:
+        """
+        Get the location of the dataset.
+
+        Returns:
+            The location of the dataset
+        """
+        if self.location is None or self.location == UNK_LOCATION or not self.location.exists():
+            return Path("unknown." + format2ending(self.format))
+        return self.location
+
+    def strat2oh(self, name: Optional[str] = None, class_: Optional[str] = None) -> Optional[np.ndarray]:
+        """
+        Convert the stratification to a one-hot encoding.
+
+        Args:
+            name: Name of the sample to get the onehot encoding for
+            class_: Class to get the onehot encoding for
+
+        Returns:
+            A one-hot encoding of the stratification
+        """
+        if class_ is None:
+            if name is None:
+                raise ValueError("Either name or class must be provided.")
+            class_ = self.stratification[name]
+        if self.classes is not None:
+            return self.class_oh[self.classes[class_]]
+        return None
 
     def shuffle(self):
         """
@@ -157,41 +198,39 @@ def read_clustering_file(filepath: Path, sep: str = "\t") -> Tuple[List[str], np
     return names, np.array(measures)
 
 
-def read_csv(filepath: Path) -> Generator[Tuple[str, str], None, None]:
+def read_csv(filepath: Path, sep: str = ",") -> Generator[Tuple[str, str], None, None]:
     """
     Read in a CSV file as pairs of data.
 
     Args:
         filepath: Path to the CSV file to read 2-tuples from
+        sep: Separator used to separate the values in the CSV file
 
     Yields:
         Pairs of strings from the file
     """
-    df = pd.read_csv(filepath, sep="\t")
+    df = pd.read_csv(filepath, sep=sep)
     for index in df.index:
         yield df.iloc[index, :2]
 
 
 def read_matrix_input(
         in_data: MATRIX_INPUT,
-        default_names: Optional[List[str]] = None
 ) -> Tuple[List[str], Union[np.ndarray, str]]:
     """
     Read the data from different types of similarity or distance.
 
     Args:
         in_data: Matrix data encoding the similarities/distances and the names of the samples
-        default_names: Names to use as default
 
     Returns:
         Tuple of names of the data samples and a matrix holding their similarities/distances or a string encoding a
         method to compute the fore-mentioned
     """
+    if isinstance(in_data, str):
+        in_data = Path(in_data)
     if isinstance(in_data, Path) and in_data.is_file():
         names, similarity = read_clustering_file(in_data)
-    elif isinstance(in_data, str):
-        names = default_names
-        similarity = in_data
     elif isinstance(in_data, tuple):
         names, similarity = in_data
     elif isinstance(in_data, Callable):
@@ -203,10 +242,12 @@ def read_matrix_input(
 
 def read_data(
         weights: DATA_INPUT,
+        strats: DATA_INPUT,
         sim: MATRIX_INPUT,
         dist: MATRIX_INPUT,
         inter: Optional[List[Tuple[str, str]]],
         index: Optional[int],
+        num_clusters: int,
         tool_args: str,
         dataset: DataSet,
 ) -> DataSet:
@@ -215,10 +256,12 @@ def read_data(
 
     Args:
         weights: Weight file for the data
+        strats: Stratification for the data
         sim: Similarity file or metric
         dist: Distance file or metric
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
+        num_clusters: Number of clusters to compute
         tool_args: Additional arguments for the tool
         dataset: A dataset object storing information on the read
 
@@ -226,8 +269,13 @@ def read_data(
         A dataset storing all information on that datatype
     """
     # parse the protein weights
-    if isinstance(weights, Path):
-        dataset.weights = dict((n, float(w)) for n, w in read_csv(weights))
+    if isinstance(weights, Path) and weights.is_file():
+        if weights.suffix[1:].lower() == "csv":
+            dataset.weights = dict((n, float(w)) for n, w in read_csv(weights, ","))
+        elif weights.suffix[1:].lower() == "tsv":
+            dataset.weights = dict((n, float(w)) for n, w in read_csv(weights, "\t"))
+        else:
+            raise ValueError()
     elif isinstance(weights, dict):
         dataset.weights = weights
     elif isinstance(weights, Callable):
@@ -239,14 +287,18 @@ def read_data(
     else:
         dataset.weights = dict((p, 1) for p in list(dataset.data.keys()))
 
+    dataset.classes, dataset.stratification = read_stratification(strats)
+    dataset.class_oh = np.eye(len(dataset.classes))
+    dataset.num_clusters = num_clusters
+
     # parse the protein similarity measure
     if sim is None and dist is None:
         dataset.similarity, dataset.distance = get_default(dataset.type, dataset.format)
         dataset.names = list(dataset.data.keys())
     elif sim is not None and not (isinstance(sim, str) and sim.lower() in SIM_ALGOS):
-        dataset.names, dataset.similarity = read_matrix_input(sim, list(dataset.data.keys()))
+        dataset.names, dataset.similarity = read_matrix_input(sim)
     elif dist is not None and not (isinstance(dist, str) and dist.lower() in DIST_ALGOS):
-        dataset.names, dataset.distance = read_matrix_input(dist, list(dataset.data.keys()))
+        dataset.names, dataset.distance = read_matrix_input(dist)
     else:
         if sim is not None:
             dataset.similarity = sim
@@ -257,6 +309,37 @@ def read_data(
     dataset.args = validate_user_args(dataset.type, dataset.format, sim, dist, tool_args)
 
     return dataset
+
+
+def read_stratification(strats: DATA_INPUT) -> Tuple[Dict[Any, int], Optional[Dict[str, np.ndarray]]]:
+    """
+    Read in the stratification for the data.
+
+    Args:
+        strats: Stratification input
+
+    Returns:
+        Set of all classes and a dictionary mapping the entity names to their class
+    """
+    # parse the stratification
+    if isinstance(strats, Path) and strats.is_file():
+        if strats.suffix[1:].lower() == "csv":
+            stratification = dict(read_csv(strats, ","))
+        elif strats.suffix[1:].lower() == "tsv":
+            stratification = dict(read_csv(strats, "\t"))
+        else:
+            raise ValueError()
+    elif isinstance(strats, dict):
+        stratification = strats
+    elif isinstance(strats, Callable):
+        stratification = strats()
+    elif isinstance(strats, Generator):
+        stratification = dict(strats)
+    else:
+        return {0: 0}, None
+
+    classes = {s: i for i, s in enumerate(set(stratification.values()))}
+    return classes, stratification
 
 
 def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Generator[Tuple[str, str], None, None]:
@@ -273,6 +356,97 @@ def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Gene
     for filename in folder_path.iterdir():
         if file_extension is None or filename.suffix[1:].lower() == file_extension.lower():
             yield filename.stem, filename
+
+
+def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[DataSet, Path], None]):
+    """
+    Read in the data from different sources and store it in the dataset.
+
+    Args:
+        data: Data input
+        dataset: Dataset to store the data in
+        read_dir: Function to read in a directory
+    """
+    if isinstance(data, Path):
+        if data.is_file():
+            if data.suffix[1:] in FASTA_FORMATS:
+                dataset.data = parse_fasta(data)
+            elif data.suffix[1:].lower() == "tsv":
+                dataset.data = dict(read_csv(data, sep="\t"))
+            elif data.suffix[1:].lower() == "csv":
+                dataset.data = dict(read_csv(data, sep=","))
+            elif data.suffix[1:].lower() == "pkl":
+                with open(data, "rb") as file:
+                    dataset.data = dict(pickle.load(file))
+            elif data.suffix[1:].lower() == "h5":
+                with h5py.File(data) as file:
+                    dataset.data = {k: np.array(file[k]) for k in file.keys()}
+            elif data.suffix[1:].lower() == "sdf":
+                dataset.data = read_sdf_file(data)
+            else:
+                raise ValueError("Unknown file format. Supported formats are: .fasta, .fna, .fa, tsv, .csv, .pkl, .h5")
+        elif data.is_dir():
+            read_dir(dataset, data)
+        else:
+            raise ValueError("Unknown data input type. Path encodes neither a file nor a directory.")
+        dataset.location = data
+    elif (isinstance(data, list) or isinstance(data, tuple)) and isinstance(data[0], Iterable) and len(data[0]) == 2:
+        dataset.data = dict(data)
+    elif isinstance(data, dict):
+        dataset.data = data
+    elif isinstance(data, Callable):
+        dataset.data = data()
+    elif isinstance(data, Generator):
+        dataset.data = dict(data)
+    else:
+        raise ValueError("Unknown data input type.")
+
+
+def read_sdf_file(file: Path) -> Dict[str, str]:
+    """
+    Read in a SDF file and return the data as a dataset.
+
+    Args:
+        file: The file to read in
+
+    Returns:
+        The dataset containing the data
+    """
+    data = {}
+    suppl = Chem.SDMolSupplier(str(file))
+    for i, mol in enumerate(suppl):
+        try:
+            name = mol.GetProp("_Name") if mol.HasProp("_Name") else f"{file.stem}_{i}"
+            data[name] = Chem.MolToSmiles(mol)
+        except:
+            pass
+    return data
+
+
+def parse_fasta(path: Path = None) -> Dict[str, str]:
+    """
+    Parse a FASTA file and do some validity checks if requested.
+
+    Args:
+        path: Path to the FASTA file
+
+    Returns:
+        Dictionary mapping sequences IDs to amino acid sequences
+    """
+    seq_map = {}
+
+    with open(path, "r") as fasta:
+        for line in fasta.readlines():
+            line = line.strip()
+            if len(line) == 0:
+                continue
+            if line[0] == '>':
+                entry_id = line[1:]  # .replace(" ", "_")
+                seq_map[entry_id] = ''
+            else:
+                seq_map[entry_id] += line
+
+    return seq_map
 
 
 def get_prefix_args(prefix, **kwargs) -> Dict[str, Any]:

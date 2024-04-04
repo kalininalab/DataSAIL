@@ -5,17 +5,13 @@ from typing import Tuple, List, Dict, Optional
 
 import numpy as np
 
-from datasail.cluster.utils import cluster_param_binary_search, extract_fasta
+from datasail.cluster.utils import cluster_param_binary_search
 from datasail.parsers import MultiYAMLParser
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, CDHIT, INSTALLED
 
 
-def run_cdhit(
-        dataset: DataSet,
-        threads: int = 1,
-        log_dir: Optional[Path] = None
-) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_cdhit(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
     """
     Run the CD-HIT tool for protein input.
 
@@ -23,21 +19,14 @@ def run_cdhit(
         dataset: DataSet holding all information on the dta to be clustered
         log_dir: Absolute path to the directory to store all the logs in
         threads: number of threads to use for one CD-HIT run
-
-    Returns:
-        A tuple containing
-          - the names of the clusters (cluster representatives)
-          - the mapping from cluster members to the cluster names (cluster representatives)
-          - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
     if not INSTALLED[CDHIT]:
         raise ValueError("CD-HIT is not installed.")
 
     user_args = MultiYAMLParser(CDHIT).get_user_arguments(dataset.args, ["c", "n"])
     vals = (dataset.args.c, dataset.args.n)  # values to be optimized
-    extract_fasta(dataset)
 
-    return cluster_param_binary_search(
+    dataset.cluster_names, dataset.cluster_map, dataset.cluster_similarity = cluster_param_binary_search(
         dataset,
         vals,
         (0.4, 2),
@@ -75,10 +64,15 @@ def cdhit_trial(
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
     results_folder = Path("cdhit_results")
+
+    with open("cdhit.fasta", "w") as out:
+        for name, seq in dataset.data.items():
+            out.write(f">{name}\n{seq}\n")
+
     cmd = f"mkdir {results_folder} && " \
           f"cd {results_folder} && " \
           f"cd-hit " \
-          f"-i {Path('..') / dataset.location} " \
+          f"-i ../cdhit.fasta " \
           f"-o clusters " \
           f"-d 0 " \
           f"-T {threads} " \

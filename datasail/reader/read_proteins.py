@@ -1,21 +1,22 @@
-import os
 from pathlib import Path
-from typing import Generator, Tuple, Dict, List, Optional, Set, Callable, Union, Iterable
+from typing import Tuple, Dict, List, Optional, Set
 
 import numpy as np
 
 from datasail.reader.read_molecules import remove_duplicate_values
-from datasail.reader.utils import read_csv, DataSet, read_data, read_folder, DATA_INPUT, MATRIX_INPUT
-from datasail.settings import P_TYPE, UNK_LOCATION, FORM_PDB, FORM_FASTA, FASTA_FORMATS
+from datasail.reader.utils import DataSet, read_data, read_folder, DATA_INPUT, MATRIX_INPUT, read_data_input
+from datasail.settings import P_TYPE, UNK_LOCATION, FORM_PDB, FORM_FASTA
 
 
 def read_protein_data(
         data: DATA_INPUT,
         weights: DATA_INPUT = None,
+        strats: DATA_INPUT = None,
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
         inter: Optional[List[Tuple[str, str]]] = None,
         index: Optional[int] = None,
+        num_clusters: Optional[int] = None,
         tool_args: str = "",
 ) -> DataSet:
     """
@@ -24,69 +25,30 @@ def read_protein_data(
     Args:
         data: Where to load the data from
         weights: Weight file for the data
+        strats: Stratification for the data
         sim: Similarity file or metric
         dist: Distance file or metric
         inter: Interaction, alternative way to compute weights
         index: Index of the entities in the interaction file
+        num_clusters: Number of clusters to compute for this dataset
         tool_args: Additional arguments for the tool
 
     Returns:
         A dataset storing all information on that datatype
     """
     dataset = DataSet(type=P_TYPE, location=UNK_LOCATION)
-    if isinstance(data, Path):
-        if data.suffix[1:] in FASTA_FORMATS:
-            dataset.data = parse_fasta(data)
-        elif data.is_file():
-            dataset.data = dict(read_csv(data))
-        elif data.is_dir():
-            dataset.data = dict(read_folder(data, "pdb"))
-        else:
-            raise ValueError()
-        dataset.location = data
-    elif (isinstance(data, list) or isinstance(data, tuple)) and isinstance(data[0], Iterable) and len(data[0]) == 2:
-        dataset.data = dict(data)
-    elif isinstance(data, dict):
-        dataset.data = data
-    elif isinstance(data, Callable):
-        dataset.data = data()
-    elif isinstance(data, Generator):
-        dataset.data = dict(data)
-    else:
-        raise ValueError()
+
+    def read_dir(ds: DataSet, path: Path) -> None:
+        ds.data = dict(read_folder(path, "pdb"))
+
+    read_data_input(data, dataset, read_dir)
 
     dataset.format = FORM_PDB if str(next(iter(dataset.data.values()))).endswith(".pdb") else FORM_FASTA
 
-    dataset = read_data(weights, sim, dist, inter, index, tool_args, dataset)
+    dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)
 
     return dataset
-
-
-def parse_fasta(path: Path = None) -> Dict[str, str]:
-    """
-    Parse a FASTA file and do some validity checks if requested.
-
-    Args:
-        path: Path to the FASTA file
-
-    Returns:
-        Dictionary mapping sequences IDs to amino acid sequences
-    """
-    seq_map = {}
-
-    with open(path, "r") as fasta:
-        for line in fasta.readlines():
-            line = line.strip()
-            if len(line) == 0:
-                continue
-            if line[0] == '>':
-                entry_id = line[1:]  # .replace(" ", "_")
-                seq_map[entry_id] = ''
-            else:
-                seq_map[entry_id] += line
-
-    return seq_map
 
 
 def check_pdb_pair(pdb_seqs1: List[str], pdb_seqs2: List[str]) -> bool:
