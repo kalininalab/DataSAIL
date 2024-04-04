@@ -13,13 +13,12 @@ SIM_OPTIONS = Literal[
     "russel", "sokal", "tanimoto"
 ]
 
-# unbounded: mcconnaughey
+# unbounded: canberra, chebyshev, cityblock, euclidean, mcconnaughey, manhattan, minkowski, sqeuclidean
 # produces inf or nan: correlation, cosine, jensenshannon, seuclidean, braycurtis
 # boolean only: dice, kulczynski1, rogerstanimoto, russelrao, sokalmichener, sokalsneath, yule
 # matching == hamming, manhattan == cityblock (inofficial)
 DIST_OPTIONS = Literal[
-    "canberra", "chebyshev", "cityblock", "euclidean", "hamming", "jaccard", "mahalanobis", "manhattan", "matching",
-    "minkowski", "sqeuclidean"
+    "hamming", "jaccard", "mahalanobis", "matching"
 ]
 
 
@@ -181,9 +180,7 @@ def run(
                 f"the embeddings. The number of samples ({len(fps)}) is too small; the covariance matrix is singular. "
                 f"For observations with {len(fps[0])} dimensions, at least {len(fps[0]) + 1} observations are required."
             )
-        dataset.cluster_distance = scipy.spatial.distance.cdist(
-            fps, fps, metric={"manhattan": "cityblock", "tanimoto": "jaccard"}.get(method, method)
-        )
+        dataset.cluster_distance = scipy.spatial.distance.cdist(fps, fps, metric=method)
 
 
 # if __name__ == '__main__':

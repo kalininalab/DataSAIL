@@ -63,8 +63,6 @@ def solve_c1(
     ) for e2 in range(e1 + 1, len(clusters))] for e1 in range(len(clusters))]  # 15
 
     loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
-    if distances is not None:
-        loss = -loss
     problem = solve(loss, constraints, max_sec, solver, log_file)
 
     return None if problem is None else {
