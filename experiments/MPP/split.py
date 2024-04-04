@@ -169,14 +169,11 @@ def split(full_path, name, solver="GUROBI"):
 
 
 def specific():
-    for run in [0, 1]:
+    for run in range(RUNS):
         for name in DATASETS.keys():
             if name.lower() == "pcba":
                 continue
-            if name in ["qm7", "qm8", "qm9", "esol", "lipophilicity", "freesolv"] and run == 0:
-                continue
-            for tech in [["I1e"], ["C1e"]]:
-                split_w_datasail(Path("/scratch") / "SCRATCH_SAS" / "roman" / "DataSAIL" / "timing" / f"{name}_{run}_{tech[0]}", name, tech)
+            split_w_datasail(Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "datasail" / "MPP" / name, name, ["C1e"])
 
 
 if __name__ == '__main__':

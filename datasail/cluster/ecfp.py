@@ -28,7 +28,10 @@ def run_ecfp(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
     invalid_mols = []
     scaffolds = {}
     for name in dataset.names:
-        mol = Chem.MolFromSmiles(dataset.data[name])
+        try:
+            mol = Chem.MolFromSmiles(dataset.data[name])
+        except:
+            mol = None
         # scaffold = read_molecule_encoding(dataset.data[name])
         # if scaffold is None:
         if mol is None:

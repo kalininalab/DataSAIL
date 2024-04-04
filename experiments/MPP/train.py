@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
-from experiments.utils import DATASETS, RUNS, MPP_EPOCHS, telegram, metric, models, TECHNIQUES, DRUG_TECHNIQUES, \
+from experiments.utils import DATASETS, RUNS, MPP_EPOCHS, metric, models, TECHNIQUES, DRUG_TECHNIQUES, \
     embed_smiles
 
 
@@ -174,8 +174,9 @@ def train_model(base_path: Path, data_path: Path, model: str, tool: str, name: s
         pd.DataFrame: Dataframe of the performance of the models
     """
     perf = {}
-    for tech in set(TECHNIQUES[tool]).intersection(set(DRUG_TECHNIQUES)):
-        perf.update(train_tech(base_path / tech, data_path, model, tech, name))
+    # for tech in set(TECHNIQUES[tool]).intersection(set(DRUG_TECHNIQUES)):
+    tech = "C1e"
+    perf.update(train_tech(base_path / tech, data_path, model, tech, name))
         # message(tool, name, model[:-2], tech)
     df = pd.DataFrame(list(perf.items()), columns=["name", "perf"])
     df["model"] = model
@@ -223,7 +224,8 @@ def train(full_path: Path, name: Optional[str] = None) -> None:
     """
     if name is None:
         for name in DATASETS:
-            train_dataset(full_path, name)
+            # train_dataset(full_path, name)
+            train_tool(full_path, "datasail", name)
     else:
         train_dataset(full_path, name)
 

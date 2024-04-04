@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 from pathlib import Path
 from typing import Optional
@@ -10,7 +11,7 @@ from datasail.reader.utils import DataSet
 from datasail.settings import INSTALLED, MMSEQS2, DIAMOND, LOGGER
 
 
-def run_diamond(dataset: DataSet, threads: int, log_dir: Optional[Path] = None) -> None:
+def run_diamond(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
     """
     Run Diamond on a dataset in clustering mode.
 
@@ -30,6 +31,8 @@ def run_diamond(dataset: DataSet, threads: int, log_dir: Optional[Path] = None) 
 
     with open("diamond.fasta", "w") as out:
         for name, seq in dataset.data.items():
+            seq = re.sub(r'[^ACDEFGHIKLMNPQRSTVWY]', 'G', seq)
+            print(":" in seq)
             out.write(f">{name}\n{seq}\n")
 
     result_folder = Path("diamond_results")
@@ -63,10 +66,12 @@ def run_diamond(dataset: DataSet, threads: int, log_dir: Optional[Path] = None) 
     rev.columns = ["target", "query", "pident", "fident"]
     df = pd.concat([df, rev])
     df = df.groupby(["query", "target"]).agg({"fident": "mean"}).reset_index()
-    table = df.pivot(index="query", columns="target", values="fident").fillna(0).to_numpy()
+    table = df.pivot(index="query", columns="target", values="fident").fillna(0)
 
     shutil.rmtree(result_folder, ignore_errors=True)
 
-    dataset.cluster_names = dataset.names
-    dataset.cluster_map = {n: n for n in dataset.names}
-    dataset.cluster_similarity = table
+    dataset.cluster_names = table.index.tolist()
+    print(dataset.cluster_names)
+    dataset.cluster_map = {n: n for n in dataset.cluster_names}
+    dataset.cluster_similarity = table.to_numpy()
+    dataset.cluster_weights = {n: 1 for n in dataset.cluster_names}

@@ -179,10 +179,20 @@ def eval(assignments, similarity, weights=None):
     if weights is None:
         weights = np.ones_like(similarity)
     mask = assignments @ assignments.T
+    # print(np.min(mask), np.max(mask))
+
+    alt = np.ones_like(mask)
+    alt[mask == 0] = 0
+    
+    mask = -mask
+    # print(np.min(mask), np.max(mask))
     mask[mask == -1] = 0
-    mask = (1 - mask) * (1 - np.eye(mask.shape[0], dtype=np.int64))
-    leak = (np.sum(similarity * weights * mask) / np.sum(similarity * weights)) / 2
-    return leak
+    # print(np.min(mask), np.max(mask))
+    # mask = (1 - mask) * (1 - np.eye(mask.shape[0], dtype=np.int64))
+    # print(np.min(mask), np.max(mask))
+    
+    leak = (np.sum(similarity * weights * mask) / np.sum(similarity * weights * alt)) / 2
+    return leak, np.sum(similarity * weights * alt) / 2
 
 
 def visualize(full_path: Path, clusters: List[int], solvers, ax: Optional[Tuple] = None, fig=None):
