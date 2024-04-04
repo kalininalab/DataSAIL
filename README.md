@@ -29,7 +29,7 @@ DataSAIL is installable from [conda](https://anaconda.org/kalininalab/datasail) 
 using
 
 ````shell
-mamba create -n sail -c conda-forge -c kalininalab -c bioconda DataSAIL
+mamba create -n sail -c conda-forge -c kalininalab -c bioconda datasail
 conda activate sail
 pip install grakel
 ````
@@ -37,12 +37,12 @@ pip install grakel
 to install it into a new empty environment or
 
 ````shell
-mamba install -c conda-forge -c kalininalab -c bioconda -c mosek DataSAIL
+mamba install -c conda-forge -c kalininalab -c bioconda -c mosek datasail
 pip install grakel
 ````
 
-to install DataSAIL in an already existing environment. Due to dependencies of the clustering algorithms, the latter 
-might lead to package conflicts with the already installed packages and requirements.
+to install DataSAIL in an already existing environment. Alternatively, one can install DataSAIL-lite from conda. 
+DataSAIL-lite is a version of DataSAIL that does not install all clustering algorithms as the standard DataSAIL.
 
 DataSAIL is available from Python 3.8 and newer.
 

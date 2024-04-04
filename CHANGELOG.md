@@ -3,24 +3,23 @@
 ## [Planned - Long-term project ideas]
 
 - [ ] Normalization of objectives for better comparability and better splits in solvers
-- [ ] Time-limit and solution limit for all solvers
 - [ ] Multi-threading support for pre-solving (Snakemake as backbone)
 - [ ] Make (more) deterministic ([Issue #6](https://github.com/kalininalab/DataSAIL/issues/6))
 - [ ] Reports of results with plots and tables a PDF and or HTML
 - [ ] Generalization to R-dimensional datasets (see [paper](https://doi.org/10.1101/2023.11.15.566305))
 - [ ] Input from config files
 - [ ] Replace GraKel with something "modern" and fully "conda-installable" to make DataSAIL fully conda-installable
-- [ ] Stratified splits
 - [ ] Include [MashMap3](https://github.com/marbl/MashMap)
 - [ ] Include MASH for amino acid sequences
 
-## v0.3.0 (2024-01-??)
+## v1.0.0 (2024-04-04)
 
 - Stratified splits
 - Extensive checks of available solvers
 - Time and Space limits for all solvers
-- Runtime experiments and experiments on a [stratified dataset](LINK)
-- Bugs and Docu fixed
+- Runtime experiments and experiments on a the Tox21 SR-ARE target
+- Improvement and extension of the documentation
+- Bug fixes
 
 ## v0.2.2 (2023-12-11)
 

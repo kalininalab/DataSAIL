@@ -1,6 +1,7 @@
 import os
 import pickle
 from pathlib import Path
+from typing import List
 
 import matplotlib
 import numpy as np
@@ -25,17 +26,44 @@ MARKERS = {
 }
 
 
-def get_single_time(path):
+def get_single_time(path: Path) -> float:
+    """
+    Get the time it took to split the dataset for a single run.
+
+    Args:
+        path: Path to the splitting directory.
+
+    Returns:
+        The time it took to split the dataset.
+    """
     if not os.path.exists(path / "train.csv"):
         return 0
     return os.path.getctime(path / "train.csv") - os.path.getctime(path / "start.txt")
 
 
-def get_run_times(path):
+def get_run_times(path: Path) -> List[float]:
+    """
+    Get the time it took to split the dataset for all runs.
+
+    Args:
+        path: Path to the technique directory.
+
+    Returns:
+        The time it took to split the dataset for all runs.
+    """
     return [get_single_time(path / f"split_{run}") for run in range(RUNS)]
 
 
-def get_tech_times(path):
+def get_tech_times(path: Path) -> List[List[float]]:
+    """
+    Get the time it took to split the dataset for all techniques.
+
+    Args:
+        path: Path to the dataset directory.
+
+    Returns:
+        The time it took to split the dataset for all techniques.
+    """
     if "deepchem" in str(path):
         techniques = ["Scaffold", "Weight", "MinMax", "Butina", "Fingerprint"]
     elif "datasail" in str(path):
@@ -49,11 +77,27 @@ def get_tech_times(path):
     return [get_run_times(path / tech) for tech in techniques]
 
 
-def get_dataset_times(path):
+def get_dataset_times(path: Path) -> List[List[List[float]]]:
+    """
+    Get the time it took to split the dataset for all datasets.
+
+    Args:
+        path: Path to the dataset directory.
+
+    Returns:
+        The time it took to split the dataset for all datasets.
+    """
     return [get_tech_times(path / ds_name) for ds_name in sorted(os.listdir(path), key=lambda x: DATASETS[x][3])]
 
 
-def get_tool_times(path, ax=None):
+def get_tool_times(path, ax=None) -> None:
+    """
+    Plot the time it took to split the dataset for all datasets and techniques.
+
+    Args:
+        path: Path to the dataset directory.
+        ax: Axis to plot on.
+    """
     if show := ax is None:
         matplotlib.rc('font', **{'size': 16})
         fig = plt.figure(figsize=(20, 10.67))
