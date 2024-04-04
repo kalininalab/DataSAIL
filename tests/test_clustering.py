@@ -257,7 +257,7 @@ def test_mmseqspp_protein():
 @pytest.mark.parametrize("in_type", ["Original", "List", "Numpy"])
 @pytest.mark.parametrize("method", [
     "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "onbit", "rogotgoldberg", "russel",
-    "sokal", "tanimoto", "hamming", "jaccard", "mahalanobis", "matching"
+    "sokal", "tanimoto", "canberra", "hamming", "jaccard", "matching", "rogerstanimoto", "sokalmichener", "yule"
 ])
 def test_vector(md_calculator, algo, in_type, method) :
     data = molecule_data()
@@ -282,7 +282,7 @@ def test_vector(md_calculator, algo, in_type, method) :
 
 @pytest.mark.parametrize("method", [
     "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "onbit", "rogotgoldberg", "russel",
-    "sokal", "hamming", "jaccard", "mahalanobis", "matching"
+    "sokal", "canberra", "hamming", "jaccard", "matching", "rogerstanimoto", "sokalmichener", "yule"
 ])
 def test_vector_edge(method):
     dataset = DataSet(

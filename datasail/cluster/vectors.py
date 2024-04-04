@@ -13,12 +13,12 @@ SIM_OPTIONS = Literal[
     "russel", "sokal", "tanimoto"
 ]
 
-# unbounded: canberra, chebyshev, cityblock, euclidean, mcconnaughey, manhattan, minkowski, sqeuclidean
+# unbounded: chebyshev, cityblock, euclidean, mahalanobis, manhattan, mcconnaughey, minkowski, sqeuclidean
 # produces inf or nan: correlation, cosine, jensenshannon, seuclidean, braycurtis
-# boolean only: dice, kulczynski1, rogerstanimoto, russelrao, sokalmichener, sokalsneath, yule
+# boolean only: dice, kulczynski1, russelrao, sokalsneath
 # matching == hamming, manhattan == cityblock (inofficial)
 DIST_OPTIONS = Literal[
-    "hamming", "jaccard", "mahalanobis", "matching"
+    "canberra", "hamming", "jaccard", "matching", "rogerstanimoto", "sokalmichener", "yule"
 ]
 
 
@@ -139,12 +139,14 @@ def run_vector(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
                 f"tuples or one-dimensional numpy arrays.")
     elif method in get_args(DIST_OPTIONS):
         if isinstance(embed, (
-        list, tuple, DataStructs.ExplicitBitVect, DataStructs.LongSparseIntVect, DataStructs.IntSparseIntVect)):
+                list, tuple, DataStructs.ExplicitBitVect, DataStructs.LongSparseIntVect, DataStructs.IntSparseIntVect)):
             dataset.data = {k: np.array(list(v), dtype=np.float64) for k, v in dataset.data.items()}
         if not isinstance(dataset.data[dataset.names[0]], np.ndarray):
             raise ValueError(
                 f"Unsupported embedding type {type(embed)}. Please use either RDKit datastructures, lists, "
                 f"tuples or one-dimensional numpy arrays.")
+        if method in ["rogerstanimoto", "sokalmichener", "yule"]:
+            dataset.data = {k: np.array(list(v), dtype=np.bool_) for k, v in dataset.data.items()}
     else:
         raise ValueError(f"Unknown method {method}")
     fps = [dataset.data[name] for name in dataset.names]
@@ -169,7 +171,6 @@ def run(
         method: The similarity measure to use.
     """
     if method in get_args(SIM_OPTIONS):
-        # dataset.cluster_similarity = scale_min_max(rdkit_sim(fps, method))
         dataset.cluster_similarity = rdkit_sim(fps, method)
         if method == "mcconnaughey":
             dataset.cluster_similarity = dataset.cluster_similarity + 1 / 2
@@ -181,29 +182,30 @@ def run(
                 f"For observations with {len(fps[0])} dimensions, at least {len(fps[0]) + 1} observations are required."
             )
         dataset.cluster_distance = scipy.spatial.distance.cdist(fps, fps, metric=method)
+        if method == "canberra":
+            dataset.cluster_distance = dataset.cluster_distance / len(fps[0])
+        elif method == "yule":
+            dataset.cluster_distance /= 2
 
 
-# if __name__ == '__main__':
-#     data = [
-#         np.array([
-#             [0, 0, 0],
-#             [1, 0, 0],
-#             [0, 1, 0],
-#             [0, 0, 1],
-#             [1, 1, 0],
-#             [1, 0, 1],
-#             [0, 1, 1],
-#             [1, 1, 1],
-#         ]),
-#         np.random.randint(-1, 3, size=(8, 3))
-#     ]
-#     for x, a in enumerate(data):
-#         for sim in ["allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "mcconnaughey", "onbit",
-#                     "rogotgoldberg", "russel", "sokal", "tanimoto"]:
-#             run_vector(ds := DataSet(data={chr(97 + i): v for i, v in enumerate(a)}, names=[chr(97 + i) for  i in range(len(a))]), sim)
-#             print(f"{x}\t{sim}\t{np.min(ds.cluster_similarity)}\t{np.max(ds.cluster_similarity)}", ds.cluster_similarity, sep="\n", end="\n\n")
-#
-#         for dist in ["canberra", "chebyshev", "cityblock", "euclidean", "hamming", "jaccard", "mahalanobis", "manhattan",
-#                      "matching", "minkowski", "sqeuclidean"]:
-#             run_vector(ds := DataSet(data={chr(97 + i): v for i, v in enumerate(a)}, names=[chr(97 + i) for  i in range(len(a))]), dist)
-#             print(f"{x}\t{dist}\t{np.min(ds.cluster_distance)}\t{np.max(ds.cluster_distance)}", ds.cluster_distance, sep="\n", end="\n\n")
+if __name__ == '__main__':
+    data = np.array([
+        [0, 0, 0, 0],
+        [2, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1],
+        [1, 1, 0, 0],
+        [1, 0, 1, 0],
+        [1, 0, 0, 1],
+        [0, 1, 1, 0],
+        [0, 1, 0, 1],
+        [0, 0, 1, 1],
+        [1, 1, 1, 0],
+        [1, 1, 0, 1],
+        [1, 0, 1, 1],
+        [0, 1, 1, 1],
+    ], dtype=np.bool_)
+    for dist in ["rogerstanimoto", "sokalmichener", "yule"]:
+        run_vector(ds := DataSet(data={chr(97 + i): v for i, v in enumerate(data)}, names=[chr(97 + i) for  i in range(len(data))]), dist)
+        print(f"{dist}\t{np.min(ds.cluster_distance)}\t{np.max(ds.cluster_distance)}", ds.cluster_distance, sep="\n", end="\n\n")
