@@ -26,8 +26,6 @@ def run_diamond(dataset: DataSet, threads: int, log_dir: Optional[Path] = None) 
     makedb_args = parser.get_user_arguments(dataset.args, [], 0)
     blastp_args = parser.get_user_arguments(dataset.args, [], 1)
 
-    # extract_fasta(dataset)
-
     with open("diamond.fasta", "w") as out:
         for name, seq in dataset.data.items():
             out.write(f">{name}\n{seq}\n")

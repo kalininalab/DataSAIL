@@ -19,10 +19,31 @@ advice you to create pull requests always against the dev-branch where we accumu
 versions that are published in non-regular intervals. We distinguish two types of pull requests:
 
  4. A fast pull requests is sufficient to make small changes to DataSAIL, e.g., quickly fixing a small bug/typo/etc.
-    For this, we offer a `fast RP template <https://www.lipsum.com/>`_ to collect some information that helps the developers reviewing and accepting
-    the PR.
+    For this, we offer a `fast RP template <https://github.com/kalininalab/DataSAIL/blob/main/.github/PULL_REQUEST_TEMPLATE/fast_pr_template.md>`_
+    to collect some information that helps the developers reviewing and accepting the PR.
  5. For implementing bigger updates and new features, we request you to submit a more detailed PR following this
-    `detailed PR template <https://www.lipsum.com/>`_.
+    `detailed PR template <https://github.com/kalininalab/DataSAIL/blob/main/.github/PULL_REQUEST_TEMPLATE/detailed_pr_template.md>`_.
+
+Applying the PR templates to your PR can be a bit tedious, as (other then for the issue templates) GitHub does not
+automatically suggest a template when creating the PR. You can either manually add the template to your PR or paste
+:code:`&template=fast_pr_template.md` (or :code:`&template=detailed_pr_template.md`) in the URL to use the template.
+So, the plain PR URL would look like this:
+
+.. code-block::
+
+    https://github.com/kalininalab/datasail/compare/dev_diamond...main?quick_pull=1
+
+and the URL with the fast PR template would look like this:
+
+.. code-block::
+
+    https://github.com/kalininalab/datasail/compare/dev_diamond...main?quick_pull=1&template=fast_pr_template.md
+
+and the URL with the detailed PR template would look like this:
+
+.. code-block::
+
+    https://github.com/kalininalab/datasail/compare/dev_diamond...main?quick_pull=1&template=detailed_pr_template.md
 
 In case you have questions about contributing, the developers are happy to help you with any question during the
 process.

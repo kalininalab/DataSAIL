@@ -142,7 +142,7 @@ def get_mmseqs_map_old(cluster_file: Path) -> Dict[str, str]:
     """
     mapping = {}
     rep = ""
-    # The file is basically contains \n\t-separated values
+    # The file basically contains \n\t-separated values
     with open(cluster_file, "r") as f:
         for line in f.readlines():
             if rep == "":

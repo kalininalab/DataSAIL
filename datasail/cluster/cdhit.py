@@ -136,7 +136,7 @@ def get_cdhit_map(cluster_file: Path) -> Dict[str, str]:
     return mapping
 
 
-def c2n(c: float):
+def c2n(c: float) -> int:
     """
     For an input value for the C-parameter to CD-HIT, return an appropriate value for the parameter n.
 

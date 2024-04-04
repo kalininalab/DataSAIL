@@ -3,8 +3,8 @@ from pathlib import Path
 import cvxpy
 import numpy as np
 
-from datasail.solver.utils import solve, interaction_contraints, cluster_y_constraints, collect_results_2d, \
-    leakage_loss, compute_limits, stratification_constraints
+from datasail.solver.utils import solve, interaction_contraints, collect_results_2d, leakage_loss, compute_limits, \
+    stratification_constraints
 
 
 def solve_c2(
@@ -62,8 +62,6 @@ def solve_c2(
     x_f = cvxpy.Variable((len(splits), len(f_clusters)), boolean=True)
     x_i = {(e, f): cvxpy.Variable(len(splits), boolean=True) for e in range(len(e_clusters)) for f in
            range(len(f_clusters)) if inter[e, f] != 0}
-    # y_e = [[cvxpy.Variable(1, boolean=True) for _ in range(e)] for e in range(len(e_clusters))]
-    # y_f = [[cvxpy.Variable(1, boolean=True) for _ in range(f)] for f in range(len(f_clusters))]
 
     # check if the cluster relations are uniform
     e_intra_weights = e_similarities if e_similarities is not None else 1 - e_distances
@@ -89,10 +87,6 @@ def solve_c2(
     interaction_contraints(e_clusters, f_clusters, x_i, constraints, splits, x_e, x_f, min_lim, lambda key: inter[key],
                            index)
 
-    # constraints += cluster_y_constraints(e_clusters, y_e, x_e, splits) + \
-    #     cluster_y_constraints(f_clusters, y_f, x_f, splits)
-
-    # inter_loss = (np.sum(inter) - sum(cvxpy.sum(x) for x in x_i.values())) / np.sum(inter)
     e_loss = leakage_loss(e_uniform, e_intra_weights, x_e, e_clusters, e_weights, len(splits))
     f_loss = leakage_loss(f_uniform, f_intra_weights, x_f, f_clusters, f_weights, len(splits))
 

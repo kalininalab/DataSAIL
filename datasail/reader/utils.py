@@ -12,7 +12,8 @@ from rdkit import Chem
 from datasail.reader.validate import validate_user_args
 from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS, UNK_LOCATION, format2ending, FASTA_FORMATS
 
-DATA_INPUT = Optional[Union[str, Path, Dict[str, Union[str, np.ndarray]], Callable[..., Dict[str, Union[str, np.ndarray]]], Generator[Tuple[str, Union[str, np.ndarray]], None, None]]]
+DATA_INPUT = Optional[Union[str, Path, Dict[str, Union[str, np.ndarray]],
+    Callable[..., Dict[str, Union[str, np.ndarray]]], Generator[Tuple[str, Union[str, np.ndarray]], None, None]]]
 MATRIX_INPUT = Optional[Union[str, Path, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
 DictMap = Dict[str, List[Dict[str, str]]]
 
@@ -123,7 +124,7 @@ class DataSet:
             return self.class_oh[self.classes[class_]]
         return None
 
-    def shuffle(self):
+    def shuffle(self) -> None:
         """
         Shuffle this dataset randomly to introduce variance in the solution space.
         """
@@ -137,7 +138,7 @@ class DataSet:
                 permute(self.cluster_names, self.cluster_similarity, self.cluster_distance)
 
 
-def permute(names, similarity=None, distance=None):
+def permute(names, similarity=None, distance=None) -> Tuple[List[str], Optional[np.ndarray], Optional[np.ndarray]]:
     """
     Permute the order of the data the names list and the according distance or similarity matrix.
 
@@ -358,7 +359,7 @@ def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Gene
             yield filename.stem, filename
 
 
-def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[DataSet, Path], None]):
+def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[DataSet, Path], None]) -> None:
     """
     Read in the data from different sources and store it in the dataset.
 
@@ -441,7 +442,7 @@ def parse_fasta(path: Path = None) -> Dict[str, str]:
             if len(line) == 0:
                 continue
             if line[0] == '>':
-                entry_id = line[1:]  # .replace(" ", "_")
+                entry_id = line[1:]
                 seq_map[entry_id] = ''
             else:
                 seq_map[entry_id] += line

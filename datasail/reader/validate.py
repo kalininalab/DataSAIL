@@ -327,7 +327,8 @@ def check_diamond_arguments(args: str = "") -> Optional[Namespace]:
         raise ValueError("Invalid value for --gapextend. It should be greater than or equal to 0.")
 
     # Checking --matrix
-    if args.matrix is not None and not args.matrix in ["BLOSUM45", "BLOSUM50", "BLOSUM62", "BLOSUM80", "BLOSUM90", "PAM30", "PAM70", "PAM250"]:
+    if args.matrix is not None and not args.matrix in ["BLOSUM45", "BLOSUM50", "BLOSUM62", "BLOSUM80", "BLOSUM90",
+                                                       "PAM30", "PAM70", "PAM250"]:
         raise ValueError("Invalid value for --matrix. It must be one of the BLOSUM or PAM matrices.")
 
     # Checking --custom-matrix
@@ -405,7 +406,9 @@ def check_diamond_arguments(args: str = "") -> Optional[Namespace]:
     #     raise ValueError("Invalid value for --shape-mask. It should be a string.")
 
     # Checking --culling-overlap
-    if args.culling_overlap is not None and (int(args.culling_overlap[:-1]) < 0 or int(args.culling_overlap[:-1]) > 100 or args.culling_overlap[-1] != "%"):
+    if args.culling_overlap is not None and (int(args.culling_overlap[:-1]) < 0 or
+                                             int(args.culling_overlap[:-1]) > 100 or
+                                             args.culling_overlap[-1] != "%"):
         raise ValueError("Invalid value for --culling-overlap. It should be between 0% and 100%.")
 
     # Checking --taxon-k
@@ -413,7 +416,8 @@ def check_diamond_arguments(args: str = "") -> Optional[Namespace]:
         raise ValueError("Invalid value for --taxon-k. It should be a non-negative integer or -1.")
 
     # Checking --range-cover
-    if args.range_cover is not None and (int(args.range_cover[:-1]) < 0 or int(args.range_cover[:-1]) > 100 or args.range_cover[-1] != "%"):
+    if args.range_cover is not None and (int(args.range_cover[:-1]) < 0 or int(args.range_cover[:-1]) > 100 or
+                                         args.range_cover[-1] != "%"):
         raise ValueError("Invalid value for --range-cover. It should be between 0% and 100%.")
 
     # Checking --stop-match-score
@@ -520,12 +524,14 @@ def check_mmseqs_arguments(args: str = "") -> Optional[Namespace]:
                      "cluster_steps", "max_rejected", "max_accept", "realign_max_seqs", "min_aln_len", "hash_shift",
                      "kmer_per_seq"]:
         if not (0 <= getattr(args, arg_name) <= 2147483647):
-            raise ValueError(f"Invalid value for --{arg_name.replace('_', '-')}. It should be a non-negative integer.")
+            raise ValueError(f"Invalid value for --{arg_name.replace('_', '-')}. "
+                             f"It should be a non-negative integer.")
 
     # Check floating-point values  # Add: "realign_score_bias" ?
     for arg_name in ["score_bias", "corr_score_weight", "corr_score_weight"]:
         if getattr(args, arg_name) < 0.0:
-            raise ValueError(f"Invalid value for --{arg_name.replace('_', '-')}. It should be a non-negative float.")
+            raise ValueError(f"Invalid value for --{arg_name.replace('_', '-')}. "
+                             f"It should be a non-negative float.")
 
     # Check string format values
     if args.k_score.count(',') != 1 or len(args.k_score.split(',')) != 2:

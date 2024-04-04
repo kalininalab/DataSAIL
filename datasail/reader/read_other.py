@@ -17,7 +17,7 @@ def read_other_data(
         index: Optional[int] = None,
         num_clusters: Optional[int] = None,
         tool_args: str = "",
-) -> Tuple[DataSet, Optional[List[Tuple[str, str]]]]:
+) -> DataSet:
     """
     Read in other data, i.e., non-protein, non-molecular, and non-genomic data, compute the weights, and distances or
     similarities of every entity.

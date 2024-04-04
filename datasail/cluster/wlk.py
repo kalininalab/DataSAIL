@@ -4,6 +4,7 @@ import math
 
 from grakel import Graph, WeisfeilerLehman, VertexHistogram
 import numpy as np
+from rdkit import Chem
 from rdkit.Chem import MolFromSmiles
 
 from datasail.reader.utils import DataSet
@@ -42,7 +43,7 @@ def run_wlk(dataset: DataSet, n_iter: int = 4) -> None:
     dataset.cluster_map = dict((name, name) for name in dataset.names)
 
 
-def run_wl_kernel(graph_list: List[Graph], n_iter=4) -> np.ndarray:
+def run_wl_kernel(graph_list: List[Graph], n_iter: int = 4) -> np.ndarray:
     """
     Run the Weisfeiler-Lehman algorithm on the list of input graphs.
 
@@ -60,7 +61,7 @@ def run_wl_kernel(graph_list: List[Graph], n_iter=4) -> np.ndarray:
     return result
 
 
-def mol_to_grakel(mol) -> Graph:
+def mol_to_grakel(mol: Chem.Mol) -> Graph:
     """
     Convert an RDKit molecule into a grakel graph to apply Weisfeiler-Lehman kernels later.
 
@@ -89,8 +90,6 @@ def mol_to_grakel(mol) -> Graph:
 
 
 class PDBStructure:
-    """Structure class"""
-
     def __init__(self, filename: Path) -> None:
         """
         Read the $C_{\alpha}$ atoms from a PDB file.
@@ -155,8 +154,6 @@ def pdb_to_grakel(pdb: Union[Path, PDBStructure], threshold: float = 7) -> Graph
 
 
 class Residue:
-    """Residue class"""
-
     def __init__(self, line: str) -> None:
         """
         Read in the important information for a residue based on the line of the C-alpha atom.

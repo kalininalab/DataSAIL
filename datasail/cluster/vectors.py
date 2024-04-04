@@ -1,5 +1,5 @@
 import copy
-from typing import Literal, get_args, Union
+from typing import Literal, get_args, Union, Callable, Any
 
 import numpy as np
 import scipy
@@ -23,7 +23,7 @@ DIST_OPTIONS = Literal[
 ]
 
 
-def get_rdkit_fct(method: SIM_OPTIONS):
+def get_rdkit_fct(method: SIM_OPTIONS) -> Callable[[Any, Any], np.ndarray]:
     """
     Get the RDKit function for the given similarity measure.
 
@@ -78,7 +78,7 @@ def rdkit_sim(fps, method: SIM_OPTIONS) -> np.ndarray:
     return matrix
 
 
-def iterable2intvect(it):
+def iterable2intvect(it) -> DataStructs.IntSparseIntVect:
     """
     Convert an iterable to an RDKit LongSparseIntVect.
 
@@ -94,7 +94,7 @@ def iterable2intvect(it):
     return output
 
 
-def iterable2bitvect(it):
+def iterable2bitvect(it) -> DataStructs.ExplicitBitVect:
     """
     Convert an iterable to an RDKit ExplicitBitVect.
 
@@ -152,21 +152,7 @@ def run_vector(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
     run(dataset, fps, method)
 
     dataset.cluster_names = copy.deepcopy(dataset.names)
-    dataset.cluster_map = dict((n, n) for n in dataset.names)
-
-
-def scale_min_max(matrix: np.ndarray) -> np.ndarray:
-    """
-    Transform features by scaling each feature to the 0-1 range.
-
-    Args:
-        matrix: The numpy array to be scaled
-
-    Returns:
-        The scaled numpy array
-    """
-    min_val, max_val = np.min(matrix), np.max(matrix)
-    return (matrix - min_val) / (max_val - min_val)
+    dataset.cluster_map = {n: n for n in dataset.names}
 
 
 def run(
@@ -195,9 +181,9 @@ def run(
                 f"the embeddings. The number of samples ({len(fps)}) is too small; the covariance matrix is singular. "
                 f"For observations with {len(fps[0])} dimensions, at least {len(fps[0]) + 1} observations are required."
             )
-        dataset.cluster_distance = scale_min_max(scipy.spatial.distance.cdist(
+        dataset.cluster_distance = scipy.spatial.distance.cdist(
             fps, fps, metric={"manhattan": "cityblock", "tanimoto": "jaccard"}.get(method, method)
-        ))
+        )
 
 
 # if __name__ == '__main__':

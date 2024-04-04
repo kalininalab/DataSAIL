@@ -2,12 +2,10 @@ from pathlib import Path
 from typing import Tuple, List, Dict, Callable, Optional
 
 import numpy as np
-import rdkit
 from matplotlib import pyplot as plt
-from rdkit import Chem
 
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, UNK_LOCATION
+from datasail.settings import LOGGER
 
 
 def cluster_param_binary_search(
@@ -42,7 +40,7 @@ def cluster_param_binary_search(
     Returns:
         Return the cluster names, the mapping from names to cluster names, and a similarity or distance matrix
     """
-    def args2log(x: Tuple):
+    def args2log(x: Tuple) -> Optional[Path]:
         """
         Compute the name of the log file based on the provided arguments.
 
@@ -144,19 +142,3 @@ def heatmap(matrix: np.ndarray, output_file: Path) -> None:
     fig.tight_layout()
     plt.savefig(output_file)
     plt.clf()
-
-
-def read_molecule_encoding(encoding: str) -> Optional[rdkit.Chem.rdchem.Mol]:
-    """
-    Detect and read the encoding of a molecule. For FASTA and Sequence input, the user must be able to specify the type
-    of sequence encoded:
-    https://www.rdkit.org/docs/source/rdkit.Chem.rdmolfiles.html#rdkit.Chem.rdmolfiles.MolFromSequence
-
-    Args:
-        encoding: Molecule encoded in some string format
-
-    Returns:
-        The molecule or None if encoding is not readable or mol is invalid.
-    """
-    # TODO: Read FASTA-, HELM-, MOL2-, MOL-, PDB-, PGN-, SVG-, Sequence-, SMARTS-, SMILES-, TPL-, XYZ-strings
-    return Chem.MolFromSmiles(encoding)

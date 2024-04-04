@@ -4,7 +4,7 @@ import operator
 import sys
 from pathlib import Path
 
-from typing import List, Optional, Union, Tuple, Dict, Callable
+from typing import List, Optional, Tuple, Dict, Callable, Union
 
 import cvxpy
 from cvxpy import Variable
@@ -104,7 +104,14 @@ class LoggerRedirect:
         sys.stdout = self.old_stdout
 
 
-def solve(loss, constraints: List, max_sec: int, solver: str, log_file: Path, num_threads: int = 14) -> Optional[cvxpy.Problem]:
+def solve(
+        loss: Union[float, cvxpy.Expression],
+        constraints: List,
+        max_sec: int,
+        solver: str,
+        log_file: Path,
+        num_threads: int = 14
+) -> Optional[cvxpy.Problem]:
     """
     Minimize the loss function based on the constraints with the timelimit specified by max_sec.
 
@@ -315,28 +322,6 @@ def interaction_contraints(
                     constraints.append(x_i[index][s] <= 0.75 * (x_e[s][i] + x_f[s][j]))
 
 
-def cluster_y_constraints(
-        clusters: List[str],
-        y: List[List[Variable]],
-        x: Variable,
-        splits: List[float],
-) -> List[Constraint]:
-    """
-    Generate constraints for the helper variables y in the cluster-based double-cold splitting.
-
-    Args:
-        clusters: List of cluster names
-        y: List of helper variables
-        x: Optimization variables
-        splits: List of splits
-
-    Returns:
-        List of constraints for the helper variables y
-    """
-    return [y[c1][c2] >= cvxpy.max(cvxpy.vstack([x[s, c1] - x[s, c2] for s in range(len(splits))]))
-            for c1 in range(len(clusters)) for c2 in range(c1)]
-
-
 def collect_results_2d(
         problem: cvxpy.Problem,
         names: List[str],
@@ -394,7 +379,7 @@ def leakage_loss(
         clusters,
         weights,
         num_splits: int,
-):
+) -> Union[int, cvxpy.Expression]:
     """
     Compute the leakage loss for the cluster-based double-cold splitting.
 
@@ -412,8 +397,10 @@ def leakage_loss(
     if uniform:
         return 0
     else:
-        # tmp = [intra_weights[c1, c2] * y[c1][c2] for c1 in range(len(clusters)) for c2 in range(c1)]
-        # e_loss = cvxpy.sum(tmp)
-        tmp = [[weights[e1] * weights[e2] * intra_weights[e1, e2] * cvxpy.max(cvxpy.vstack([x[s, e1] - x[s, e2] for s in range(num_splits)])) for e2 in range(e1 + 1, len(clusters))] for e1 in range(len(clusters))]
+        tmp = [[
+            weights[e1] * weights[e2] * intra_weights[e1, e2] * cvxpy.max(
+                cvxpy.vstack([x[s, e1] - x[s, e2] for s in range(num_splits)])
+            ) for e2 in range(e1 + 1, len(clusters))
+        ] for e1 in range(len(clusters))]
         loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
         return loss

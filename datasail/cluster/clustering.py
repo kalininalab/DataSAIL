@@ -143,7 +143,7 @@ def distance_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[st
     finish_clustering(dataset)
 
 
-def finish_clustering(dataset: DataSet):
+def finish_clustering(dataset: DataSet) -> None:
     """
     Finish clustering by computing the weights of the clusters and the stratification of the clusters.
 

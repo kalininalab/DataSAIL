@@ -126,6 +126,16 @@ def remove_molecule_duplicates(dataset: DataSet) -> DataSet:
 
 
 def remove_duplicate_values(dataset, data) -> DataSet:
+    """
+    Remove duplicate values from the dataset.
+
+    Args:
+        dataset: Dataset to remove duplicates from
+        data: Data to remove duplicates from
+
+    Returns:
+        Updated dataset with removed duplicates
+    """
     tmp = dict()
     for idx, mol in data.items():
         if mol not in tmp:

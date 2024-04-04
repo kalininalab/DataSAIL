@@ -68,18 +68,19 @@ def validate_args(**kwargs) -> Dict[str, object]:
     if kwargs[KW_NAMES] is None:
         kwargs[KW_NAMES] = [f"Split{x:03d}" for x in range(len(kwargs[KW_SPLITS]))]
     elif len(kwargs[KW_SPLITS]) != len(kwargs[KW_NAMES]):
-        error("Different number of splits and names. You have to give the same number of splits and names for them.",
-              2, kwargs[KW_CLI])
+        error("Different number of splits and names. You have to give the same number of splits and names for "
+              "them.",2, kwargs[KW_CLI])
     elif len(kwargs[KW_NAMES]) != len(set(kwargs[KW_NAMES])):
-        error("At least two splits will have the same name. Please check the naming of the splits again to have unique "
-              "names", 24, kwargs[KW_CLI])
+        error("At least two splits will have the same name. Please check the naming of the splits again to have "
+              "unique names", 24, kwargs[KW_CLI])
     kwargs[KW_SPLITS] = [x / sum(kwargs[KW_SPLITS]) for x in kwargs[KW_SPLITS]]
 
     # check search termination criteria
     if kwargs[KW_MAX_SEC] < 1:
         error("The maximal search time must be a positive integer.", 3, kwargs[KW_CLI])
     if kwargs[KW_MAX_SOL] < 1:
-        error("The maximal number of solutions to look at has to be a positive integer.", 4, kwargs[KW_CLI])
+        error("The maximal number of solutions to look at has to be a positive integer.", 4,
+              kwargs[KW_CLI])
     if kwargs[KW_THREADS] < 0:
         error("The number of threads to use has to be a non-negative integer.", 23, kwargs[KW_CLI])
     if kwargs[KW_THREADS] == 0:
@@ -116,48 +117,56 @@ def validate_args(**kwargs) -> Dict[str, object]:
     # syntactically parse the input data for the E-dataset
     if kwargs[KW_E_DATA] is not None and isinstance(kwargs[KW_E_DATA], Path) and not kwargs[KW_E_DATA].exists():
         error("The filepath to the E-data is invalid.", 7, kwargs[KW_CLI])
-    if kwargs[KW_E_WEIGHTS] is not None and isinstance(kwargs[KW_E_WEIGHTS], Path) and not kwargs[KW_E_WEIGHTS].is_file():
+    if kwargs[KW_E_WEIGHTS] is not None and isinstance(kwargs[KW_E_WEIGHTS], Path) and \
+            not kwargs[KW_E_WEIGHTS].is_file():
         error("The filepath to the weights of the E-data is invalid.", 8, kwargs[KW_CLI])
     if kwargs[KW_E_STRAT] is not None and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
         error("The filepath to the stratification of the E-data is invalid.", 11, kwargs[KW_CLI])
     if kwargs[KW_E_SIM] is not None and isinstance(kwargs[KW_E_SIM], str) and kwargs[KW_E_SIM].lower() not in SIM_ALGOS:
         kwargs[KW_E_SIM] = Path(kwargs[KW_E_SIM])
         if not kwargs[KW_E_SIM].is_file():
-            error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", 9,
-                  kwargs[KW_CLI])
-    if kwargs[KW_E_DIST] is not None and isinstance(kwargs[KW_E_DIST], str) and kwargs[KW_E_DIST].lower() not in DIST_ALGOS:
+            error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.",
+                  9, kwargs[KW_CLI])
+    if kwargs[KW_E_DIST] is not None and isinstance(kwargs[KW_E_DIST], str) and \
+            kwargs[KW_E_DIST].lower() not in DIST_ALGOS:
         kwargs[KW_E_DIST] = Path(kwargs[KW_E_DIST])
         if not kwargs[KW_E_DIST].is_file():
-            error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10,
-                  kwargs[KW_CLI])
+            error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.",
+                  10, kwargs[KW_CLI])
     if kwargs[KW_E_CLUSTERS] < 1:
-        error("The number of clusters to find in the E-data has to be a positive integer.", 12, kwargs[KW_CLI])
+        error("The number of clusters to find in the E-data has to be a positive integer.", 12,
+              kwargs[KW_CLI])
 
     # syntactically parse the input data for the F-dataset
     if kwargs[KW_F_DATA] is not None and isinstance(kwargs[KW_F_DATA], Path) and not kwargs[KW_F_DATA].exists():
         error("The filepath to the F-data is invalid.", 13, kwargs[KW_CLI])
-    if kwargs[KW_F_WEIGHTS] is not None and isinstance(kwargs[KW_F_WEIGHTS], Path) and not kwargs[KW_F_WEIGHTS].is_file():
+    if kwargs[KW_F_WEIGHTS] is not None and isinstance(kwargs[KW_F_WEIGHTS], Path) and \
+            not kwargs[KW_F_WEIGHTS].is_file():
         error("The filepath to the weights of the F-data is invalid.", 14, kwargs[KW_CLI])
     if kwargs[KW_E_STRAT] is not None and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
         error("The filepath to the stratification of the E-data is invalid.", 20, kwargs[KW_CLI])
     if kwargs[KW_F_SIM] is not None and isinstance(kwargs[KW_F_SIM], str) and kwargs[KW_F_SIM].lower() not in SIM_ALGOS:
         kwargs[KW_F_SIM] = Path(kwargs[KW_F_SIM])
         if not kwargs[KW_F_SIM].is_file():
-            error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", 15,
-                  kwargs[KW_CLI])
-    if kwargs[KW_F_DIST] is not None and isinstance(kwargs[KW_F_DIST], str) and kwargs[KW_F_DIST].lower() not in DIST_ALGOS:
+            error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.",
+                  15, kwargs[KW_CLI])
+    if kwargs[KW_F_DIST] is not None and isinstance(kwargs[KW_F_DIST], str) and \
+            kwargs[KW_F_DIST].lower() not in DIST_ALGOS:
         if not kwargs[KW_F_DIST].is_file():
-            error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16,
-                  kwargs[KW_CLI])
+            error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.",
+                  16, kwargs[KW_CLI])
     if kwargs[KW_F_CLUSTERS] < 1:
-        error("The number of clusters to find in the F-data has to be a positive integer.", 17, kwargs[KW_CLI])
+        error("The number of clusters to find in the F-data has to be a positive integer.", 17,
+              kwargs[KW_CLI])
 
     return kwargs
 
 
 def datasail(
         techniques: Union[str, List[str], Callable[..., List[str]], Generator[str, None, None]] = None,
-        inter: Optional[Union[str, Path, List[Tuple[str, str]], Callable[..., List[str]], Generator[str, None, None]]] = None,
+        inter: Optional[
+            Union[str, Path, List[Tuple[str, str]], Callable[..., List[str]], Generator[str, None, None]]
+        ] = None,
         max_sec: int = 100,
         max_sol: int = 1000,
         verbose: str = "W",

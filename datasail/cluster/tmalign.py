@@ -1,7 +1,6 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Dict, Tuple, List
 
 import numpy as np
 
@@ -9,7 +8,7 @@ from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, INSTALLED, TMALIGN
 
 
-def run_tmalign(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+def run_tmalign(dataset: DataSet) -> None:
     """
     Run TM-align in the commandline and read in the results into clusters.
 
@@ -49,7 +48,9 @@ def run_tmalign(dataset: DataSet) -> Tuple[List[str], Dict[str, str], np.ndarray
         read_tmalign_folder(dataset, results_folder)
     shutil.rmtree(results_folder, ignore_errors=True)
 
-    return cluster_names, cluster_map, cluster_sim
+    dataset.cluster_names = cluster_names
+    dataset.cluster_map = cluster_map
+    dataset.cluster_similarity = cluster_sim
 
 
 def read_tmalign_folder(dataset: DataSet, tmalign_folder: Path) -> np.ndarray:

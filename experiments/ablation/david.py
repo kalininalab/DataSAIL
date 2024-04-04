@@ -9,15 +9,15 @@ import matplotlib
 import cvxpy
 import deepchem as dc
 import numpy as np
+from cvxpy import Variable, Constraint
 from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 
 from datasail.cluster.clustering import additional_clustering
-from datasail.cluster.utils import read_molecule_encoding
 from datasail.reader.read_molecules import read_molecule_data
-from datasail.solver.utils import solve, compute_limits, cluster_y_constraints
+from datasail.solver.utils import solve, compute_limits
 from experiments.ablation.time import MARKERS
 from experiments.utils import dc2pd, DATASETS, COLORS
 
@@ -55,6 +55,28 @@ def solve_ccs_blp(
 
     assignment = {e: names[s] for s in range(len(splits)) for i, e in enumerate(clusters) if x[s, i].value > 0.1}
     return problem, assignment, ttime
+
+
+def cluster_y_constraints(
+        clusters: List[str],
+        y: List[List[Variable]],
+        x: Variable,
+        splits: List[float],
+) -> List[Constraint]:
+    """
+    Generate constraints for the helper variables y in the cluster-based double-cold splitting.
+
+    Args:
+        clusters: List of cluster names
+        y: List of helper variables
+        x: Optimization variables
+        splits: List of splits
+
+    Returns:
+        List of constraints for the helper variables y
+    """
+    return [y[c1][c2] >= cvxpy.max(cvxpy.vstack([x[s, c1] - x[s, c2] for s in range(len(splits))]))
+            for c1 in range(len(clusters)) for c2 in range(c1)]
 
 
 def run_ecfp(dataset):

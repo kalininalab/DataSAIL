@@ -174,8 +174,8 @@ As something may break during the execution of the DIAMOND tool, we have to chec
             raise ValueError("Something went wront with DIAMOND alignment. The output file does not exist.")
 
 Now, it's time to harvest the results of the DIAMOND tool. This is done by reading the output file into a dataframe and
-converting it into a table using :code:`df.pivot`. Then, we need to fix two details about the DIAMOND output. First, the
-TSV-file has no column names, so we have to add them. Second, the similarity score is computed as pident, which is
+converting it into a table using :code:`df.pivot`. Then, we need to fix two details about the DIAMOND output. First,
+the TSV-file has no column names, so we have to add them. Second, the similarity score is computed as pident, which is
 f_ident * 100. To correct this and scale the similarities back to [0,1], we have to divide p_ident by 100.
 
 .. code-block:: python

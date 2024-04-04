@@ -1,9 +1,6 @@
 from rdkit import Chem, RDLogger
 from rdkit.Chem import AllChem
-from rdkit.Chem.Scaffolds.MurckoScaffold import MakeScaffoldGeneric
-from rdkit.Chem.rdchem import MolSanitizeException
 
-from datasail.cluster.utils import read_molecule_encoding
 from datasail.cluster.vectors import run, SIM_OPTIONS
 from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER
@@ -29,22 +26,13 @@ def run_ecfp(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
     scaffolds = {}
     for name in dataset.names:
         mol = Chem.MolFromSmiles(dataset.data[name])
-        # scaffold = read_molecule_encoding(dataset.data[name])
-        # if scaffold is None:
         if mol is None:
-            bo, bc = "{", "}"
-            LOGGER.warning(f"RDKit cannot parse {name} {bo}{dataset.data[name]}{bc}")
+            LOGGER.warning(f"RDKit cannot parse {name} >{dataset.data[name]}< as a molecule. Skipping.")
             invalid_mols.append(name)
             continue
         scaffolds[name] = mol
-        # try:
-        #     scaffolds[name] = MakeScaffoldGeneric(scaffold)
-        # except MolSanitizeException:
-        #     LOGGER.warning(f"RDKit cannot parse {name} ({dataset.data[name]})")
-        #     invalid_mols.append(name)
-        #     continue
 
-    for invalid_name in invalid_mols:  # obsolete code?
+    for invalid_name in invalid_mols:
         dataset.names.remove(invalid_name)
         dataset.data.pop(invalid_name)
         poppable = []
@@ -54,13 +42,8 @@ def run_ecfp(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
         for pop in poppable:
             dataset.id_map.pop(pop)
     
-    fps = []
-    # dataset.cluster_names = list(set(Chem.MolToSmiles(s) for s in list(scaffolds.values())))
-    # for scaffold in dataset.cluster_names:
-    #     fps.append(AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(scaffold), 2, nBits=1024))
+    fps = [AllChem.GetMorganFingerprintAsBitVect(scaffolds[name], 2, nBits=1024) for name in dataset.names]
     dataset.cluster_names = dataset.names
-    for name in dataset.names:
-        fps.append(AllChem.GetMorganFingerprintAsBitVect(scaffolds[name], 2, nBits=1024))
 
     LOGGER.info(f"Reduced {len(dataset.names)} molecules to {len(dataset.cluster_names)}")
     LOGGER.info("Compute Tanimoto Coefficients")
@@ -68,5 +51,3 @@ def run_ecfp(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
     run(dataset, fps, method)
 
     dataset.cluster_map = {name: name for name in dataset.names}
-    dataset.cluster_weights = {name: 1 for name in dataset.names}
-

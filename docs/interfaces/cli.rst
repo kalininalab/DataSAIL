@@ -21,8 +21,8 @@ generator therefore. For more details on the supported types, please checkout th
 ==============
 CLI only! Required!
 
-The path to the output directory to store the splits in. This folder will contain all splits, reports, and logs from the
-execution.
+The path to the output directory to store the splits in. This folder will contain all splits, reports, and logs from
+the execution.
 
 -i / -\-inter
 =============
@@ -40,8 +40,8 @@ so far.
 
 -\-threads
 ==========
-The number of threads to use throughout the computation. This number of threads is also forwarded to clustering programs
-used internally. If 0, all available CPUs will be used.
+The number of threads to use throughout the computation. This number of threads is also forwarded to clustering
+programs used internally. If 0, all available CPUs will be used.
 
 -\-verbose
 ==========

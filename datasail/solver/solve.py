@@ -14,7 +14,7 @@ from datasail.solver.cluster_2d import solve_c2
 from datasail.solver.utils import sample_categorical
 
 
-def insert(dictionary: dict, key: str, value):
+def insert(dictionary: dict, key: str, value) -> None:
     """
     Append a value into a dictionary with the given key. If key is not in dictionary, create an empty list and append
     the value.
@@ -83,9 +83,6 @@ def run_solver(
                 log_file = None if log_dir is None else log_dir / f"{dataset.get_name()}_{technique}.log"
 
                 if technique == TEC_R:
-                    # losing interactions here: from 19074 to 18810 (round about 1.5%)
-                    # This magically is the number of assignments for the other splits as well
-                    # SOLUTION: new inter contains duplicates?!
                     solution = sample_categorical(
                         inter=inter,
                         splits=splits,
@@ -145,9 +142,13 @@ def run_solver(
                 elif technique.startswith(TEC_I2):
                     solution = solve_i2(
                         e_entities=e_dataset.names,
-                        e_stratification=np.stack([e_dataset.strat2oh(name=n) for n in e_dataset.names]) if e_dataset.stratification is not None else None,
+                        e_stratification=np.stack([
+                            e_dataset.strat2oh(name=n) for n in e_dataset.names
+                        ]) if e_dataset.stratification is not None else None,
                         f_entities=f_dataset.names,
-                        f_stratification=np.stack([f_dataset.strat2oh(name=n) for n in f_dataset.names]) if f_dataset.stratification is not None else None,
+                        f_stratification=np.stack([
+                            f_dataset.strat2oh(name=n) for n in f_dataset.names
+                        ]) if f_dataset.stratification is not None else None,
                         inter=set(inter),
                         delta=delta,
                         epsilon=epsilon,
@@ -166,8 +167,10 @@ def run_solver(
                     cluster_split = solve_c1(
                         clusters=dataset.cluster_names,
                         weights=[dataset.cluster_weights.get(c, 0) for c in dataset.cluster_names],
-                        s_matrix=np.stack([dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
-                                           for c in dataset.cluster_names]) if dataset.cluster_stratification is not None else None,
+                        s_matrix=np.stack([
+                            dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
+                            for c in dataset.cluster_names
+                        ]) if dataset.cluster_stratification is not None else None,
                         similarities=dataset.cluster_similarity,
                         distances=dataset.cluster_distance,
                         delta=delta,
@@ -192,14 +195,18 @@ def run_solver(
                     cluster_inter = cluster_interactions(inter, e_dataset, f_dataset)
                     cluster_split = solve_c2(
                         e_clusters=e_dataset.cluster_names,
-                        e_s_matrix=np.stack([e_dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
-                                             for c in e_dataset.cluster_names]) if e_dataset.cluster_stratification is not None else None,
+                        e_s_matrix=np.stack([
+                            e_dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
+                            for c in e_dataset.cluster_names
+                        ]) if e_dataset.cluster_stratification is not None else None,
                         e_similarities=e_dataset.cluster_similarity,
                         e_distances=e_dataset.cluster_distance,
                         e_weights=np.array([e_dataset.cluster_weights.get(c, 1) for c in e_dataset.cluster_names]),
                         f_clusters=f_dataset.cluster_names,
-                        f_s_matrix=np.stack([f_dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
-                                             for c in f_dataset.cluster_names]) if f_dataset.cluster_stratification is not None else None,
+                        f_s_matrix=np.stack([
+                            f_dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
+                            for c in f_dataset.cluster_names
+                        ]) if f_dataset.cluster_stratification is not None else None,
                         f_similarities=f_dataset.cluster_similarity,
                         f_distances=f_dataset.cluster_distance,
                         f_weights=np.array([f_dataset.cluster_weights.get(c, 1) for c in f_dataset.cluster_names]),
