@@ -1,0 +1,19 @@
+name: Publish DataSAIL-lite
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    
+jobs:
+  publish:
+    runs-on: 'ubuntu-latest'
+    steps:
+    - uses: actions/checkout@v4
+    - name: Publish DataSAIL-lite to Conda
+      uses: Old-Shatterhand/publish-conda-multichannel-action@v0.0.11
+      with:
+        AnacondaToken: ${{ secrets.DATASAIL_ANACONDA_TOKEN }}
+        Versions: "3.8,3.9,3.10,3.11,3.12"
+        Folder: "recipe_lite"
+        Platforms: "osx-64,osx-arm64,win-64"
