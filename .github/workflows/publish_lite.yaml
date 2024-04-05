@@ -36,7 +36,7 @@ jobs:
     - name: Build DataSAIL for linux-64
       shell: bash -l {0}
       run: |
-        conda-build -q --variants -c conda-forge -c bioconda --output-folder . --no-test recipe_lite
+        conda-build -q -c conda-forge -c bioconda --output-folder . --no-test recipe_lite
 
     - name: Convert DataSAIL to osx-64, osx-arm64, win-64
       shell: bash -l {0}
