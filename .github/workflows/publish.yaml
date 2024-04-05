@@ -15,6 +15,7 @@ jobs:
         ANACONDA_TOKEN: ${{ secrets.DATASAIL_ANACONDA_TOKEN }}
       shell: bash -l {0}
       run: |
+        conda install -y anaconda-client conda-build git
         conda-build -q --variants "{python: [3.8, 3.9, 3.10, 3.11, 3.12]}" -c conda-forge -c bioconda --output-folder . --no-test recipe
         conda convert -p osx-64 linux-64/*.tar.bz2
         anaconda -t "$ANACONDA_TOKEN" upload linux-64/*.tar.bz2
