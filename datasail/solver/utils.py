@@ -50,7 +50,7 @@ def stratification_constraints(
     """
     c = np.sum(s_matrix, axis=0)
     slbo = np.array([[c[e] * split * (1 - delta) for e in range(s_matrix.shape[1])] for split in splits])
-    return (x * s_matrix) >= slbo
+    return (x @ s_matrix) >= slbo
 
 
 class LoggerRedirect:

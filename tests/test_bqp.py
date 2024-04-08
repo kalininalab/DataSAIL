@@ -1,14 +1,15 @@
 import shutil
 from pathlib import Path
+from typing import Tuple
 
 import pytest
 
 from tests.utils import check_folder, run_sail
 
 
-# @pytest.mark.parametrize("root_dir", [Path("data") / "perf_7_3", Path("data") / "perf_70_30"])
-# @pytest.mark.parametrize("mode", [("R", "random"), ("I1e", "id_cold_single"), ("I2", "id_cold_double")])
-def test_perf_bin_2(root_dir=Path("data") / "perf_70_30", mode=("I2", "id_cold_double")):
+@pytest.mark.parametrize("root_dir", [Path("data") / "perf_7_3", Path("data") / "perf_70_30"])
+@pytest.mark.parametrize("mode", [("R", "random"), ("I1e", "id_cold_single"), ("I2", "id_cold_double")])
+def test_perf_bin_2(root_dir: Path, mode: Tuple[str, str]):
     base = root_dir / mode[1]
 
     run_sail(
