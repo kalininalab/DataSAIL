@@ -123,7 +123,7 @@ def run_vector(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
     if method in get_args(SIM_OPTIONS):
         if isinstance(embed, (list, tuple, np.ndarray)):
             if isinstance(embed[0], int) or np.issubdtype(embed[0].dtype, int):
-                if method in ["allbit", "asymmetric", "braunblanquet", "cosine", "kulczynski", "mcconnaughey", "onbit",
+                if method in ["allbit", "asymmetric", "braunblanquet", "cosine", "kulczynski", "onbit",
                               "rogotgoldberg", "russel", "sokal"]:
                     dataset.data = {k: iterable2bitvect(v) for k, v in dataset.data.items()}
                 else:
@@ -138,15 +138,14 @@ def run_vector(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
                 f"Unsupported embedding type {type(embed)}. Please use either RDKit datastructures, lists, "
                 f"tuples or one-dimensional numpy arrays.")
     elif method in get_args(DIST_OPTIONS):
+        dtype = np.bool_ if ["jaccard", "rogerstanimoto", "sokalmichener", "yule"] else np.float64
         if isinstance(embed, (
                 list, tuple, DataStructs.ExplicitBitVect, DataStructs.LongSparseIntVect, DataStructs.IntSparseIntVect)):
-            dataset.data = {k: np.array(list(v), dtype=np.float64) for k, v in dataset.data.items()}
+            dataset.data = {k: np.array(list(v), dtype=dtype) for k, v in dataset.data.items()}
         if not isinstance(dataset.data[dataset.names[0]], np.ndarray):
             raise ValueError(
                 f"Unsupported embedding type {type(embed)}. Please use either RDKit datastructures, lists, "
                 f"tuples or one-dimensional numpy arrays.")
-        if method in ["rogerstanimoto", "sokalmichener", "yule"]:
-            dataset.data = {k: np.array(list(v), dtype=np.bool_) for k, v in dataset.data.items()}
     else:
         raise ValueError(f"Unknown method {method}")
     fps = [dataset.data[name] for name in dataset.names]
