@@ -144,7 +144,8 @@ Details about the clustering algorithms
 #######################################
 
 For all algorithms, the given general commands can be extended by user defined arguments according to the specification
-of the respective tool.
+of the respective tool. Apart from this, DataSAIL offers multiple options to compute similarities or distances between
+embeddings of the input data. More information is given :ref:`here <embeddings-label>`.
 
 CD-HIT(-EST)
 ============

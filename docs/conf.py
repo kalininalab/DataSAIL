@@ -59,6 +59,7 @@ html_logo = "imgs/DataSAIL_Logo.png"
 html_show_sourcelink = True
 
 rst_context = {"DataSAIL": datasail}
+mathjax3_config = {'chtml': {'displayAlign': 'left'}}
 
 add_module_names = False
 fail_on_warning = True

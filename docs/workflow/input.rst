@@ -15,17 +15,17 @@ The standard way to share data in an effective way are :code:`.csv` and :code:`.
 are used to, e. g., transport data about molecules, weights of samples, or stratification. From these files, DataSAIL
 only reads the first two columns. The first column has to contain the names of the samples and the second row the
 according information (SMILES or FASTA string, weighting, stratification, ...). Also, the first row must be column
-names, therefore, DataSAIL ignores the first row. Examples are given in :code:`tests/data/pipline/drug.tsv`v(`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/drugs.tsv>`_)
-and :code:`tests/data/pipeline/drugs_weights.tsv` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/drug_weights.tsv>`_).
+names, therefore, DataSAIL ignores the first row. Examples are given in :code:`tests/data/pipline/drug.tsv`v(`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/drugs.tsv>`__)
+and :code:`tests/data/pipeline/drugs_weights.tsv` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/drug_weights.tsv>`__).
 
-But they are also used to ship similarity and distance matrices. An
-example is given in :code:`tests/data/pipeline/drug_sim.csv` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/drug_sim.tsv>`_)
-and :code:`tests/data/pipeline/drug_dist.csv` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/drug_dist.tsv>`_).
+But they are also used to ship similarity and distance matrices. An example is given in
+:code:`tests/data/pipeline/drug_sim.csv` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/drug_sim.tsv>`__)
+and :code:`tests/data/pipeline/drug_dist.csv` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/drug_dist.tsv>`__).
 Here, the first row and column contain the names of the samples and the rest of the matrix the similarities or
 distances between the samples.
 
 CSV and TSV files can also be used to transport interactions. An example is given in
-:code:`tests/data/pipeline/inter.tsv` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/inter.tsv>`_).
+:code:`tests/data/pipeline/inter.tsv` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/inter.tsv>`__).
 Again, only the first two columns matter which specify which sample from the e-entity with which sample from the
 f-entity interacts.
 
@@ -44,13 +44,13 @@ For Protein and Nucleotide Sequences
 Sequence-based datasets are stored inside a single files. Each sequences must be identified with its name in a line
 starting with a :code:`>`. All following lines are concatenated to form the sequence until there is an empty line, the
 end of the file, or a line that starts with :code:`>` starting the next line. An example with protein sequences is
-given in :code:`tests/data/pipline/seqs.fasta` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/seqs.fasta>`_).
+given in :code:`tests/data/pipline/seqs.fasta` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/seqs.fasta>`__).
 
 For whole Genomes
 =================
 
 Genome input through FASTA files is a bit different to the format above. Here, each file contains all contigs, or reads
-of one sample and the dataset is represented by a folder. Examples are given in :code:`tests/data/genomes` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/genomes>`_).
+of one sample and the dataset is represented by a folder. Examples are given in :code:`tests/data/genomes` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/genomes>`__).
 
 Pickle Files
 ############
@@ -59,7 +59,7 @@ Pickle Files
 
 From version 1.0.0 on, DataSAIL can also take embeddings as input. Here, the pickle file has to contain a dictionary
 mapping the sample names to the embeddings. An example storing Morgan fingerprints of the molecules in
-:code:`tests/data/pipeline/drugs.tsv` in a pickle file is given in :code:`tests/data/pipeline/drugs.pkl` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/drugs.pkl>`_).
+:code:`tests/data/pipeline/drugs.tsv` in a pickle file is given in :code:`tests/data/pipeline/drugs.pkl` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/drugs.pkl>`__).
 
 HDF5 Files
 ##########
@@ -69,7 +69,7 @@ HDF5 Files
 Also, from version 1.0.0 on, DataSAIL supports the :code:`.h5` format. This format is used to store large datasets in
 runtime and memory efficient way. Similar to Pickle files, the HDF5 file has to contain a dictionary mapping the sample
 names to the embeddings. An example storing Morgan fingerprints of the molecules in
-:code:`tests/data/pipeline/drugs.tsv` in a HDF5 file is given in :code:`tests/data/pipeline/drugs.h5` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/drugs.h5>`_).
+:code:`tests/data/pipeline/drugs.tsv` in a HDF5 file is given in :code:`tests/data/pipeline/drugs.h5` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/drugs.h5>`__).
 To open and convert it to a dictionary, the following code can be used:
 
 .. code-block:: python
@@ -80,7 +80,7 @@ To open and convert it to a dictionary, the following code can be used:
     with h5py.File('tests/data/pipeline/morgan.h5', 'r') as f:
         morgan = {k: np.array(v) for k, v in f.items()}
 
-Example code for creation and reading of Pickle and HDF5 files can be found in :code:`tests/data/pipeline/embed.py` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/embed.py>`_).
+Example code for creation and reading of Pickle and HDF5 files can be found in :code:`tests/data/pipeline/embed.py` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/embed.py>`__).
 
 Molecular Input Files
 #####################
@@ -96,4 +96,4 @@ except for :code:`.sdf` files, which can contain multiple molecules. The molecul
 molecules in the same file.
 
 Example files for :code:`.mol`, :code:`.mrv`, :code:`.pdb`, and :code:`.tpl` are given in
-:code:`tests/data/pipeline/mol_formats/<FORMAT>/` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/mol_formats>`_).
+:code:`tests/data/pipeline/mol_formats/<FORMAT>/` (`Link <https://github.com/kalininalab/DataSAIL/blob/main/tests/data/pipeline/mol_formats>`__).

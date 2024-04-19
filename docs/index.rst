@@ -64,6 +64,7 @@ arguments are mostly the same.
 
     workflow/input
     workflow/clustering
+    workflow/embeddings
     workflow/splits
     workflow/solvers
     posters
