@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 
 import h5py
+import numpy as np
 import pandas as pd
 import pytest
 import rdkit
@@ -366,6 +367,28 @@ def test_rna():
     assert 5 < sum(x == "test" for x in e_splits["I1e"][0].values()) < 10
     assert 15 < sum(x == "train" for x in e_splits["C1e"][0].values()) < 20
     assert 5 < sum(x == "test" for x in e_splits["C1e"][0].values()) < 10
+
+
+def test_c2_impossible():
+    sims = np.zeros((10, 10))
+    sims[:9, :9] += np.ones((9, 9))
+    sims[-1, -1] = 1
+    e_splits, f_splits, inter_splits = datasail(
+        inter=[(str(i), str(j)) for i in range(9) for j in range(9)] + [("9", "9")],
+        verbose="I",
+        techniques=["C2"],
+        splits=[0.5, 0.5],
+        names=["train", "test"],
+        e_type="P",
+        e_data={str(i): "A" * (i + 1) for i in range(10)},
+        e_sim=([str(i) for i in range(10)], sims),
+        e_clusters=2,
+        f_type="P",
+        f_sim=([str(i) for i in range(10)], sims),
+        f_data={str(i): "A" * (i + 1) for i in range(10)},
+        f_clusters=2,
+    )
+    assert e_splits is not None
 
 
 def check_identity_tsv(filename):

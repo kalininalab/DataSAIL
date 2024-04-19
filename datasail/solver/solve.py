@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple, Optional, List, Dict, Union
+from typing import Tuple, Optional, List, Dict, Union, Set
 
 import numpy as np
 from cvxpy import SolverError
@@ -43,7 +43,7 @@ def run_solver(
         max_sol: int,
         solver: str,
         log_dir: Path,
-) -> Tuple[Dict[str, List[Dict[Tuple[str, str], str]]], DictMap, DictMap, DictMap, DictMap]:
+) -> Tuple[Dict[str, List[Dict[Tuple[str, str], str]]], DictMap, DictMap, DictMap, DictMap, Set[str]]:
     """
     Run a solver based on the selected technique.
 
@@ -71,11 +71,14 @@ def run_solver(
 
     LOGGER.info("Define optimization problem")
 
+    infeasible_techs = set()
     for run in range(runs):
         if run > 0:
             e_dataset.shuffle()
             f_dataset.shuffle()
         for technique in techniques:
+            if technique in infeasible_techs:
+                continue
             try:
                 LOGGER.info(technique)
                 mode = technique[-1]
@@ -139,6 +142,8 @@ def run_solver(
                                 insert(output_f_entities, technique, solution)
                             else:
                                 insert(output_e_entities, technique, solution)
+                    else:
+                        infeasible_techs.add(technique)
                 elif technique.startswith(TEC_I2):
                     solution = solve_i2(
                         e_entities=e_dataset.names,
@@ -163,6 +168,8 @@ def run_solver(
                         insert(output_inter, technique, solution[0])
                         insert(output_e_entities, technique, solution[1])
                         insert(output_f_entities, technique, solution[2])
+                    else:
+                        infeasible_techs.add(technique)
                 elif technique.startswith(TEC_C1):
                     cluster_split = solve_c1(
                         clusters=dataset.cluster_names,
@@ -191,6 +198,8 @@ def run_solver(
                             insert(output_e_clusters, technique, cluster_split)
                             insert(output_e_entities, technique,
                                    reverse_clustering(cluster_split, e_dataset.cluster_map))
+                    else:
+                        infeasible_techs.add(technique)
                 elif technique.startswith(TEC_C2):
                     cluster_inter = cluster_interactions(inter, e_dataset, f_dataset)
                     cluster_split = solve_c2(
@@ -234,7 +243,9 @@ def run_solver(
                                reverse_clustering(cluster_split[1], e_dataset.cluster_map))
                         insert(output_f_entities, technique,
                                reverse_clustering(cluster_split[2], f_dataset.cluster_map))
+                    else:
+                        infeasible_techs.add(technique)
             except SolverError:
                 LOGGER.error(f"Splitting failed for {technique}, try to increase the timelimit or the epsilon value.")
 
-    return output_inter, output_e_entities, output_f_entities, output_e_clusters, output_f_clusters
+    return output_inter, output_e_entities, output_f_entities, output_e_clusters, output_f_clusters, infeasible_techs

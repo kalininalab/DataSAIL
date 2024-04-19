@@ -168,7 +168,7 @@ def solve(
             "limits/time": max_sec,
             "display/verblevel": 2,
             "lp/threads": num_threads,
-            "parallel/maxnthreads": num_threads
+            "parallel/maxnthreads": num_threads,
         }}
     elif solver == SOLVER_XPRESS:
         # TODO: find valid license and activate it

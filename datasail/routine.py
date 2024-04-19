@@ -54,21 +54,24 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     LOGGER.info("Split data")
 
     # split the data into dictionaries mapping interactions, e-entities, and f-entities into the splits
-    inter_split_map, e_name_split_map, f_name_split_map, e_cluster_split_map, f_cluster_split_map = run_solver(
-        techniques=kwargs[KW_TECHNIQUES],
-        e_dataset=e_dataset,
-        f_dataset=f_dataset,
-        inter=new_inter,
-        delta=kwargs[KW_DELTA],
-        epsilon=kwargs[KW_EPSILON],
-        runs=kwargs[KW_RUNS],
-        splits=kwargs[KW_SPLITS],
-        split_names=kwargs[KW_NAMES],
-        max_sec=kwargs[KW_MAX_SEC],
-        max_sol=kwargs[KW_MAX_SOL],
-        solver=kwargs[KW_SOLVER],
-        log_dir=kwargs[KW_LOGDIR],
-    )
+    inter_split_map, e_name_split_map, f_name_split_map, e_cluster_split_map, f_cluster_split_map, infeasible_techs = \
+        run_solver(
+            techniques=kwargs[KW_TECHNIQUES],
+            e_dataset=e_dataset,
+            f_dataset=f_dataset,
+            inter=new_inter,
+            delta=kwargs[KW_DELTA],
+            epsilon=kwargs[KW_EPSILON],
+            runs=kwargs[KW_RUNS],
+            splits=kwargs[KW_SPLITS],
+            split_names=kwargs[KW_NAMES],
+            max_sec=kwargs[KW_MAX_SEC],
+            max_sol=kwargs[KW_MAX_SOL],
+            solver=kwargs[KW_SOLVER],
+            log_dir=kwargs[KW_LOGDIR],
+        )
+    LOGGER.warn(f"The ILPs for the following techniques are infeasible. Please retry with increased time-limit, "
+                f"epsilon, or delta values.\n\t{infeasible_techs}")
 
     LOGGER.info("Store results")
 
@@ -76,6 +79,8 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
     output_inter_split_map = dict()
     if new_inter is not None:
         for technique in kwargs[KW_TECHNIQUES]:
+            if technique in infeasible_techs:
+                continue
             output_inter_split_map[technique] = []
             for run in range(kwargs[KW_RUNS]):
                 output_inter_split_map[technique].append(dict())
