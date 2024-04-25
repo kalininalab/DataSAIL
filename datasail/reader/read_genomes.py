@@ -43,5 +43,6 @@ def read_genome_data(
     read_data_input(data, dataset, read_dir)
 
     dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
-    dataset = remove_duplicate_values(dataset, dataset.data)
+    if dataset.data is not None:
+        dataset = remove_duplicate_values(dataset, dataset.data)
     return dataset

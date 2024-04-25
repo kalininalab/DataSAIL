@@ -40,7 +40,6 @@ def read_molecule_data(
         index: Optional[int] = None,
         num_clusters: Optional[int] = None,
         tool_args: str = "",
-        detect_duplicates: bool = True,
 ) -> DataSet:
     """
     Read in molecular data, compute the weights, and distances or similarities of every entity.
@@ -80,7 +79,7 @@ def read_molecule_data(
     read_data_input(data, dataset, read_dir)
 
     dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
-    if detect_duplicates:
+    if dataset.data is not None:
         dataset = remove_molecule_duplicates(dataset)
 
     return dataset

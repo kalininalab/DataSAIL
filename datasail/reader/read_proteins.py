@@ -46,7 +46,8 @@ def read_protein_data(
     dataset.format = FORM_PDB if str(next(iter(dataset.data.values()))).endswith(".pdb") else FORM_FASTA
 
     dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
-    dataset = remove_duplicate_values(dataset, dataset.data)
+    if dataset.data is not None:
+        dataset = remove_duplicate_values(dataset, dataset.data)
 
     return dataset
 

@@ -14,7 +14,7 @@ from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS, UNK_LOCATION, 
 
 DATA_INPUT = Optional[Union[str, Path, Dict[str, Union[str, np.ndarray]],
     Callable[..., Dict[str, Union[str, np.ndarray]]], Generator[Tuple[str, Union[str, np.ndarray]], None, None]]]
-MATRIX_INPUT = Optional[Union[str, Path, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
+MATRIX_INPUT = Optional[Union[str, Path, np.ndarray, Tuple[np.ndarray, List[str]], Callable[..., Tuple[np.ndarray, Optional[List[str]]]]]]
 DictMap = Dict[str, List[Dict[str, str]]]
 
 
@@ -63,7 +63,10 @@ class DataSet:
             elif isinstance(obj, Namespace):
                 hv = hash(tuple(obj.__dict__.items()))
             else:
-                hv = hash(obj)
+                try:
+                    hv = hash(obj)
+                except TypeError:
+                    hv = 0
             hash_val ^= hv
         return hash_val
 
@@ -178,7 +181,7 @@ def count_inter(inter: List[Tuple[str, str]], mode: int) -> Generator[Tuple[str,
         yield key, tmp[mode].count(key)
 
 
-def read_clustering_file(filepath: Path, sep: str = "\t") -> Tuple[List[str], np.ndarray]:
+def read_clustering_file(filepath: Path, sep: str = "\t") -> Tuple[np.ndarray, Optional[List[str]]]:
     """
     Read a similarity or distance matrix from a file.
 
@@ -189,14 +192,16 @@ def read_clustering_file(filepath: Path, sep: str = "\t") -> Tuple[List[str], np
     Returns:
         A list of names of the entities and their pairwise interactions in and numpy array
     """
-    names = []
-    measures = []
+    measures, names = [], []
     with open(filepath, "r") as data:
-        for line in data.readlines()[1:]:
+        names_given = not data.readlines()[0].split(sep)[1].replace('.','',1).isdigit()
+        data.seek(0)  # Reset filepointer to beginning
+        for line in data.readlines()[(1 if names_given else 0):]:
             parts = line.strip().split(sep)
-            names.append(parts[0])
-            measures.append([float(x) for x in parts[1:]])
-    return names, np.array(measures)
+            if names_given:
+                names.append(parts[0])
+            measures.append([float(x) for x in parts[(1 if names_given else 0):]])
+    return np.array(measures), names
 
 
 def read_csv(filepath: Path, sep: str = ",") -> Generator[Tuple[str, str], None, None]:
@@ -217,7 +222,7 @@ def read_csv(filepath: Path, sep: str = ",") -> Generator[Tuple[str, str], None,
 
 def read_matrix_input(
         in_data: MATRIX_INPUT,
-) -> Tuple[List[str], Union[np.ndarray, str]]:
+) -> Tuple[np.ndarray, Optional[List[str]]]:
     """
     Read the data from different types of similarity or distance.
 
@@ -228,17 +233,20 @@ def read_matrix_input(
         Tuple of names of the data samples and a matrix holding their similarities/distances or a string encoding a
         method to compute the fore-mentioned
     """
+    names = None
     if isinstance(in_data, str):
         in_data = Path(in_data)
     if isinstance(in_data, Path) and in_data.is_file():
-        names, similarity = read_clustering_file(in_data)
+        matrix, names = read_clustering_file(in_data)
+    elif isinstance(in_data, np.ndarray):
+        matrix = in_data
     elif isinstance(in_data, tuple):
-        names, similarity = in_data
+        matrix, names = in_data
     elif isinstance(in_data, Callable):
-        names, similarity = in_data()
+        matrix = in_data()
     else:
         raise ValueError()
-    return names, similarity
+    return matrix, names
 
 
 def read_data(
@@ -295,17 +303,25 @@ def read_data(
     # parse the protein similarity measure
     if sim is None and dist is None:
         dataset.similarity, dataset.distance = get_default(dataset.type, dataset.format)
-        dataset.names = list(dataset.data.keys())
     elif sim is not None and not (isinstance(sim, str) and sim.lower() in SIM_ALGOS):
-        dataset.names, dataset.similarity = read_matrix_input(sim)
+        dataset.similarity, names = read_matrix_input(sim)
+        if names is not None:
+            dataset.names = names
     elif dist is not None and not (isinstance(dist, str) and dist.lower() in DIST_ALGOS):
-        dataset.names, dataset.distance = read_matrix_input(dist)
+        dataset.distance, names = read_matrix_input(dist)
+        if names is not None:
+            dataset.names = names
     else:
         if sim is not None:
             dataset.similarity = sim
         else:
             dataset.distance = dist
         dataset.names = list(dataset.data.keys())
+
+    if dataset.data is not None and dataset.names is None:
+        dataset.names = list(dataset.data.keys())
+    elif dataset.similarity is None and dataset.distance is None:
+        raise ValueError("No data provided for splitting.")
 
     dataset.args = validate_user_args(dataset.type, dataset.format, sim, dist, tool_args)
 

@@ -9,14 +9,12 @@ on:
     branches:
       - main
       - dev
-      - dev_1.0
-      - dev_1.0_weighting
+      - dev_1.1.0
   pull_request:
     branches:
       - main
       - dev
-      - dev_1.0
-      - dev_1.0_weighting
+      - dev_1.1.0
   workflow_dispatch:  # make is manually start-able
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel

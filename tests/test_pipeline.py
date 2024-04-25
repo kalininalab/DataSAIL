@@ -381,10 +381,10 @@ def test_c2_impossible():
         names=["train", "test"],
         e_type="P",
         e_data={str(i): "A" * (i + 1) for i in range(10)},
-        e_sim=([str(i) for i in range(10)], sims),
+        e_sim=sims,
         e_clusters=2,
         f_type="P",
-        f_sim=([str(i) for i in range(10)], sims),
+        f_sim=sims,
         f_data={str(i): "A" * (i + 1) for i in range(10)},
         f_clusters=2,
     )

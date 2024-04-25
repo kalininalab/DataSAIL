@@ -96,7 +96,6 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
                             f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
                     else:
                         raise ValueError()
-
     LOGGER.info("BQP splitting finished and results stored.")
     LOGGER.info(f"Total runtime: {time.time() - start:.5f}s")
 
