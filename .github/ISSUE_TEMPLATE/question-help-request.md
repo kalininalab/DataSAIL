@@ -17,10 +17,10 @@ Which outcome of DataSAIL do you encounter?
 Which outcome of DataSAIL do you expect? Describe how the outcome of DataSAIL confuses you.
 
 **Environment (please complete the following information):**
- - OS: [e.g. MacOS, Linux, Win-64]
- - DataSAIL Version [e.g. datasail v0.2.2 or datasail-lite v1.0.0]
- - Python Version [e.g. Py3.10]
- - other useful information about the system, e.g. usage of a WSL or docker
+ - OS: [e. g. MacOS, Linux, Win-64]
+ - DataSAIL Version: [e. g. datasail v0.2.2 or datasail-lite v1.0.0]
+ - Python Version: [e. g. Py3.10]
+ - other useful information about the system: [e. g. usage of a WSL or docker]
 
 **Additional context**
 Add any other context or screenshots about the feature request here.
