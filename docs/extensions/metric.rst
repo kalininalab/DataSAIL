@@ -317,7 +317,7 @@ First, we add a test to test_clustering.py. This :code:`test_<tool_name>_<data_t
     :linenos:
     :lineno-start: 230
 
-        @pytest.mark.nowin
+        @pytest.mark.full
         def test_diamond_protein():
             data = protein_fasta_data(DIAMOND)
             if platform.system() == "Windows":

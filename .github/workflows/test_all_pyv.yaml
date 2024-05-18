@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Testing
+name: Testing All Python Versions
 
 # Controls when the workflow will run
 on:
@@ -8,17 +8,22 @@ on:
   push:
     branches:
       - main
-      - dev
   pull_request:
     branches:
       - main
-      - dev
   workflow_dispatch:  # make is manually start-able
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "test"
   test:
+    strategy:
+      matrix:
+        python-version:
+          - '3.8'
+          - '3.9'
+          - '3.11'
+          - '3.12'
     runs-on: 'ubuntu-latest'
     steps:
       - uses: actions/checkout@v4
@@ -26,27 +31,20 @@ jobs:
       - name: Setup Mamba
         uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: '3.10'
+          python-version: matrix.python-version
           miniforge-variant: Mambaforge
           miniforge-version: latest
           activate-environment: MPP
           use-mamba: true
-          
+
       - name: Install environment
         shell: bash -l {0}
         run: |
-          mamba install -c conda-forge -c bioconda -y numpy pandas networkx matplotlib pytest setuptools pyscipopt"<4.0.0" foldseek mmseqs2 cd-hit mash tmalign diamond cvxpy pytest-cov rdkit">=2023.09.1" pytest-cases scikit-learn pyyaml h5py
+          mamba install -c conda-forge -c bioconda -y numpy pandas networkx matplotlib pytest setuptools pyscipopt foldseek mmseqs2 cd-hit mash tmalign diamond cvxpy pytest-cov rdkit">=2023.09.1" pytest-cases scikit-learn pyyaml h5py
           pip install grakel
-        
+
       - name: Run tests
         shell: bash -l {0}
         run: |
           cd tests
-          pytest -m "not todo and not issue" --cov=../datasail/ --cov-report=xml
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
-          files: coverage.xml
+          pytest -m "not todo and not issue"

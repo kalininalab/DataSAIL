@@ -10,6 +10,9 @@ from tests.pipeline_package_fixtures import *
 
 
 base = Path("data") / "pipeline"
+
+
+@pytest.mark.full
 @pytest.mark.parametrize("data", [
     (True, False, None, None, None, False, None, None, False, "I1f"),
     (True, False, "wlk", None, None, False, None, None, False, "I1f"),  # <-- 1/14

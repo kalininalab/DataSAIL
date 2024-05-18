@@ -326,6 +326,7 @@ def invalid_comb(mode):
     return False
 
 
+@pytest.mark.full
 @pytest.mark.todo
 def test_genomes():
     base = Path("data") / "genomes"
@@ -345,6 +346,7 @@ def test_genomes():
     shutil.rmtree(base / "out", ignore_errors=True)
 
 
+@pytest.mark.full
 def test_rna():
     e_splits, _, _ = datasail(
         inter=None,

@@ -7,6 +7,7 @@ import pytest
 from datasail.sail import datasail
 
 
+@pytest.mark.full
 @pytest.mark.parametrize("tech", ["I1e", "I1f", "I2", "C1e", "C1f", "C2"])
 def test_stratification(tech):
     base = Path("data") / "pipeline"

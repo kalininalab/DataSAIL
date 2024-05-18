@@ -1,9 +1,12 @@
 import shutil
 from pathlib import Path
 
+import pytest
+
 from datasail.sail import sail
 
 
+@pytest.mark.full
 def test_cdhit_cargs_1():
     out = Path("data") / "pipeline" / "output"
     sail([
@@ -24,6 +27,7 @@ def test_cdhit_cargs_1():
     shutil.rmtree(out, ignore_errors=True)
 
 
+@pytest.mark.full
 def test_cdhit_cargs_2():
     out = Path("data") / "pipeline" / "output"
     sail([
@@ -44,6 +48,7 @@ def test_cdhit_cargs_2():
     shutil.rmtree(out, ignore_errors=True)
 
 
+@pytest.mark.full
 def test_cdhitest_cargs_1():
     out = Path("data") / "pipeline" / "output"
     sail([
@@ -64,6 +69,7 @@ def test_cdhitest_cargs_1():
     shutil.rmtree(out, ignore_errors=True)
 
 
+@pytest.mark.full
 def test_cdhitest_cargs_2():
     out = Path("data/pipeline/output")
     sail([
@@ -84,6 +90,7 @@ def test_cdhitest_cargs_2():
     shutil.rmtree(out, ignore_errors=True)
 
 
+@pytest.mark.full
 def test_foldseek_cargs():
     out = Path("data/pipeline/output")
     sail([
@@ -104,6 +111,7 @@ def test_foldseek_cargs():
     shutil.rmtree(out, ignore_errors=True)
 
 
+@pytest.mark.full
 def test_mash_cargs():
     out = Path("data/pipeline/output")
     sail([
@@ -124,6 +132,7 @@ def test_mash_cargs():
     shutil.rmtree(out, ignore_errors=True)
 
 
+@pytest.mark.full
 def test_diamond_cargs():
     out = Path("data/pipeline/output")
     sail([
@@ -144,6 +153,7 @@ def test_diamond_cargs():
     shutil.rmtree(out, ignore_errors=True)
 
 
+@pytest.mark.full
 def test_mmseqs_cargs():
     out = Path("data/pipeline/output")
     sail([
@@ -164,6 +174,7 @@ def test_mmseqs_cargs():
     shutil.rmtree(out, ignore_errors=True)
 
 
+@pytest.mark.full
 def test_mmseqspp_cargs():
     out = Path("data/pipeline/output")
     sail([

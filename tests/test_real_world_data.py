@@ -17,7 +17,7 @@ sabdab_d = base / "sabdab_domains"
 
 
 @pytest.mark.real
-@pytest.mark.todo
+@pytest.mark.full
 @pytest.mark.parametrize(
     "ligand_data,ligand_weights,protein_data,protein_weights,interactions,output", [
         (None, None, mave / "mave_db_gold_standard_only_sequences.fasta",
@@ -111,6 +111,7 @@ def test_full_single_colds(ligand_data, ligand_weights, protein_data, protein_we
     shutil.rmtree(output, ignore_errors=True)
 
 
+@pytest.mark.full
 def test_pdbbind_splits():
     base = Path("data") / "rw_data"
     df = pd.read_csv(base / "LP_PDBBind.csv").iloc[:1000, :]

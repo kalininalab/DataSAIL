@@ -183,7 +183,7 @@ def genome_fasta_data(mode):
     )
 
 
-@pytest.mark.nowin
+@pytest.mark.full
 def test_cdhit_protein():
     data = protein_fasta_data(CDHIT)
     if platform.system() == "Windows":
@@ -192,8 +192,8 @@ def test_cdhit_protein():
     check_clustering(data)
 
 
+@pytest.mark.full
 @pytest.mark.todo
-@pytest.mark.nowin
 def test_cdhit_genome():
     data = genome_fasta_data(CDHIT)
     if platform.system() == "Windows":
@@ -208,7 +208,7 @@ def test_ecfp_molecule():
     check_clustering(data)
 
 
-@pytest.mark.nowin
+@pytest.mark.full
 def test_foldseek_protein():
     data = protein_pdb_data(FOLDSEEK)
     if platform.system() == "Windows":
@@ -217,7 +217,7 @@ def test_foldseek_protein():
     check_clustering(data)
 
 
-@pytest.mark.nowin
+@pytest.mark.full
 def test_mash_genomic():
     data = genome_fasta_data(MASH)
     if platform.system() == "Windows":
@@ -226,7 +226,7 @@ def test_mash_genomic():
     check_clustering(data)
 
 
-@pytest.mark.nowin
+@pytest.mark.full
 def test_diamond_protein():
     data = protein_fasta_data(DIAMOND)
     if platform.system() == "Windows":
@@ -235,7 +235,7 @@ def test_diamond_protein():
     check_clustering(data)
 
 
-@pytest.mark.nowin
+@pytest.mark.full
 def test_mmseqs2_protein():
     data = protein_fasta_data(MMSEQS)
     if platform.system() == "Windows":
@@ -244,7 +244,7 @@ def test_mmseqs2_protein():
     check_clustering(data)
 
 
-@pytest.mark.nowin
+@pytest.mark.full
 def test_mmseqspp_protein():
     data = protein_fasta_data(MMSEQSPP)
     if platform.system() == "Windows":
@@ -302,8 +302,7 @@ def test_vector_edge(method):
     check_clustering(dataset)
 
 
-
-@pytest.mark.nowin
+@pytest.mark.full
 @pytest.mark.todo
 def test_tmalign_protein():
     data = protein_pdb_data(TMALIGN)
@@ -313,7 +312,7 @@ def test_tmalign_protein():
     check_clustering(data)
 
 
-@pytest.mark.nowin
+@pytest.mark.full
 def test_wlkernel_protein():
     protein_data = protein_pdb_data(FOLDSEEK)
     run_wlk(protein_data)
@@ -326,6 +325,7 @@ def test_wlkernel_molecule():
     check_clustering(data)
 
 
+@pytest.mark.full
 @pytest.mark.parametrize("algo", [CDHIT, MMSEQS])
 def test_clustering(algo):
     base = Path("data") / "rw_data"
