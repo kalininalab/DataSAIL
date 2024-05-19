@@ -20,7 +20,7 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
         Tuple of the names of the method to use to compute either the similarity or distance for the input
     """
     if data_type == P_TYPE:
-        if data_format == FORM_PDB:
+        if data_format == FORM_PDB and INSTALLED[FOLDSEEK]:
             return FOLDSEEK, None
         elif data_format == FORM_FASTA:
             order = [MMSEQS2, CDHIT, DIAMOND, MMSEQSPP]
@@ -30,9 +30,9 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
     if data_type == M_TYPE and data_format == FORM_SMILES:
         return ECFP, None
     if data_type == G_TYPE:
-        if data_format == FORM_FASTA:
+        if data_format == FORM_FASTA and INSTALLED[CDHIT]:
             return CDHIT_EST, None
-        elif data_format == FORM_GENOMES:
+        elif data_format == FORM_GENOMES and INSTALLED[MASH]:
             return None, MASH
     return None, None
 
