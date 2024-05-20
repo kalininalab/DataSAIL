@@ -24,7 +24,7 @@ requirements:
     - matplotlib
     - pytest
     - setuptools
-    - pyscipopt<4.0.0
+    - pyscipopt
     - scikit-learn
     - foldseek
     - mmseqs2
