@@ -50,13 +50,14 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         dataset.cluster_similarity = dataset.similarity
         dataset.cluster_distance = dataset.distance
         dataset.cluster_weights = dataset.weights
+        dataset.cluster_stratification = {name: dataset.strat2oh(name) for name in dataset.cluster_names}
 
     if dataset.cluster_names is None:  # No clustering to do?!
         return dataset
 
     # if there are too many clusters, reduce their number based on some cluster algorithms.
     if any(isinstance(m, np.ndarray) for m in
-           [dataset.similarity, dataset.cluster_similarity, dataset.cluster_distance]):
+           [dataset.similarity, dataset.distance, dataset.cluster_similarity, dataset.cluster_distance]):
         num_old_cluster = len(dataset.cluster_names) + 1
         while dataset.num_clusters < len(dataset.cluster_names) < num_old_cluster:
             num_old_cluster = len(dataset.cluster_names)
@@ -269,12 +270,14 @@ def labels2clusters(
         if new_cluster not in new_cluster_stratification:
             new_cluster_stratification[new_cluster] = np.zeros(len(dataset.classes))
         new_cluster_weights[new_cluster] += dataset.cluster_weights[name]
+        new_cluster_stratification[new_cluster] += dataset.cluster_stratification[name]
 
     LOGGER.info(f"Reduced number of clusters to {len(new_cluster_names)}.")
 
     dataset.cluster_names = new_cluster_names
     dataset.cluster_map = new_cluster_map
     dataset.cluster_weights = new_cluster_weights
+    dataset.cluster_stratification = new_cluster_stratification
 
     # store the matrix at the correct field and set the main diagonal to either 1 or 0 depending on dist or sim
     if dataset.cluster_similarity is not None:
