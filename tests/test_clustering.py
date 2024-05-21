@@ -72,7 +72,7 @@ def test_additional_clustering():
     s_dataset.cluster_similarity = similarity
     s_dataset.cluster_distance = None
     s_dataset.classes = {0: 0}
-    s_dataset.stratification = None
+    s_dataset.cluster_stratification = {n: np.array([0]) for n in names}
     d_dataset = DataSet()
     d_dataset.cluster_names = names
     d_dataset.cluster_map = base_map
@@ -80,7 +80,7 @@ def test_additional_clustering():
     d_dataset.cluster_similarity = None
     d_dataset.cluster_distance = distance
     d_dataset.classes = {0: 0}
-    d_dataset.stratification = None
+    d_dataset.cluster_stratification = {n: np.array([0]) for n in names}
 
     s_dataset = additional_clustering(s_dataset, n_clusters=5, linkage="average")
     assert len(s_dataset.cluster_names) == 5
@@ -121,6 +121,7 @@ def test_force_clustering():
         [0.1, 0.2, 0.4, 0.6, 1]
     ])
     dataset.classes = {0: 0}
+    dataset.cluster_stratification = {"cluster1": np.array([0]), "cluster2": np.array([0]), "cluster3": np.array([0]), "cluster4": np.array([0]), "5": np.array([0])}
     dataset.num_clusters = 3
 
     # Call the force_clustering function
@@ -339,8 +340,10 @@ def test_clustering(algo):
             weights={k: 1 for k in seqs.keys()},
             location=base / "pdbbind_clean.fasta",
             similarity=algo,
-            args=check_cdhit_arguments("") if algo == CDHIT else check_mmseqs_arguments(""),
+            stratification={k: 0 for k in seqs.keys()},
+            class_oh=np.eye(1),
             classes={0: 0},
+            args=check_cdhit_arguments("") if algo == CDHIT else check_mmseqs_arguments(""),
         ),
         num_clusters=50,
         linkage="average",
