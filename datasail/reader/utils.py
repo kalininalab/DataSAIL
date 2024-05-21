@@ -269,7 +269,7 @@ def read_data(
     Returns:
         A dataset storing all information on that datatype
     """
-    # parse the protein weights
+    # parse the weights
     if isinstance(weights, Path) and weights.is_file():
         if weights.suffix[1:].lower() == "csv":
             dataset.weights = dict((n, float(w)) for n, w in read_csv(weights, ","))
@@ -286,13 +286,31 @@ def read_data(
     elif inter is not None:
         dataset.weights = dict(count_inter(inter, index))
     else:
-        dataset.weights = dict((p, 1) for p in list(dataset.data.keys()))
+        dataset.weights = {k: 1 for k in dataset.data.keys()}
 
-    dataset.classes, dataset.stratification = read_stratification(strats)
+    # parse the stratification
+    if isinstance(strats, Path) and strats.is_file():
+        if strats.suffix[1:].lower() == "csv":
+            dataset.stratification = dict(read_csv(strats, ","))
+        elif strats.suffix[1:].lower() == "tsv":
+            dataset.stratification = dict(read_csv(strats, "\t"))
+        else:
+            raise ValueError()
+    elif isinstance(strats, dict):
+        dataset.stratification = strats
+    elif isinstance(strats, Callable):
+        dataset.stratification = strats()
+    elif isinstance(strats, Generator):
+        dataset.stratification = dict(strats)
+    else:
+        dataset.stratification = {k: 0 for k in dataset.data.keys()}
+
+    # .classes maps the individual classes to their index in one-hot encoding, important for non-numeric classes
+    dataset.classes = {s: i for i, s in enumerate(set(dataset.stratification.values()))}
     dataset.class_oh = np.eye(len(dataset.classes))
     dataset.num_clusters = num_clusters
 
-    # parse the protein similarity measure
+    # parse the similarity or distance measure
     if sim is None and dist is None:
         dataset.similarity, dataset.distance = get_default(dataset.type, dataset.format)
         dataset.names = list(dataset.data.keys())
@@ -310,37 +328,6 @@ def read_data(
     dataset.args = validate_user_args(dataset.type, dataset.format, sim, dist, tool_args)
 
     return dataset
-
-
-def read_stratification(strats: DATA_INPUT) -> Tuple[Dict[Any, int], Optional[Dict[str, np.ndarray]]]:
-    """
-    Read in the stratification for the data.
-
-    Args:
-        strats: Stratification input
-
-    Returns:
-        Set of all classes and a dictionary mapping the entity names to their class
-    """
-    # parse the stratification
-    if isinstance(strats, Path) and strats.is_file():
-        if strats.suffix[1:].lower() == "csv":
-            stratification = dict(read_csv(strats, ","))
-        elif strats.suffix[1:].lower() == "tsv":
-            stratification = dict(read_csv(strats, "\t"))
-        else:
-            raise ValueError()
-    elif isinstance(strats, dict):
-        stratification = strats
-    elif isinstance(strats, Callable):
-        stratification = strats()
-    elif isinstance(strats, Generator):
-        stratification = dict(strats)
-    else:
-        return {0: 0}, None
-
-    classes = {s: i for i, s in enumerate(set(stratification.values()))}
-    return classes, stratification
 
 
 def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Generator[Tuple[str, str], None, None]:

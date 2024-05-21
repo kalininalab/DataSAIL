@@ -69,7 +69,5 @@ def run_diamond(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = No
     shutil.rmtree(result_folder, ignore_errors=True)
 
     dataset.cluster_names = table.index.tolist()
-    print(dataset.cluster_names)
     dataset.cluster_map = {n: n for n in dataset.cluster_names}
     dataset.cluster_similarity = table.to_numpy()
-    dataset.cluster_weights = {n: 1 for n in dataset.cluster_names}

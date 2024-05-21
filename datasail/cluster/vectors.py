@@ -149,8 +149,8 @@ def run_vector(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
     else:
         raise ValueError(f"Unknown method {method}")
     fps = [dataset.data[name] for name in dataset.names]
-    run(dataset, fps, method)
 
+    run(dataset, fps, method)
     dataset.cluster_names = copy.deepcopy(dataset.names)
     dataset.cluster_map = {n: n for n in dataset.names}
 

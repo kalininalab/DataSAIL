@@ -153,18 +153,16 @@ def finish_clustering(dataset: DataSet) -> None:
     """
     # compute the weights and the stratification for the clusters
     dataset.cluster_weights = {}
-    if dataset.stratification is not None:
-        dataset.cluster_stratification = {}
+    dataset.cluster_stratification = {}
 
     for key, value in dataset.cluster_map.items():
         if value not in dataset.cluster_weights:
             dataset.cluster_weights[value] = 0
         dataset.cluster_weights[value] += dataset.weights[key]
 
-        if dataset.stratification is not None:
-            if value not in dataset.cluster_stratification:
-                dataset.cluster_stratification[value] = np.zeros(len(dataset.classes))
-            dataset.cluster_stratification[value] += dataset.strat2oh(name=key)
+        if value not in dataset.cluster_stratification:
+            dataset.cluster_stratification[value] = np.zeros(len(dataset.classes))
+        dataset.cluster_stratification[value] += dataset.strat2oh(name=key)
 
 
 def additional_clustering(
