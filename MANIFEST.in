@@ -1,0 +1,15 @@
+# By default, all files are excluded
+# Include all source
+graft datasail
+
+# Include the files for the build process
+include setup.py
+include recipe/meta.yaml
+include recipe_lite/meta.yaml
+include base_recipe.yaml
+
+# Include housekeeping files
+include README.md
+include LICENSE
+include CONTRIBUTING.md
+

@@ -4,6 +4,9 @@ package:
 
 source:
   path: ..
+#     - ../datasail/*
+#     - ../datasail/args/*.yaml
+#     - setup.py
 
 build:
   entry_points:
