@@ -26,8 +26,8 @@ setup(
     ],
     packages=find_packages(),
     include_package_data=False,
+    package_data={"datasail": ["datasail/args/*"]},
     install_requires=[],
-    package_data={},
     python_requires=">=3.8, <4.0.0",
     keywords="bioinformatics",
 )

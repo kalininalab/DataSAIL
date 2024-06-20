@@ -6,6 +6,7 @@ from typing import Tuple, Optional
 import platform
 
 import cvxpy
+import pkg_resources
 
 
 def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Optional[str]]:
@@ -132,17 +133,17 @@ MAX_CLUSTERS = 50
 
 # YAML-files storing the arguments to the tools
 YAML_FILE_NAMES = {
-    MMSEQS: "args/mmseqs2.yaml",
-    MMSEQS2: "args/mmseqs2.yaml",
-    MMSEQSPP: "args/mmseqspp.yaml",
-    CDHIT: "args/cdhit.yaml",
-    CDHIT_EST: "args/cdhit_est.yaml",
-    DIAMOND: "args/diamond.yaml",
-    FOLDSEEK: "args/foldseek.yaml",
-    ECFP: "args/.yaml",
-    MASH: "args/mash.yaml",
-    MASH_SKETCH: "args/mash_sketch.yaml",
-    MASH_DIST: "args/mash_dist.yaml",
+    MMSEQS: pkg_resources.resource_filename("datasail", "args/mmseqs2.yaml"),
+    MMSEQS2: pkg_resources.resource_filename("datasail", "args/mmseqs2.yaml"),
+    MMSEQSPP: pkg_resources.resource_filename("datasail", "args/mmseqspp.yaml"),
+    CDHIT: pkg_resources.resource_filename("datasail", "args/cdhit.yaml"),
+    CDHIT_EST: pkg_resources.resource_filename("datasail", "args/cdhit_est.yaml"),
+    DIAMOND: pkg_resources.resource_filename("datasail", "args/diamond.yaml"),
+    FOLDSEEK: pkg_resources.resource_filename("datasail", "args/foldseek.yaml"),
+    ECFP: pkg_resources.resource_filename("datasail", "args/.yaml"),
+    MASH: pkg_resources.resource_filename("datasail", "args/mash.yaml"),
+    MASH_SKETCH: pkg_resources.resource_filename("datasail", "args/mash_sketch.yaml"),
+    MASH_DIST: pkg_resources.resource_filename("datasail", "args/mash_dist.yaml"),
 }
 
 KW_CACHE = "cache"
