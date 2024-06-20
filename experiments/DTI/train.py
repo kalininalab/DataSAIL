@@ -175,8 +175,11 @@ def main(full_path: Path):
         full_path: Path to the folder holding the runs for all tools
     """
     for tool in TECHNIQUES:
+        if tool == "datasail":
+            continue
         train_tool(full_path, tool)
 
 
 if __name__ == '__main__':
     main(Path(sys.argv[1]))
+

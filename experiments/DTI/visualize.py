@@ -1,15 +1,14 @@
 import os.path
 import pickle
 from pathlib import Path
-from typing import Literal, Dict, List, Union
+from typing import Literal, Dict, List, Union, Optional
 
 import numpy as np
 import pandas as pd
 import umap
-from matplotlib import gridspec
-import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
 import matplotlib
+from matplotlib.colors import LinearSegmentedColormap
+from matplotlib import pyplot as plt, gridspec, cm, colors as mpl_colors
 from matplotlib.lines import Line2D
 from sklearn.manifold import TSNE
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -21,17 +20,20 @@ from datasail.cluster.ecfp import run_ecfp
 from experiments.ablation import david
 from datasail.settings import *
 from experiments.utils import USE_UMAP, embed_smiles, COLORS, set_subplot_label, embed_sequence, TECHNIQUES, \
-    DRUG_TECHNIQUES, PROTEIN_TECHNIQUES
+    DRUG_TECHNIQUES, PROTEIN_TECHNIQUES, plot_bars_2y, create_heatmap
 
 
-def comp_il():
-    output = {}
+def comp_il(base_path: Path):
+    if (leak_path := (base_path / "data" / "leakage.pkl")).exists():
+        with open(leak_path, "rb") as f:
+            output = pickle.load(f)
+    else:
+        output = {}
     df = pd.read_csv(Path(__file__).parent / "lppdbbind" / "dataset" / "LP_PDBBind.csv")
     df.rename(columns={"Unnamed: 0": "ids"}, inplace=True)
-    print(df.head())
-    
-    if Path("lig.pkl").exists():
-        with open("lig.pkl", "rb") as f:
+
+    if (lig_path:= (base_path / "data" / "lig.pkl")).exists():
+        with open(lig_path, "rb") as f:
             lig_dataset = pickle.load(f)
         print("Loaded pickled ligands")
     else:
@@ -42,64 +44,66 @@ def comp_il():
             id_map={x: x for x in df["ids"].tolist()},
         )
         run_ecfp(lig_dataset)
-        print(lig_dataset.cluster_similarity.shape)
-        with open("lig.pkl", "wb") as f:
+        print("Computed liagnds:", lig_dataset.cluster_similarity.shape)
+        with open(lig_path, "wb") as f:
             pickle.dump(lig_dataset, f)
-    
-    if Path("tar.pkl").exists():
-        with open("tar.pkl", "rb") as f:
+
+    if (tar_path := (base_path / "data" / "tar.pkl")).exists():
+        with open(tar_path, "rb") as f:
             tar_dataset = pickle.load(f)
         print("Loaded pickled targets")
     else:
         tar_dataset = DataSet(
             type="P",
-            names = df["ids"].tolist(),
+            names=df["ids"].tolist(),
             data=dict(df[["ids", "seq"]].values.tolist()),
             id_map={x: x for x in df["ids"].tolist()},
         )
         run_diamond(tar_dataset)
-        print(tar_dataset.cluster_similarity.shape)
-        with open("tar.pkl", "wb") as f:
+        print("Computed targets:", tar_dataset.cluster_similarity.shape)
+        with open(tar_path, "wb") as f:
             pickle.dump(tar_dataset, f)
-    
-    output["lig_sim"] = np.sum(lig_dataset.cluster_similarity)
-    output["tar_sim"] = np.sum(tar_dataset.cluster_similarity)
 
-    print(len(lig_dataset.cluster_names))
-    print(lig_dataset.cluster_similarity.shape)
-    print(len(tar_dataset.cluster_names))
-    print(tar_dataset.cluster_similarity.shape)
+    if "lig_sim" not in output:
+        output["lig_sim"] = np.sum(lig_dataset.cluster_similarity)
+    if "tar_sim" not in output:
+        output["tar_sim"] = np.sum(tar_dataset.cluster_similarity)
 
-    root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "DTI" / "datasail"
-    for tech in ["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2", "Fingerprint", "lohi", "graphpart"]:
+    # root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "DTI" / "datasail"
+    for tech in [t for techs in TECHNIQUES.values() for t in techs]:
+        base = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "DTI"
         if tech in ["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"]:
-            root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "DTI" / "datasail"
+            root = base / "datasail"
         elif tech == "lohi":
-            root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v03" / "DTI" / "lohi"
+            root = base / "lohi"
         elif tech == "graphpart":
-            root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v03" / "DTI" / "graphpart"
+            root = base / "graphpart"
         else:
-            root = Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v03" / "DTI" / "deepchem"
+            root = base / "deepchem"
 
         if tech in ["R", "I2", "C2"]:
             dss = [(lig_dataset, "_lig"), (tar_dataset, "_tar")]
-        elif tech in ["I1e", "C1e", "Fingerprint", "lohi"]:
+        elif tech in ["I1e", "C1e", "lohi", "Butina", "Fingerprint", "MaxMin", "Scaffold", "Weight"]:
             dss = [(lig_dataset, "_lig")]
         elif tech in ["I1f", "C1f", "graphpart"]:
             dss = [(tar_dataset, "_tar")]
         else:
-            raise ValueError(f"Wrong technique: {tech}")
-        
+            print(f"Unknown technique: {tech}")
+            continue
+
         for ds, n in dss:
             name = tech + n
             if name not in output:
                 output[name] = []
+            elif tech not in TECHNIQUES["datasail"]:
+                continue
             for run in range(5):
                 print(name, run, end="\t")
                 base = root / tech / f"split_{run}"
                 train_ids = pd.read_csv(base / "train.csv")["ids"]
                 test_ids = pd.read_csv(base / "test.csv")["ids"]
-                assi = np.array([1 if x in train_ids.values else -1 if x in test_ids.values else 0 for x in ds.cluster_names])
+                assi = np.array(
+                    [1 if x in train_ids.values else -1 if x in test_ids.values else 0 for x in ds.cluster_names])
                 il, total = david.eval(
                     assi.reshape(-1, 1),
                     ds.cluster_similarity,
@@ -107,7 +111,7 @@ def comp_il():
                 )
                 print(il)
                 output[name].append((il, total))
-    with open("pdbbind.pkl", "wb") as f:
+    with open(leak_path, "wb") as f:
         pickle.dump(output, f)
 
 
@@ -129,6 +133,7 @@ def read_lp_pdbbind():
         KW_E_SIM: "ecfp",
         KW_E_DIST: None,
         KW_E_ARGS: "",
+        KW_E_CLUSTERS: 50,
         KW_F_TYPE: "P",
         KW_F_DATA: df[["ids", "seq"]].values.tolist(),
         KW_F_WEIGHTS: None,
@@ -136,6 +141,7 @@ def read_lp_pdbbind():
         KW_F_SIM: "mmseqs",
         KW_F_DIST: None,
         KW_F_ARGS: "",
+        KW_F_CLUSTERS: 50,
     })
     out = pd.DataFrame(
         [(e_dataset.data[e_dataset.id_map[idx]], f_dataset.data[f_dataset.id_map[idx]]) for idx, _ in inter if
@@ -161,7 +167,7 @@ def load_embed(path: Path):
     return embeds
 
 
-def read_single_data(tech, path, encodings, data_path) -> dict:
+def read_single_data(tech, path, encodings, data_path, full) -> dict:
     """
     Read the data for a single technique.
 
@@ -174,12 +180,15 @@ def read_single_data(tech, path, encodings, data_path) -> dict:
     Returns:
         dict: The data
     """
-    data = {"folder": path,
-            "train_ids_drug": [], "test_ids_drug": [], "drop_ids_drug": [],
-            "train_ids_prot": [], "test_ids_prot": [], "drop_ids_prot": []}
-    full = read_lp_pdbbind()
+    data = {
+        "folder": path,
+        "train_ids_drug": [], "test_ids_drug": [], "drop_ids_drug": [],
+        "train_ids_prot": [], "test_ids_prot": [], "drop_ids_prot": [],
+    }
     train = pd.read_csv(path / "split_0" / "train.csv")
     test = pd.read_csv(path / "split_0" / "test.csv")
+    train.rename(columns={"Ligand": "smiles", "Target": "seq"}, inplace=True)
+    test.rename(columns={"Ligand": "smiles", "Target": "seq"}, inplace=True)
     smiles = {"train": train["smiles"].tolist(), "test": test["smiles"].tolist()}
     aaseqs = {"train": train["seq"].tolist(), "test": test["seq"].tolist()}
 
@@ -240,7 +249,9 @@ def read_data(base_path: Path) -> dict:
         "d_map": {},
         "p_map": {},
     }
-    data = {tech: read_single_data(tech, base_path / tool / tech, encodings, base_path / "data")
+    
+    full = read_lp_pdbbind()
+    data = {tech: read_single_data(tech, base_path / tool / tech, encodings, base_path / "data", full)
             for tool, techniques in TECHNIQUES.items() for tech in techniques}
 
     if USE_UMAP:
@@ -268,11 +279,13 @@ def read_data(base_path: Path) -> dict:
 
 def plot_embeds(
         ax: plt.Axes,
+        fig: plt.Figure,
         data: Dict,
         postfix: Literal["prot", "drug"],
         title: str,
         drop: bool = True,
         legend: Optional[Union[str, int]] = None,
+        label: Optional[str] = None,
 ) -> None:
     """
     Plot the embeddings.
@@ -312,16 +325,19 @@ def plot_embeds(
             handles.extend([train_dot, test_dot])
         ax.legend(handles=handles, loc=legend, markerscale=2)
     ax.set_title(title)
+    set_subplot_label(ax, fig, label)
 
 
 def viz_sl_models(
         base_path: Path,
-        ax: plt.Axes,
+        # ax: plt.Axes,
+        gs: gridspec.SubplotSpec,
         fig: plt.Figure,
         techniques: List,
         ptype: Literal["htm", "bar"] = "htm",
         legend: Optional[Union[str, int]] = None,
         ncol: int = 1,
+        label: Optional[str] = None,
 ) -> None:
     """
     Visualize the statistical learning models.
@@ -337,6 +353,17 @@ def viz_sl_models(
     """
     models = ["RF", "SVM", "XGB", "MLP", "DeepDTA"]
     values = [[] for _ in range(len(techniques))]
+    leak_cmap = mpl_colors.LinearSegmentedColormap.from_list("cyan_magenta", ["cyan", "magenta"])
+    with open(base_path / "data" / "leakage.pkl", "rb") as f:
+        l = pickle.load(f)
+
+    def leakage(tech):
+        if tech in ["R", "I2", "C2"]:
+            return [[(l[f"{tech}_lig"][i][j] + l[f"{tech}_tar"][i][j] / 2) for j in range(len(l[f"{tech}_lig"][i]))]
+                    for i in range(5)]
+        if tech in ["I1f", "C1f", "graphpart"]:
+            return l[f"{tech}_tar"]
+        return l[f"{tech}_lig"]
 
     for s, (tool, _, t) in enumerate(techniques):
         for model in models:
@@ -346,29 +373,31 @@ def viz_sl_models(
             except Exception as e:
                 print(e)
                 values[s].append(0)
+    
     if ptype == "bar":
+        ax = fig.add_subplot(gs)
         df = pd.DataFrame(np.array(values).T, columns=[x[1] for x in techniques], index=models)
         c_map = {"I1f": "I1e", "C1f": "C1e", "R": "0d"}
-        df.plot.bar(ax=ax, rot=0, ylabel="RMSE (↓)", color=[COLORS[c_map.get(x[2], x[2]).lower()] for x in techniques])
-        if legend and ptype == "bar":
-            ax.legend(loc=legend, ncol=ncol)
+        df.loc["Splits"] = [np.average([x for x, _ in leakage(tech)]) for _, _, tech in techniques]
+        il = plot_bars_2y(df.T, ax, color=[COLORS[c_map.get(x[2], x[2]).lower()] for x in techniques])
+        ax.set_ylabel("RMSE (↓)")
+        ax.set_xlabel("ML Models")
+        if legend is not None:
+            il.legend(loc=legend, ncol=ncol, framealpha=1)
+        ax.set_title("Performance comparison")
+        ax.set_xlabel("ML Models")
     elif ptype == "htm":
+        gs_main = gs.subgridspec(1, 2, width_ratios=[15, 1], wspace=0.4)
+        ax = fig.add_subplot(gs_main[1])
         values = np.array(values, dtype=float)
+        leak = np.array([np.average([x for x, _ in leakage(tech)]) for _, _, tech in techniques]).reshape(-1, 1)
         cmap = LinearSegmentedColormap.from_list("Custom", [COLORS["train"], COLORS["test"]], N=256)
         cmap.set_bad(color="white")
-        pic = ax.imshow(values, cmap=cmap, vmin=np.nanmin(values), vmax=np.nanmax(values))
-        ax.set_yticks(range(len(techniques)), [t[1] for t in techniques])
-        ax.set_xticks(range(len(models)), models)
-        for b in range(len(models)):
-            for a in range(len(techniques)):
-                if np.isnan(values[a, b]):
-                    continue
-                label = f"{values[a, b]:.2f}"
-                ax.text(b, a, label, ha='center', va='center')
-        cax = make_axes_locatable(ax).append_axes('right', size='5%', pad=0.05)
-        fig.colorbar(pic, cax=cax, orientation='vertical', label="RMSE (↓)")
-    ax.set_xlabel("ML Models")
-    ax.set_title("Performance comparison")
+        create_heatmap(values, leak, cmap, leak_cmap, fig, gs_main[0], "Performance", "RMSE (↓)", y_labels=True, mode="MMB", max_val=max(leak), label=label, yticklabels=[t[1] for t in techniques])
+        plt.colorbar(cm.ScalarMappable(mpl_colors.Normalize(0, max(leak)), leak_cmap), cax=ax, label="$L(\pi)$ ↓")
+    else:
+        raise ValueError(f"Unknown plottype {ptype}")
+    return ax
 
 
 def plot_3x3(full_path: Path, data: Dict) -> None:
@@ -386,38 +415,34 @@ def plot_3x3(full_path: Path, data: Dict) -> None:
 
     ax_rd = fig.add_subplot(gs[0, 0])
     ax_sd = fig.add_subplot(gs[1, 0])
-    ax_cd = fig.add_subplot(gs[2, 0])
     ax_rp = fig.add_subplot(gs[0, 1])
     ax_sp = fig.add_subplot(gs[1, 1])
-    ax_cp = fig.add_subplot(gs[2, 1])
     ax_c2d = fig.add_subplot(gs[0, 2])
     ax_c2p = fig.add_subplot(gs[1, 2])
-    ax_c2 = fig.add_subplot(gs[2, 2])
 
-    plot_embeds(ax_rd, data["I1e"], "drug", "Random drug baseline (I1)", drop=False)
-    plot_embeds(ax_sd, data["C1e"], "drug", "DataSAIL drug-based (S1)", drop=False)
-    plot_embeds(ax_rp, data["I1f"], "prot", "Random protein baseline (I1)", drop=False)
-    plot_embeds(ax_sp, data["C1f"], "prot", "DataSAIL protein-based (S1)", drop=False)
-    plot_embeds(ax_c2d, data["C2"], "drug", "DataSAIL 2D split (S2) - drugs", legend=4)
-    plot_embeds(ax_c2p, data["C2"], "prot", "DataSAIL 2D split (S2) - proteins")
+    plot_embeds(ax_rd, fig, data["I1e"], "drug", "Random drug baseline (I1)", drop=False, label="A")
+    plot_embeds(ax_sd, fig, data["C1e"], "drug", "DataSAIL drug-based (S1)", drop=False, label="B")
+    plot_embeds(ax_rp, fig, data["I1f"], "prot", "Random protein baseline (I1)", drop=False, label="D")
+    plot_embeds(ax_sp, fig, data["C1f"], "prot", "DataSAIL protein-based (S1)", drop=False, label="E")
+    plot_embeds(ax_c2d, fig, data["C2"], "drug", "DataSAIL 2D split (S2) - drugs", legend="lower right", label="G")
+    plot_embeds(ax_c2p, fig, data["C2"], "prot", "DataSAIL 2D split (S2) - proteins", label="H")
 
-    viz_sl_models(full_path, ax_cd, fig, [
+    ax_cd = viz_sl_models(full_path, gs[2, 0], fig, [
+        ("datasail", "DataSAIL drug-based (S1)", "C1e"),
+        ("lohi", "LoHi", "lohi"),
+        ("deepchem", "Fingerprint", "Fingerprint"),
         ("datasail", "Random drug baseline (I1)", "I1e"),
-        ("datasail", "DataSAIL drug-based (S1)", "C1e")
-    ], legend="upper right", ptype="bar")
-    viz_sl_models(full_path, ax_cp, fig, [
-        ("datasail", "Random protein baseline (I1)", "I1f"),
-        ("datasail", "DataSAIL protein-based (S1)", "C1f")
-    ], legend="upper right", ptype="bar")
-    viz_sl_models(full_path, ax_c2, fig, [
-        ("datasail", "Random baseline", "R"),
+    ], legend="lower left", ptype="bar", label="C")
+    ax_cp = viz_sl_models(full_path, gs[2, 1], fig, [
+        ("datasail", "DataSAIL protein-based (S1)", "C1f"),
+        ("graphpart", "GraphPart", "graphpart"),
+        ("datasail", "Random protein baseline (I1)", "I1f")
+    ], legend="lower left", ptype="bar", label="F")
+    ax_c2 = viz_sl_models(full_path, gs[2, 2], fig, [
+        ("datasail", "DataSAIL 2D split (S2)", "C2"),
         ("datasail", "ID-based baseline (I2)", "I2"),
-        ("datasail", "DataSAIL 2D split (S2)", "C2")
-    ], legend="lower right", ptype="bar")
-
-    for ax, l in zip([ax_rd, ax_sd, ax_cd, ax_rp, ax_sp, ax_cp, ax_c2d, ax_c2p, ax_c2],
-                     ["A", "B", "C", "D", "E", "F", "G", "H", "I"]):
-        set_subplot_label(ax, fig, l)
+        ("datasail", "Random baseline", "R")
+    ], legend="lower left", ptype="bar", label="I")
 
     ax_cd.sharey(ax_c2)
     ax_cp.sharey(ax_c2)
@@ -445,7 +470,7 @@ def plot_cold_drug(full_path: Path, data: Dict) -> None:
 
     i1e, c1e, lohi, butina, fingerprint, minmax, scaffold, weight = \
         data["I1e"], data["C1e"], data["lohi"], data["Butina"], data["Fingerprint"], data["MaxMin"], data["Scaffold"], \
-        data["Weight"]
+            data["Weight"]
 
     ax_i1 = fig.add_subplot(gs_upper[0])
     ax_c1 = fig.add_subplot(gs_upper[1])
@@ -455,18 +480,18 @@ def plot_cold_drug(full_path: Path, data: Dict) -> None:
     ax_mm = fig.add_subplot(gs_comp[1, 1])
     ax_sc = fig.add_subplot(gs_comp[2, 0])
     ax_we = fig.add_subplot(gs_comp[2, 1])
-    ax_full = fig.add_subplot(gs_lower[1])
+    # ax_full = fig.add_subplot(gs_lower[1])
 
-    plot_embeds(ax_i1, i1e, "drug", "Random drug baseline (I1)", legend=4, drop=False)
-    plot_embeds(ax_c1, c1e, "drug", "DataSAIL drug-based (S1)", drop=False)
-    plot_embeds(ax_lh, lohi, "drug", "LoHi", drop=False)
-    plot_embeds(ax_bu, butina, "drug", "DC - Butina Splits", drop=False)
-    plot_embeds(ax_fi, fingerprint, "drug", "DC - Fingerprint Splits", drop=False)
-    plot_embeds(ax_mm, minmax, "drug", "DC - MaxMin Splits", drop=False)
-    plot_embeds(ax_sc, scaffold, "drug", "DC - Scaffold Splits", drop=False)
-    plot_embeds(ax_we, weight, "drug", "DC - Weight Splits", drop=False)
+    plot_embeds(ax_i1, fig, i1e, "drug", "Random drug baseline (I1)", legend=4, drop=False, label="A")
+    plot_embeds(ax_c1, fig, c1e, "drug", "DataSAIL drug-based (S1)", drop=False, label="B")
+    plot_embeds(ax_lh, fig, lohi, "drug", "LoHi", drop=False, label="C")
+    plot_embeds(ax_bu, fig, butina, "drug", "DC - Butina Splits", drop=False, label="D")
+    plot_embeds(ax_fi, fig, fingerprint, "drug", "DC - Fingerprint Splits", drop=False, label="E")
+    plot_embeds(ax_mm, fig, minmax, "drug", "DC - MaxMin Splits", drop=False, label="F")
+    plot_embeds(ax_sc, fig, scaffold, "drug", "DC - Scaffold Splits", drop=False, label="G")
+    plot_embeds(ax_we, fig, weight, "drug", "DC - Weight Splits", drop=False, label="H")
 
-    viz_sl_models(full_path, ax_full, fig, [
+    viz_sl_models(full_path, gs_lower[1], fig, [
         ("datasail", "DataSAIL (S2)", "C2"),
         ("datasail", "DataSAIL (S1)", "C1e"),
         ("datasail", "Rd. basel. (I1)", "I1e"),
@@ -476,11 +501,7 @@ def plot_cold_drug(full_path: Path, data: Dict) -> None:
         ("deepchem", "DC - MaxMin", "MaxMin"),
         ("deepchem", "DC - Scaffold", "Scaffold"),
         ("deepchem", "DC - Weight", "Weight")
-    ], ptype="htm")
-
-    for ax, l in zip([ax_i1, ax_c1, ax_lh, ax_bu, ax_fi, ax_mm, ax_sc, ax_we, ax_full],
-                     ["A", "B", "C", "D", "E", "F", "G", "H", "I"]):
-        set_subplot_label(ax, fig, l)
+    ], ptype="htm", label="I")
 
     fig.tight_layout()
     plt.savefig(full_path / "plots" / f"PDBBind_CD_{'umap' if USE_UMAP else 'tsne'}.png")
@@ -497,27 +518,23 @@ def plot_cold_prot(full_path: Path, data: Dict) -> None:
     """
     matplotlib.rc('font', **{'size': 16})
 
-    fig = plt.figure(figsize=(12, 8))
+    fig = plt.figure(figsize=(15, 10))
     gs = gridspec.GridSpec(2, 2, figure=fig)
     i1f, c1f, graphpart = data["I1f"], data["C1f"], data["graphpart"]
     ax_i1 = fig.add_subplot(gs[0, 0])
     ax_c1 = fig.add_subplot(gs[0, 1])
     ax_gp = fig.add_subplot(gs[1, 0])
-    ax_full = fig.add_subplot(gs[1, 1])
 
-    plot_embeds(ax_i1, i1f, "prot", "Random protein baseline (I1)", legend=4, drop=False)
-    plot_embeds(ax_c1, c1f, "prot", "DataSAIL protein-based (S1)", drop=False)
-    plot_embeds(ax_gp, graphpart, "prot", "GraphPart", drop=False)
+    plot_embeds(ax_i1, fig, i1f, "prot", "Random protein baseline (I1)", legend=4, drop=False, label="A")
+    plot_embeds(ax_c1, fig, c1f, "prot", "DataSAIL protein-based (S1)", drop=False, label="B")
+    plot_embeds(ax_gp, fig, graphpart, "prot", "GraphPart", drop=False, label="C")
 
-    viz_sl_models(full_path, ax_full, fig, [
+    viz_sl_models(full_path, gs[1, 1], fig, [
         ("datasail", "DataSAIL (S2)", "C2"),
         ("datasail", "DataSAIL (S1)", "C1f"),
         ("datasail", "Baseline (I1)", "I1f"),
         ("graphpart", "GraphPart", "graphpart"),
-    ], legend="lower right", ptype="bar", ncol=2)
-
-    for ax, l in zip([ax_i1, ax_c1, ax_gp, ax_full], ["A", "B", "C", "D"]):
-        set_subplot_label(ax, fig, l)
+    ], legend="lower left", ptype="bar", ncol=2, label="D")
 
     fig.tight_layout()
     plt.savefig(full_path / "plots" / f"PDBBind_CT_{'umap' if USE_UMAP else 'tsne'}.png")
@@ -552,6 +569,5 @@ def plot(full_path: Path):
 
 
 if __name__ == '__main__':
-    # plot(Path(sys.argv[1]))
-    comp_il()
-
+    plot(Path(sys.argv[1]))
+    # comp_il(Path(sys.argv[1]))

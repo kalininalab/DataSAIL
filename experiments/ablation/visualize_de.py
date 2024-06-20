@@ -102,7 +102,7 @@ def plot_de_ablation(full_path: Path, ax=None, fig=None) -> None:
 
     if show:
         plt.tight_layout()
-        plt.savefig("strat.png")
+        plt.savefig(full_path / "strat.png")
         plt.show()
 
 

@@ -13,6 +13,7 @@ from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from datasail.cluster.clustering import additional_clustering
 from datasail.cluster.utils import read_molecule_encoding
@@ -61,8 +62,10 @@ def run_ecfp(dataset):
     invalid_mols = []
     molecules = {}
     for name in dataset.names:
+        if dataset.data[name] is None:
+            invalid_mols.append(name)
+            continue
         mol = Chem.MolFromSmiles(dataset.data[name])
-        # mol = read_molecule_encoding(dataset.data[name])
         if mol is None:
             invalid_mols.append(name)
             continue
@@ -196,6 +199,9 @@ def eval(assignments, similarity, weights=None):
 
 
 def visualize(full_path: Path, clusters: List[int], solvers, ax: Optional[Tuple] = None, fig=None):
+    """
+    full_path = scratch/SCRATCH_SAS/roman/DataSAIL/.../Clusters/
+    """
     if show := ax is None:
         matplotlib.rc('font', **{'size': 16})
         fig = plt.figure(figsize=(10, 8))
@@ -206,8 +212,7 @@ def visualize(full_path: Path, clusters: List[int], solvers, ax: Optional[Tuple]
 
     times = time_overhead(full_path)
 
-    perf_path = Path("performances.pkl")
-    if perf_path.exists():
+    if (perf_path:= (full_path / "performances.pkl")).exists():
         with open(perf_path, "rb") as f:
             performances = pickle.load(f)
     else:
@@ -215,9 +220,8 @@ def visualize(full_path: Path, clusters: List[int], solvers, ax: Optional[Tuple]
         with open(full_path / "data.pkl", "rb") as f:
             dataset = pickle.load(f)
 
-        for solver in solvers:
-            for num_clusters in clusters:
-                print(f"\r{solver} - {num_clusters}", end="")
+        for solver in tqdm(solvers):
+            for num_clusters in tqdm(clusters):
                 try:
                     with open(full_path / solver / f"data_{num_clusters}.pkl", "rb") as f:
                         ds, assi = pickle.load(f)
@@ -258,13 +262,14 @@ def visualize(full_path: Path, clusters: List[int], solvers, ax: Optional[Tuple]
     if show:
         ax_p.title.set_text("Unleaked information measured by sample similarity")
         fig.tight_layout()
-        plt.savefig(full_path / "clusters.png")
+        (img_path := (full_path / "plots")).mkdir(exist_ok=True, parents=True)
+        plt.savefig(img_path / "clusters.png")
         plt.show()
 
 
 def run_cluster_ablation(full_path: Path):
-    run_solver(full_path, "tox21", list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)),
-               ["GUROBI", "MOSEK", "SCIP"])
+    # run_solver(full_path, "tox21", list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)),
+    #            ["GUROBI", "MOSEK", "SCIP"])
     visualize(full_path, list(range(10, 50, 5)) + list(range(50, 150, 10)) + list(range(150, 401, 50)),
               ["GUROBI", "MOSEK", "SCIP"])
 
