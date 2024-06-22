@@ -19,6 +19,15 @@ on:
 jobs:
   # This workflow contains a single job called "test"
   test:
+    strategy:
+      matrix:
+        python-version:
+          - '3.8'
+          - '3.9'
+          - '3.11'
+          - '3.12'
+        exclude:
+          - python-version: ${{ github.ref == 'ref/heads/dev' && python-version != '3.10' }}
     runs-on: 'ubuntu-latest'
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +35,7 @@ jobs:
       - name: Setup Mamba
         uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: '3.10'
+          python-version: ${{ matrix.python-version }}
           miniforge-variant: Mambaforge
           miniforge-version: latest
           activate-environment: MPP

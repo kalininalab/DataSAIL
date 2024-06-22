@@ -36,48 +36,29 @@ jobs:
       run: |
         conda install -y anaconda-client conda-build git
 
-    - name: Build DataSAIL for linux-64
-      if: matrix.datasail-versions == 'full'
+    - name: Build DataSAIL(-lite) for linux-64
       shell: bash -l {0}
       run: |
-        conda-build -q -c conda-forge -c bioconda --output-folder . --no-test --append-file base_recipe.yaml recipe
+        folder=$(if [ ${{ matrix.datasail-version }} = 'full' ]; then echo 'recipe'; else echo 'recipe_lite'; fi)
+        conda-build -q -c conda-forge -c bioconda --output-folder . --no-test --append-file base_recipe.yaml $folder
 
-    - name: Convert DataSAIL to osx-64
-      if: matrix.datasail-versions == 'full'
+    - name: Convert DataSAIL to other platforms
       shell: bash -l {0}
       run: |
         conda convert -p osx-64 linux-64/*.tar.bz2
+        if [ ${{ matrix.datasail-versions }} = 'lite' ]; then
+          conda convert -p osx-arm64 linux-64/*.tar.bz2
+          conda convert -p win-64 linux-64/*.tar.bz2
+        fi
 
-    - name: Publish DataSAIL to Conda
-      if: matrix.datasail-versions == 'full'
+    - name: Publish to Conda
       env:
         ANACONDA_TOKEN: ${{ secrets.DATASAIL_ANACONDA_TOKEN }}
       shell: bash -l {0}
       run: |
         anaconda -t "$ANACONDA_TOKEN" upload linux-64/*.tar.bz2
         anaconda -t "$ANACONDA_TOKEN" upload osx-64/*.tar.bz2
-
-    - name: Build DataSAIL for linux-64
-      if: matrix.datasail-versions == 'lite'
-      shell: bash -l {0}
-      run: |
-        conda-build -q -c conda-forge -c bioconda --output-folder . --no-test --append-file base_recipe.yaml recipe_lite
-
-    - name: Convert DataSAIL to osx-64, osx-arm64, win-64
-      if: matrix.datasail-versions == 'lite'
-      shell: bash -l {0}
-      run: |
-        conda convert -p osx-64 linux-64/*.tar.bz2
-        conda convert -p osx-arm64 linux-64/*.tar.bz2
-        conda convert -p win-64 linux-64/*.tar.bz2
-
-    - name: Publish DataSAIL-lite to Conda
-      if: matrix.datasail-versions == 'lite'
-      env:
-        ANACONDA_TOKEN: ${{ secrets.DATASAIL_ANACONDA_TOKEN }}
-      shell: bash -l {0}
-      run: |
-        anaconda -t "$ANACONDA_TOKEN" upload linux-64/*.tar.bz2
-        anaconda -t "$ANACONDA_TOKEN" upload osx-64/*.tar.bz2
-        anaconda -t "$ANACONDA_TOKEN" upload osx-arm64/*.tar.bz2
-        anaconda -t "$ANACONDA_TOKEN" upload win-64/*.tar.bz2
+        if [ ${{ matrix.datasail-versions }} = 'lite' ]; then
+          anaconda -t "$ANACONDA_TOKEN" upload osx-arm64/*.tar.bz2
+          anaconda -t "$ANACONDA_TOKEN" upload win-64/*.tar.bz2
+        fi
