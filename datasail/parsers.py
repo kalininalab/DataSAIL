@@ -115,7 +115,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "-d",
         "--delta",
         default=0.3,
-        type=int,
+        type=float,
         dest=KW_DELTA,
         help="Relative error for stratification. This is only used if stratification is provided."
     )
