@@ -11,6 +11,11 @@
 - [ ] Replace GraKel with something "modern" and fully "conda-installable" to make DataSAIL fully conda-installable
 - [ ] Include [MashMap3](https://github.com/marbl/MashMap)
 - [ ] Include MASH for amino acid sequences
+- [ ] Custom clustering methods ([Issue #25](https://github.com/kalininalab/DataSAIL/issues/25))
+
+## v1.0.1 (2024-05-08) till v1.0.7 (2024-06-27)
+
+- Bug fixes in stratification
 
 ## v1.0.0 (2024-04-04)
 

@@ -44,7 +44,7 @@ pip install grakel
 to install DataSAIL in an already existing environment. Alternatively, one can install DataSAIL-lite from conda. 
 DataSAIL-lite is a version of DataSAIL that does not install all clustering algorithms as the standard DataSAIL.
 
-DataSAIL is available from Python 3.8 and newer.
+DataSAIL is available for Python 3.8 and newer.
 
 ## Usage
 
@@ -55,7 +55,7 @@ datasail --e-type P --e-data <path_to_fasta> --e-sim mmseqs --output <path_to_ou
 ````
 
 to split a set of proteins that have been clustered using mmseqs. For a full list of arguments, run `datasail -h` and 
-checkout [ReadTheDocs](https://datasail.readthedocs.io/en/latest/index.html).
+checkout [ReadTheDocs](https://datasail.readthedocs.io/en/latest/index.html). There is a more detailed explanation of the arguments and example notebooks.
 
 ## When to use DataSAIL and when not to use
 
@@ -73,7 +73,7 @@ different from your training data but not if the data in the application is more
 
 If you used DataSAIL to split your data, please cite DataSAIL in your publication.
 ````
-@article{joeres2022datasail,
+@article{joeres2023datasail,
   title={DataSAIL: Data Splitting Against Information Leakage},
   author={Joeres, Roman and Blumenthal, David B. and Kalinina, Olga V},
   journal={bioRxiv},

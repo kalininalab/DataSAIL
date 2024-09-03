@@ -552,6 +552,5 @@ def plot(full_path: Path):
 
 
 if __name__ == '__main__':
-    # plot(Path(sys.argv[1]))
     comp_il()
-
+    plot(Path(sys.argv[1]))
