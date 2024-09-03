@@ -45,6 +45,71 @@ def test_stratification(tech):
     assert inter_splits is not None
 
 
+@pytest.mark.parametrize("clustering", [True, False])
+def test_multiclass(clustering: bool):
+    strats = {"A": {1}, "B": {1, 2}, "C": {2, 1}, "D": {2}}
+    kwargs = dict(
+        techniques=["I1e"],
+        splits=[8, 2],
+        names=["train", "test"],
+        runs=1,
+        solver="SCIP",
+        delta=0.45,
+        e_type="O",
+        e_data={"A": np.array([1]), "B": np.array([2]), "C": np.array([3]), "D": np.array([4])},
+        e_strat=strats,
+    )
+    if clustering:
+        kwargs["techniques"] = ["C1e"]
+        kwargs["e_clusters"] = 4
+        kwargs["e_sim"] = ("A", "B", "C", "D"), np.eye(4)
+    e_splits, _, _ = datasail(**kwargs,)
+    assert e_splits is not None and e_splits != {}
+    e = e_splits["C1e" if clustering else "I1e"][0]
+    train_strats, test_strats = [], []
+    for x in "ABCD":
+        if e[x] == "train":
+            train_strats += list(strats[x])
+        else:
+            test_strats += list(strats[x])
+    for strat in [train_strats, test_strats]:
+        for c in {1, 2}:
+            assert strat.count(c) >= 1
+
+
+def test_clustered_glycans():
+    data = {}
+    df = pd.read_csv(Path("data") / "rw_data" / "taxonomy_Phylum.tsv", sep="\t")
+    for i, (_, row) in enumerate(df.iterrows()):
+        name = f"Gly{i:05d}"
+        tmp = row[df.columns[1:-1]]
+        data[name] = (row["IUPAC"], set(dict(tmp[tmp != 0]).keys()))
+
+    e_splits, _, _ = datasail(
+        techniques=["I1e"],
+        splits=[8, 2],
+        names=["train", "test"],
+        runs=1,
+        solver="SCIP",
+        delta=0.45,
+        epsilon=0.3,
+        e_type="O",
+        e_data={k: v[0] for k, v in data.items()},
+        e_strat={k: v[1] for k, v in data.items()},
+    )
+    assert e_splits is not None and e_splits != {}
+    e = e_splits["I1e"][0]
+    train_strats, test_strats = [], []
+    for x in "ABCD":
+        if e[x] == "train":
+            train_strats += list(data[x][1])
+        else:
+            test_strats += list(data[x][1])
+    for strat in [train_strats, test_strats]:
+        for c in {1, 2}:
+            assert strat.count(c) >= 1
+
+
 def check(df, key, splits, tech):
     factor = 0.5 if tech[1] == "2" else 1
     df["split"] = df[key].apply(lambda x: splits[tech][0][x])

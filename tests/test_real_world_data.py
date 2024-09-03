@@ -52,7 +52,6 @@ def test_full_single_colds(ligand_data, ligand_weights, protein_data, protein_we
     if protein_data is not None:
         techniques += ["I1f", "C1f"]
 
-    print(ligand_data)
     run_sail(
         inter=interactions,
         output=output,

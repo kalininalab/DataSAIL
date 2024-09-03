@@ -2,7 +2,7 @@ import pickle
 from argparse import Namespace
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable, Iterable
+from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable, Iterable, Set
 
 import h5py
 import numpy as np
@@ -105,7 +105,7 @@ class DataSet:
             return Path("unknown." + format2ending(self.format))
         return self.location
 
-    def strat2oh(self, name: Optional[str] = None, class_: Optional[str] = None) -> Optional[np.ndarray]:
+    def strat2oh(self, name: Optional[str] = None, classes: Optional[Union[str, Set[str]]] = None) -> Optional[np.ndarray]:
         """
         Convert the stratification to a one-hot encoding.
 
@@ -116,12 +116,13 @@ class DataSet:
         Returns:
             A one-hot encoding of the stratification
         """
-        if class_ is None:
+        if classes is None:
             if name is None:
                 raise ValueError("Either name or class must be provided.")
-            class_ = self.stratification[name]
+            classes = self.stratification[name]
         if self.classes is not None:
-            return self.class_oh[self.classes[class_]]
+            # print(name, self.class_oh[[self.classes[class_] for class_ in classes]].sum(axis=0))
+            return self.class_oh[[self.classes[class_] for class_ in classes]].sum(axis=0)
         return None
 
     def shuffle(self) -> None:
@@ -306,7 +307,13 @@ def read_data(
         dataset.stratification = {k: 0 for k in dataset.data.keys()}
 
     # .classes maps the individual classes to their index in one-hot encoding, important for non-numeric classes
-    dataset.classes = {s: i for i, s in enumerate(set(dataset.stratification.values()))}
+    tmp_classes = set()
+    for value in dataset.stratification.values():
+        if isinstance(value, set):
+            tmp_classes.update(value)
+        else:
+            tmp_classes.add(value)
+    dataset.classes = {s: i for i, s in enumerate(tmp_classes)}
     dataset.class_oh = np.eye(len(dataset.classes))
     dataset.num_clusters = num_clusters
 

@@ -362,7 +362,6 @@ def test_distance_input():
         names=["train", "test"],
     )
     assert "C1e" in e_splits
-    print(e_splits["C1e"][0])
 
 
 def check_clustering(dataset):
