@@ -7,22 +7,28 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-from experiments.utils import set_subplot_label, COLORS, embed, plot_embeds
+from experiments.utils import set_subplot_label, COLORS, embed, plot_embeds, plot_bars_2y
 
 
 def plot_perf(base_path, ax):
+    with open("strat.pkl", "rb") as f:
+        leakage = pd.read_pickle(f)
     models = ["RF", "SVM", "XGB", "MLP", "D-MPNN"]
     df = pd.read_csv(base_path / "results.csv")
     values = df[["tool", "model", "perf"]].groupby(["model", "tool"])["perf"].mean().reset_index() \
         .pivot(index="model", columns="tool", values="perf")
-    values = np.array(values.reindex(["rf", "svm", "xgb", "mlp", "d-mpnn"])[["deepchem", "datasail"]], dtype=float)
-    df = pd.DataFrame(values, columns=["Stratified baseline", "DataSAIL split (S1 w/ classes)"], index=models)
-    df.plot.bar(ax=ax, rot=0, ylabel="AUROC (↑)", color=[COLORS["r1d"], COLORS["s1d"]])
-    ax.legend(loc="lower right")
+    values = np.array(values.reindex(["rf", "svm", "xgb", "mlp", "d-mpnn"])[["datasail", "deepchem"]], dtype=float)
+    df = pd.DataFrame(values, columns=["DataSAIL split (S1 w/ classes)", "Stratified baseline"], index=models)
+    df.loc["IL"] = [np.average([x for x, _ in leakage[k]]) for k in ["datasail", "deepchem"]]
+    il = plot_bars_2y(df.T, ax, color=[COLORS["s1d"], COLORS["r1d"]])
+    ax.set_ylabel("AUROC (↑)")
+    ax.set_xlabel("ML Models")
+    ax.legend(loc="lower left")
     ax.set_title(f"Performance comparison")
 
 
 def main(full_path):
+    (plot_dir := (full_path / "plots")).mkdir(exist_ok=True, parents=True)
     matplotlib.rc('font', **{'size': 16})
     fig = plt.figure(figsize=(20, 5.33))
     gs = gridspec.GridSpec(1, 3, figure=fig)
@@ -37,7 +43,7 @@ def main(full_path):
     set_subplot_label(ax[2], fig, "C")
 
     fig.tight_layout()
-    plt.savefig(full_path / "Strat.png")
+    plt.savefig(plot_dir / "Strat.png")
     plt.show()
 
 

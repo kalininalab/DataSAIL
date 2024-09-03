@@ -40,8 +40,8 @@ def split_w_datasail(base_path: Path, name: str, techniques: List[str], solver: 
     #     print("DataSAIL skipping", name)
     #     return
 
-    with open(base_path / "time.txt", "w") as time:
-        print("Start", file=time)
+    # with open(base_path / "time.txt", "w") as time:
+    #     print("Start", file=time)
 
     df = prep_moleculenet(name)
     start = T.time()
@@ -56,8 +56,8 @@ def split_w_datasail(base_path: Path, name: str, techniques: List[str], solver: 
         max_sec=1000,
         epsilon=0.1,
     )
-    with open(base_path / "time.txt", "a") as time:
-        print("I1+C1", T.time() - start, file=time)
+    # with open(base_path / "time.txt", "a") as time:
+    #     print("I1+C1", T.time() - start, file=time)
 
     save_datasail_splits(base_path, df, "ID", [(t, t) for t in techniques], e_splits=e_splits)
 
@@ -163,7 +163,7 @@ def split(full_path, name, solver="GUROBI"):
     """
     Split the MoleculeNet datasets using different techniques.
     """
-    split_w_datasail(full_path / "datasail" / name, name, techniques=["I1e", "C1e"], solver=solver)
+    split_w_datasail(full_path / "datasail" / name, name, techniques=["I1e"], solver=solver)
     # split_w_deepchem(full_path / "deepchem" / name, name, techniques=SPLITTERS.keys())
     # split_w_lohi(full_path / "lohi" / name, name)
 
@@ -177,6 +177,8 @@ def specific():
 
 
 if __name__ == '__main__':
+    split_w_datasail(Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "MPP" / "datasail" / "hiv", "hiv", ["I1e"])
+    exit(0)
     if len(sys.argv) == 1:
         specific()
     elif len(sys.argv) == 2:

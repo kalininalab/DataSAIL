@@ -134,7 +134,11 @@ def train_run(run_path: Path, data_path: Path, name: str, model: str) -> float:
     m.fit(x_train, y_train)
 
     test_predictions = m.predict(x_test)
-    test_perf = metric[DATASETS[name][2]](y_test, test_predictions)
+    scoring = metric[DATASETS[name][2]]
+    if name == "muv":
+        test_perf = np.mean([scoring(y_test[:, i], test_predictions[:, i]) for i in range(y_test.shape[1])])
+    else:
+        test_perf = scoring(y_test, test_predictions)
 
     return test_perf
 
@@ -174,9 +178,8 @@ def train_model(base_path: Path, data_path: Path, model: str, tool: str, name: s
         pd.DataFrame: Dataframe of the performance of the models
     """
     perf = {}
-    # for tech in set(TECHNIQUES[tool]).intersection(set(DRUG_TECHNIQUES)):
-    tech = "C1e"
-    perf.update(train_tech(base_path / tech, data_path, model, tech, name))
+    for tech in ["I1e", "C1e"]:  # set(TECHNIQUES[tool]).intersection(set(DRUG_TECHNIQUES)):
+        perf.update(train_tech(base_path / tech, data_path, model, tech, name))
         # message(tool, name, model[:-2], tech)
     df = pd.DataFrame(list(perf.items()), columns=["name", "perf"])
     df["model"] = model
@@ -224,14 +227,19 @@ def train(full_path: Path, name: Optional[str] = None) -> None:
     """
     if name is None:
         for name in DATASETS:
-            # train_dataset(full_path, name)
+            if name in ["qm7", "qm8", "qm9", "lipophilicity", "esol", "freesolv", "pcba", "tox21", "clintox", "muv"]:
+                continue
             train_tool(full_path, "datasail", name)
+            # train_dataset(full_path, name)
     else:
         train_dataset(full_path, name)
 
 
 if __name__ == '__main__':
+    train_tool(Path(sys.argv[1]), "datasail", "hiv")
+    exit(0)
     if len(sys.argv) == 2:
         train(Path(sys.argv[1]))
+        # train_tool(Path(sys.argv[1]), "datasail", "muv")
     elif len(sys.argv) == 3:
         train_dataset(Path(sys.argv[1]), sys.argv[2])
