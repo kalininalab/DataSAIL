@@ -26,6 +26,13 @@ def parse_datasail_args(args) -> Dict[str, object]:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
+        "--cc",
+        default=False,
+        action='store_true',
+        dest=KW_CC,
+        help="List available clustering algorithms."
+    )
+    parser.add_argument(
         "-o",
         "--output",
         type=Path,

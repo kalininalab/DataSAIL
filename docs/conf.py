@@ -6,6 +6,7 @@ import sys
 import sphinx_rtd_theme
 
 sys.path.insert(0, os.path.abspath("./.."))
+sys.path.insert(0, os.path.abspath("./."))
 
 import datasail
 from datasail.version import __version__
@@ -21,7 +22,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "nbsphinx",
     "nbsphinx_link",
-    "IPython.sphinxext.ipython_console_highlighting"
+    "IPython.sphinxext.ipython_console_highlighting",
 ]
 
 autosummary_generate = True
@@ -45,7 +46,6 @@ autodoc_member_order = "bysource"
 intersphinx_mapping = {
     "python": ("https://docs.python.org/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
-    # "numpy": ("http://docs.scipy.org/doc/numpy", None),
 }
 
 html_theme_options = {

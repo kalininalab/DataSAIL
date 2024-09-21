@@ -1,5 +1,5 @@
 import time
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 
 from datasail.argparse_patch import remove_patch
 from datasail.cluster.clustering import cluster
@@ -8,11 +8,23 @@ from datasail.reader.utils import DataSet
 from datasail.report import report
 from datasail.settings import LOGGER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
     KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL, KW_DELTA, \
-    KW_E_CLUSTERS, KW_F_CLUSTERS
+    KW_E_CLUSTERS, KW_F_CLUSTERS, KW_CC, CDHIT, INSTALLED, FOLDSEEK, TMALIGN, CDHIT_EST, DIAMOND, MMSEQS, MASH
 from datasail.solver.solve import run_solver
 
 
-def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
+def list_cluster_algos():
+    """
+    List all available clustering algorithms.
+    """
+
+    print("Available clustering algorithms:", "\tECFP", sep="\n")
+    for algo, name in [(CDHIT, "CD-HIT"), (CDHIT_EST, "CD-HIT-EST"), (DIAMOND, "DIAMOND"), (MMSEQS, "MMseqs, MMseqs2"),
+                       (MASH, "MASH"), (FOLDSEEK, "FoldSeek"), (TMALIGN, "TMalign")]:
+        if INSTALLED[algo]:
+            print("\t", name, sep="")
+
+
+def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
     """
     Main routine of DataSAIL. Here the parsed input is aggregated into structures and then split and saved.
 
@@ -20,6 +32,10 @@ def datasail_main(**kwargs) -> Tuple[Dict, Dict, Dict]:
         **kwargs: Parsed commandline arguments to DataSAIL.
     """
     kwargs = remove_patch(**kwargs)
+    if kwargs[KW_CC]:
+        list_cluster_algos()
+        return None
+
     start = time.time()
     LOGGER.info("Read data")
 

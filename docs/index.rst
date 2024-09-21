@@ -8,35 +8,30 @@ datasets. However, its versatility extends beyond biology, making it applicable 
 utilized through its command line interface or integrated as a Python package, DataSAIL stands out for its
 user-friendly design and adaptability. Licensed under the MIT license, it is open source and conveniently accessible on
 `GitHub <https://github.com/kalininalab/datasail>`_. Installation is made simple through
-`conda <https://anaconda.org/kalininalab/datasail>`_, utilizing
-`mamba <https://mamba.readthedocs.io/en/latest/installation.html#existing-conda-install>`_.
+`conda <https://anaconda.org/kalininalab/datasail>`_.
+
+Install
+#######
+
+DataSAIL is available for all modern versions of Pytion (v3.8 or newer).
+
+.. note::
+    It is recommended to use `mamba <https://mamba.readthedocs.io/en/latest/installation.html#existing-conda-install>`_
+    for the installation because conda might not be able to resolve the dependencies of DataSAIL successfully.
+
+.. raw:: html
+    :file: install.html
+
+DataSAIL vs. DataSAIL-lite
+--------------------------
+
+The difference between :code:`DataSAIL` and :code:`DataSAIL-lite` is that the latter does not include most of the
+clustering algorithms as they are not provide on conda for all OSs. Therefore, the user is required to the user to
+install them manually as needed. DataSAIL will work even if not all clustering are installed. For the installation, is
+it necessary to be able to call them. You can test which are available by running :code:`datasail --cc`.
 
 Quick Start
 ###########
-
-DataSAIL is available for all modern versions of Pytion (v3.8 or newer). Other than described on the conda-website,
-the command to install DataSAIL within your just created environment is
-
-.. code-block:: shell
-
-    mamba install -c kalininalab -c conda-forge -c bioconda datasail
-    pip install grakel
-
-The second command is necessary to run WLK clustering as the grakel library is not available on conda for python 3.10
-or newer. Alternatively, one can install :code:`DataSAIL-lite` from conda as
-
-.. code-block:: shell
-
-    mamba install -c kalininalab -c conda-forge -c bioconda datasail-lite
-    pip install grakel
-
-.. note::
-    It is important to use mamba for the installation because conda might not be able to resolve the dependencies of
-    DataSAIL successfully.
-
-The difference between :code:`DataSAIL` and :code:`DataSAIL-lite` is that the latter does not include the clustering
-algorithms and requires the user to install them manually as needed. The reason for this is that the clustering
-algorithms are not available for all OS and we want to make DataSAIL available for all OS.
 
 Regardless of which installation command was used, DataSAIL can be executed by running
 

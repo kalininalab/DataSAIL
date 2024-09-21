@@ -148,6 +148,7 @@ YAML_FILE_NAMES = {
 
 KW_CACHE = "cache"
 KW_CACHE_DIR = "cache_dir"
+KW_CC = "cc"
 KW_CLI = "cli"
 KW_DELTA = "delta"
 KW_EPSILON = "epsilon"
