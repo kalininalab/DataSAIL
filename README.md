@@ -5,10 +5,13 @@
 [![codecov](https://codecov.io/gh/kalininalab/DataSAIL/branch/main/graph/badge.svg)](https://codecov.io/gh/kalininalab/DataSAIL)
 [![anaconda](https://anaconda.org/kalininalab/datasail/badges/version.svg)](https://anaconda.org/kalininalab/datasail)
 [![update](https://anaconda.org/kalininalab/datasail/badges/latest_release_date.svg)](https://anaconda.org/kalininalab/datasail)
-[![platforms](https://anaconda.org/kalininalab/datasail/badges/platforms.svg)](https://anaconda.org/kalininalab/datasail)
 [![license](https://anaconda.org/kalininalab/datasail/badges/license.svg)](https://anaconda.org/kalininalab/datasail)
 [![downloads](https://anaconda.org/kalininalab/datasail/badges/downloads.svg)](https://anaconda.org/kalininalab/datasail)
 ![Python 3](https://img.shields.io/badge/python-3-blue.svg)
+[![DOI](https://zenodo.org/badge/598109632.svg)](https://doi.org/10.5281/zenodo.13938602)
+
+DataSAIL: [![platforms](https://anaconda.org/kalininalab/datasail/badges/platforms.svg)](https://anaconda.org/kalininalab/datasail)
+DataSAIL-lite: [![platforms](https://anaconda.org/kalininalab/datasail-lite/badges/platforms.svg)](https://anaconda.org/kalininalab/datasail-lite)
 
 DataSAIL is a tool that splits data while minimizing Information Leakage. This tool formulates the splitting of a 
 dataset as a constrained minimization problem and computes the assignment of data points to splits while minimizing the 
