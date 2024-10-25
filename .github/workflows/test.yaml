@@ -27,7 +27,6 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: '3.10'
-          miniforge-variant: Mambaforge
           miniforge-version: latest
           activate-environment: MPP
           use-mamba: true
