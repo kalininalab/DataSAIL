@@ -16,7 +16,7 @@ Install
 DataSAIL is available for all modern versions of Pytion (v3.8 or newer).
 
 .. note::
-    It is recommended to use `mamba <https://mamba.readthedocs.io/en/latest/installation.html#existing-conda-install>`_
+    It is recommended to use `mamba <https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html>`_
     for the installation because conda might not be able to resolve the dependencies of DataSAIL successfully.
 
 .. raw:: html

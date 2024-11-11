@@ -28,7 +28,7 @@ Apart from the short overview, you can find a more detailed explanation of the t
 ## Installation
 
 DataSAIL is installable from [conda](https://anaconda.org/kalininalab/datasail) using
-[mamba](https://mamba.readthedocs.io/en/latest/installation.html#existing-conda-install>).
+[mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html>).
 using
 
 ````shell
