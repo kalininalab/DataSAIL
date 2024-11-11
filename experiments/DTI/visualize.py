@@ -562,10 +562,10 @@ def plot(full_path: Path):
 
     print("Plot 3x3")
     plot_3x3(full_path, data)
-    print("Plot cold drug")
-    plot_cold_drug(full_path, data)
-    print("Plot cold prot")
-    plot_cold_prot(full_path, data)
+    #print("Plot cold drug")
+    #plot_cold_drug(full_path, data)
+    #print("Plot cold prot")
+    #plot_cold_prot(full_path, data)
 
 
 if __name__ == '__main__':

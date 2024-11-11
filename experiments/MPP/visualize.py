@@ -138,9 +138,9 @@ def plot_double(full_path: Path, names: List[str]) -> None:
 
         i_tr, i_te, c_tr, c_te = embed(full_path, name.lower())
         plot_embeds(ax[i][0], i_tr, i_te, "Random baseline (I1)", legend=True)
-        set_subplot_label(ax[i][0], fig, "A")
+        set_subplot_label(ax[i][0], fig, chr(ord("A") + 3 * i))
         plot_embeds(ax[i][1], c_tr, c_te, "DataSAIL split (S1)")
-        set_subplot_label(ax[i][1], fig, "B")
+        set_subplot_label(ax[i][1], fig, chr(ord("B") + 3 * i))
     plt.tight_layout()
     plt.savefig(full_path / "plots" / f"{names[0]}_{names[1]}.png")
     plt.show()
