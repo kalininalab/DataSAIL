@@ -46,6 +46,7 @@ pip install grakel
 
 to install DataSAIL in an already existing environment. Alternatively, one can install DataSAIL-lite from conda. 
 DataSAIL-lite is a version of DataSAIL that does not install all clustering algorithms as the standard DataSAIL.
+Installing either package usually takes less than 5 minutes.
 
 DataSAIL is available for Python 3.8 and newer.
 
@@ -58,7 +59,7 @@ datasail --e-type P --e-data <path_to_fasta> --e-sim mmseqs --output <path_to_ou
 ````
 
 to split a set of proteins that have been clustered using mmseqs. For a full list of arguments, run `datasail -h` and 
-checkout [ReadTheDocs](https://datasail.readthedocs.io/en/latest/index.html). There is a more detailed explanation of the arguments and example notebooks.
+checkout [ReadTheDocs](https://datasail.readthedocs.io/en/latest/index.html). There is a more detailed explanation of the arguments and example notebooks. The runtime largy depends on the number and type of splits to be computed and the size of the dataset. For small datasets (less then 10k samples) DataSAIL finished within minutes. On large datasets (more than 100k samples) it can take several hours to complete.
 
 ## When to use DataSAIL and when not to use
 
