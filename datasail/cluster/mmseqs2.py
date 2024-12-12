@@ -98,7 +98,7 @@ def mmseqs_trial(
 
     cluster_map = get_mmseqs_map(results_folder / "mmseqs_out_cluster.tsv")
     cluster_names = list(set(cluster_map.values()))
-    cluster_sim = np.ones((len(cluster_names), len(cluster_names)))
+    cluster_sim = np.ones((len(cluster_names), len(cluster_names)), dtype=int)
 
     shutil.rmtree(results_folder, ignore_errors=True)
 

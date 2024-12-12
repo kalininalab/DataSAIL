@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import List, Callable, Generator
 
+import numpy as np
+
 from datasail.reader.read_genomes import read_genome_data
 from datasail.reader.read_molecules import read_molecule_data
 from datasail.reader.read_other import read_other_data
@@ -25,29 +27,41 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
     elif isinstance(kwargs[KW_INTER], Path):
         if kwargs[KW_INTER].is_file():
             if kwargs[KW_INTER].suffix[1:] == "tsv":
-                inter = list(tuple(x) for x in read_csv(kwargs[KW_INTER], "\t"))
+                inter = list(read_csv(kwargs[KW_INTER], sep="\t", interactions=True, stratification=True))
             elif kwargs[KW_INTER].suffix[1:] == "csv":
-                inter = list(tuple(x) for x in read_csv(kwargs[KW_INTER], ","))
+                inter = list(read_csv(kwargs[KW_INTER], sep=",", interactions=True, stratification=True))
             else:
                 raise ValueError()
         else:
             raise ValueError()
-    elif isinstance(kwargs[KW_INTER], list):
-        inter = kwargs[KW_INTER]
+    elif isinstance(kwargs[KW_INTER], (list, Generator)):
+        inter = [(x[:2], x[2:]) for x in kwargs[KW_INTER]]
     elif isinstance(kwargs[KW_INTER], Callable):
-        inter = kwargs[KW_INTER]()
-    elif isinstance(kwargs[KW_INTER], Generator):
-        inter = list(kwargs[KW_INTER])
+        inter = [(x[:2], x[2:]) for x in kwargs[KW_INTER]()]
     else:
         raise ValueError()
 
+    e_inter_strats, f_inter_strats = None, None
+    if inter is not None:
+        e_inter_strats, f_inter_strats = {}, {}
+        for (e, f), strat in inter:
+            strat = 1 - np.isnan(np.array(strat, dtype=float)).astype(int)
+            if e not in e_inter_strats:
+                e_inter_strats[e] = np.zeros_like(strat, dtype=int)
+            if f not in f_inter_strats:
+                f_inter_strats[f] = np.zeros_like(strat, dtype=int)
+            # TODO: implement this in a weighted fashion
+            e_inter_strats[e] |= strat
+            f_inter_strats[f] |= strat
+
+
     e_dataset = read_data_type(kwargs[KW_E_TYPE])(
-        kwargs[KW_E_DATA], kwargs[KW_E_WEIGHTS], kwargs[KW_E_STRAT], kwargs[KW_E_SIM], kwargs[KW_E_DIST], inter, 0,
-        kwargs[KW_E_CLUSTERS], kwargs[KW_E_ARGS],
+        kwargs[KW_E_DATA], kwargs[KW_E_WEIGHTS], kwargs[KW_E_STRAT], kwargs[KW_E_SIM], kwargs[KW_E_DIST], inter,
+        e_inter_strats, 0, kwargs[KW_E_CLUSTERS], kwargs[KW_E_ARGS],
     )
     f_dataset = read_data_type(kwargs[KW_F_TYPE])(
-        kwargs[KW_F_DATA], kwargs[KW_F_WEIGHTS], kwargs[KW_F_STRAT], kwargs[KW_F_SIM], kwargs[KW_F_DIST], inter, 1,
-        kwargs[KW_F_CLUSTERS], kwargs[KW_F_ARGS],
+        kwargs[KW_F_DATA], kwargs[KW_F_WEIGHTS], kwargs[KW_F_STRAT], kwargs[KW_F_SIM], kwargs[KW_F_DIST], inter,
+        f_inter_strats, 1, kwargs[KW_F_CLUSTERS], kwargs[KW_F_ARGS],
     )
 
     return e_dataset, f_dataset, inter

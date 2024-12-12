@@ -188,6 +188,7 @@ KW_VERBOSE = "verbosity"
 KW_LINKAGE = "linkage"
 
 DEFAULT_KWARGS = {
+    KW_CC: False,
     KW_CACHE: False,
     KW_CACHE_DIR: None,
     KW_CLI: False,

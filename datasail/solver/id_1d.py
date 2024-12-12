@@ -42,12 +42,12 @@ def solve_i1(
     min_lim = compute_limits(epsilon, sum(weights), splits)
     x = cvxpy.Variable((len(splits), len(entities)), boolean=True)
 
-    constraints = [cvxpy.sum(x, axis=0) == np.ones((len(entities)))]
+    constraints = [cvxpy.sum(x, axis=0) == np.ones((len(entities)), dtype=int)]
 
     for s, split in enumerate(splits):
         constraints.append(min_lim[s] <= cvxpy.sum(cvxpy.multiply(x[s], weights)))
 
-    if stratification is not None:
+    if 0 not in stratification.shape:
         constraints.append(stratification_constraints(stratification, splits, delta, x))
 
     problem = solve(1, constraints, max_sec, solver, log_file)

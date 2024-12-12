@@ -71,16 +71,16 @@ def test_additional_clustering():
     s_dataset.cluster_weights = weights
     s_dataset.cluster_similarity = similarity
     s_dataset.cluster_distance = None
-    s_dataset.classes = {0: 0}
-    s_dataset.cluster_stratification = {n: np.array([0]) for n in names}
+    s_dataset.num_classes = 0
+    s_dataset.cluster_stratification = {n: np.array([]) for n in names}
     d_dataset = DataSet()
     d_dataset.cluster_names = names
     d_dataset.cluster_map = base_map
     d_dataset.cluster_weights = weights
     d_dataset.cluster_similarity = None
     d_dataset.cluster_distance = distance
-    d_dataset.classes = {0: 0}
-    d_dataset.cluster_stratification = {n: np.array([0]) for n in names}
+    d_dataset.num_classes = 0
+    d_dataset.cluster_stratification = {n: np.array([]) for n in names}
 
     s_dataset = additional_clustering(s_dataset, n_clusters=5, linkage="average")
     assert len(s_dataset.cluster_names) == 5
@@ -120,8 +120,8 @@ def test_force_clustering():
         [0.2, 0.3, 0.5, 1, 0.6],
         [0.1, 0.2, 0.4, 0.6, 1]
     ])
-    dataset.classes = {0: 0}
-    dataset.cluster_stratification = {"cluster1": np.array([0]), "cluster2": np.array([0]), "cluster3": np.array([0]), "cluster4": np.array([0]), "cluster5": np.array([0])}
+    dataset.num_classes = 0
+    dataset.cluster_stratification = {"cluster1": np.array([]), "cluster2": np.array([]), "cluster3": np.array([]), "cluster4": np.array([]), "cluster5": np.array([])}
     dataset.num_clusters = 3
 
     # Call the force_clustering function

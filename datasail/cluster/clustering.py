@@ -50,7 +50,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         dataset.cluster_similarity = dataset.similarity
         dataset.cluster_distance = dataset.distance
         dataset.cluster_weights = dataset.weights
-        dataset.cluster_stratification = {name: dataset.strat2oh(name) for name in dataset.cluster_names}
+        dataset.cluster_stratification = {name: dataset.stratification[name] for name in dataset.cluster_names}
 
     if dataset.cluster_names is None:  # No clustering to do?!
         return dataset
@@ -73,7 +73,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     if len(dataset.cluster_names) > dataset.num_clusters:
         dataset = force_clustering(dataset, kwargs[KW_LINKAGE])
 
-    store_to_cache(dataset, **kwargs)
+    # store_to_cache(dataset, **kwargs)
 
     return dataset
 
@@ -161,8 +161,8 @@ def finish_clustering(dataset: DataSet) -> None:
         dataset.cluster_weights[value] += dataset.weights[key]
 
         if value not in dataset.cluster_stratification:
-            dataset.cluster_stratification[value] = np.zeros(len(dataset.classes))
-        dataset.cluster_stratification[value] += dataset.strat2oh(name=key)
+            dataset.cluster_stratification[value] = np.zeros(dataset.num_classes)
+        dataset.cluster_stratification[value] += dataset.stratification[key]
 
 
 def additional_clustering(
@@ -266,7 +266,7 @@ def labels2clusters(
         if new_cluster not in new_cluster_weights:
             new_cluster_weights[new_cluster] = 0
         if new_cluster not in new_cluster_stratification:
-            new_cluster_stratification[new_cluster] = np.zeros(len(dataset.classes))
+            new_cluster_stratification[new_cluster] = np.zeros(dataset.num_classes)
         new_cluster_weights[new_cluster] += dataset.cluster_weights[name]
         new_cluster_stratification[new_cluster] += dataset.cluster_stratification[name]
 

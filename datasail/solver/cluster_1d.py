@@ -47,12 +47,12 @@ def solve_c1(
 
     x = cvxpy.Variable((len(splits), len(clusters)), boolean=True)  # 19
 
-    constraints = [cvxpy.sum(x, axis=0) == np.ones((len(clusters)))]  # 16
+    constraints = [cvxpy.sum(x, axis=0) == np.ones((len(clusters)), dtype=int)]  # 16
 
     for s, split in enumerate(splits):
         constraints.append(min_lim[s] <= cvxpy.sum(cvxpy.multiply(x[s], weights)))  # 17
 
-    if s_matrix is not None:
+    if 0 not in s_matrix.shape:
         constraints.append(stratification_constraints(s_matrix, splits, delta, x))
 
     intra_weights = similarities if similarities is not None else np.max(distances) - distances

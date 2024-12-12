@@ -15,6 +15,7 @@ def read_protein_data(
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
         inter: Optional[List[Tuple[str, str]]] = None,
+        inter_strats: Optional[Tuple[Dict[str, List[int]]]] = None,
         index: Optional[int] = None,
         num_clusters: Optional[int] = None,
         tool_args: str = "",
@@ -29,6 +30,7 @@ def read_protein_data(
         sim: Similarity file or metric
         dist: Distance file or metric
         inter: Interaction, alternative way to compute weights
+        inter_strats: Stratification based on the interactions
         index: Index of the entities in the interaction file
         num_clusters: Number of clusters to compute for this dataset
         tool_args: Additional arguments for the tool
@@ -45,7 +47,7 @@ def read_protein_data(
 
     dataset.format = FORM_PDB if str(next(iter(dataset.data.values()))).endswith(".pdb") else FORM_FASTA
 
-    dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
+    dataset = read_data(weights, strats, sim, dist, inter, inter_strats, index, num_clusters, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)
 
     return dataset

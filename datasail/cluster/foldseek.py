@@ -60,7 +60,7 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
         raise ValueError("Something went wrong with foldseek. The output file does not exist.")
 
     namap = dict((n, i) for i, n in enumerate(dataset.names))
-    cluster_sim = np.zeros((len(dataset.names), len(dataset.names)))
+    cluster_sim = np.zeros((len(dataset.names), len(dataset.names)), dtype=int)
     with open(f"{results_folder}/aln.m8", "r") as data:
         for line in data.readlines():
             q1, q2, sim = line.strip().split("\t")[:3]
@@ -74,6 +74,7 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
             cluster_sim[namap[q2], namap[q1]] = sim
 
     shutil.rmtree(results_folder, ignore_errors=True)
+    shutil.rmtree(tmp, ignore_errors=True)
 
     dataset.cluster_names = dataset.names
     dataset.cluster_map = dict((n, n) for n in dataset.names)

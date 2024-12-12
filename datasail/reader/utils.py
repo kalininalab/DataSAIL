@@ -1,6 +1,7 @@
 import pickle
 from argparse import Namespace
 from dataclasses import dataclass, fields
+from distutils.command.build import build
 from pathlib import Path
 from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable, Iterable, Set
 
@@ -32,8 +33,7 @@ class DataSet:
     location: Optional[Path] = None
     weights: Optional[Dict[str, float]] = None
     cluster_weights: Optional[Dict[str, float]] = None
-    classes: Optional[Dict[Any, int]] = None
-    class_oh: Optional[np.ndarray] = None
+    num_classes: Optional[int] = None
     stratification: Optional[Dict[str, Any]] = None
     cluster_stratification: Optional[Dict[str, np.ndarray]] = None
     similarity: Optional[Union[np.ndarray, str]] = None
@@ -104,26 +104,6 @@ class DataSet:
         if self.location is None or self.location == UNK_LOCATION or not self.location.exists():
             return Path("unknown." + format2ending(self.format))
         return self.location
-
-    def strat2oh(self, name: Optional[str] = None, classes: Optional[Union[str, Set[str]]] = None) -> Optional[np.ndarray]:
-        """
-        Convert the stratification to a one-hot encoding.
-
-        Args:
-            name: Name of the sample to get the onehot encoding for
-            class_: Class to get the onehot encoding for
-
-        Returns:
-            A one-hot encoding of the stratification
-        """
-        if classes is None:
-            if name is None:
-                raise ValueError("Either name or class must be provided.")
-            classes = self.stratification[name]
-        if self.classes is not None:
-            # print(name, self.class_oh[[self.classes[class_] for class_ in classes]].sum(axis=0))
-            return self.class_oh[[self.classes[class_] for class_ in classes]].sum(axis=0)
-        return None
 
     def shuffle(self) -> None:
         """
@@ -200,20 +180,32 @@ def read_clustering_file(filepath: Path, sep: str = "\t") -> Tuple[List[str], np
     return names, np.array(measures)
 
 
-def read_csv(filepath: Path, sep: str = ",") -> Generator[Tuple[str, str], None, None]:
+def read_csv(
+        filepath: Path,
+        sep: str = ",",
+        interactions: bool = False,
+        stratification: bool = False,
+) -> Generator[Union[Tuple[str, str], Tuple[Tuple[str, str], Tuple]], None, None]:
     """
     Read in a CSV file as pairs of data.
 
     Args:
         filepath: Path to the CSV file to read 2-tuples from
         sep: Separator used to separate the values in the CSV file
+        interactions: boolean flag indicating to read an interactions file
+        stratification: boolean flag indicating to read potentially multiple stratifications
 
     Yields:
         Pairs of strings from the file
     """
     df = pd.read_csv(filepath, sep=sep)
     for index in df.index:
-        yield df.iloc[index, :2]
+        if not stratification:
+            yield df.iloc[index, :2]
+        elif not interactions:
+            yield df.iloc[index, 0], tuple(df.iloc[index, 1:])
+        else:
+            yield df.iloc[index, :2], tuple(df.iloc[index, 2:].notna())
 
 
 def read_matrix_input(
@@ -248,6 +240,7 @@ def read_data(
         sim: MATRIX_INPUT,
         dist: MATRIX_INPUT,
         inter: Optional[List[Tuple[str, str]]],
+        inter_strats: Optional[Dict[str, List[int]]],
         index: Optional[int],
         num_clusters: int,
         tool_args: str,
@@ -262,6 +255,7 @@ def read_data(
         sim: Similarity file or metric
         dist: Distance file or metric
         inter: Interaction, alternative way to compute weights
+        inter_strats: Stratification based on the interactions
         index: Index of the entities in the interaction file
         num_clusters: Number of clusters to compute
         tool_args: Additional arguments for the tool
@@ -290,31 +284,7 @@ def read_data(
         dataset.weights = {k: 1 for k in dataset.data.keys()}
 
     # parse the stratification
-    if isinstance(strats, Path) and strats.is_file():
-        if strats.suffix[1:].lower() == "csv":
-            dataset.stratification = dict(read_csv(strats, ","))
-        elif strats.suffix[1:].lower() == "tsv":
-            dataset.stratification = dict(read_csv(strats, "\t"))
-        else:
-            raise ValueError()
-    elif isinstance(strats, dict):
-        dataset.stratification = strats
-    elif isinstance(strats, Callable):
-        dataset.stratification = strats()
-    elif isinstance(strats, Generator):
-        dataset.stratification = dict(strats)
-    else:
-        dataset.stratification = {k: 0 for k in dataset.data.keys()}
-
-    # .classes maps the individual classes to their index in one-hot encoding, important for non-numeric classes
-    tmp_classes = set()
-    for value in dataset.stratification.values():
-        if isinstance(value, set):
-            tmp_classes.update(value)
-        else:
-            tmp_classes.add(value)
-    dataset.classes = {s: i for i, s in enumerate(tmp_classes)}
-    dataset.class_oh = np.eye(len(dataset.classes))
+    build_stratification(dataset, strats, inter_strats)
     dataset.num_clusters = num_clusters
 
     # parse the similarity or distance measure
@@ -335,6 +305,33 @@ def read_data(
     dataset.args = validate_user_args(dataset.type, dataset.format, sim, dist, tool_args)
 
     return dataset
+
+
+def build_stratification(dataset, strats, inter_strats):
+    if isinstance(strats, Path) and strats.is_file():
+        if strats.suffix[1:].lower() == "csv":
+            stratification = dict(read_csv(strats, sep=",", stratification=True))
+        elif strats.suffix[1:].lower() == "tsv":
+            stratification = dict(read_csv(strats, sep="\t", stratification=True))
+        else:
+            raise ValueError()
+    elif isinstance(strats, dict):
+        stratification = strats
+    elif isinstance(strats, Callable):
+        stratification = strats()
+    elif isinstance(strats, Generator):
+        stratification = dict(strats)
+    else:
+        stratification = {k: [] for k in dataset.data.keys()}
+
+    default_inter_strat = (np.zeros_like(list(inter_strats.values())[0]) if inter_strats is not None else np.array([])).astype(int)
+    dataset.stratification = {}
+    for key, strat in stratification.items():
+        inter_strat = inter_strats.get(key, default_inter_strat) if inter_strats is not None else default_inter_strat
+        strat = 1 - np.isnan(np.array(strat, dtype=float)).astype(int)
+        dataset.stratification[key] = np.concatenate((strat, inter_strat))
+        if dataset.num_classes is None:
+            dataset.num_classes = len(dataset.stratification[key])
 
 
 def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Generator[Tuple[str, str], None, None]:

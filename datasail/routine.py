@@ -1,5 +1,6 @@
 import time
 from typing import Dict, Tuple, Optional
+import pickle
 
 from datasail.argparse_patch import remove_patch
 from datasail.cluster.clustering import cluster
@@ -8,7 +9,7 @@ from datasail.reader.utils import DataSet
 from datasail.report import report
 from datasail.settings import LOGGER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
     KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL, KW_DELTA, \
-    KW_E_CLUSTERS, KW_F_CLUSTERS, KW_CC, CDHIT, INSTALLED, FOLDSEEK, TMALIGN, CDHIT_EST, DIAMOND, MMSEQS, MASH
+    KW_E_CLUSTERS, KW_F_CLUSTERS, KW_CC, CDHIT, INSTALLED, FOLDSEEK, TMALIGN, CDHIT_EST, DIAMOND, MMSEQS, MASH, KW_INTER
 from datasail.solver.solve import run_solver
 
 
@@ -32,7 +33,7 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
         **kwargs: Parsed commandline arguments to DataSAIL.
     """
     kwargs = remove_patch(**kwargs)
-    if kwargs[KW_CC]:
+    if kwargs.get(KW_CC, False):
         list_cluster_algos()
         return None
 

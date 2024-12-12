@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict
 
 from datasail.reader.read_molecules import remove_duplicate_values
 from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_folder, read_data_input
@@ -13,6 +13,7 @@ def read_genome_data(
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
         inter: Optional[List[Tuple[str, str]]] = None,
+        inter_strats: Optional[Tuple[Dict[str, List[int]]]] = None,
         index: Optional[int] = None,
         num_clusters: Optional[int] = None,
         tool_args: str = "",
@@ -27,6 +28,7 @@ def read_genome_data(
         sim: Similarity file or metric
         dist: Distance file or metric
         inter: Interaction, alternative way to compute weights
+        inter_strats: Stratification based on the interactions
         index: Index of the entities in the interaction file
         num_clusters: Number of clusters to compute for this dataset
         tool_args: Additional arguments for the tool
@@ -42,6 +44,6 @@ def read_genome_data(
 
     read_data_input(data, dataset, read_dir)
 
-    dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
+    dataset = read_data(weights, strats, sim, dist, inter, inter_strats, index, num_clusters, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)
     return dataset

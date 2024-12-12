@@ -79,9 +79,9 @@ def solve_c2(
         cvxpy.sum(x_f, axis=0) == np.ones((len(f_clusters))),
     ]
 
-    if e_s_matrix is not None:
+    if 0 not in e_s_matrix.shape:
         constraints.append(stratification_constraints(e_s_matrix, [s / 2 for s in splits], delta / 2, x_e))
-    if f_s_matrix is not None:
+    if 0 not in f_s_matrix.shape:
         constraints.append(stratification_constraints(f_s_matrix, [s / 2 for s in splits], delta / 2, x_f))
 
     interaction_contraints(e_clusters, f_clusters, x_i, constraints, splits, x_e, x_f, min_lim, lambda key: inter[key],

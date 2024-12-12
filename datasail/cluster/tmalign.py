@@ -64,7 +64,7 @@ def read_tmalign_folder(dataset: DataSet, tmalign_folder: Path) -> np.ndarray:
     Returns:
         Map from cluster-members to cluster-representatives (cluster-names)
     """
-    sims = np.ones((len(dataset.names), len(dataset.names)))
+    sims = np.ones((len(dataset.names), len(dataset.names)), dtype=int)
     for i, name1 in enumerate(dataset.names):
         for j, name2 in enumerate(dataset.names[i + 1:]):
             sims[i, i + j + 1] = read_tmalign_file(tmalign_folder / f"out_{name1}_{name2}.txt")

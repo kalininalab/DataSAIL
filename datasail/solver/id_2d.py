@@ -59,9 +59,9 @@ def solve_i2(
     constraints = [cvxpy.sum(x_e, axis=0) == np.ones((len(e_entities))),
                    cvxpy.sum(x_f, axis=0) == np.ones((len(f_entities)))]
 
-    if e_stratification is not None:
+    if 0 not in e_stratification.shape:
         stratification_constraints(e_stratification, splits, delta, x_e)
-    if f_stratification is not None:
+    if 0 not in f_stratification.shape:
         stratification_constraints(f_stratification, splits, delta, x_f)
 
     interaction_contraints(e_entities, f_entities, x_i, constraints, splits, x_e, x_f, min_lim, lambda key: 1, index)
