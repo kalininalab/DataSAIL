@@ -120,6 +120,8 @@ class DataSet:
             if name is None:
                 raise ValueError("Either name or class must be provided.")
             classes = self.stratification[name]
+        if not isinstance(classes, Iterable):
+            classes = [classes]
         if self.classes is not None:
             # print(name, self.class_oh[[self.classes[class_] for class_ in classes]].sum(axis=0))
             return self.class_oh[[self.classes[class_] for class_ in classes]].sum(axis=0)

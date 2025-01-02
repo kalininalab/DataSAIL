@@ -32,7 +32,7 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
         **kwargs: Parsed commandline arguments to DataSAIL.
     """
     kwargs = remove_patch(**kwargs)
-    if kwargs[KW_CC]:
+    if kwargs.get(KW_CC, False):
         list_cluster_algos()
         return None
 
