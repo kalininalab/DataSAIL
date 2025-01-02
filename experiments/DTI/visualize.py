@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import umap
 import matplotlib
+import cairosvg
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib import pyplot as plt, gridspec, cm, colors as mpl_colors
 from matplotlib.lines import Line2D
@@ -81,36 +82,29 @@ def comp_il(base_path: Path):
         else:
             root = base / "deepchem"
 
-        if tech in ["R", "I2", "C2"]:
-            dss = [(lig_dataset, "_lig"), (tar_dataset, "_tar")]
-        elif tech in ["I1e", "C1e", "lohi", "Butina", "Fingerprint", "MaxMin", "Scaffold", "Weight"]:
-            dss = [(lig_dataset, "_lig")]
-        elif tech in ["I1f", "C1f", "graphpart"]:
-            dss = [(tar_dataset, "_tar")]
-        else:
-            print(f"Unknown technique: {tech}")
-            continue
-
-        for ds, n in dss:
+        for ds, n in [(lig_dataset, "_lig"), (tar_dataset, "_tar")]:
+            print(tech, n)
             name = tech + n
-            if name not in output:
-                output[name] = []
-            elif tech not in TECHNIQUES["datasail"]:
+            if name in output:
                 continue
+            output[name] = []
             for run in range(5):
                 print(name, run, end="\t")
                 base = root / tech / f"split_{run}"
                 train_ids = pd.read_csv(base / "train.csv")["ids"]
                 test_ids = pd.read_csv(base / "test.csv")["ids"]
-                assi = np.array(
-                    [1 if x in train_ids.values else -1 if x in test_ids.values else 0 for x in ds.cluster_names])
-                il, total = david.eval(
-                    assi.reshape(-1, 1),
-                    ds.cluster_similarity,
-                    [ds.cluster_weights[c] for c in ds.cluster_names],
-                )
-                print(il)
-                output[name].append((il, total))
+                assi = np.array([1 if x in train_ids.values else -1 if x in test_ids.values else 0 for x in ds.cluster_names]).reshape(-1, 1)
+                mask = assi @ assi.T
+                mask = -mask
+                mask[mask == -1] = 0
+                output[name].append(np.sum(mask * ds.cluster_similarity))
+                #il, total = david.eval(
+                #    assi.reshape(-1, 1),
+                #    ds.cluster_similarity,
+                #    [ds.cluster_weights[c] for c in ds.cluster_names],
+                #)
+                print(output[name][-1])
+                # output[name].append(il)
     with open(leak_path, "wb") as f:
         pickle.dump(output, f)
 
@@ -358,12 +352,8 @@ def viz_sl_models(
         l = pickle.load(f)
 
     def leakage(tech):
-        if tech in ["R", "I2", "C2"]:
-            return [[(l[f"{tech}_lig"][i][j] + l[f"{tech}_tar"][i][j] / 2) for j in range(len(l[f"{tech}_lig"][i]))]
-                    for i in range(5)]
-        if tech in ["I1f", "C1f", "graphpart"]:
-            return l[f"{tech}_tar"]
-        return l[f"{tech}_lig"]
+        return [(l[f"{tech}_lig"][i] + l[f"{tech}_tar"][i]) / (l["lig_sim"] + l["tar_sim"]) for i in range(5)]
+        # return [[(l[f"{tech}_lig"][i][j] + l[f"{tech}_tar"][i][j]) for j in range(len(l[f"{tech}_lig"][i]))] for i in range(5)]
 
     for s, (tool, _, t) in enumerate(techniques):
         for model in models:
@@ -378,7 +368,7 @@ def viz_sl_models(
         ax = fig.add_subplot(gs)
         df = pd.DataFrame(np.array(values).T, columns=[x[1] for x in techniques], index=models)
         c_map = {"I1f": "I1e", "C1f": "C1e", "R": "0d"}
-        df.loc["Splits"] = [np.average([x for x, _ in leakage(tech)]) for _, _, tech in techniques]
+        df.loc["Splits"] = [np.average(leakage(tech)) for _, _, tech in techniques]
         il = plot_bars_2y(df.T, ax, color=[COLORS[c_map.get(x[2], x[2]).lower()] for x in techniques])
         ax.set_ylabel("RMSE (↓)")
         ax.set_xlabel("ML Models")
@@ -386,18 +376,20 @@ def viz_sl_models(
             il.legend(loc=legend, ncol=ncol, framealpha=1)
         ax.set_title("Performance comparison")
         ax.set_xlabel("ML Models")
+        set_subplot_label(ax, fig, label)
     elif ptype == "htm":
+        il = None
         gs_main = gs.subgridspec(1, 2, width_ratios=[15, 1], wspace=0.4)
         ax = fig.add_subplot(gs_main[1])
         values = np.array(values, dtype=float)
-        leak = np.array([np.average([x for x, _ in leakage(tech)]) for _, _, tech in techniques]).reshape(-1, 1)
+        leak = np.array([np.average(leakage(tech)) for _, _, tech in techniques]).reshape(-1, 1)
         cmap = LinearSegmentedColormap.from_list("Custom", [COLORS["train"], COLORS["test"]], N=256)
         cmap.set_bad(color="white")
         create_heatmap(values, leak, cmap, leak_cmap, fig, gs_main[0], "Performance", "RMSE (↓)", y_labels=True, mode="MMB", max_val=max(leak), label=label, yticklabels=[t[1] for t in techniques])
-        plt.colorbar(cm.ScalarMappable(mpl_colors.Normalize(0, max(leak)), leak_cmap), cax=ax, label="$L(\pi)$ ↓")
+        plt.colorbar(cm.ScalarMappable(mpl_colors.Normalize(0, max(leak)), leak_cmap), cax=ax, label="scaled $L(\pi)$ (↓)")
     else:
         raise ValueError(f"Unknown plottype {ptype}")
-    return ax
+    return ax, il
 
 
 def plot_3x3(full_path: Path, data: Dict) -> None:
@@ -420,35 +412,37 @@ def plot_3x3(full_path: Path, data: Dict) -> None:
     ax_c2d = fig.add_subplot(gs[0, 2])
     ax_c2p = fig.add_subplot(gs[1, 2])
 
-    plot_embeds(ax_rd, fig, data["I1e"], "drug", "Random drug baseline (I1)", drop=False, label="A")
-    plot_embeds(ax_sd, fig, data["C1e"], "drug", "DataSAIL drug-based (S1)", drop=False, label="B")
-    plot_embeds(ax_rp, fig, data["I1f"], "prot", "Random protein baseline (I1)", drop=False, label="D")
-    plot_embeds(ax_sp, fig, data["C1f"], "prot", "DataSAIL protein-based (S1)", drop=False, label="E")
-    plot_embeds(ax_c2d, fig, data["C2"], "drug", "DataSAIL 2D split (S2) - drugs", legend="lower right", label="G")
-    plot_embeds(ax_c2p, fig, data["C2"], "prot", "DataSAIL 2D split (S2) - proteins", label="H")
+    plot_embeds(ax_rd, fig, data["I1e"], "drug", "Random drug baseline (I1)", drop=False, label="a")
+    plot_embeds(ax_sd, fig, data["C1e"], "drug", "DataSAIL drug-based (S1)", drop=False, label="b")
+    plot_embeds(ax_rp, fig, data["I1f"], "prot", "Random protein baseline (I1)", drop=False, label="d")
+    plot_embeds(ax_sp, fig, data["C1f"], "prot", "DataSAIL protein-based (S1)", drop=False, label="e")
+    plot_embeds(ax_c2d, fig, data["C2"], "drug", "DataSAIL 2D split (S2) - drugs", legend="lower right", label="f")
+    plot_embeds(ax_c2p, fig, data["C2"], "prot", "DataSAIL 2D split (S2) - proteins", label="h")
 
-    ax_cd = viz_sl_models(full_path, gs[2, 0], fig, [
+    ax_cd, il_cd = viz_sl_models(full_path, gs[2, 0], fig, [
         ("datasail", "DataSAIL drug-based (S1)", "C1e"),
         ("lohi", "LoHi", "lohi"),
-        ("deepchem", "Fingerprint", "Fingerprint"),
+        ("deepchem", "DC - Fingerprint", "Fingerprint"),
         ("datasail", "Random drug baseline (I1)", "I1e"),
-    ], legend="lower left", ptype="bar", label="C")
-    ax_cp = viz_sl_models(full_path, gs[2, 1], fig, [
+    ], legend="lower left", ptype="bar", label="c")
+    ax_cp, il_cp = viz_sl_models(full_path, gs[2, 1], fig, [
         ("datasail", "DataSAIL protein-based (S1)", "C1f"),
         ("graphpart", "GraphPart", "graphpart"),
         ("datasail", "Random protein baseline (I1)", "I1f")
-    ], legend="lower left", ptype="bar", label="F")
-    ax_c2 = viz_sl_models(full_path, gs[2, 2], fig, [
+    ], legend="lower left", ptype="bar", label="f")
+    ax_c2, il_c2 = viz_sl_models(full_path, gs[2, 2], fig, [
         ("datasail", "DataSAIL 2D split (S2)", "C2"),
         ("datasail", "ID-based baseline (I2)", "I2"),
         ("datasail", "Random baseline", "R")
-    ], legend="lower left", ptype="bar", label="I")
+    ], legend="lower left", ptype="bar", label="i")
 
     ax_cd.sharey(ax_c2)
     ax_cp.sharey(ax_c2)
+    il_c2.sharey(il_cd)
+    il_cp.sharey(il_cd)
 
     fig.tight_layout()
-    plt.savefig(full_path / "plots" / f"PDBBind_{'umap' if USE_UMAP else 'tsne'}_3x3.png", transparent=True)
+    plt.savefig(full_path / "plots" / f"PDBBind_{'umap' if USE_UMAP else 'tsne'}_3x3.pdf", transparent=True)
     plt.show()
 
 
@@ -482,14 +476,14 @@ def plot_cold_drug(full_path: Path, data: Dict) -> None:
     ax_we = fig.add_subplot(gs_comp[2, 1])
     # ax_full = fig.add_subplot(gs_lower[1])
 
-    plot_embeds(ax_i1, fig, i1e, "drug", "Random drug baseline (I1)", legend=4, drop=False, label="A")
-    plot_embeds(ax_c1, fig, c1e, "drug", "DataSAIL drug-based (S1)", drop=False, label="B")
-    plot_embeds(ax_lh, fig, lohi, "drug", "LoHi", drop=False, label="C")
-    plot_embeds(ax_bu, fig, butina, "drug", "DC - Butina Splits", drop=False, label="D")
-    plot_embeds(ax_fi, fig, fingerprint, "drug", "DC - Fingerprint Splits", drop=False, label="E")
-    plot_embeds(ax_mm, fig, minmax, "drug", "DC - MaxMin Splits", drop=False, label="F")
-    plot_embeds(ax_sc, fig, scaffold, "drug", "DC - Scaffold Splits", drop=False, label="G")
-    plot_embeds(ax_we, fig, weight, "drug", "DC - Weight Splits", drop=False, label="H")
+    plot_embeds(ax_i1, fig, i1e, "drug", "Random drug baseline (I1)", legend=4, drop=False, label="a")
+    plot_embeds(ax_c1, fig, c1e, "drug", "DataSAIL drug-based (S1)", drop=False, label="b")
+    plot_embeds(ax_lh, fig, lohi, "drug", "LoHi", drop=False, label="c")
+    plot_embeds(ax_bu, fig, butina, "drug", "DC - Butina Splits", drop=False, label="d")
+    plot_embeds(ax_fi, fig, fingerprint, "drug", "DC - Fingerprint Splits", drop=False, label="e")
+    plot_embeds(ax_mm, fig, minmax, "drug", "DC - MaxMin Splits", drop=False, label="f")
+    plot_embeds(ax_sc, fig, scaffold, "drug", "DC - Scaffold Splits", drop=False, label="g")
+    plot_embeds(ax_we, fig, weight, "drug", "DC - Weight Splits", drop=False, label="h")
 
     viz_sl_models(full_path, gs_lower[1], fig, [
         ("datasail", "DataSAIL (S2)", "C2"),
@@ -501,10 +495,11 @@ def plot_cold_drug(full_path: Path, data: Dict) -> None:
         ("deepchem", "DC - MaxMin", "MaxMin"),
         ("deepchem", "DC - Scaffold", "Scaffold"),
         ("deepchem", "DC - Weight", "Weight")
-    ], ptype="htm", label="I")
+    ], ptype="htm", label="i")
 
     fig.tight_layout()
-    plt.savefig(full_path / "plots" / f"PDBBind_CD_{'umap' if USE_UMAP else 'tsne'}.png")
+    plt.savefig(full_path / "plots" / f"PDBBind_CD_{'umap' if USE_UMAP else 'tsne'}.svg")
+    cairosvg.svg2pdf(url=str(full_path / "plots" / f"PDBBind_CD_{'umap' if USE_UMAP else 'tsne'}.svg"), write_to=str(full_path / "plots" / f"PDBBind_CD_{'umap' if USE_UMAP else 'tsne'}.pdf"))
     plt.show()
 
 
@@ -525,19 +520,19 @@ def plot_cold_prot(full_path: Path, data: Dict) -> None:
     ax_c1 = fig.add_subplot(gs[0, 1])
     ax_gp = fig.add_subplot(gs[1, 0])
 
-    plot_embeds(ax_i1, fig, i1f, "prot", "Random protein baseline (I1)", legend=4, drop=False, label="A")
-    plot_embeds(ax_c1, fig, c1f, "prot", "DataSAIL protein-based (S1)", drop=False, label="B")
-    plot_embeds(ax_gp, fig, graphpart, "prot", "GraphPart", drop=False, label="C")
+    plot_embeds(ax_i1, fig, i1f, "prot", "Random protein baseline (I1)", legend=4, drop=False, label="a")
+    plot_embeds(ax_c1, fig, c1f, "prot", "DataSAIL protein-based (S1)", drop=False, label="b")
+    plot_embeds(ax_gp, fig, graphpart, "prot", "GraphPart", drop=False, label="c")
 
     viz_sl_models(full_path, gs[1, 1], fig, [
         ("datasail", "DataSAIL (S2)", "C2"),
         ("datasail", "DataSAIL (S1)", "C1f"),
         ("datasail", "Baseline (I1)", "I1f"),
         ("graphpart", "GraphPart", "graphpart"),
-    ], legend="lower left", ptype="bar", ncol=2, label="D")
+    ], legend="lower left", ptype="bar", ncol=2, label="d")
 
     fig.tight_layout()
-    plt.savefig(full_path / "plots" / f"PDBBind_CT_{'umap' if USE_UMAP else 'tsne'}.png")
+    plt.savefig(full_path / "plots" / f"PDBBind_CT_{'umap' if USE_UMAP else 'tsne'}.pdf")
     plt.show()
 
 
@@ -561,13 +556,13 @@ def plot(full_path: Path):
             data = pickle.load(pickled_data)
 
     print("Plot 3x3")
-    plot_3x3(full_path, data)
-    #print("Plot cold drug")
-    #plot_cold_drug(full_path, data)
-    #print("Plot cold prot")
+    #plot_3x3(full_path, data)
+    print("Plot cold drug")
+    plot_cold_drug(full_path, data)
+    print("Plot cold prot")
     #plot_cold_prot(full_path, data)
 
 
 if __name__ == '__main__':
-    plot(Path(sys.argv[1]))
     # comp_il(Path(sys.argv[1]))
+    plot(Path(sys.argv[1]))

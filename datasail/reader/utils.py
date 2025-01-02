@@ -3,6 +3,7 @@ from argparse import Namespace
 from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable, Iterable, Set
+from collections.abc import Iterable
 
 import h5py
 import numpy as np
@@ -120,8 +121,13 @@ class DataSet:
             if name is None:
                 raise ValueError("Either name or class must be provided.")
             classes = self.stratification[name]
+            if not isinstance(classes, Iterable):
+                classes = [classes]
         if self.classes is not None:
             # print(name, self.class_oh[[self.classes[class_] for class_ in classes]].sum(axis=0))
+            # print("classes", classes)
+            # print("self.cl", self.classes)
+            # print("self.oh", self.class_oh)
             return self.class_oh[[self.classes[class_] for class_ in classes]].sum(axis=0)
         return None
 
@@ -285,7 +291,8 @@ def read_data(
     elif isinstance(weights, Generator):
         dataset.weights = dict(weights)
     elif inter is not None:
-        dataset.weights = dict(count_inter(inter, index))
+        dataset.weights = {k: 0 for k in dataset.data.keys()}
+        dataset.weights.update(dict(count_inter(inter, index)))
     else:
         dataset.weights = {k: 1 for k in dataset.data.keys()}
 

@@ -19,7 +19,6 @@ from tqdm import tqdm
 from datasail.cluster.clustering import additional_clustering
 from datasail.reader.read_molecules import read_molecule_data
 from datasail.solver.utils import solve, compute_limits
-from experiments.ablation.time import MARKERS
 from experiments.utils import dc2pd, DATASETS, COLORS
 
 
@@ -217,6 +216,7 @@ def eval(assignments, similarity, weights=None):
     # print(np.min(mask), np.max(mask))
     
     leak = (np.sum(similarity * weights * mask) / np.sum(similarity * weights * alt)) / 2
+    # print("\t", leak, sum(mask), sum(alt))
     return leak, np.sum(similarity * weights * alt) / 2
 
 
@@ -259,21 +259,15 @@ def visualize(full_path: Path, clusters: List[int], solvers, ax: Optional[Tuple]
     ax_p.set_xlabel("Number of clusters")
     ax_t.set_xlabel("Number of clusters")
     ax_t.set_ylabel("Time for solving [s] (↓)")
-    ax_p.set_ylabel("$L(\pi)$ (↓)")
+    ax_p.set_ylabel("scaled $L(\pi)$ (↓)")
 
-    ax_t.plot(times["GUROBI"][:, 0], times["GUROBI"][:, 1], label="GUROBI", color=COLORS["train"],
-              marker=MARKERS["gurobi"], markersize=9)
-    ax_t.plot(times["MOSEK"][:, 0], times["MOSEK"][:, 1], label="MOSEK", color=COLORS["test"],
-              marker=MARKERS["mosek"], markersize=9)
-    ax_t.plot(times["SCIP"][:, 0], times["SCIP"][:, 1], label="SCIP", color=COLORS["r1d"],
-              marker=MARKERS["scip"], markersize=9)
+    ax_t.plot(times["GUROBI"][:, 0], times["GUROBI"][:, 1], label="GUROBI", color=COLORS["train"], marker="o")
+    ax_t.plot(times["MOSEK"][:, 0], times["MOSEK"][:, 1], label="MOSEK", color=COLORS["test"], marker="x")
+    ax_t.plot(times["SCIP"][:, 0], times["SCIP"][:, 1], label="SCIP", color=COLORS["r1d"], marker="D")
 
-    ax_p.plot(times["GUROBI"][:, 0], performances["GUROBI"], label="GUROBI", color=COLORS["train"],
-              marker=MARKERS["gurobi"], markersize=9)
-    ax_p.plot(times["MOSEK"][:, 0], performances["MOSEK"], label="MOSEK", color=COLORS["test"],
-              marker=MARKERS["mosek"], markersize=9)
-    ax_p.plot(times["SCIP"][:, 0], performances["SCIP"], label="SCIP", color=COLORS["r1d"],
-              marker=MARKERS["scip"], markersize=9)
+    ax_p.plot(times["GUROBI"][:, 0], [2 * x[0] for x in performances["GUROBI"]], label="GUROBI", color=COLORS["train"], marker="o")
+    ax_p.plot(times["MOSEK"][:, 0], [2 * x[0] for x in performances["MOSEK"]], label="MOSEK", color=COLORS["test"], marker="x")
+    ax_p.plot(times["SCIP"][:, 0], [2 * x[0] for x in performances["SCIP"]], label="SCIP", color=COLORS["r1d"], marker="D")
 
     ax_p.legend()
     ax_p.set_title("Leaked Information on Tox21")

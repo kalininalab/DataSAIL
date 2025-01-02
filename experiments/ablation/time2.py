@@ -10,13 +10,14 @@ from experiments.utils import DATASETS, TECHNIQUES, RUNS
 def read_times(base_path: Path, name, tool):
     data = {"tech": [], "run": [], "time": []}
     counter = {"lohi": 0, "Scaffold": 0, "Weight": 0, "MaxMin": 0, "Butina": 0, "Fingerprint": 0}
-    with open(base_path / tool / name / "time2.txt") as f:
-        for line in f.readlines()[1:]:
-            tech, time = line.split()
-            data["tech"].append(tech)
-            data["time"].append(float(time))
-            data["run"].append(counter[tech])
-            counter[tech] += 1
+    if (file_path := base_path / tool / name / "time2.txt").exists():
+        with open(file_path, "r") as f:
+            for line in f.readlines()[1:]:
+                tech, time = line.split()
+                data["tech"].append(tech)
+                data["time"].append(float(time))
+                data["run"].append(counter[tech])
+                counter[tech] += 1
     df = pd.DataFrame(data)
     df["name"] = name
     df["tool"] = tool

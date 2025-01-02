@@ -95,7 +95,7 @@ def remove_molecule_duplicates(dataset: DataSet) -> DataSet:
         dataset: The dataset to remove duplicates from
 
     Returns:
-        Update arguments as teh location of the data might change and an ID-Map file might be added.
+        Update arguments as the location of the data might change and an ID-Map file might be added.
     """
     if isinstance(dataset.data[dataset.names[0]], (list, tuple, np.ndarray)):
         # TODO: proper check for duplicate embeddings

@@ -73,7 +73,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     if len(dataset.cluster_names) > dataset.num_clusters:
         dataset = force_clustering(dataset, kwargs[KW_LINKAGE])
 
-    store_to_cache(dataset, **kwargs)
+    # store_to_cache(dataset, **kwargs)
 
     return dataset
 
@@ -212,6 +212,7 @@ def additional_clustering(
         )
     # cluster the clusters into new, fewer, and bigger clusters
     labels = ca.fit_predict(cluster_matrix)
+    LOGGER.info("Clustering finished")
     return labels2clusters(labels, dataset, cluster_matrix, linkage)
 
 

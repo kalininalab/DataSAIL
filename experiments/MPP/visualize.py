@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt, gridspec, cm, colors as mpl_colors
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import deepchem as dc
+import cairosvg
 
 from datasail.reader.utils import DataSet
 from experiments.ablation import david
@@ -134,15 +135,15 @@ def plot_double(full_path: Path, names: List[str]) -> None:
         ax[i][2].legend(loc="lower left", framealpha=1)
         ax[i][2].set_title("Performance comparison")
         ax[i][2].set_xlabel("ML Models")
-        set_subplot_label(ax[i][2], fig, ["C", "F"][i])
+        set_subplot_label(ax[i][2], fig, ["c", "f"][i])
 
         i_tr, i_te, c_tr, c_te = embed(full_path, name.lower())
         plot_embeds(ax[i][0], i_tr, i_te, "Random baseline (I1)", legend=True)
-        set_subplot_label(ax[i][0], fig, chr(ord("A") + 3 * i))
+        set_subplot_label(ax[i][0], fig, chr(ord("a") + 3 * i))
         plot_embeds(ax[i][1], c_tr, c_te, "DataSAIL split (S1)")
-        set_subplot_label(ax[i][1], fig, chr(ord("B") + 3 * i))
+        set_subplot_label(ax[i][1], fig, chr(ord("b") + 3 * i))
     plt.tight_layout()
-    plt.savefig(full_path / "plots" / f"{names[0]}_{names[1]}.png")
+    plt.savefig(full_path / "plots" / f"{names[0]}_{names[1]}.pdf")
     plt.show()
 
 
@@ -164,7 +165,7 @@ def heatmap_plot(full_path: Path):
     cols, rows = 4, 4
     gs_main = gridspec.GridSpec(1, 2, figure=fig, width_ratios=[85, 3], wspace=0.1)
     gs = gs_main[0].subgridspec(rows, cols, wspace=0.3, hspace=0.25)
-    ax = fig.add_subplot(gs_main[1])
+    ax_main = fig.add_subplot(gs_main[1])
     
     if (leak_path := full_path / "data" / "leakage.pkl").exists():
         with open(leak_path, "rb") as f:
@@ -200,12 +201,14 @@ def heatmap_plot(full_path: Path):
         df["Split"] = [get_il(name, tech) for tech in df.index]
         values = np.array(df.loc[
             ["C1e", "I1e", "lohi", "Butina", "Fingerprint", "MaxMin", "Scaffold", "Weight"],
-            ["RF", "SVM", "XGB", "MLP", "D-MPNN", "Split"], 
+            ["RF", "SVM", "XGB", "MLP", "D-MPNN", "Split"],
         ], dtype=float)
-        create_heatmap(values[:, :-1], values[:, -1:], cmap, leak_cmap, fig, gs[i // 4, i % 4], name, METRICS[DATASETS[name.lower()][2]], y_labels=(i % cols == 0), mode="MMB", max_val=max_leak, yticklabels=["DataSAIL (S1)", "Rd. basel. (I1)", "LoHi", "DC - Butina", "DC_Fingerp.", "DC - MinMax", "DC - Scaffold", "DC - Weight"])
+        ax = create_heatmap(values[:, :-1], values[:, -1:], cmap, leak_cmap, fig, gs[i // 4, i % 4], name, METRICS[DATASETS[name.lower()][2]], y_labels=(i % cols == 0), mode="MMB", max_val=max_leak, yticklabels=["DataSAIL (S1)", "Rd. basel. (I1)", "LoHi", "DC - Butina", "DC - Fingerp.", "DC - MinMax", "DC - Scaffold", "DC - Weight"])
+        set_subplot_label(ax[0], fig, chr(ord("a") + i))
     
-    plt.colorbar(cm.ScalarMappable(mpl_colors.Normalize(0, max_leak), leak_cmap), cax=ax, label="$L(\pi)$ ↓")
-    plt.savefig(full_path / "plots" / f"MoleculeNet_comp.png", transparent=True)
+    plt.colorbar(cm.ScalarMappable(mpl_colors.Normalize(0, max_leak), leak_cmap), cax=ax_main, label="scaled $L(\pi)$ (↓)")
+    plt.savefig(full_path / "plots" / f"MoleculeNet_comp.svg", dpi=200)  # transparent=True)
+    cairosvg.svg2pdf(url=str(full_path / "plots" / f"MoleculeNet_comp.svg"), write_to=str(full_path / "plots" / f"MoleculeNet_comp.pdf"))
     plt.show()
 
 
@@ -257,7 +260,7 @@ def comp_all_il(base: Path):
 
 if __name__ == '__main__':
     # comp_all_il(Path(sys.argv[1]))
-    plot_double(Path(sys.argv[1]), ["QM8", "Tox21"])
+    #plot_double(Path(sys.argv[1]), ["QM8", "Tox21"])
     # plot_double(Path(sys.argv[1]), ["FreeSolv", "ESOL"])
-    # heatmap_plot(Path(sys.argv[1]))
+    heatmap_plot(Path(sys.argv[1]))
 

@@ -58,6 +58,7 @@ def run_mash(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None)
     dataset.cluster_names = dataset.names
 
     shutil.rmtree(results_folder, ignore_errors=True)
+    shutil.rmtree(tmp, ignore_errors=True)
 
 
 def read_mash_tsv(filename: Path, num_entities: int) -> np.ndarray:

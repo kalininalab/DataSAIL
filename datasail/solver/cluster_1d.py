@@ -64,6 +64,7 @@ def solve_c1(
 
     loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
     problem = solve(loss, constraints, max_sec, solver, log_file)
+    print(problem)
 
     return None if problem is None else {
         e: names[s] for s in range(len(splits)) for i, e in enumerate(clusters) if x[s, i].value > 0.1

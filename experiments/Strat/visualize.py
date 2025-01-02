@@ -21,7 +21,7 @@ def plot_perf(base_path, ax):
     df = pd.DataFrame(values, columns=["DataSAIL split (S1 w/ classes)", "Stratified baseline"], index=models)
     df.loc["IL"] = [np.average([x for x, _ in leakage[k]]) for k in ["datasail", "deepchem"]]
     il = plot_bars_2y(df.T, ax, color=[COLORS["s1d"], COLORS["r1d"]])
-    ax.set_ylabel("AUROC (↑)")
+    ax.set_ylabel("ROC-AUC (↑)")
     ax.set_xlabel("ML Models")
     ax.legend(loc="lower left")
     ax.set_title(f"Performance comparison")
@@ -36,14 +36,14 @@ def main(full_path):
 
     dc_tr, dc_te, ds_tr, ds_te = embed(full_path)
     plot_embeds(ax[0], dc_tr, dc_te, "Stratified baseline", legend=True)
-    set_subplot_label(ax[0], fig, "A")
+    set_subplot_label(ax[0], fig, "a")
     plot_embeds(ax[1], ds_tr, ds_te, "DataSAIL split (S1 w/ classes)")
-    set_subplot_label(ax[1], fig, "B")
+    set_subplot_label(ax[1], fig, "b")
     plot_perf(full_path, ax[2])
-    set_subplot_label(ax[2], fig, "C")
+    set_subplot_label(ax[2], fig, "c")
 
     fig.tight_layout()
-    plt.savefig(plot_dir / "Strat.png")
+    plt.savefig(plot_dir / "Strat.pdf")
     plt.show()
 
 
