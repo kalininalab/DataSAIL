@@ -35,7 +35,7 @@ def score_split(full_path: Path, dataset: DataSet, delta: float, epsilon: float)
         print(f"\r{delta}, {epsilon}, {run}", end=" " * 10)
         train = set(pd.read_csv(base / f"split_{run}" / "train.csv")["ID"].tolist())
         tmp2 = np.array([1 if n in train else -1 for n in dataset.names]).reshape(-1, 1)
-        vals.append(eval(tmp2, dataset.cluster_similarity))
+        vals.append(eval(tmp2, dataset.cluster_similarity)[0])
     return np.mean(vals)
 
 
@@ -76,7 +76,7 @@ def plot_de_ablation(full_path: Path, ax=None, fig=None) -> None:
     pkl_path = full_path / "strat_data.pkl"
     if Path(pkl_path).exists():
         with open(pkl_path, "rb") as f:
-            qual = pickle.load(f)
+            _, qual = pickle.load(f)
     else:
         qual = read_quality(full_path)
         with open(full_path / "strat_data.pkl", "wb") as out:
@@ -91,14 +91,14 @@ def plot_de_ablation(full_path: Path, ax=None, fig=None) -> None:
     cax = divider.append_axes('right', size='5%', pad=0.05)
     cmap = LinearSegmentedColormap.from_list("Custom", [COLORS["r1d"], COLORS["s1d"]], N=256)
     cmap.set_bad(color="white")
-    q_values = np.array(qual.values, dtype=float)[::-1, :].T
+    q_values = np.array(qual.values, dtype=float)[::-1, :].T * 3.1
     tmp = ax.imshow(q_values, cmap=cmap, vmin=np.nanmin(q_values), vmax=np.nanmax(q_values))
     ax.set_xticks(list(reversed(range(1, 6, 2))), [0.3, 0.2, 0.1])
     ax.set_yticks(list(range(0, 6, 2)), [0.3, 0.2, 0.1])
     ax.set_xlabel("$\epsilon$")
     ax.set_ylabel("$\delta$")
     ax.set_title("Effect of $\delta$ and $\epsilon$")
-    fig.colorbar(tmp, cax=cax, orientation='vertical', label="$L(\pi)$ (↓)")
+    fig.colorbar(tmp, cax=cax, orientation='vertical', label="scaled $L(\pi)$ (↓)")
 
     if show:
         plt.tight_layout()

@@ -1,3 +1,11 @@
+import os
+
+#num_threads = "128"
+#os.environ["OPENBLAS_NUM_THREADS"] = num_threads
+#os.environ["GOTO_NUM_THREADS"] = num_threads
+#os.environ["OMP_NUM_THREADS"] = num_threads
+
+
 import sys
 from pathlib import Path
 import time as T
@@ -49,15 +57,15 @@ def split_w_datasail(base_path: Path, name: str, techniques: List[str], solver: 
         techniques=techniques,
         splits=[8, 2],
         names=["train", "test"],
-        runs=5,
+        runs=1,  # 5,
         solver=solver,
         e_type="M",
         e_data=dict(df[["ID", "SMILES"]].values.tolist()),
         max_sec=1000,
         epsilon=0.1,
     )
-    # with open(base_path / "time.txt", "a") as time:
-    #     print("I1+C1", T.time() - start, file=time)
+    with open(base_path / "time2.txt", "a") as time:
+        print(techniques[0], T.time() - start, file=time)
 
     save_datasail_splits(base_path, df, "ID", [(t, t) for t in techniques], e_splits=e_splits)
 
@@ -171,14 +179,17 @@ def split(full_path, name, solver="GUROBI"):
 def specific():
     for run in range(RUNS):
         for name in DATASETS.keys():
-            if name.lower() == "pcba":
+            if name.lower() in {"pcba"}:
                 continue
-            split_w_datasail(Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "datasail" / "MPP" / name, name, ["C1e"])
+            split_w_datasail(Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "MPP" / "datasail_new" / name, name, ["I1e"])
+            split_w_datasail(Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "MPP" / "datasail_new" / name, name, ["C1e"])
 
 
 if __name__ == '__main__':
-    split_w_datasail(Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "MPP" / "datasail" / "hiv", "hiv", ["I1e"])
+    specific()
     exit(0)
+    # split_w_datasail(Path("/") / "scratch" / "SCRATCH_SAS" / "roman" / "DataSAIL" / "v10" / "MPP" / "datasail_test" / "qm8", "qm8", ["C1e"])
+    # exit(0)
     if len(sys.argv) == 1:
         specific()
     elif len(sys.argv) == 2:

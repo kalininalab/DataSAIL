@@ -51,7 +51,7 @@ DATASETS = {
 DS2UPPER = {
 "qm7": "QM7", "qm8": "QM8", "qm9": "QM9", "esol": "ESOL", "freesolv": "FreeSolv", "lipophilicity": "Lipophilicity", "pcba": "PCBA", "muv": "MUV", "hiv": "HIV", "bace": "BACE", "bbbp": "BBBP", "tox21": "Tox21", "toxcast": "ToxCast", "sider": "SIDER", "clintox": "ClinTox",
 }
-METRICS = {"mae": "MAE ↓", "rmse": "RMSE ↓", "prc-auc": "PRC-AUC ↑", "auc": "ROC-AUC ↑"}
+METRICS = {"mae": "MAE (↓)", "rmse": "RMSE (↓)", "prc-auc": "PRC-AUC (↑)", "auc": "ROC-AUC (↑)"}
 
 models = {
     "rf-r": RandomForestRegressor(n_estimators=500, n_jobs=-1, random_state=42),
@@ -120,7 +120,7 @@ def save_datasail_splits(base: Path, df: pd.DataFrame, key: str, techniques: Lis
         inter_splits: Interactions splits
     """
     for name, tech in techniques:
-        for run in range(RUNS):
+        for run in range(1):  # RUNS):
             path = base / name / f"split_{run}"
             path.mkdir(parents=True, exist_ok=True)
 
@@ -398,7 +398,7 @@ def plot_bars_2y2(df: pd.DataFrame, ax: plt.Axes, color) -> plt.Axes:
         il.bar(len(x) + addendum, row[-1], width, label=index, color=color[i])
 
     # Adding labels and title
-    il.set_ylabel('$L(\pi)$ ↓')
+    il.set_ylabel('scaled $L(\pi)$ (↓)')
     plt.xticks(np.arange(len(df.columns)) + width / 2, df.columns)
     return il
 
@@ -417,7 +417,7 @@ def plot_bars_2y(df: pd.DataFrame, ax: plt.Axes, color) -> plt.Axes:
         il.bar(len(x) + addendum, row[-1], width, label=index, color=color[i])
 
     # Adding labels and title
-    il.set_ylabel('$L(\pi)$ ↓')
+    il.set_ylabel('scaled $L(\pi)$ (↓)')
     plt.xticks(np.arange(len(df.columns)) + width / 2, df.columns)
     return il
 
@@ -468,3 +468,4 @@ def create_heatmap(main_data, scnd_data, main_cmap, scnd_cmap, fig, main_gs, tit
         l = f"{scnd_data[a, 0]:.2f}"
         ax[2].text(0, a, l, ha='center', va='center')
     set_subplot_label(ax[0], fig, label)
+    return ax

@@ -132,6 +132,8 @@ def solve(
         f"The problem has {sum([functools.reduce(operator.mul, v.shape, 1) for v in problem.variables()])} variables "
         f"and {sum([functools.reduce(operator.mul, c.shape, 1) for c in problem.constraints])} constraints.")
 
+    print(max_sec)
+
     if solver == SOLVER_CBC:
         kwargs = {
             "maximumSeconds": max_sec,
@@ -191,16 +193,17 @@ def solve(
             LOGGER.info(f"{solver} status: {problem.status}")
             LOGGER.info(f"Solution's score: {problem.value}")
 
-            if "optimal" not in problem.status:
+            if problem.status in {"infeasible", "unbound"}:
                 LOGGER.warning(
                     f'{solver} cannot solve the problem. Please consider relaxing split restrictions, '
                     'e.g., less splits, or a higher tolerance level for exceeding cluster limits.'
                 )
                 return None
             return problem
-        except KeyError:
-            LOGGER.warning(f"Solving failed for {''}. Please use try another solver or update your python version.")
-            return None
+        except Exception as e:
+            raise e
+            # LOGGER.warning(f"Solving failed for {''}. Please use try another solver or update your python version.")
+            # return None
 
 
 def sample_categorical(
@@ -372,6 +375,51 @@ def collect_results_2d(
     return output
 
 
+def collect_results_2d2(
+        problem: cvxpy.Problem,
+        names: List[str],
+        splits: List[float],
+        e_entities: List[str],
+        f_entities: List[str],
+        x_e: Variable,
+        x_f: Variable,
+        inter: np.ndarray,
+) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[object, str], Dict[object, str]]]:
+    """
+    Report the found solution for two-dimensional splits.
+
+    Args:
+        problem: Problem object after solving.
+        names: List of names of the splits.
+        splits: List of the relative sizes of the splits.
+        e_entities: List of names of entities in the e-dataset.
+        f_entities: List of names of entities in the f-dataset.
+        x_e: Optimization variables for the e-dataset.
+        x_f: Optimization variables for the f-dataset.
+
+    Returns:
+        A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
+    """
+    if problem is None:
+        return None
+
+    # report the found solution
+    output = (
+        {},
+        {e: names[s] for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[s, i].value > 0.1},
+        {f: names[s] for s in range(len(splits)) for j, f in enumerate(f_entities) if x_f[s, j].value > 0.1},
+    )
+    for i, e in enumerate(e_entities):
+        for j, f in enumerate(f_entities):
+            if inter[i, j] == 0:
+                continue
+            if output[1][e] == output[2][f]:
+                output[0][e, f] = output[1][e]
+            else:
+                output[0][e, f] = NOT_ASSIGNED
+    return output
+
+
 def leakage_loss(
         uniform: bool,
         intra_weights,
@@ -404,3 +452,37 @@ def leakage_loss(
         ] for e1 in range(len(clusters))]
         loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
         return loss
+
+
+#def leakage_loss(
+#        uniform: bool,
+#        intra_weights,
+#        x,
+#        clusters,
+#        weights,
+#        num_splits: int,
+#) -> Union[int, cvxpy.Expression]:
+#    """
+#    Compute the leakage loss for the cluster-based double-cold splitting.
+#
+#    Args:
+#        uniform: Boolean flag if the cluster metric is uniform
+#        intra_weights: Weights of the intra-cluster edges
+#        x: Variables of the optimization problem
+#        clusters: List of cluster names
+#        weights: Weights of the clusters
+#        num_splits: Number of splits
+#
+#    Returns:
+#        Loss describing the leakage between clusters
+#    """
+#    if uniform:
+#        return 0
+#    else:
+#        tmp = [[
+#            weights[e1] * weights[e2] * intra_weights[e1, e2] * cvxpy.max(
+#                cvxpy.vstack([x[s, e1] - x[s, e2] for s in range(num_splits)])
+#            ) for e2 in range(e1 + 1, len(clusters))
+#        ] for e1 in range(len(clusters))]
+#        loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
+#        return loss
