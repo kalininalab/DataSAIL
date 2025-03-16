@@ -1,4 +1,5 @@
 import logging
+import os
 import shutil
 import subprocess
 import sys
@@ -24,7 +25,7 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
         if data_format == FORM_PDB and INSTALLED[FOLDSEEK]:
             return FOLDSEEK, None
         elif data_format == FORM_FASTA:
-            order = [MMSEQS2, CDHIT, DIAMOND, MMSEQSPP]
+            order = [DIAMOND, MMSEQSPP, MMSEQS2, CDHIT]
             for method in order:
                 if INSTALLED[method]:
                     return method, None
@@ -84,15 +85,15 @@ ALGOS = SIM_ALGOS + DIST_ALGOS
 
 # Check if the tools are installed
 INSTALLED = {
-    CDHIT: shutil.which("cd-hit") is not None,
-    CDHIT_EST: shutil.which("cd-hit-est") is not None,
-    DIAMOND: shutil.which("diamond") is not None,
-    MMSEQS: shutil.which("mmseqs") is not None,
-    MMSEQS2: shutil.which("mmseqs") is not None,
-    MMSEQSPP: shutil.which("mmseqs") is not None,
-    MASH: shutil.which("mash") is not None,
-    FOLDSEEK: shutil.which("foldseek") is not None,
-    TMALIGN: shutil.which("TMalign") is not None,
+    CDHIT: os.system("cd-hit -h > /dev/null") == 256,
+    CDHIT_EST: os.system("cd-hit-est -h > /dev/null") == 256,
+    DIAMOND: os.system("diamond -h > /dev/null") == 0,
+    MMSEQS: os.system("mmseqs -h > /dev/null") == 0,
+    MMSEQS2: os.system("mmseqs -h > /dev/null") == 0,
+    MMSEQSPP: os.system("mmseqs -h > /dev/null") == 0,
+    MASH: os.system("mash -h > /dev/null") == 0,
+    FOLDSEEK: os.system("foldseek -h > /dev/null") == 0,
+    TMALIGN: os.system("TMalign -h > /dev/null") == 0,
 }
 
 

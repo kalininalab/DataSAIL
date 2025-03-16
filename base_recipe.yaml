@@ -1,5 +1,5 @@
 package:
-  version: '1.0.7'
+  version: '1.1.0'
 
 source:
   path: ..
@@ -17,7 +17,7 @@ requirements:
     - pip
   run:
     - python>=3.8
-    - numpy
+    - numpy<2
     - pandas
     - networkx
     - matplotlib
@@ -25,13 +25,15 @@ requirements:
     - setuptools
     - pyscipopt
     - scikit-learn
-    - cvxpy
+    - cvxpy==1.5.3
     - pytest-cov
     - rdkit
     - pytest-cases
     - pyyaml
     - cvxopt
     - h5py
+    - pyarrow
+    - tqdm
 
 about:
   home: https://github.com/kalininalab/DataSAIL

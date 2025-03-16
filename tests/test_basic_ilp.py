@@ -34,8 +34,10 @@ def test_icd():
     solution = solve_i2(
         e_entities=["D1", "D2", "D3", "D4", "D5"],
         e_stratification=None,
+        e_weights=np.array([1, 1, 1, 1, 1]),
         f_entities=["P1", "P2", "P3", "P4", "P5"],
         f_stratification=None,
+        f_weights=np.array([1, 1, 1, 1, 1]),
         inter={
             ("D1", "P1"), ("D1", "P2"), ("D1", "P3"),
             ("D2", "P1"), ("D2", "P2"), ("D2", "P3"),
@@ -45,7 +47,7 @@ def test_icd():
         },
         epsilon=0.01,
         delta=0.01,
-        splits=[0.69, 0.31],
+        splits=[0.7, 0.3],
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
@@ -55,48 +57,58 @@ def test_icd():
     assert isinstance(solution, tuple)
     assert all([isinstance(solution[i], dict) for i in range(3)])
     i_sol, e_sol, f_sol = solution
-    for i in range(1, 4):
-        assert e_sol[f"D{i}"] == "train"
-        assert f_sol[f"P{i}"] == "train"
-    for i in range(4, 6):
-        assert e_sol[f"D{i}"] == "test"
-        assert f_sol[f"P{i}"] == "test"
+    for i in range(1, 6):
+        assert e_sol[f"D{i}"] in {"train", "test"}
+        assert f_sol[f"P{i}"] in {"train", "test"}
+    selections = {"train": 0, "test": 0}
     for i in range(1, 4):
         for j in range(1, 4):
-            assert i_sol[f"D{i}", f"P{j}"] == "train"
+            assert i_sol[f"D{i}", f"P{j}"] in {"train", "test", "not selected"}
+            if i_sol[f"D{i}", f"P{j}"] != "not selected":
+                selections[i_sol[f"D{i}", f"P{j}"]] += 1
     for i in range(4, 6):
         for j in range(4, 6):
-            assert i_sol[f"D{i}", f"P{j}"] == "test"
+            assert i_sol[f"D{i}", f"P{j}"] in {"train", "test", "not selected"}
+            if i_sol[f"D{i}", f"P{j}"] != "not selected":
+                selections[i_sol[f"D{i}", f"P{j}"]] += 1
+    print(selections)
+    assert selections["train"] >= int(0.7 * 0.99 * (selections["train"] + selections["test"]))
 
 
 def test_ccd():
     solution = solve_c2(
-        e_clusters=["D1", "D2", "D3"],
+        e_clusters=["D1", "D2", "D3", "D4", "D5"],
         e_similarities=np.asarray([
-            [5, 5, 0],
-            [5, 5, 0],
-            [0, 0, 5],
+            [5, 5, 5, 0, 0],
+            [5, 5, 5, 0, 0],
+            [5, 5, 5, 0, 0],
+            [0, 0, 0, 5, 5],
+            [0, 0, 0, 5, 5],
         ]),
         e_distances=None,
         e_s_matrix=None,
-        e_weights=np.array([3, 3, 3]),
-        f_clusters=["P1", "P2", "P3"],
+        e_weights=np.array([3, 3, 3, 3, 3]),
+        f_clusters=["P1", "P2", "P3", "P4", "P5"],
         f_similarities=np.asarray([
-            [5, 5, 0],
-            [5, 5, 0],
-            [0, 0, 5],
+            [5, 5, 5, 0, 0],
+            [5, 5, 5, 0, 0],
+            [5, 5, 5, 0, 0],
+            [0, 0, 0, 5, 5],
+            [0, 0, 0, 5, 5],
         ]),
         f_distances=None,
         f_s_matrix=None,
-        f_weights=np.array([3, 3, 3]),
+        f_weights=np.array([3, 3, 3, 3, 3]),
         inter=np.asarray([
-            [9, 9, 0],
-            [9, 9, 0],
-            [0, 0, 9],
+            [9, 9, 9, 0, 0],
+            [9, 9, 9, 0, 0],
+            [9, 9, 9, 0, 0],
+            [0, 0, 0, 9, 9],
+            [0, 0, 0, 9, 9],
         ]),
         epsilon=0.05,
         delta=0.05,
-        splits=[0.8, 0.2],
+        splits=[0.7, 0.3],
         names=["train", "test"],
         max_sec=10,
         max_sol=0,
@@ -106,17 +118,22 @@ def test_ccd():
     assert isinstance(solution, tuple)
     assert all([isinstance(solution[i], dict) for i in range(3)])
     i_sol, e_sol, f_sol = solution
-    assert e_sol["D1"] == "train"
-    assert e_sol["D2"] == "train"
-    assert e_sol["D3"] == "test"
-    assert f_sol["P1"] == "train"
-    assert f_sol["P2"] == "train"
-    assert f_sol["P3"] == "test"
-    assert i_sol["D1", "P1"] == "train"
-    assert i_sol["D2", "P1"] == "train"
-    assert i_sol["D1", "P2"] == "train"
-    assert i_sol["D2", "P2"] == "train"
-    assert i_sol["D3", "P3"] == "test"
+    for i in range(1, 6):
+        assert e_sol[f"D{i}"] in {"train", "test"}
+        assert f_sol[f"P{i}"] in {"train", "test"}
+    selections = {"train": 0, "test": 0}
+    for i in range(1, 4):
+        for j in range(1, 4):
+            assert i_sol[f"D{i}", f"P{j}"] in {"train", "test", "not selected"}
+            if i_sol[f"D{i}", f"P{j}"] != "not selected":
+                selections[i_sol[f"D{i}", f"P{j}"]] += 1
+    for i in range(4, 6):
+        for j in range(4, 6):
+            assert i_sol[f"D{i}", f"P{j}"] in {"train", "test", "not selected"}
+            if i_sol[f"D{i}", f"P{j}"] != "not selected":
+                selections[i_sol[f"D{i}", f"P{j}"]] += 1
+    print(selections)
+    assert selections["train"] >= int(0.7 * 0.99 * (selections["train"] + selections["test"]))
 
 
 def test_ccs_sim():

@@ -49,8 +49,8 @@ def solve_c1(
 
     constraints = [cvxpy.sum(x, axis=0) == np.ones((len(clusters)))]  # 16
 
-    for s, split in enumerate(splits):
-        constraints.append(min_lim[s] <= cvxpy.sum(cvxpy.multiply(x[s], weights)))  # 17
+    for s, lim in enumerate(min_lim):
+        constraints.append(lim <= cvxpy.sum(cvxpy.multiply(x[s], weights)))  # 17
 
     if s_matrix is not None:
         constraints.append(stratification_constraints(s_matrix, splits, delta, x))

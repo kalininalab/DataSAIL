@@ -44,8 +44,8 @@ def solve_i1(
 
     constraints = [cvxpy.sum(x, axis=0) == np.ones((len(entities)))]
 
-    for s, split in enumerate(splits):
-        constraints.append(min_lim[s] <= cvxpy.sum(cvxpy.multiply(x[s], weights)))
+    for s, lim in enumerate(min_lim):
+        constraints.append(lim <= cvxpy.sum(cvxpy.multiply(x[s], weights)))
 
     if stratification is not None:
         constraints.append(stratification_constraints(stratification, splits, delta, x))

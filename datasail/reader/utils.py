@@ -124,10 +124,6 @@ class DataSet:
         if not isinstance(classes, Iterable):
             classes = [classes]
         if self.classes is not None:
-            # print(name, self.class_oh[[self.classes[class_] for class_ in classes]].sum(axis=0))
-            # print("classes", classes)
-            # print("self.cl", self.classes)
-            # print("self.oh", self.class_oh)
             return self.class_oh[[self.classes[class_] for class_ in classes]].sum(axis=0)
         return None
 

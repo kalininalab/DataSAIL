@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Dict, Tuple, List, Union, Optional, Literal
 
 import numpy as np
@@ -152,17 +153,16 @@ def finish_clustering(dataset: DataSet) -> None:
         dataset: The dataset to finish clustering on
     """
     # compute the weights and the stratification for the clusters
-    dataset.cluster_weights = {}
-    dataset.cluster_stratification = {}
-
+    dataset.cluster_weights = defaultdict(float)
     for key, value in dataset.cluster_map.items():
-        if value not in dataset.cluster_weights:
-            dataset.cluster_weights[value] = 0
         dataset.cluster_weights[value] += dataset.weights[key]
 
-        if value not in dataset.cluster_stratification:
-            dataset.cluster_stratification[value] = np.zeros(len(dataset.classes))
-        dataset.cluster_stratification[value] += dataset.strat2oh(name=key)
+    if dataset.stratification is not None and len(dataset.classes) > 1:
+        dataset.cluster_stratification = defaultdict(lambda: np.zeros(len(dataset.classes)))
+        for key, value in dataset.cluster_map.items():
+            dataset.cluster_stratification[value] += dataset.strat2oh(name=key)
+    else:
+        dataset.cluster_stratification = None
 
 
 def additional_clustering(
@@ -261,15 +261,18 @@ def labels2clusters(
 
     # compute the mapping of new clusters to their weights as the sum of their members weights
     new_cluster_weights = {}
-    new_cluster_stratification = {}
     for i, name in enumerate(dataset.cluster_names):
         new_cluster = labels[i]
         if new_cluster not in new_cluster_weights:
             new_cluster_weights[new_cluster] = 0
-        if new_cluster not in new_cluster_stratification:
-            new_cluster_stratification[new_cluster] = np.zeros(len(dataset.classes))
         new_cluster_weights[new_cluster] += dataset.cluster_weights[name]
-        new_cluster_stratification[new_cluster] += dataset.cluster_stratification[name]
+    if dataset.cluster_stratification is not None:
+        new_cluster_stratification = defaultdict(lambda: np.zeros(len(dataset.classes)))
+        for i, name in enumerate(dataset.cluster_names):
+            new_cluster = labels[i]
+            new_cluster_stratification[new_cluster] += dataset.cluster_stratification[name]
+    else:
+        new_cluster_stratification = None
 
     LOGGER.info(f"Reduced number of clusters to {len(new_cluster_names)}.")
 

@@ -333,8 +333,7 @@ def collect_results_2d(
         f_entities: List[str],
         x_e: Variable,
         x_f: Variable,
-        x_i: Dict[Tuple[str, str], Variable],
-        is_valid: Callable,
+        inter: set[tuple[str, str]],
 ) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[object, str], Dict[object, str]]]:
     """
     Report the found solution for two-dimensional splits.
@@ -364,13 +363,12 @@ def collect_results_2d(
     )
     for i, e in enumerate(e_entities):
         for j, f in enumerate(f_entities):
-            index = is_valid(i, j)
-            if index is not None:
-                for b in range(len(splits)):
-                    if x_i[index][b].value > 0:
-                        output[0][e, f] = names[b]
-                if sum(x_i[index][b].value for b in range(len(splits))) == 0:
-                    output[0][e, f] = NOT_ASSIGNED
+            if (e, f) not in inter:
+                continue
+            if output[1][e] == output[2][f]:
+                output[0][e, f] = output[1][e]
+            else:
+                output[0][e, f] = NOT_ASSIGNED
 
     return output
 

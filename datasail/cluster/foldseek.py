@@ -27,12 +27,12 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
         raise ValueError("Foldseek is not installed.")
     user_args = MultiYAMLParser(FOLDSEEK).get_user_arguments(dataset.args, [])
 
-    results_folder = Path("/scratch/SCRATCH_SAS/roman/DataSAIL/fs_results")
+    results_folder = Path("fs_results")
 
-    tmp = Path("/scratch/SCRATCH_SAS/roman/DataSAIL/fs_tmp")
+    tmp = Path("fs_tmp")
     tmp.mkdir(parents=True, exist_ok=True)
-    ##for name in dataset.names:
-    ##    shutil.copy(dataset.data[name], tmp)
+    for name in dataset.names:
+        shutil.copy(dataset.data[name], tmp)
 
     cmd = f"mkdir {results_folder} && " \
           f"cd {results_folder} && " \
@@ -45,9 +45,9 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
           f"--format-output 'query,target,fident,qlen,lddt' " \
           f"-e inf " \
           f"--threads {threads} " \
-          f"{user_args}"  # && " \
-          # f"--exhaustive-search 1 " \
-          # f"rm -rf ../tmp"
+          f"{user_args} " \
+          f"--exhaustive-search 1 &&" \
+          f"rm -rf ../tmp"
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"
@@ -59,54 +59,40 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
 
     LOGGER.info("Start FoldSeek clustering")
     LOGGER.info(cmd)
-    ##os.system(cmd)
+    os.system(cmd)
 
-    ##if not (results_folder / "aln.m8").exists():
-    ##    raise ValueError("Something went wrong with foldseek. The output file does not exist.")
+    if not (results_folder / "aln.m8").exists():
+        raise ValueError("Something went wrong with foldseek. The output file does not exist.")
 
-    ##ds = read_with_pyarrow(f"{results_folder}/aln.m8")
-    #with open("/scratch/SCRATCH_SAS/roman/DataSAIL/pyarrow.pkl", "rb") as data:
-    #    ds = pickle.load(data)
+    ds = read_with_pyarrow(f"{results_folder}/aln.m8")
+    namap = dict((n, i) for i, n in enumerate(dataset.names))
+    cluster_sim = np.zeros((len(dataset.names), len(dataset.names)))
+    with open(f"{results_folder}/aln.m8", "r") as data:
+        for line in data.readlines():
+            q1, q2, sim = line.strip().split("\t")[:3]
+            if "_" in q1 and "." in q1 and q1.rindex("_") > q1.index("."):
+                q1 = "_".join(q1.split("_")[:-1])
+            if "_" in q2 and "." in q2 and q2.rindex("_") > q2.index("."):
+                q2 = "_".join(q2.split("_")[:-1])
+            q1 = q1.replace(".pdb", "")
+            q2 = q2.replace(".pdb", "")
+            cluster_sim[namap[q1], namap[q2]] = sim
+            cluster_sim[namap[q2], namap[q1]] = sim
+    for i, name1 in enumerate(dataset.names):
+        cluster_sim[i, i] = 1
+        for j, name2 in enumerate(dataset.names[i + 1:]):
+            if name2 in ds[name1]:
+                cluster_sim[i, j] = ds[name1][name2][2] / ds[name1][name2][3]
+            if name1 in ds[name2]:
+                cluster_sim[j, i] = ds[name2][name1][2] / ds[name2][name1][3]
+    cluster_sim = (cluster_sim + cluster_sim.T) / 2
     
-    #try:
-    #except Exception as e:
-    #    print("pickling failed due to:", e)
-    # namap = dict((n, i) for i, n in enumerate(dataset.names))
-    ##cluster_sim = np.zeros((len(dataset.names), len(dataset.names)))
-    #with open(f"{results_folder}/aln.m8", "r") as data:
-    #    for line in data.readlines():
-    #        q1, q2, sim = line.strip().split("\t")[:3]
-    #        if "_" in q1 and "." in q1 and q1.rindex("_") > q1.index("."):
-    #            q1 = "_".join(q1.split("_")[:-1])
-    #        if "_" in q2 and "." in q2 and q2.rindex("_") > q2.index("."):
-    #            q2 = "_".join(q2.split("_")[:-1])
-    #        q1 = q1.replace(".pdb", "")
-    #        q2 = q2.replace(".pdb", "")
-    #        cluster_sim[namap[q1], namap[q2]] = sim
-    #        cluster_sim[namap[q2], namap[q1]] = sim
-    # print("Additional names:", set(dataset.names).difference(set(ds.keys())))
-    # print("Additional hits:", set(ds.keys()).difference(set(dataset.names)))
-    # exit(0)
-    ##for i, name1 in enumerate(dataset.names):
-    ##    cluster_sim[i, i] = 1
-    ##    for j, name2 in enumerate(dataset.names[i + 1:]):
-    ##        if name2 in ds[name1]:
-    ##            cluster_sim[i, j] = ds[name1][name2][2] / ds[name1][name2][3]
-    ##        if name1 in ds[name2]:
-    ##            cluster_sim[j, i] = ds[name2][name1][2] / ds[name2][name1][3]
-    ##cluster_sim = (cluster_sim + cluster_sim.T) / 2
-    
-    # with open("/scratch/SCRATCH_SAS/roman/DataSAIL/PLINDER/prot_sim_full_v12.pkl", "wb") as out:
-    #     pickle.dump(ds, out)
-    with open("/scratch/SCRATCH_SAS/roman/DataSAIL/PLINDER/eval/full_v0/prots.pkl", "rb") as f:
-        ds = pickle.load(f)
-
     shutil.rmtree(results_folder, ignore_errors=True)
     shutil.rmtree(tmp, ignore_errors=True)
 
     dataset.cluster_names = dataset.names
     dataset.cluster_map = dict((n, n) for n in dataset.names)
-    dataset.cluster_similarity = ds.cluster_similarity  ## cluster_sim
+    dataset.cluster_similarity = cluster_sim
 
 
 def extract(tmp):

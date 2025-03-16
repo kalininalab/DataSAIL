@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -8,7 +9,7 @@ from datasail.sail import datasail
 
 
 @pytest.mark.full
-@pytest.mark.parametrize("tech", ["I1e", "I1f", "I2", "C1e", "C1f", "C2"])
+@pytest.mark.parametrize("tech", ["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"])
 def test_stratification(tech):
     base = Path("data") / "pipeline"
     drugs = pd.read_csv(base / "drugs.tsv", sep="\t")
@@ -79,7 +80,9 @@ def test_multiclass(clustering: bool):
 
 def test_clustered_glycans():
     data = {}
-    df = pd.read_csv(Path("data") / "rw_data" / "taxonomy_Phylum.tsv", sep="\t")
+    df = pd.read_csv("tests" / Path("data") / "rw_data" / "taxonomy_Phylum.tsv", sep="\t")
+    df.drop(columns=list(df.columns[1:-1][df.values[:, 1:-1].sum(axis=0) <= 10]), inplace=True)
+    df = df[df.values[:, 1:-1].sum(axis=1) != 0]
     for i, (_, row) in enumerate(df.iterrows()):
         name = f"Gly{i:05d}"
         tmp = row[df.columns[1:-1]]
@@ -91,23 +94,24 @@ def test_clustered_glycans():
         names=["train", "test"],
         runs=1,
         solver="SCIP",
-        delta=0.45,
-        epsilon=0.3,
+        delta=0.15,
+        epsilon=0.15,
         e_type="O",
         e_data={k: v[0] for k, v in data.items()},
         e_strat={k: v[1] for k, v in data.items()},
     )
     assert e_splits is not None and e_splits != {}
-    e = e_splits["I1e"][0]
-    train_strats, test_strats = [], []
-    for x in "ABCD":
-        if e[x] == "train":
-            train_strats += list(data[x][1])
-        else:
-            test_strats += list(data[x][1])
-    for strat in [train_strats, test_strats]:
-        for c in {1, 2}:
-            assert strat.count(c) >= 1
+    train_strats, test_strats = defaultdict(int), defaultdict(int)
+    for k, v in e_splits["I1e"][0].items():
+        for class_ in data[k][1]:
+            if v == "train":
+                train_strats[class_] += 1
+            else:
+                test_strats[class_] += 1
+    for class_ in df.columns[1:-1]:
+        assert train_strats[class_] > 0
+        assert test_strats[class_] > 0
+        assert train_strats[class_] > test_strats[class_]
 
 
 def check(df, key, splits, tech):
