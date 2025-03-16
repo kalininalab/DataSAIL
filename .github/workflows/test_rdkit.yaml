@@ -41,7 +41,7 @@ jobs:
       - name: Install environment
         shell: bash -l {0}
         run: |
-          mamba install -c conda-forge -c bioconda -y numpy"<2" pandas networkx matplotlib pytest setuptools pyscipopt==5.2.1 foldseek mmseqs2 cd-hit mash tmalign diamond cvxpy==1.5.3 pytest-cov ${{ matrix.rdkit-version }} pytest-cases scikit-learn pyyaml h5py pyarrow tqdm
+          mamba install -c conda-forge -c bioconda -y numpy"<2" pandas networkx matplotlib pytest setuptools pyscipopt==5.2.1 scip==9.1.1 foldseek mmseqs2 cd-hit mash tmalign diamond cvxpy==1.5.3 pytest-cov ${{ matrix.rdkit-version }} pytest-cases scikit-learn pyyaml h5py pyarrow tqdm
           pip install grakel
 
       - name: Run tests
