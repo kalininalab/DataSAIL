@@ -23,7 +23,7 @@ requirements:
     - matplotlib
     - pytest
     - setuptools
-    - pyscipopt
+    - pyscipopt<4
     - scikit-learn
     - cvxpy==1.5.3
     - pytest-cov
