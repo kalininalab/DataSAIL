@@ -23,10 +23,10 @@ requirements:
     - matplotlib
     - pytest
     - setuptools
-    - pyscipopt==5.2.1
-    - scip==9.1.1
+    - pyscipopt
+    - scip=9.1
     - scikit-learn
-    - cvxpy==1.5.3
+    - cvxpy=1.5.3
     - pytest-cov
     - rdkit
     - pytest-cases
