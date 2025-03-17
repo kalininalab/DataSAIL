@@ -19,7 +19,6 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
-        "Programming Language :: Python :: 3.13",
         "Intended Audience :: Science/Research",
         "Natural Language :: English",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
@@ -29,6 +28,6 @@ setup(
     # packages=find_packages(),
     # include_package_data=False,
     install_requires=[],
-    python_requires=">=3.9, <4.0.0",
+    python_requires=">=3.9, <3.13.0",
     keywords="bioinformatics",
 )

@@ -80,7 +80,7 @@ def test_multiclass(clustering: bool):
 
 def test_clustered_glycans():
     data = {}
-    df = pd.read_csv("tests" / Path("data") / "rw_data" / "taxonomy_Phylum.tsv", sep="\t")
+    df = pd.read_csv(Path("data") / "rw_data" / "taxonomy_Phylum.tsv", sep="\t")
     df.drop(columns=list(df.columns[1:-1][df.values[:, 1:-1].sum(axis=0) <= 10]), inplace=True)
     df = df[df.values[:, 1:-1].sum(axis=1) != 0]
     for i, (_, row) in enumerate(df.iterrows()):

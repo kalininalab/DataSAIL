@@ -15,7 +15,7 @@
 
 ## v1.1.0 (2025-0?-??)
 
-- Support terminated for Python v3.8 and added for Python v3.13. Now supports Python v3.9 to v3.13.
+- Support terminated for Python v3.8. Now, DataSAIL supports Python v3.9 to v3.12.
 - Major rework of two-dimensional splitting
 - Bug fixes
 

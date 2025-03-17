@@ -9,6 +9,7 @@ from datasail.reader.read_molecules import read_molecule_data
 from datasail.reader.utils import read_csv
 
 
+@pytest.mark.todo
 @pytest.mark.parametrize("size", ["perf_7_3", "perf_70_30"])
 def test_caching(size):
     base = Path("data") / size

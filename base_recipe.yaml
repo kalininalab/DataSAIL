@@ -16,7 +16,7 @@ requirements:
     - setuptools_scm
     - pip
   run:
-    - python>=3.9
+    - python>=3.9,<3.13.0
     - numpy<2
     - pandas
     - networkx
