@@ -13,7 +13,7 @@ user-friendly design and adaptability. Licensed under the MIT license, it is ope
 Install
 #######
 
-DataSAIL is available for all modern versions of Pytion (v3.8 or newer).
+DataSAIL is available for all modern versions of Pytion (v3.9 or newer).
 
 .. note::
     It is recommended to use `mamba <https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html>`_

@@ -48,7 +48,7 @@ to install DataSAIL in an already existing environment. Alternatively, one can i
 DataSAIL-lite is a version of DataSAIL that does not install all clustering algorithms as the standard DataSAIL.
 Installing either package usually takes less than 5 minutes.
 
-DataSAIL is available for Python 3.8 and newer.
+DataSAIL is available for Python 3.9 and newer.
 
 ## Usage
 

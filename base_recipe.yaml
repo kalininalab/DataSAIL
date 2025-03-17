@@ -16,7 +16,7 @@ requirements:
     - setuptools_scm
     - pip
   run:
-    - python>=3.8
+    - python>=3.9
     - numpy<2
     - pandas
     - networkx
@@ -24,7 +24,7 @@ requirements:
     - pytest
     - setuptools
     - pyscipopt
-    - scip=9.1
+    - scip<=9.1
     - scikit-learn
     - cvxpy=1.5.3
     - pytest-cov
