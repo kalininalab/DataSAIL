@@ -59,8 +59,8 @@ def solve_c2(
         dataset
     """
     splits = convert(splits)
-    min_lim_e = compute_limits(epsilon, len(e_clusters), splits)
-    min_lim_f = compute_limits(epsilon, len(f_clusters), splits)
+    min_lim_e = compute_limits(epsilon, sum(e_weights), splits)
+    min_lim_f = compute_limits(epsilon, sum(f_weights), splits)
     print(min_lim_e, min_lim_f)
 
     x_e = cvxpy.Variable((len(splits), len(e_clusters)), boolean=True)
