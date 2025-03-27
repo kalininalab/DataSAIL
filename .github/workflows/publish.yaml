@@ -38,13 +38,13 @@ jobs:
       if: matrix.datasail-versions == 'full'
       shell: bash -l {0}
       run: |
-        conda-build -q -c conda-forge -c bioconda --output-folder . --no-test --append-file base_recipe.yaml recipe
+        conda-build -q -c conda-forge -c bioconda --output-folder . --no-test --package-format tar.bz2 --append-file base_recipe.yaml recipe
 
     - name: Convert DataSAIL to osx-64
       if: matrix.datasail-versions == 'full'
       shell: bash -l {0}
       run: |
-        conda convert -p osx-64 linux-64/*.conda
+        conda convert -p osx-64 linux-64/*.tar.bz2
 
     - name: Publish DataSAIL to Conda
       if: matrix.datasail-versions == 'full'
@@ -52,22 +52,22 @@ jobs:
         ANACONDA_TOKEN: ${{ secrets.DATASAIL_ANACONDA_TOKEN }}
       shell: bash -l {0}
       run: |
-        anaconda -t "$ANACONDA_TOKEN" upload linux-64/*.conda
-        anaconda -t "$ANACONDA_TOKEN" upload osx-64/*.conda
+        anaconda -t "$ANACONDA_TOKEN" upload linux-64/*.tar.bz2
+        anaconda -t "$ANACONDA_TOKEN" upload osx-64/*.tar.bz2
 
     - name: Build DataSAIL for linux-64
       if: matrix.datasail-versions == 'lite'
       shell: bash -l {0}
       run: |
-        conda-build -q -c conda-forge -c bioconda --output-folder . --no-test --append-file base_recipe.yaml recipe_lite
+        conda-build -q -c conda-forge -c bioconda --output-folder . --no-test --package-format tar.bz2 --append-file base_recipe.yaml recipe_lite
 
     - name: Convert DataSAIL to osx-64, osx-arm64, win-64
       if: matrix.datasail-versions == 'lite'
       shell: bash -l {0}
       run: |
-        conda convert -p osx-64 linux-64/*.conda
-        conda convert -p osx-arm64 linux-64/*.conda
-        conda convert -p win-64 linux-64/*.conda
+        conda convert -p osx-64 linux-64/*.tar.bz2
+        conda convert -p osx-arm64 linux-64/*.tar.bz2
+        conda convert -p win-64 linux-64/*.tar.bz2
 
     - name: Publish DataSAIL-lite to Conda
       if: matrix.datasail-versions == 'lite'
@@ -75,7 +75,7 @@ jobs:
         ANACONDA_TOKEN: ${{ secrets.DATASAIL_ANACONDA_TOKEN }}
       shell: bash -l {0}
       run: |
-        anaconda -t "$ANACONDA_TOKEN" upload linux-64/*.conda
-        anaconda -t "$ANACONDA_TOKEN" upload osx-64/*.conda
-        anaconda -t "$ANACONDA_TOKEN" upload osx-arm64/*.conda
-        anaconda -t "$ANACONDA_TOKEN" upload win-64/*.conda
+        anaconda -t "$ANACONDA_TOKEN" upload linux-64/*.tar.bz2
+        anaconda -t "$ANACONDA_TOKEN" upload osx-64/*.tar.bz2
+        anaconda -t "$ANACONDA_TOKEN" upload osx-arm64/*.tar.bz2
+        anaconda -t "$ANACONDA_TOKEN" upload win-64/*.tar.bz2
