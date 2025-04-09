@@ -77,12 +77,13 @@ different from your training data but not if the data in the application is more
 
 If you used DataSAIL to split your data, please cite DataSAIL in your publication.
 ````
-@article{joeres2023datasail,
-  title={DataSAIL: Data Splitting Against Information Leakage},
+@article{joeres2025datasail,
+  title={Data splitting to avoid information leakage with DataSAIL},
   author={Joeres, Roman and Blumenthal, David B. and Kalinina, Olga V},
-  journal={bioRxiv},
-  pages={2023--11},
-  year={2023},
-  publisher={Cold Spring Harbor Laboratory}
+  journal={Nature Communications},
+  volume={16},
+  pages={3337},
+  year={2025},
+  doi={10.1038/s41467-025-58606-8},
 }
 ````
