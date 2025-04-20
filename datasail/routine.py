@@ -7,7 +7,7 @@ from datasail.cluster.clustering import cluster
 from datasail.reader.read import read_data
 from datasail.reader.utils import DataSet
 from datasail.report import report
-from datasail.settings import LOGGER, KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
+from datasail.settings import KW_DATA, LOGGER, KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
     KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL, KW_DELTA, \
     KW_E_CLUSTERS, KW_F_CLUSTERS, KW_CC, CDHIT, INSTALLED, FOLDSEEK, TMALIGN, CDHIT_EST, DIAMOND, MMSEQS, MASH
 from datasail.solver.solve import run_solver
@@ -41,30 +41,17 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
     LOGGER.info("Read data")
 
     # read e-entities and f-entities
-    e_dataset, f_dataset, inter = read_data(**kwargs)
+    inter = read_inter(**kwargs)
+    datasets = read_data(inter, kwargs[KW_DATA])
 
     # if required, cluster the input otherwise define the cluster-maps to be None
     clusters = list(filter(lambda x: x[0].startswith(SRC_CL), kwargs[KW_TECHNIQUES]))
-    cluster_e = len(clusters) != 0 and any(c[-1] in {DIM_2, MODE_E} for c in clusters)
-    cluster_f = len(clusters) != 0 and any(c[-1] in {DIM_2, MODE_F} for c in clusters)
+    clusterings = [len(clusters) != 0 and any(d + 1 in set(c[1:].split(".")) for c in clusters) for d in len(datasets)]
 
-    if cluster_e:
-        LOGGER.info("Cluster first set of entities.")
-        e_dataset = cluster(e_dataset, **kwargs)
-    if cluster_f:
-        LOGGER.info("Cluster second set of entities.")
-        f_dataset = cluster(f_dataset, **kwargs)
-
-    #split = str(kwargs[KW_INTER]).split("/")[-2]
-    #with open(f"/scratch/SCRATCH_SAS/roman/DataSAIL/PLINDER/{split}.pkl", "wb") as f:
-    #    pickle.dump((e_dataset, f_dataset), f)
-    #with open(f"/scratch/SCRATCH_SAS/roman/DataSAIL/PLINDER/{split}.pkl", "rb") as f:
-    #    e_dataset, f_dataset = pickle.load(f)
-    #f_dataset.id_map = f_dataset_tmp.id_map
-
-    #print("E_ID_Map is None:", e_dataset.id_map is None)
-    #print("F_ID_Map is None:", f_dataset.id_map is None)
-    #print("Nones in inter  :", sum([x is None for x in inter]))
+    for i, (clustering, dataset) in enumerate(zip(clusterings, datasets)):
+        if clustering:
+            LOGGER.info(f"Clustering data {i + 1}.")
+            dataset = cluster(dataset, **kwargs)
 
     if inter is not None:
         if e_dataset.type is not None and f_dataset.type is not None:
@@ -84,8 +71,6 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
     # split the data into dictionaries mapping interactions, e-entities, and f-entities into the splits
     inter_split_map, e_name_split_map, f_name_split_map, e_cluster_split_map, f_cluster_split_map = run_solver(
         techniques=kwargs[KW_TECHNIQUES],
-        e_dataset=e_dataset,
-        f_dataset=f_dataset,
         inter=new_inter,
         delta=kwargs[KW_DELTA],
         epsilon=kwargs[KW_EPSILON],
@@ -96,6 +81,7 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
         max_sol=kwargs[KW_MAX_SOL],
         solver=kwargs[KW_SOLVER],
         log_dir=kwargs[KW_LOGDIR],
+        datasets=datasets,
     )
 
     LOGGER.info("Store results")
@@ -125,9 +111,8 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
 
     if kwargs[KW_OUTDIR] is not None:
         report(
+            e_dataset=datasets,
             techniques=kwargs[KW_TECHNIQUES],
-            e_dataset=e_dataset,
-            f_dataset=f_dataset,
             e_name_split_map=e_name_split_map,
             f_name_split_map=f_name_split_map,
             e_cluster_split_map=e_cluster_split_map,

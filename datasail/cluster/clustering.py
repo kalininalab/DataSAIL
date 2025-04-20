@@ -19,7 +19,7 @@ from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
+from datasail.settings import KW_SPLITS, LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
     FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND,TANIMOTO, KW_LINKAGE
 
 
@@ -73,6 +73,9 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
 
     if len(dataset.cluster_names) > dataset.num_clusters:
         dataset = force_clustering(dataset, kwargs[KW_LINKAGE])
+    
+    while max(dataset.cluster_weights.values()) > max(kwargs[KW_SPLITS]) * sum(dataset.cluster_weights.values()):
+        dataset = break_biggest_cluster(dataset, kwargs[KW_LINKAGE])
 
     # store_to_cache(dataset, **kwargs)
 
@@ -334,6 +337,50 @@ def force_clustering(dataset: DataSet, linkage: Literal["average", "single", "co
     # cluster the dataset based on the list of new clusters and return
     matrix = dataset.cluster_similarity if dataset.cluster_similarity is not None else dataset.cluster_distance
     return labels2clusters(labels, dataset, matrix, linkage)
+
+
+def break_biggest_cluster(dataset: DataSet, linkage: Literal["average", "single", "complete"]) -> DataSet:
+    highest_weight, big_cluster_name = 0, ""
+    for cluster_name, weight in dataset.cluster_weights.items():
+        if weight > highest_weight:
+            highest_weight = weight
+            big_cluster_name = cluster_name
+    labels, gap_map = [], {}
+    for name in dataset.names:
+        if (c := dataset.cluster_map[name]) != big_cluster_name:
+            labels.append(c)
+        else:
+            gap_map[name] = len(labels)
+            labels.append("?")
+    re_assigns = sorted(gap_map.keys(), key=lambda x: -dataset.weights[x])
+    max_size = highest_weight // 2 + 1
+    size_cluster_a = 0
+    for name in re_assigns:
+        if size_cluster_a + dataset.weights[name] < max_size:
+            labels[gap_map[name]] = str(big_cluster_name) + "_A"
+            size_cluster_a += dataset.weights[name]
+        else:
+            labels[gap_map[name]] = str(big_cluster_name) + "_B"
+    
+    unique_labels = {}
+    new_labels = []
+    for label in labels:
+        if label not in unique_labels:
+            unique_labels[label] = len(unique_labels)
+        new_labels.append(unique_labels[label])
+    
+    dataset.cluster_names = dataset.names  # sorted(dataset.cluster_weights.keys())
+    dataset.cluster_map = {n: n for n in dataset.cluster_names}
+    dataset.cluster_weights = dataset.weights
+    dataset.cluster_stratification = dataset.stratification
+    if isinstance(dataset.similarity, np.ndarray):
+        cluster_matrix = dataset.similarity
+    elif isinstance(dataset.distance, np.ndarray):
+        cluster_matrix = dataset.distance
+    else:
+        raise ValueError("Neither the similarity nor the distance of the dataset are matrices.")
+    
+    return labels2clusters(new_labels, dataset, cluster_matrix, linkage)
 
 
 def cluster_interactions(

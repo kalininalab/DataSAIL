@@ -26,7 +26,7 @@ from datasail.reader.utils import DataSet, read_csv, parse_fasta
 from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
     check_mash_arguments, check_mmseqspp_arguments, check_diamond_arguments
 from datasail.sail import datasail
-from datasail.settings import P_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN, MMSEQSPP, \
+from datasail.settings import P_TYPE, O_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN, MMSEQSPP, \
     DIAMOND, MASH
 
 
@@ -359,6 +359,26 @@ def test_distance_input():
         e_data=[(name, "A" * i) for i, name in enumerate(names)],
         e_dist=Path("data") / "rw_data" / "distance_matrix.tsv",
         splits=[0.7, 0.3],
+        names=["train", "test"],
+    )
+    assert "C1e" in e_splits
+
+
+def test_cluster_break():
+    e_splits, _, _ = datasail(
+        techniques=["C1e"],
+        e_type=O_TYPE,
+        e_data={"A": "A", "B": "B", "C": "C", "D": "D", "E": "E", "F": "F"},
+        e_sim=(["A", "B", "C", "D", "E", "F"], np.array([
+            [5, 5, 5, 4, 4, 0],
+            [5, 5, 5, 4, 4, 0],
+            [5, 5, 5, 4, 4, 0],
+            [4, 4, 4, 5, 5, 0],
+            [4, 4, 4, 5, 5, 0],
+            [0, 0, 0, 0, 0, 5],
+        ])),
+        e_clusters=2,
+        splits=[5, 5],
         names=["train", "test"],
     )
     assert "C1e" in e_splits
