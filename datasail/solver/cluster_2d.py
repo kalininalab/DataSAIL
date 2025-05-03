@@ -99,7 +99,7 @@ def solve_c2(
 
 def func(x, targets):
     denom = sum([a ** 2 for a in x])
-    return [(x[i] ** 2 / denom - targets[i]) for i in range(len(x))]
+    return [(x[i] ** 2 / denom - targets[i]) + (1e6 if x[i] < 0 else 0) for i in range(len(x))]
 
 
 def convert(targets):
