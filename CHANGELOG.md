@@ -13,6 +13,10 @@
 - [ ] Include MASH for amino acid sequences
 - [ ] Custom clustering methods ([Issue #25](https://github.com/kalininalab/DataSAIL/issues/25))
 
+## v1.1.1 (2025-05-03)
+
+- Bug fix in C2 splitting
+
 ## v1.1.0 (2025-0?-??)
 
 - Support terminated for Python v3.8. Now, DataSAIL supports Python v3.9 to v3.12.

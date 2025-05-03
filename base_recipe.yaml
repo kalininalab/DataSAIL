@@ -1,5 +1,5 @@
 package:
-  version: '1.1.0'
+  version: '1.1.1'
 
 source:
   path: ..
@@ -8,6 +8,10 @@ build:
   entry_points:
     - datasail = datasail.sail:sail
   script: python setup.py install
+
+outputs:
+  - name: datasail
+    type: conda_v2
 
 requirements:
   build:
