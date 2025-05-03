@@ -9,10 +9,6 @@ build:
     - datasail = datasail.sail:sail
   script: python setup.py install
 
-outputs:
-  - name: datasail
-    type: conda_v2
-
 requirements:
   build:
     - python
