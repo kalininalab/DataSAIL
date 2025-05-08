@@ -6,7 +6,7 @@ import scipy
 from rdkit import DataStructs
 
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER
+from datasail.constants import LOGGER
 
 SIM_OPTIONS = Literal[
     "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "onbit", "rogotgoldberg",

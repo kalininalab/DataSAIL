@@ -1,16 +1,15 @@
 import logging
-import os
-import shutil
 import subprocess
+import os
 import sys
-from typing import Tuple, Optional
+from typing import Optional
 import platform
 
 import cvxpy
 import pkg_resources
 
 
-def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Optional[str]]:
+def get_default(data_type: str, data_format: str) -> tuple[Optional[str], Optional[str]]:
     """
     Return the default clustering method for a specific type of data and a specific format.
 
@@ -37,6 +36,13 @@ def get_default(data_type: str, data_format: str) -> Tuple[Optional[str], Option
         elif data_format == FORM_GENOMES and INSTALLED[MASH]:
             return None, MASH
     return None, None
+
+
+def check_algo_presence(command: str, expected_value: int):
+    try:
+        return subprocess.run(command.split(" "), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == expected_value
+    except:
+        return False
 
 
 VERB_MAP = {
@@ -83,18 +89,19 @@ SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, D
 DIST_ALGOS = [MASH, ]
 ALGOS = SIM_ALGOS + DIST_ALGOS
 
+
 # Check if the tools are installed
 INSTALLED = {
-    CDHIT: os.system("cd-hit -h > /dev/null") == 256,
-    CDHIT_EST: os.system("cd-hit-est -h > /dev/null") == 256,
-    DIAMOND: os.system("diamond -h > /dev/null") == 0,
-    MMSEQS: os.system("mmseqs -h > /dev/null") == 0,
-    MMSEQS2: os.system("mmseqs -h > /dev/null") == 0,
-    MMSEQSPP: os.system("mmseqs -h > /dev/null") == 0,
-    MASH: os.system("mash -h > /dev/null") == 0,
-    FOLDSEEK: os.system("foldseek -h > /dev/null") == 0,
-    TMALIGN: os.system("TMalign -h > /dev/null") == 0,
+    CDHIT: check_algo_presence("cd-hit -h", 256),
+    CDHIT_EST: check_algo_presence("cd-hit-este -h", 256),
+    DIAMOND: check_algo_presence("diamond version", 0),
+    MMSEQS: check_algo_presence("mmseqs -h", 0),
+    MASH: check_algo_presence("mash -h", 0),
+    FOLDSEEK: check_algo_presence("foldseek -h", 0),
+    TMALIGN: check_algo_presence("TMalign -h", 0),
 }
+INSTALLED[MMSEQS2] = INSTALLED[MMSEQS]
+INSTALLED[MMSEQSPP] = INSTALLED[MMSEQS]
 
 
 def format2ending(fmt: str) -> str:

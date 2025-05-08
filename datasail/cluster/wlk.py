@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Tuple, List, Union
+from typing import Union
 import math
 
 from grakel import Graph, WeisfeilerLehman, VertexHistogram
@@ -8,9 +8,9 @@ from rdkit import Chem
 from rdkit.Chem import MolFromSmiles
 
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, MAX_PATH
+from datasail.constants import LOGGER, MAX_PATH
 
-Point = Tuple[float, float, float]
+Point = tuple[float, float, float]
 
 node_encoding = {
     "ala": 0, "arg": 1, "asn": 2, "asp": 3, "cys": 4, "gln": 5, "glu": 6, "gly": 7, "his": 8, "ile": 9,
@@ -43,7 +43,7 @@ def run_wlk(dataset: DataSet, n_iter: int = 4) -> None:
     dataset.cluster_map = dict((name, name) for name in dataset.names)
 
 
-def run_wl_kernel(graph_list: List[Graph], n_iter: int = 4) -> np.ndarray:
+def run_wl_kernel(graph_list: list[Graph], n_iter: int = 4) -> np.ndarray:
     """
     Run the Weisfeiler-Lehman algorithm on the list of input graphs.
 
@@ -104,7 +104,7 @@ class PDBStructure:
                     res = Residue(line)
                     self.residues[res.num] = res
 
-    def get_edges(self, threshold: float = 7) -> List[Tuple[int, int]]:
+    def get_edges(self, threshold: float = 7) -> list[tuple[int, int]]:
         """
         Get edges for the graph representation of this PDB structure based on the distance of the C-alpha atoms
 
@@ -118,7 +118,7 @@ class PDBStructure:
         return [(coords[i][0], coords[j][0]) for i in range(len(coords)) for j in range(len(coords)) if
                 math.dist(coords[i][1], coords[j][1]) < threshold]
 
-    def get_nodes(self) -> Dict[int, int]:
+    def get_nodes(self) -> dict[int, int]:
         """
         Get the nodes as a map from their residue id to a numerical encoding of the represented amino acid.
 

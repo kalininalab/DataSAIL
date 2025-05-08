@@ -1,6 +1,6 @@
 import pytest
 
-from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
+from datasail.validation.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
     check_mmseqspp_arguments, check_mash_arguments, check_diamond_arguments
 from datasail.sail import datasail
 

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, Tuple, List, Union, Optional, Literal
+from typing import Union, Optional, Literal
 
 import numpy as np
 import sklearn
@@ -19,7 +19,7 @@ from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import KW_SPLITS, LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
+from datasail.constants import KW_SPLITS, LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
     FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND,TANIMOTO, KW_LINKAGE
 
 
@@ -220,7 +220,7 @@ def additional_clustering(
 
 
 def labels2clusters(
-        labels: Union[List, np.ndarray],
+        labels: Union[list, np.ndarray],
         dataset: DataSet,
         cluster_matrix: np.ndarray,
         linkage: Literal["average", "single", "complete"],
@@ -384,7 +384,7 @@ def break_biggest_cluster(dataset: DataSet, linkage: Literal["average", "single"
 
 
 def cluster_interactions(
-        inter: List[Tuple[str, str]],
+        inter: list[tuple],
         e_dataset: DataSet,
         f_dataset: DataSet,
 ) -> np.ndarray:
@@ -411,7 +411,7 @@ def cluster_interactions(
     return output
 
 
-def reverse_clustering(cluster_split: Dict[str, str], name_cluster: Dict[str, str]) -> Dict[str, str]:
+def reverse_clustering(cluster_split: dict[str, str], name_cluster: dict[str, str]) -> dict[str, str]:
     """
     Reverse clustering to uncover which entity is assigned to which split.
 
@@ -426,11 +426,11 @@ def reverse_clustering(cluster_split: Dict[str, str], name_cluster: Dict[str, st
 
 
 def reverse_interaction_clustering(
-        inter_split: Dict[Tuple[str, str], str],
-        e_name_cluster_map: Dict[str, str],
-        f_name_cluster_map: Dict[str, str],
-        inter: List[Tuple[str, str]]
-) -> Dict[str, str]:
+        inter_split: dict[tuple, str],
+        e_name_cluster_map: dict[str, str],
+        f_name_cluster_map: dict[str, str],
+        inter: list[tuple]
+) -> dict[str, str]:
     """
     Revert the clustering of interactions.
 

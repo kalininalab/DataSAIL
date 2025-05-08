@@ -1,7 +1,6 @@
 import os
 import sys
 from pathlib import Path
-from typing import List
 
 import numpy as np
 import pandas as pd
@@ -12,7 +11,7 @@ from datasail.sail import datasail
 from experiments.utils import load_lp_pdbbind, SPLITTERS, RUNS, TECHNIQUES, save_datasail_splits
 
 
-def split_w_datasail(base_path: Path, techniques: List[str], solver: str = "GUROBI") -> None:
+def split_w_datasail(base_path: Path, techniques: list[str], solver: str = "GUROBI") -> None:
     """
     Split the LP_PDBBind dataset using DataSAIL.
 
@@ -45,7 +44,7 @@ def split_w_datasail(base_path: Path, techniques: List[str], solver: str = "GURO
     save_datasail_splits(base, df, "ids", [(t, t) for t in techniques], inter_splits=inter_splits)
 
 
-def split_w_deepchem(base_path: Path, techniques: List[str]) -> None:
+def split_w_deepchem(base_path: Path, techniques: list[str]) -> None:
     """
     Split the LP_PDBBind dataset using DeepChem.
 

@@ -1,6 +1,6 @@
 import math
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Set
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -8,21 +8,21 @@ from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 
 from datasail.reader.utils import DataSet, DictMap
-from datasail.settings import LOGGER, NOT_ASSIGNED, DIM_2, MODE_F, MODE_E, SRC_CL
+from datasail.constants import LOGGER, NOT_ASSIGNED, DIM_2, MODE_F, MODE_E, SRC_CL
 
 
 def report(
-        techniques: Set[str],
+        techniques: set[str],
         e_dataset: DataSet,
         f_dataset: DataSet,
         e_name_split_map: DictMap,
         f_name_split_map: DictMap,
         e_cluster_split_map: DictMap,
         f_cluster_split_map: DictMap,
-        inter_split_map: Dict[str, List[Dict[Tuple[str, str], str]]],
+        inter_split_map: dict[str, list[dict[tuple, str]]],
         runs: int,
         output_dir: Path,
-        split_names: List[str],
+        split_names: list[str],
 ) -> None:
     """
     Central entrypoint to create reports on the computed splits. This stores t-SNE plots, histograms, cluster- and
@@ -89,10 +89,10 @@ def report(
 def individual_report(
         save_dir: Path,
         dataset: DataSet,
-        name_split_map: Dict[str, Dict[str, str]],
-        cluster_split_map: Dict[str, Dict[str, str]],
+        name_split_map: dict[str, dict[str, str]],
+        cluster_split_map: dict[str, dict[str, str]],
         technique: str,
-        split_names: List[str],
+        split_names: list[str],
 ) -> None:
     """
     Create all the report files for one dataset and one technique.
@@ -123,7 +123,7 @@ def individual_report(
     # print(stats_string(sum(dataset.weights.values()), split_counts))
 
 
-def save_inter_assignment(save_dir: Path, inter_split_map: Optional[Dict[Tuple[str, str], str]]) -> None:
+def save_inter_assignment(save_dir: Path, inter_split_map: Optional[dict[tuple, str]]) -> None:
     """
     Save the assignment of interactions to splits in a TSV file.
 
@@ -140,7 +140,7 @@ def save_inter_assignment(save_dir: Path, inter_split_map: Optional[Dict[Tuple[s
     ).to_csv(save_dir / "inter.tsv", sep="\t", columns=["E_ID", "F_ID", "Split"], index=False)
 
 
-def save_assignment(save_dir: Path, dataset: DataSet, name_split_map: Optional[Dict[str, str]]) -> None:
+def save_assignment(save_dir: Path, dataset: DataSet, name_split_map: Optional[dict[str, str]]) -> None:
     """
     Save an assignment from data points to splits.
 
@@ -181,9 +181,9 @@ def save_clusters(save_dir: Path, dataset: DataSet) -> None:
 def save_t_sne(
         save_dir: Path,
         dataset: DataSet,
-        name_split_map: Dict[str, str],
-        cluster_split_map: Dict[str, str],
-        split_names: List[str]
+        name_split_map: dict[str, str],
+        cluster_split_map: dict[str, str],
+        split_names: list[str]
 ) -> None:
     """
     Compute and save the tSNE-plots for the splits visualizing the cluster assignments in 2D space.
@@ -212,10 +212,10 @@ def save_t_sne(
 def save_matrix_tsne(
         similarities: Optional[np.ndarray],
         distances: Optional[np.ndarray],
-        names: List[str],
+        names: list[str],
         dataset: DataSet,
-        entity_split_map: Dict[str, str],
-        split_names: List[str],
+        entity_split_map: dict[str, str],
+        split_names: list[str],
         save_dir: Path,
         postfix: str
 ) -> None:
@@ -283,8 +283,8 @@ def save_cluster_hist(save_dir: Path, dataset: DataSet) -> None:
 
 
 def whatever(
-        names: List[str],
-        clusters: Dict[str, str],
+        names: list[str],
+        clusters: dict[str, str],
         distances: Optional[np.ndarray],
         similarities: Optional[np.ndarray],
 ) -> None:
@@ -336,7 +336,7 @@ def whatever(
         LOGGER.info(f"\t{(metric > val).sum() / len(metric) * 100:.2}% of similarities are larger")
 
 
-def stats_string(count: int, split_stats: Dict[str, float]) -> str:
+def stats_string(count: int, split_stats: dict[str, float]) -> str:
     """
     Compute and print some statistics about the final splits.
 

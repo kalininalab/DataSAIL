@@ -1,14 +1,13 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Tuple, List, Dict, Optional
+from typing import Optional
 
 import numpy as np
 
-from datasail.cluster.utils import cluster_param_binary_search
-from datasail.parsers import MultiYAMLParser
+from datasail.cluster.utils import cluster_param_binary_search, MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, INSTALLED, CDHIT_EST
+from datasail.constants import LOGGER, INSTALLED, CDHIT_EST
 
 
 def run_cdhit_est(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
@@ -43,11 +42,11 @@ def run_cdhit_est(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = 
 
 def cdhit_est_trial(
         dataset: DataSet,
-        tune_args: Tuple,
+        tune_args: tuple,
         user_args: str,
         threads: int = 1,
         log_file: Optional[Path] = None
-) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+) -> tuple[list[str], dict[str, str], np.ndarray]:
     """
     Run CD-HIT on the dataset with the given sequence similarity defined by add_args.
 
@@ -104,7 +103,7 @@ def cdhit_est_trial(
     return cluster_names, cluster_map, cluster_sim
 
 
-def get_cdhit_map(cluster_file: Path) -> Dict[str, str]:
+def get_cdhit_map(cluster_file: Path) -> dict[str, str]:
     """
     Read the cluster assignment from the output of CD-HIT.
 

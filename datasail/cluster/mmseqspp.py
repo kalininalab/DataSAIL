@@ -5,9 +5,9 @@ import shutil
 
 import pandas as pd
 
-from datasail.parsers import MultiYAMLParser
+from datasail.cluster.utils import MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, MMSEQS2, INSTALLED, MMSEQSPP
+from datasail.constants import LOGGER, MMSEQS2, INSTALLED, MMSEQSPP
 
 
 def run_mmseqspp(dataset: DataSet, threads: int, log_dir: Optional[Path] = None) -> None:

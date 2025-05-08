@@ -1,8 +1,8 @@
 from argparse import Namespace
-from typing import Tuple, Union, Optional
+from typing import Union, Optional
 
-from datasail.parsers import MultiYAMLParser
-from datasail.settings import CDHIT, MMSEQS2, MASH, FOLDSEEK, MMSEQS, get_default, CDHIT_EST, MMSEQSPP, DIAMOND
+from datasail.cluster.utils import MultiYAMLParser
+from datasail.constants import CDHIT, MMSEQS2, MASH, FOLDSEEK, MMSEQS, get_default, CDHIT_EST, MMSEQSPP, DIAMOND
 
 
 def validate_user_args(
@@ -11,7 +11,7 @@ def validate_user_args(
         similarity: str,
         distance: str,
         tool_args: str,
-) -> Optional[Union[Namespace, Tuple[Optional[Namespace], Optional[Namespace]]]]:
+) -> Optional[Union[Namespace, tuple[Optional[Namespace], Optional[Namespace]]]]:
     """
     Validate the arguments from the user for an external clustering program.
 

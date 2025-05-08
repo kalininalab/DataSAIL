@@ -1,7 +1,6 @@
-import os.path
 import pickle
 from pathlib import Path
-from typing import Literal, Dict, List, Union, Optional
+from typing import Literal, Union, Optional
 
 import numpy as np
 import pandas as pd
@@ -12,14 +11,12 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib import pyplot as plt, gridspec, cm, colors as mpl_colors
 from matplotlib.lines import Line2D
 from sklearn.manifold import TSNE
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from datasail.reader import read
 from datasail.reader.utils import DataSet
 from datasail.cluster.diamond import run_diamond
 from datasail.cluster.ecfp import run_ecfp
-from experiments.ablation import david
-from datasail.settings import *
+from datasail.constants import *
 from experiments.utils import USE_UMAP, embed_smiles, COLORS, set_subplot_label, embed_sequence, TECHNIQUES, \
     DRUG_TECHNIQUES, PROTEIN_TECHNIQUES, plot_bars_2y, create_heatmap
 
@@ -274,7 +271,7 @@ def read_data(base_path: Path) -> dict:
 def plot_embeds(
         ax: plt.Axes,
         fig: plt.Figure,
-        data: Dict,
+        data: dict,
         postfix: Literal["prot", "drug"],
         title: str,
         drop: bool = True,
@@ -324,10 +321,9 @@ def plot_embeds(
 
 def viz_sl_models(
         base_path: Path,
-        # ax: plt.Axes,
         gs: gridspec.SubplotSpec,
         fig: plt.Figure,
-        techniques: List,
+        techniques: list,
         ptype: Literal["htm", "bar"] = "htm",
         legend: Optional[Union[str, int]] = None,
         ncol: int = 1,
@@ -392,7 +388,7 @@ def viz_sl_models(
     return ax, il
 
 
-def plot_3x3(full_path: Path, data: Dict) -> None:
+def plot_3x3(full_path: Path, data: dict) -> None:
     """
     Plot the 3x3 grid of embeddings and models.
 
@@ -446,7 +442,7 @@ def plot_3x3(full_path: Path, data: Dict) -> None:
     plt.show()
 
 
-def plot_cold_drug(full_path: Path, data: Dict) -> None:
+def plot_cold_drug(full_path: Path, data: dict) -> None:
     """
     Plot the cold drug embeddings.
 
@@ -503,7 +499,7 @@ def plot_cold_drug(full_path: Path, data: Dict) -> None:
     plt.show()
 
 
-def plot_cold_prot(full_path: Path, data: Dict) -> None:
+def plot_cold_prot(full_path: Path, data: dict) -> None:
     """
     Plot the cold protein embeddings.
 

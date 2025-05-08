@@ -1,25 +1,28 @@
+import argparse
+from pydoc import locate
 from pathlib import Path
-from typing import Tuple, List, Dict, Callable, Optional
+from typing import Callable, Literal, Optional, Sequence
 
 import numpy as np
 from matplotlib import pyplot as plt
+import yaml
 
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER
+from datasail.constants import LOGGER, YAML_FILE_NAMES
 
 
 def cluster_param_binary_search(
         dataset: DataSet,
-        init_args: Tuple,
-        min_args: Tuple,
-        max_args: Tuple,
+        init_args: tuple,
+        min_args: tuple,
+        max_args: tuple,
         user_args: str,
         threads: int,
         trial: Callable,
         args2str: Callable,
         gen_args: Callable,
         log_dir: Path,
-) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+) -> tuple[list[str], dict[str, str], np.ndarray]:
     """
     Perform binary search on the parameter space for clustering algorithms. So far, this is used to find optimal number
     of clusters for CD-HIT and MMseqs2.
@@ -40,7 +43,7 @@ def cluster_param_binary_search(
     Returns:
         Return the cluster names, the mapping from names to cluster names, and a similarity or distance matrix
     """
-    def args2log(x: Tuple) -> Optional[Path]:
+    def args2log(x: tuple) -> Optional[Path]:
         """
         Compute the name of the log file based on the provided arguments.
 
@@ -142,3 +145,107 @@ def heatmap(matrix: np.ndarray, output_file: Path) -> None:
     fig.tight_layout()
     plt.savefig(output_file)
     plt.clf()
+
+
+class MultiYAMLParser(argparse.ArgumentParser):
+    def __init__(self, algo_name):
+        """
+        Initialize the argument parser for DataSAIL. This is a wrapper around the standard argparse.ArgumentParser.
+
+        Args:
+            algo_name: Name of the algorithm to parse arguments for.
+        """
+        super().__init__()
+        self.fos_map = {}
+        if algo_name is not None:
+            self.add_yaml_arguments(YAML_FILE_NAMES[algo_name])
+
+    def parse_args(self, args: Optional[Sequence[str]] = ...) -> argparse.Namespace:
+        """
+        Parse the arguments provided by the user. This prepends some preprocessing to the arguments before sending them
+        to the actual parsing.
+
+        Args:
+            args: Arguments provided by the user.
+
+        Returns:
+            Namespace of the parsed arguments.
+        """
+        if isinstance(args, str):
+            if " " in args:
+                args = args.split(" ")
+            elif len(args) > 0:
+                args = [args]
+        elif args is None:
+            args = ""
+        return super().parse_args(args)
+
+    def add_yaml_arguments(self, yaml_filepath: Path) -> None:
+        """
+        Add arguments to the parser based on a YAML file.
+
+        Args:
+            yaml_filepath: Path to the YAML file to read the arguments from.
+        """
+        with open(Path(__file__).parent.resolve() / yaml_filepath, "r") as data:
+            data = yaml.safe_load(data)
+        for name, values in data.items():
+            kwargs = {"dest": name.replace("-", "_"), "type": locate(values["type"])}
+            if kwargs["type"] == bool:
+                if not values["default"]:
+                    kwargs.update({"action": "store_true", "default": False})
+                else:
+                    kwargs.update({"action": "store_false", "default": True})
+                del kwargs["type"]
+            else:
+                if values["cardinality"] != 0:
+                    kwargs["nargs"] = values["cardinality"]
+                if "default" in values:
+                    kwargs["default"] = values["default"]
+            self.fos_map[name.replace("-", "_")] = values.get("fos", 0)
+            super().add_argument(
+                *values["calls"],
+                **kwargs,
+            )
+
+    def get_user_arguments(self, args: argparse.Namespace, ds_args: list[str], fos: Literal[0, 1] = 0) -> str:
+        """
+        Get the arguments that the user provided to the program that differ from default values.
+
+        Args:
+            args: Arguments provided by the user.
+            ds_args: Arguments that are optimized by DataSAIL and extracted differently.
+            fos:
+
+        Returns:
+            String representation of the arguments that the user provided for the program to be passed to subprograms.
+        """
+        cleaned_args = namespace_diff(args, self.parse_args([]))  # the non-standard arguments
+        action_map = {action.dest: action.option_strings[0] for action in self._actions}
+        fos = {fos, 2}
+
+        for key in ds_args:
+            if key in cleaned_args:
+                del cleaned_args[key]
+
+        return " ".join([f"{action_map[key]} {value}" for key, value in cleaned_args.items() if self.fos_map[key] in fos])
+
+
+def namespace_diff(a: argparse.Namespace, b: argparse.Namespace) -> dict:
+    """
+    Get the difference between two namespaces.
+
+    Args:
+        a: First namespace to compare.
+        b: Second namespace to compare.
+
+    Returns:
+        Dictionary of all attributes that are different between the two namespaces.
+    """
+    output = {}
+    if a is None:
+        return output
+    for key, value in vars(a).items():
+        if not hasattr(b, key) or getattr(b, key) != value:
+            output[key] = value
+    return output

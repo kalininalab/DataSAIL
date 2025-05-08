@@ -3,7 +3,7 @@ from rdkit.Chem import AllChem
 
 from datasail.cluster.vectors import run, SIM_OPTIONS
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER
+from datasail.constants import LOGGER
 
 
 def run_ecfp(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:

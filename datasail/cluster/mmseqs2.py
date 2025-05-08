@@ -1,14 +1,13 @@
 import os
 from pathlib import Path
-from typing import Dict, Tuple, List, Optional
+from typing import Optional
 import shutil
 
 import numpy as np
 
-from datasail.cluster.utils import cluster_param_binary_search
-from datasail.parsers import MultiYAMLParser
+from datasail.cluster.utils import cluster_param_binary_search, MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, MMSEQS2, INSTALLED
+from datasail.constants import LOGGER, MMSEQS2, INSTALLED
 
 
 def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path]) -> None:
@@ -42,11 +41,11 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path]) -> None:
 
 def mmseqs_trial(
         dataset: DataSet,
-        tune_args: Tuple,
+        tune_args: tuple,
         user_args: str,
         threads: int = 1,
         log_file: Optional[Path] = None
-) -> Tuple[List[str], Dict[str, str], np.ndarray]:
+) -> tuple[list[str], dict[str, str], np.ndarray]:
     """
     Run MMseqs2 on the dataset with the given sequence similarity defined by add_args.
 
@@ -105,7 +104,7 @@ def mmseqs_trial(
     return cluster_names, cluster_map, cluster_sim
 
 
-def get_mmseqs_map(cluster_file: Path) -> Dict[str, str]:
+def get_mmseqs_map(cluster_file: Path) -> dict[str, str]:
     """
     Read clusters from mmseqs output into map from cluster members to cluster representatives (cluster names).
 
@@ -129,7 +128,7 @@ def get_mmseqs_map(cluster_file: Path) -> Dict[str, str]:
     return mapping
 
 
-def get_mmseqs_map_old(cluster_file: Path) -> Dict[str, str]:
+def get_mmseqs_map_old(cluster_file: Path) -> dict[str, str]:
     """
     This is a helper method for get_mmseqs_map that is necessary when DataSAIL is run on Windows and in a Python3.8
     build. In this case, MMseqs struggles with different linebreaks of Linux and Windows.

@@ -1,7 +1,6 @@
 import sys
 import pickle
 from pathlib import Path
-from typing import List
 import traceback
 
 import numpy as np
@@ -9,7 +8,6 @@ import pandas as pd
 import matplotlib
 from matplotlib import pyplot as plt, gridspec, cm, colors as mpl_colors
 from matplotlib.colors import LinearSegmentedColormap
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 import deepchem as dc
 import cairosvg
 
@@ -92,7 +90,7 @@ def compute_il(root, name, tools, techniques, mode="M"):
     return output
 
 
-def plot_double(full_path: Path, names: List[str]) -> None:
+def plot_double(full_path: Path, names: list[str]) -> None:
     """
     Plot the performance and t-SNE embeddings of two datasets.
 

@@ -1,5 +1,5 @@
-from typing import Optional, Tuple, List, Set, Dict
 from pathlib import Path
+from typing import Optional
 
 import cvxpy
 import numpy as np
@@ -9,22 +9,22 @@ from datasail.solver.utils import solve, collect_results_2d, compute_limits, str
 
 
 def solve_i2(
-        e_entities: List[str],
+        e_entities: list[str],
         e_stratification: Optional[np.ndarray],
         e_weights: np.ndarray,
-        f_entities: List[str],
+        f_entities: list[str],
         f_stratification: Optional[np.ndarray],
         f_weights: np.ndarray,
-        inter: Set[Tuple[str, str]],
+        inter: set[tuple],
         delta: float,
         epsilon: float,
-        splits: List[float],
-        names: List[str],
+        splits: list[float],
+        names: list[str],
         max_sec: int,
         max_sol: int,
         solver: str,
         log_file: Path,
-) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[object, str], Dict[object, str]]]:
+) -> Optional[tuple[dict[tuple, str], dict[object, str], dict[object, str]]]:
     """
     Solve identity-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
     programming.

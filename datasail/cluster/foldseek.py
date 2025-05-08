@@ -9,9 +9,9 @@ from pyarrow import compute, csv
 from collections import defaultdict
 from tqdm import tqdm
 
-from datasail.parsers import MultiYAMLParser
+from datasail.cluster.utils import MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, FOLDSEEK, INSTALLED
+from datasail.constants import LOGGER, FOLDSEEK, INSTALLED
 
 
 def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:

@@ -1,6 +1,6 @@
 import shutil
 from pathlib import Path
-from typing import List, Literal
+from typing import Literal
 
 from datasail.sail import sail
 
@@ -14,9 +14,9 @@ def read_tsv(filepath: Path):
 
 def run_sail(
         inter=None, output: Path = "", max_sec: int = 100, max_sol: int = 1000, verbosity: str = "I",
-        splits: List[float] = None, names: List[str] = None, epsilon: float = 0.05, delta: float = 0.05, runs: int = 1,
+        splits: list[float] = None, names: list[str] = None, epsilon: float = 0.05, delta: float = 0.05, runs: int = 1,
         linkage: Literal["single", "complete", "average"] = "average", solver: str = "SCIP",
-        techniques: List[str] = None, cache: bool = False, cache_dir: str = None, e_type: str = None, e_data=None,
+        techniques: list[str] = None, cache: bool = False, cache_dir: str = None, e_type: str = None, e_data=None,
         e_strat=None, e_weights=None, e_sim=None, e_dist=None, e_args: str = "", e_clusters: int = 50,
         f_type: str = None, f_data=None, f_strat=None, f_weights=None, f_sim=None,
         f_dist=None, f_args: str = "", f_clusters: int = 50, threads: int = 1,

@@ -4,18 +4,18 @@ import operator
 import sys
 from pathlib import Path
 
-from typing import List, Optional, Tuple, Dict, Callable, Union
+from typing import Optional, Callable, Union
 
 import cvxpy
 from cvxpy import Variable
 from cvxpy.constraints.constraint import Constraint
 import numpy as np
 
-from datasail.settings import LOGGER, SOLVER_CPLEX, SOLVER_XPRESS, SOLVER_SCIP, SOLVER_MOSEK, \
+from datasail.constants import LOGGER, SOLVER_CPLEX, SOLVER_XPRESS, SOLVER_SCIP, SOLVER_MOSEK, \
     SOLVER_GUROBI, SOLVERS, NOT_ASSIGNED, SOLVER_GLPK_MI, SOLVER_CBC
 
 
-def compute_limits(epsilon: float, total: int, splits: List[float]) -> List[float]:
+def compute_limits(epsilon: float, total: int, splits: list[float]) -> list[float]:
     """
     Compute the lower and upper limits for the splits based on the total number of interactions and the epsilon.
 
@@ -32,7 +32,7 @@ def compute_limits(epsilon: float, total: int, splits: List[float]) -> List[floa
 
 def stratification_constraints(
         s_matrix: np.ndarray,
-        splits: List[float],
+        splits: list[float],
         delta: float,
         x: Variable,
 ) -> Constraint:
@@ -106,7 +106,7 @@ class LoggerRedirect:
 
 def solve(
         loss: Union[float, cvxpy.Expression],
-        constraints: List,
+        constraints: list,
         max_sec: int,
         solver: str,
         log_file: Path,
@@ -207,10 +207,10 @@ def solve(
 
 
 def sample_categorical(
-        inter: List[Tuple[str, str]],
-        splits: List[float],
-        names: List[str],
-) -> Dict[Tuple[str, str], str]:
+        inter: list[tuple],
+        splits: list[float],
+        names: list[str],
+) -> dict[tuple, str]:
     """
     Sample interactions randomly into splits. This is the random split. It relies on the idea of categorical sampling.
 
@@ -289,14 +289,14 @@ def sample_categorical(
 
 
 def interaction_contraints(
-        e_entities: List[str],
-        f_entities: List[str],
-        x_i: Dict[Tuple[str, str], Variable],
-        constraints: List,
-        splits: List[float],
+        e_entities: list[str],
+        f_entities: list[str],
+        x_i: dict[tuple, Variable],
+        constraints: list,
+        splits: list[float],
         x_e: Variable,
         x_f: Variable,
-        min_lim: List[float],
+        min_lim: list[float],
         weighting: Callable,
         is_valid: Callable
 ) -> None:
@@ -327,14 +327,14 @@ def interaction_contraints(
 
 def collect_results_2d(
         problem: cvxpy.Problem,
-        names: List[str],
-        splits: List[float],
-        e_entities: List[str],
-        f_entities: List[str],
-        x_e: Variable,
-        x_f: Variable,
-        inter: set[tuple[str, str]],
-) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[object, str], Dict[object, str]]]:
+        names: list[str],
+        splits: list[float],
+        e_entities: list[str],
+        f_entities: list[str],
+        x_e: cvxpy.Variable,
+        x_f: cvxpy.Variable,
+        inter: set[tuple],
+) -> Optional[tuple[dict[tuple, str], dict[object, str], dict[object, str]]]:
     """
     Report the found solution for two-dimensional splits.
 
@@ -375,14 +375,14 @@ def collect_results_2d(
 
 def collect_results_2d2(
         problem: cvxpy.Problem,
-        names: List[str],
-        splits: List[float],
-        e_entities: List[str],
-        f_entities: List[str],
-        x_e: Variable,
-        x_f: Variable,
+        names: list[str],
+        splits: list[float],
+        e_entities: list[str],
+        f_entities: list[str],
+        x_e: cvxpy.Variable,
+        x_f: cvxpy.Variable,
         inter: np.ndarray,
-) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[object, str], Dict[object, str]]]:
+) -> Optional[tuple[dict[tuple, str], dict[object, str], dict[object, str]]]:
     """
     Report the found solution for two-dimensional splits.
 

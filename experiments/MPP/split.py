@@ -9,7 +9,6 @@ import os
 import sys
 from pathlib import Path
 import time as T
-from typing import List
 
 import deepchem as dc
 import pandas as pd
@@ -33,7 +32,7 @@ def prep_moleculenet(name) -> pd.DataFrame:
     return dc2pd(dataset, name)
 
 
-def split_w_datasail(base_path: Path, name: str, techniques: List[str], solver: str = "GUROBI") -> None:
+def split_w_datasail(base_path: Path, name: str, techniques: list[str], solver: str = "GUROBI") -> None:
     """
     Split a MoleculeNet dataset using DataSAIL.
 

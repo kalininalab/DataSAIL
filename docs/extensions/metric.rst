@@ -291,7 +291,7 @@ Next, we have to this checker to the :code:`validate_user_args` function in the 
                 similarity: str,
                 distance: str,
                 tool_args: str,
-        ) -> Optional[Union[Namespace, Tuple[Optional[Namespace], Optional[Namespace]]]]:
+        ) -> Optional[Union[Namespace, tuple[Optional[Namespace], Optional[Namespace]]]]:
             """
             ...
             """

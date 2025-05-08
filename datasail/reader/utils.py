@@ -1,8 +1,6 @@
 import pickle
-from argparse import Namespace
-from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Generator, Tuple, List, Optional, Dict, Union, Any, Callable, Iterable, Set
+from typing import Generator, Optional, Union, Any, Callable, Iterable
 from collections.abc import Iterable
 
 import h5py
@@ -10,161 +8,17 @@ import numpy as np
 import pandas as pd
 from rdkit import Chem
 
-from datasail.reader.validate import validate_user_args
-from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS, UNK_LOCATION, format2ending, FASTA_FORMATS
+from datasail.dataset import DataSet
+from datasail.validation.validate import validate_user_args
+from datasail.constants import get_default, SIM_ALGOS, DIST_ALGOS, FASTA_FORMATS
 
-DATA_INPUT = Optional[Union[str, Path, Dict[str, Union[str, np.ndarray]],
-    Callable[..., Dict[str, Union[str, np.ndarray]]], Generator[Tuple[str, Union[str, np.ndarray]], None, None]]]
-MATRIX_INPUT = Optional[Union[str, Path, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
-DictMap = Dict[str, List[Dict[str, str]]]
-
-
-@dataclass
-class DataSet:
-    type: Optional[str] = None
-    format: Optional[str] = None
-    args: Optional[Namespace] = None
-    names: Optional[List[str]] = None
-    id_map: Optional[Dict[str, str]] = None
-    cluster_names: Optional[List[str]] = None
-    num_clusters: int = 50
-    data: Optional[Dict[str, Union[str, np.ndarray]]] = None
-    cluster_map: Optional[Dict[str, str]] = None
-    location: Optional[Path] = None
-    weights: Optional[Dict[str, float]] = None
-    cluster_weights: Optional[Dict[str, float]] = None
-    classes: Optional[Dict[Any, int]] = None
-    class_oh: Optional[np.ndarray] = None
-    stratification: Optional[Dict[str, Any]] = None
-    cluster_stratification: Optional[Dict[str, np.ndarray]] = None
-    similarity: Optional[Union[np.ndarray, str]] = None
-    cluster_similarity: Optional[Union[np.ndarray, str]] = None
-    distance: Optional[Union[np.ndarray, str]] = None
-    cluster_distance: Optional[Union[np.ndarray, str]] = None
-
-    def __hash__(self) -> int:
-        """
-        Compute the hash value for this dataset to be used in caching. Therefore, the hash is computed on properties
-        that do not change during clustering.
-
-        Returns:
-            The cluster-insensitive hash-value of the instance.
-        """
-        hash_val = 0
-        for field in filter(lambda f: "cluster" not in f.name, fields(DataSet)):
-            obj = getattr(self, field.name)
-            if obj is None:
-                hv = 0
-            elif isinstance(obj, dict):
-                hv = hash(tuple(obj.items()))
-            elif isinstance(obj, list):
-                hv = hash(tuple(obj))
-            elif isinstance(obj, np.ndarray):
-                hv = 0
-            elif isinstance(obj, Namespace):
-                hv = hash(tuple(obj.__dict__.items()))
-            else:
-                hv = hash(obj)
-            hash_val ^= hv
-        return hash_val
-
-    def __eq__(self, other: Any) -> bool:
-        """
-        Determine equality of two DataSets based on their hash value.
-
-        Args:
-            other: Other  object to compare to
-
-        Returns:
-            True if other object is a DataSet and contains the same information as this one.
-        """
-        return isinstance(other, DataSet) and hash(self) == hash(other)
-
-    def get_name(self) -> str:
-        """
-        Compute the name of the dataset as the name of the file or the folder storing the data.
-
-        Returns:
-            Name of the dataset
-        """
-        if self.location is None or self.location == UNK_LOCATION:
-            return "unknown"
-        if isinstance(self.location, Path):
-            if self.location.is_file():
-                return self.location.stem
-            return self.location.name
-        return str(self.location)
-
-    def get_location_path(self) -> Path:
-        """
-        Get the location of the dataset.
-
-        Returns:
-            The location of the dataset
-        """
-        if self.location is None or self.location == UNK_LOCATION or not self.location.exists():
-            return Path("unknown." + format2ending(self.format))
-        return self.location
-
-    def strat2oh(self, name: Optional[str] = None, classes: Optional[Union[str, Set[str]]] = None) -> Optional[np.ndarray]:
-        """
-        Convert the stratification to a one-hot encoding.
-
-        Args:
-            name: Name of the sample to get the onehot encoding for
-            class_: Class to get the onehot encoding for
-
-        Returns:
-            A one-hot encoding of the stratification
-        """
-        if classes is None:
-            if name is None:
-                raise ValueError("Either name or class must be provided.")
-            classes = self.stratification[name]
-        if not isinstance(classes, Iterable):
-            classes = [classes]
-        if self.classes is not None:
-            return self.class_oh[[self.classes[class_] for class_ in classes]].sum(axis=0)
-        return None
-
-    def shuffle(self) -> None:
-        """
-        Shuffle this dataset randomly to introduce variance in the solution space.
-        """
-        if self.type is None:
-            return
-
-        self.names, self.similarity, self.distance = permute(self.names, self.similarity, self.distance)
-
-        if self.cluster_names is not None:
-            self.cluster_names, self.cluster_similarity, self.cluster_distance = \
-                permute(self.cluster_names, self.cluster_similarity, self.cluster_distance)
+DATA_INPUT = Optional[Union[str, Path, dict[str, Union[str, np.ndarray]],
+    Callable[..., dict[str, Union[str, np.ndarray]]], Generator[tuple[str, Union[str, np.ndarray]], None, None]]]
+MATRIX_INPUT = Optional[Union[str, Path, tuple[list[str], np.ndarray], Callable[..., tuple[list[str], np.ndarray]]]]
+DictMap = dict[str, list[dict[str, str]]]
 
 
-def permute(names, similarity=None, distance=None) -> Tuple[List[str], Optional[np.ndarray], Optional[np.ndarray]]:
-    """
-    Permute the order of the data the names list and the according distance or similarity matrix.
-
-    Args:
-        names: List of names of samples in the dataset
-        similarity: Similarity matrix of datapoints in the dataset
-        distance: Distance matrix of datapoints in the dataset
-
-    Returns:
-        Permuted names, similarity and distance matrix
-    """
-    permutation = np.random.permutation(len(names))
-    names = [names[x] for x in permutation]
-    if isinstance(similarity, np.ndarray):
-        similarity = similarity[permutation, :]
-        similarity = similarity[:, permutation]
-    if isinstance(distance, np.ndarray):
-        distance = distance[permutation, :]
-        distance = distance[:, permutation]
-    return names, similarity, distance
-
-
-def count_inter(inter: List[Tuple[str, str]], mode: int) -> Generator[Tuple[str, int], None, None]:
+def count_inter(inter: list[tuple], mode: int) -> Generator[tuple[str, int], None, None]:
     """
     Count interactions per entity in a set of interactions.
 
@@ -181,7 +35,7 @@ def count_inter(inter: List[Tuple[str, str]], mode: int) -> Generator[Tuple[str,
         yield key, tmp[mode].count(key)
 
 
-def read_clustering_file(filepath: Path, sep: str = "\t") -> Tuple[List[str], np.ndarray]:
+def read_clustering_file(filepath: Path, sep: str = "\t") -> tuple[list[str], np.ndarray]:
     """
     Read a similarity or distance matrix from a file.
 
@@ -202,46 +56,21 @@ def read_clustering_file(filepath: Path, sep: str = "\t") -> Tuple[List[str], np
     return names, np.array(measures)
 
 
-def read_csv(filepath: Path, sep: str = ",") -> Generator[Tuple[str, str], None, None]:
+def read_csv(filepath: Path, sep: str = ",", num_positions: int = 1) -> Generator[tuple, None, None]:
     """
     Read in a CSV file as pairs of data.
 
     Args:
         filepath: Path to the CSV file to read 2-tuples from
         sep: Separator used to separate the values in the CSV file
+        num_positions: number of positions to read from each line
 
     Yields:
-        Pairs of strings from the file
+        num_positions-tuple of strings from the file
     """
     df = pd.read_csv(filepath, sep=sep)
     for index in df.index:
-        yield df.iloc[index, :2]
-
-
-def read_matrix_input(
-        in_data: MATRIX_INPUT,
-) -> Tuple[List[str], Union[np.ndarray, str]]:
-    """
-    Read the data from different types of similarity or distance.
-
-    Args:
-        in_data: Matrix data encoding the similarities/distances and the names of the samples
-
-    Returns:
-        Tuple of names of the data samples and a matrix holding their similarities/distances or a string encoding a
-        method to compute the fore-mentioned
-    """
-    if isinstance(in_data, str):
-        in_data = Path(in_data)
-    if isinstance(in_data, Path) and in_data.is_file():
-        names, similarity = read_clustering_file(in_data)
-    elif isinstance(in_data, tuple):
-        names, similarity = in_data
-    elif isinstance(in_data, Callable):
-        names, similarity = in_data()
-    else:
-        raise ValueError()
-    return names, similarity
+        yield df.iloc[index, :num_positions]
 
 
 def read_data(
@@ -249,7 +78,7 @@ def read_data(
         strats: DATA_INPUT,
         sim: MATRIX_INPUT,
         dist: MATRIX_INPUT,
-        inter: Optional[List[Tuple[str, str]]],
+        inter: Optional[list[tuple]],
         index: Optional[int],
         num_clusters: int,
         tool_args: str,
@@ -340,7 +169,31 @@ def read_data(
     return dataset
 
 
-def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Generator[Tuple[str, str], None, None]:
+def read_matrix_input(in_data: MATRIX_INPUT) -> tuple[list[str], Union[np.ndarray, str]]:
+    """
+    Read the data from different types of similarity or distance.
+
+    Args:
+        in_data: Matrix data encoding the similarities/distances and the names of the samples
+
+    Returns:
+        Tuple of names of the data samples and a matrix holding their similarities/distances or a string encoding a
+        method to compute the fore-mentioned
+    """
+    if isinstance(in_data, str):
+        in_data = Path(in_data)
+    if isinstance(in_data, Path) and in_data.is_file():
+        names, similarity = read_clustering_file(in_data)
+    elif isinstance(in_data, tuple):
+        names, similarity = in_data
+    elif isinstance(in_data, Callable):
+        names, similarity = in_data()
+    else:
+        raise ValueError()
+    return names, similarity
+
+
+def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Generator[tuple, None, None]:
     """
     Read in all PDB file from a folder and ignore non-PDB files.
 
@@ -400,7 +253,7 @@ def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[Data
         raise ValueError("Unknown data input type.")
 
 
-def read_sdf_file(file: Path) -> Dict[str, str]:
+def read_sdf_file(file: Path) -> dict[str, str]:
     """
     Read in a SDF file and return the data as a dataset.
 
@@ -421,7 +274,7 @@ def read_sdf_file(file: Path) -> Dict[str, str]:
     return data
 
 
-def parse_fasta(path: Path = None) -> Dict[str, str]:
+def parse_fasta(path: Path = None) -> dict[str, str]:
     """
     Parse a FASTA file and do some validity checks if requested.
 
@@ -447,7 +300,7 @@ def parse_fasta(path: Path = None) -> Dict[str, str]:
     return seq_map
 
 
-def get_prefix_args(prefix, **kwargs) -> Dict[str, Any]:
+def get_prefix_args(prefix, **kwargs) -> dict[str, Any]:
     """
     Remove prefix from keys and return those key-value-pairs.
 

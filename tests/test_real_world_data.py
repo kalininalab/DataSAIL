@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 from datasail.reader.utils import read_csv, parse_fasta
-from datasail.settings import NOT_ASSIGNED
+from datasail.constants import NOT_ASSIGNED
 from tests.utils import run_sail
 
 base = Path("data") / "rw_data"

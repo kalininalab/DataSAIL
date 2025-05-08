@@ -1,7 +1,6 @@
 import os
 import pickle
 from pathlib import Path
-from typing import List
 
 import matplotlib
 import numpy as np
@@ -41,7 +40,7 @@ def get_single_time(path: Path) -> float:
     return os.path.getctime(path / "train.csv") - os.path.getctime(path / "start.txt")
 
 
-def get_run_times(path: Path) -> List[float]:
+def get_run_times(path: Path) -> list[float]:
     """
     Get the time it took to split the dataset for all runs.
 
@@ -54,7 +53,7 @@ def get_run_times(path: Path) -> List[float]:
     return [get_single_time(path / f"split_{run}") for run in range(RUNS)]
 
 
-def get_tech_times(path: Path) -> List[List[float]]:
+def get_tech_times(path: Path) -> list[list[float]]:
     """
     Get the time it took to split the dataset for all techniques.
 
@@ -77,7 +76,7 @@ def get_tech_times(path: Path) -> List[List[float]]:
     return [get_run_times(path / tech) for tech in techniques]
 
 
-def get_dataset_times(path: Path) -> List[List[List[float]]]:
+def get_dataset_times(path: Path) -> list[list[list[float]]]:
     """
     Get the time it took to split the dataset for all datasets.
 

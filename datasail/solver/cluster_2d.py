@@ -1,20 +1,20 @@
-from typing import List, Tuple, Optional, Dict, Union
 from pathlib import Path
+from typing import Optional, Union
+
 import cvxpy
 import numpy as np
 from scipy.optimize import fsolve
 
-from datasail.solver.utils import solve, interaction_contraints, collect_results_2d, leakage_loss, compute_limits, \
-    stratification_constraints, collect_results_2d2
+from datasail.solver.utils import solve, compute_limits, stratification_constraints, collect_results_2d2
 
 
 def solve_c2(
-        e_clusters: List[Union[str, int]],
+        e_clusters: list[Union[str, int]],
         e_s_matrix: Optional[np.ndarray],
         e_similarities: Optional[np.ndarray],
         e_distances: Optional[np.ndarray],
         e_weights: Optional[np.ndarray],
-        f_clusters: List[Union[str, int]],
+        f_clusters: list[Union[str, int]],
         f_s_matrix: Optional[np.ndarray],
         f_similarities: Optional[np.ndarray],
         f_distances: Optional[np.ndarray],
@@ -22,13 +22,13 @@ def solve_c2(
         inter: np.ndarray,
         delta: float,
         epsilon: float,
-        splits: List[float],
-        names: List[str],
+        splits: list[float],
+        names: list[str],
         max_sec: int,
         max_sol: int,
         solver: str,
         log_file: Path,
-) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[str, str], Dict[str, str]]]:
+) -> Optional[tuple[dict[tuple, str], dict[str, str], dict[str, str]]]:
     """
     Solve cluster-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
     programming.

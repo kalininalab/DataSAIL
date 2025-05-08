@@ -23,10 +23,10 @@ from datasail.cluster.wlk import run_wlk
 
 from datasail.reader.read_proteins import read_folder
 from datasail.reader.utils import DataSet, read_csv, parse_fasta
-from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
+from datasail.validation.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
     check_mash_arguments, check_mmseqspp_arguments, check_diamond_arguments
 from datasail.sail import datasail
-from datasail.settings import P_TYPE, O_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN, MMSEQSPP, \
+from datasail.constants import P_TYPE, O_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN, MMSEQSPP, \
     DIAMOND, MASH
 
 

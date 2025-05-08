@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import Optional
 
 import numpy as np
 import rdkit
@@ -7,7 +7,7 @@ from rdkit import Chem
 from rdkit.Chem import MolFromMolFile, MolFromMol2File, MolFromPDBFile, MolFromTPLFile
 
 from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_data_input, read_sdf_file
-from datasail.settings import M_TYPE, UNK_LOCATION, FORM_SMILES, LOGGER
+from datasail.constants import M_TYPE, UNK_LOCATION, FORM_SMILES, LOGGER
 
 if rdkit.__version__ < "2022.09.1":
     from rdkit.Chem import MolFromMol2File
@@ -36,7 +36,7 @@ def read_molecule_data(
         strats: DATA_INPUT = None,
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
-        inter: Optional[List[Tuple[str, str]]] = None,
+        inter: Optional[list[tuple]] = None,
         index: Optional[int] = None,
         num_clusters: Optional[int] = None,
         tool_args: str = "",

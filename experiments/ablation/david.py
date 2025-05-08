@@ -3,13 +3,12 @@ import pickle
 import sys
 import time
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import Optional
 
 import matplotlib
 import cvxpy
 import deepchem as dc
 import numpy as np
-from cvxpy import Variable, Constraint
 from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
 from sklearn.linear_model import LinearRegression
@@ -58,11 +57,11 @@ def solve_ccs_blp(
 
 
 def cluster_y_constraints(
-        clusters: List[str],
-        y: List[List[Variable]],
-        x: Variable,
-        splits: List[float],
-) -> List[Constraint]:
+        clusters: list[str],
+        y: list[list[cvxpy.Variable]],
+        x: cvxpy.Variable,
+        splits: list[float],
+) -> list[cvxpy.Constraint]:
     """
     Generate constraints for the helper variables y in the cluster-based double-cold splitting.
 
@@ -120,7 +119,7 @@ def run_ecfp(dataset):
     return dataset.names, cluster_map, sim_matrix, cluster_weights
 
 
-def run_solver(full_path: Path, ds_name: str, clusters: List[int], solvers: List[str]):
+def run_solver(full_path: Path, ds_name: str, clusters: list[int], solvers: list[str]):
     full_path.mkdir(parents=True, exist_ok=True)
 
     ds_path = full_path / "data.pkl"
@@ -220,7 +219,7 @@ def eval(assignments, similarity, weights=None):
     return leak, np.sum(similarity * weights * alt) / 2
 
 
-def visualize(full_path: Path, clusters: List[int], solvers, ax: Optional[Tuple] = None, fig=None):
+def visualize(full_path: Path, clusters: list[int], solvers, ax: Optional[tuple] = None, fig=None):
     """
     full_path = scratch/SCRATCH_SAS/roman/DataSAIL/.../Clusters/
     """

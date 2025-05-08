@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER, INSTALLED, TMALIGN
+from datasail.constants import LOGGER, INSTALLED, TMALIGN
 
 
 def run_tmalign(dataset: DataSet) -> None:

@@ -4,7 +4,7 @@ from typing import Optional
 from pip._internal.utils.appdirs import user_cache_dir
 
 from datasail.reader.utils import DataSet
-from datasail.settings import KW_CACHE_DIR
+from datasail.constants import KW_CACHE_DIR
 
 
 def load_from_cache(dataset: DataSet, **kwargs) -> Optional[DataSet]:

@@ -1,5 +1,5 @@
-from typing import List, Union, Optional, Dict
 from pathlib import Path
+from typing import Union, Optional
 
 import cvxpy
 import numpy as np
@@ -8,20 +8,20 @@ from datasail.solver.utils import solve, compute_limits, stratification_constrai
 
 
 def solve_c1(
-        clusters: List[Union[str, int]],
-        weights: List[float],
+        clusters: list[Union[str, int]],
+        weights: list[float],
         s_matrix: Optional[np.ndarray],
         similarities: Optional[np.ndarray],
         distances: Optional[np.ndarray],
         delta: float,
         epsilon: float,
-        splits: List[float],
-        names: List[str],
+        splits: list[float],
+        names: list[str],
         max_sec: int,
         max_sol: int,
         solver: str,
         log_file: Path,
-) -> Optional[Dict[str, str]]:
+) -> Optional[dict[str, str]]:
     """
     Solve cluster-based cold splitting using disciplined quasi-convex programming and binary quadratic programming.
 

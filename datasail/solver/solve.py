@@ -1,12 +1,12 @@
 from pathlib import Path
-from typing import Tuple, Optional, List, Dict, Union
+from typing import Optional, Union
 
 import numpy as np
 from cvxpy import SolverError
 
 from datasail.cluster.clustering import reverse_clustering, cluster_interactions, reverse_interaction_clustering
 from datasail.reader.utils import DataSet, DictMap
-from datasail.settings import LOGGER, MODE_F, TEC_R, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MMSEQS, CDHIT, MMSEQS2
+from datasail.constants import LOGGER, MODE_F, TEC_R, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MMSEQS, CDHIT, MMSEQS2
 from datasail.solver.id_1d import solve_i1
 from datasail.solver.id_2d import solve_i2
 from datasail.solver.cluster_1d import solve_c1
@@ -30,20 +30,20 @@ def insert(dictionary: dict, key: str, value) -> None:
 
 
 def run_solver(
-        techniques: List[str],
+        techniques: list[str],
         e_dataset: DataSet,
         f_dataset: DataSet,
-        inter: Optional[Union[np.ndarray, List[Tuple[str, str]]]],
+        inter: Optional[Union[np.ndarray, list[tuple]]],
         delta: float,
         epsilon: float,
         runs: int,
-        splits: List[float],
-        split_names: List[str],
+        splits: list[float],
+        split_names: list[str],
         max_sec: int,
         max_sol: int,
         solver: str,
         log_dir: Path,
-) -> Tuple[Dict[str, List[Dict[Tuple[str, str], str]]], DictMap, DictMap, DictMap, DictMap]:
+) -> tuple[dict[str, list[dict[tuple, str]]], DictMap, DictMap, DictMap, DictMap]:
     """
     Run a solver based on the selected technique.
 

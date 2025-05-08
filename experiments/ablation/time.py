@@ -1,7 +1,4 @@
-import os
-import pickle
 from pathlib import Path
-from typing import List
 
 import matplotlib
 import pandas as pd

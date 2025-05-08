@@ -1,10 +1,9 @@
 from pathlib import Path
-from typing import Tuple, Optional, List
+from typing import Optional
 
 from pytest_cases import lazy_value
 
-from datasail.reader.read import read_data
-from datasail.reader.utils import DataSet
+from datasail.reader.utils import DataSet, read_data
 from datasail.sail import datasail
 from tests.pipeline_package_fixtures import *
 
@@ -86,7 +85,7 @@ def test_pipeline_inputs(
     def read_data_sub(
             inter=None, e_type=None, e_data=None, e_weights=None, e_sim=None, f_type=None, f_data=None,
             f_weights=None, f_sim=None,
-    ) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]]]]:
+    ) -> tuple[DataSet, DataSet, Optional[list[tuple]]]:
         kwargs = dict(
             inter=inter, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=None, e_args="",
             e_strat=None, e_clusters=50, f_type=f_type, f_data=f_data, f_weights=f_weights, f_sim=f_sim, f_dist=None,

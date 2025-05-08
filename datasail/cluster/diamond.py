@@ -6,9 +6,9 @@ from typing import Optional
 
 import pandas as pd
 
-from datasail.parsers import MultiYAMLParser
+from datasail.cluster.utils import MultiYAMLParser
 from datasail.reader.utils import DataSet
-from datasail.settings import INSTALLED, MMSEQS2, DIAMOND, LOGGER
+from datasail.constants import INSTALLED, MMSEQS2, DIAMOND, LOGGER
 
 
 def run_diamond(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:

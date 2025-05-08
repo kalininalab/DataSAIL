@@ -1,11 +1,11 @@
 from pathlib import Path
-from typing import Tuple, Dict, List, Optional, Set
+from typing import Optional
 
 import numpy as np
 
 from datasail.reader.read_molecules import remove_duplicate_values
 from datasail.reader.utils import DataSet, read_data, read_folder, DATA_INPUT, MATRIX_INPUT, read_data_input
-from datasail.settings import P_TYPE, UNK_LOCATION, FORM_PDB, FORM_FASTA
+from datasail.constants import P_TYPE, UNK_LOCATION, FORM_PDB, FORM_FASTA
 
 
 def read_protein_data(
@@ -14,7 +14,7 @@ def read_protein_data(
         strats: DATA_INPUT = None,
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
-        inter: Optional[List[Tuple[str, str]]] = None,
+        inter: Optional[list[tuple]] = None,
         index: Optional[int] = None,
         num_clusters: Optional[int] = None,
         tool_args: str = "",
@@ -51,7 +51,7 @@ def read_protein_data(
     return dataset
 
 
-def check_pdb_pair(pdb_seqs1: List[str], pdb_seqs2: List[str]) -> bool:
+def check_pdb_pair(pdb_seqs1: list[str], pdb_seqs2: list[str]) -> bool:
     """
     Entry point for the comparison of two PDB files.
 
@@ -69,10 +69,10 @@ def check_pdb_pair(pdb_seqs1: List[str], pdb_seqs2: List[str]) -> bool:
 
 
 def check_pdb_pair_rec(
-        pdb_seqs1: List[str],
-        pdb_seqs2: List[str],
+        pdb_seqs1: list[str],
+        pdb_seqs2: list[str],
         index1: int,
-        blocked: Set[int],
+        blocked: set[int],
         dp_table: np.ndarray
 ) -> bool:
     """
@@ -125,7 +125,7 @@ def seqs_equality(seq1: str, seq2: str) -> float:
     return 1.0 if seq1 == seq2 else 0.0
 
 
-def extract_pdb_seqs(pdb_file: Path) -> Dict[str, str]:
+def extract_pdb_seqs(pdb_file: Path) -> dict[str, str]:
     """
     Extract all amino acid sequences from a PDB file.
 
