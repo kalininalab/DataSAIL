@@ -1,0 +1,20 @@
+threads: 8
+verbose: I
+splits: [8, 2]
+names: [train, test]
+delta: 0.1
+epsilon: 0.1
+runs: 1
+solver: SCIP
+inter: tests/data/inter.tsv
+techniques: [I1, I2, S1, S2, I1-2, S1-2]
+output: results
+data:
+  - type: M
+    data: tests/data/drugs.tsv
+    weights: tests/data/drugs_weights.tsv
+    sim: ECFP
+  - type: P
+    data: tests/data/seqs.fasta
+    weights: tests/data/prot_weights.tsv
+    sim: mmseqspp

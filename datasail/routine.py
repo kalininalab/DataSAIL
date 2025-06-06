@@ -6,7 +6,8 @@ from datasail.reader.read_genomes import read_genome_data
 from datasail.reader.read_molecules import read_molecule_data
 from datasail.reader.read_other import read_other_data
 from datasail.reader.read_proteins import read_protein_data
-from datasail.reader.utils import read_csv, DataSet
+from datasail.reader.utils import read_csv
+from datasail.dataset import DataSet
 from datasail.cluster.clustering import cluster
 from datasail.solver.solve import run_solver
 from datasail.report import report
@@ -40,22 +41,22 @@ def datasail_main(**kwargs) -> Optional[tuple[dict, dict, dict]]:
 
     if inter is not None:
         LOGGER.debug("Rename interactions based on id_maps")
-        if e_dataset.type is not None and f_dataset.type is not None:
-            new_inter = [(e_dataset.id_map[x[0]], f_dataset.id_map[x[1]])
-                         for x in filter(lambda x: x[0] in e_dataset.id_map and x[1] in f_dataset.id_map, inter)]
-        elif e_dataset.type is not None:
-            new_inter = [(e_dataset.id_map[x[0]], x[1]) for x in filter(lambda x: x[0] in e_dataset.id_map, inter)]
-        elif f_dataset.type is not None:
-            new_inter = [(x[0], f_dataset.id_map[x[1]]) for x in filter(lambda x: x[1] in f_dataset.id_map, inter)]
-        else:
-            raise ValueError()
+        new_inter = []
+        for interaction in inter:
+            build = []
+            for dataset, entity in zip(datasets, interaction):
+                if dataset.type is not None:
+                    build.append(entity)
+                else:
+                    new_inter.append(dataset.id_map[entity])
+            new_inter.append(build)
     else:
         new_inter = None
 
     LOGGER.info("Split data")
 
     # split the data into dictionaries mapping interactions, e-entities, and f-entities into the splits
-    inter_split_map, e_name_split_map, f_name_split_map, e_cluster_split_map, f_cluster_split_map = run_solver(
+    inter_split_map, dataset_name_split_maps = run_solver(
         techniques=kwargs[KW_TECHNIQUES],
         inter=new_inter,
         delta=kwargs[KW_DELTA],
@@ -144,7 +145,7 @@ def read_inter(**kwargs: Any) -> Optional[list[tuple]]:
         raise ValueError(f"Unknown type {type(kwargs[KW_INTER])} found for ")
 
 
-def read_data(inter: list[tuple], **kwargs) -> tuple[DataSet, DataSet, Optional[list[tuple]]]:
+def read_data(inter: list[tuple], **kwargs) -> list[DataSet]:
     """
     Read data from the input arguments.
 
@@ -154,13 +155,12 @@ def read_data(inter: list[tuple], **kwargs) -> tuple[DataSet, DataSet, Optional[
     Returns:
         A list with all datasets storing the information on the input entities
     """
-    datasets = [
+    return [
         read_data_type(data_kwargs[KW_TYPE])(
             data_kwargs[KW_DATA], data_kwargs[KW_WEIGHTS], data_kwargs[KW_STRAT], data_kwargs[KW_SIM], 
             data_kwargs[KW_DIST], inter, i, data_kwargs[KW_CLUSTERS], data_kwargs[KW_ARGS],
         ) for i, data_kwargs in enumerate(kwargs[KW_DATA])
     ]
-    return datasets
 
 
 def read_data_type(data_type: chr) -> Callable:

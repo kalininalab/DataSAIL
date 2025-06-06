@@ -1,9 +1,10 @@
 from pathlib import Path
 from typing import Optional
 
+from datasail.dataset import DataSet
 from datasail.reader.read_molecules import remove_duplicate_values
-from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_folder, read_data_input
-from datasail.constants import G_TYPE, UNK_LOCATION, FORM_FASTA, FORM_GENOMES
+from datasail.reader.utils import read_data, read_folder, read_input_data
+from datasail.constants import G_TYPE, UNK_LOCATION, FORM_FASTA, FORM_GENOMES, DATA_INPUT, MATRIX_INPUT
 
 
 def read_genome_data(
@@ -40,7 +41,7 @@ def read_genome_data(
         ds.data = dict(read_folder(path))
         ds.format = FORM_GENOMES
 
-    read_data_input(data, dataset, read_dir)
+    read_input_data(data, dataset, read_dir)
 
     dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
     dataset = remove_duplicate_values(dataset, dataset.data)

@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from datasail.reader.utils import read_csv, parse_fasta
+from datasail.reader.utils import read_csv, read_fasta
 from datasail.constants import NOT_ASSIGNED
 from tests.utils import run_sail
 
@@ -199,7 +199,7 @@ def check_split_completeness(input_data, split_names_filename, split_names):
             names_count += 1
     elif input_data.is_file():
         if input_data.suffix in {".fasta", ".fa", ".fna"}:
-            data = parse_fasta(input_data)
+            data = read_fasta(input_data)
         elif input_data.suffix in {".tsv"}:
             data = dict(read_csv(input_data, "\t"))
         else:

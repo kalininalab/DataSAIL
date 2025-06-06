@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from datasail.cluster.clustering import cluster
-from datasail.reader.utils import read_csv, parse_fasta
+from datasail.reader.utils import read_csv, read_fasta
 
 from datasail.reader.read_molecules import read_molecule_data
 from datasail.reader.read_proteins import read_protein_data
@@ -101,39 +101,39 @@ def mave_weights_generator():
 
 
 def mave_dict():
-    return parse_fasta(base / "mave" / "mave_db_gold_standard_only_sequences.fasta")
+    return read_fasta(base / "mave" / "mave_db_gold_standard_only_sequences.fasta")
 
 
 def mave_returner():
-    return lambda: parse_fasta(base / "mave" / "mave_db_gold_standard_only_sequences.fasta")
+    return lambda: read_fasta(base / "mave" / "mave_db_gold_standard_only_sequences.fasta")
 
 
 def mave_generator():
-    for x in list(parse_fasta(base / "mave" / "mave_db_gold_standard_only_sequences.fasta").items()):
+    for x in list(read_fasta(base / "mave" / "mave_db_gold_standard_only_sequences.fasta").items()):
         yield x
 
 
 def sabdab_ag_dict():
-    return parse_fasta(base / "sabdab_full" / "ag.fasta")
+    return read_fasta(base / "sabdab_full" / "ag.fasta")
 
 
 def sabdab_ag_returner():
-    return lambda: parse_fasta(base / "sabdab_full" / "ag.fasta")
+    return lambda: read_fasta(base / "sabdab_full" / "ag.fasta")
 
 
 def sabdab_ag_generator():
-    for x in list(parse_fasta(base / "sabdab_full" / "ag.fasta").items()):
+    for x in list(read_fasta(base / "sabdab_full" / "ag.fasta").items()):
         yield x
 
 
 def sabdab_vh_dict():
-    return parse_fasta(base / "sabdab_full" / "vh.fasta")
+    return read_fasta(base / "sabdab_full" / "vh.fasta")
 
 
 def sabdab_vh_returner():
-    return lambda: parse_fasta(base / "sabdab_full" / "vh.fasta")
+    return lambda: read_fasta(base / "sabdab_full" / "vh.fasta")
 
 
 def sabdab_vh_generator():
-    for x in list(parse_fasta(base / "sabdab_full" / "vh.fasta").items()):
+    for x in list(read_fasta(base / "sabdab_full" / "vh.fasta").items()):
         yield x

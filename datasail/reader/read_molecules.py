@@ -6,8 +6,9 @@ import rdkit
 from rdkit import Chem
 from rdkit.Chem import MolFromMolFile, MolFromMol2File, MolFromPDBFile, MolFromTPLFile
 
-from datasail.reader.utils import DataSet, read_data, DATA_INPUT, MATRIX_INPUT, read_data_input, read_sdf_file
-from datasail.constants import M_TYPE, UNK_LOCATION, FORM_SMILES, LOGGER
+from datasail.dataset import DataSet
+from datasail.reader.utils import read_data, read_input_data, read_sdf_file
+from datasail.constants import M_TYPE, UNK_LOCATION, FORM_SMILES, LOGGER, DATA_INPUT, MATRIX_INPUT
 
 if rdkit.__version__ < "2022.09.1":
     from rdkit.Chem import MolFromMol2File
@@ -77,7 +78,7 @@ def read_molecule_data(
             else:
                 ds.data = read_sdf_file(file)
 
-    read_data_input(data, dataset, read_dir)
+    read_input_data(data, dataset, read_dir)
 
     dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
     if detect_duplicates:

@@ -1,0 +1,15 @@
+threads: 8
+verbose: I
+splits: [5, 3, 2]
+names: [train, val, test]
+delta: 0.3
+epsilon: 0.2
+runs: 1
+solver: SCIP
+techniques: [I1, S1]
+output: results
+data:
+  - type: P
+    data: tests/data/seqs.fasta
+    weights: tests/data/prot_weights.tsv
+    sim: mmseqspp

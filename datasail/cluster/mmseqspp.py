@@ -6,7 +6,7 @@ import shutil
 import pandas as pd
 
 from datasail.cluster.utils import MultiYAMLParser
-from datasail.reader.utils import DataSet
+from datasail.dataset import DataSet
 from datasail.constants import LOGGER, MMSEQS2, INSTALLED, MMSEQSPP
 
 

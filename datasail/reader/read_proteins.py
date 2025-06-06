@@ -3,9 +3,10 @@ from typing import Optional
 
 import numpy as np
 
+from datasail.dataset import DataSet
 from datasail.reader.read_molecules import remove_duplicate_values
-from datasail.reader.utils import DataSet, read_data, read_folder, DATA_INPUT, MATRIX_INPUT, read_data_input
-from datasail.constants import P_TYPE, UNK_LOCATION, FORM_PDB, FORM_FASTA
+from datasail.reader.utils import read_data, read_folder, read_input_data
+from datasail.constants import P_TYPE, UNK_LOCATION, FORM_PDB, FORM_FASTA, DATA_INPUT, MATRIX_INPUT
 
 
 def read_protein_data(
@@ -41,7 +42,7 @@ def read_protein_data(
     def read_dir(ds: DataSet, path: Path) -> None:
         ds.data = dict(read_folder(path, "pdb"))
 
-    read_data_input(data, dataset, read_dir)
+    read_input_data(data, dataset, read_dir)
 
     dataset.format = FORM_PDB if str(next(iter(dataset.data.values()))).endswith(".pdb") else FORM_FASTA
 

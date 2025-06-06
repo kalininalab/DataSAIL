@@ -1,11 +1,13 @@
 import logging
+from pathlib import Path
 import subprocess
 import os
 import sys
-from typing import Optional
+from typing import Callable, Generator, Optional, Union
 import platform
 
 import cvxpy
+import numpy as np
 import pkg_resources
 
 
@@ -296,3 +298,8 @@ SOLVERS = {
     # 0 "SCS": cvxpy.SCS,
     # 0 "SCIPY": cvxpy.SCIPY,
 }
+
+DATA_INPUT = Optional[Union[str, Path, dict[str, Union[str, np.ndarray]],
+    Callable[..., dict[str, Union[str, np.ndarray]]], Generator[tuple[str, Union[str, np.ndarray]], None, None]]]
+MATRIX_INPUT = Optional[Union[str, Path, tuple[list[str], np.ndarray], Callable[..., tuple[list[str], np.ndarray]]]]
+DictMap = dict[str, list[dict[str, str]]]

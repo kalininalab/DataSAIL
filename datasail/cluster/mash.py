@@ -6,7 +6,7 @@ from typing import Optional
 import numpy as np
 
 from datasail.cluster.utils import MultiYAMLParser
-from datasail.reader.utils import DataSet
+from datasail.dataset import DataSet
 from datasail.constants import LOGGER, INSTALLED, MASH
 
 

@@ -2,7 +2,7 @@ from rdkit import Chem, RDLogger
 from rdkit.Chem import AllChem
 
 from datasail.cluster.vectors import run, SIM_OPTIONS
-from datasail.reader.utils import DataSet
+from datasail.dataset import DataSet
 from datasail.constants import LOGGER
 
 

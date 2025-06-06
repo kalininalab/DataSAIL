@@ -6,7 +6,7 @@ import shutil
 import numpy as np
 
 from datasail.cluster.utils import cluster_param_binary_search, MultiYAMLParser
-from datasail.reader.utils import DataSet
+from datasail.dataset import DataSet
 from datasail.constants import LOGGER, MMSEQS2, INSTALLED
 
 

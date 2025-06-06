@@ -180,7 +180,7 @@ def sail(args) -> None:
     parser.add_argument(
         "config", 
         type=str,
-        nargs="*",
+        nargs="?",
         help="Path to the configuration file."
     )
     parser.add_argument(
@@ -198,19 +198,8 @@ def sail(args) -> None:
     )
 
     args = parser.parse_args(args)
-    configs = args.config    
     
     print(args)
-
-    # Merge multiple config files into one config dictionary
-    # if len(configs) == 1:
-    #     configs = [configs]
-    if len(configs) != 0:
-        with open(configs[0], "r") as f:
-            configs = yaml.load(configs[0], Loader=yaml.FullLoader)
-        for c in configs[1:]:
-            with open(c, "r") as f:
-                configs.update(yaml.load(c, Loader=yaml.FullLoader))
 
     if args.list_cluster:
         print("Available clustering algorithms:", "\tECFP", sep="\n")
@@ -219,5 +208,9 @@ def sail(args) -> None:
             if INSTALLED[algo]:
                 print("\t", name)
         exit(0)
+
+    if args.config is not None:
+        with open(args.config, "r") as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
     
-    datasail(configs)
+    datasail(config)

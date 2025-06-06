@@ -10,67 +10,7 @@ from rdkit import Chem
 
 from datasail.dataset import DataSet
 from datasail.validation.validate import validate_user_args
-from datasail.constants import get_default, SIM_ALGOS, DIST_ALGOS, FASTA_FORMATS
-
-DATA_INPUT = Optional[Union[str, Path, dict[str, Union[str, np.ndarray]],
-    Callable[..., dict[str, Union[str, np.ndarray]]], Generator[tuple[str, Union[str, np.ndarray]], None, None]]]
-MATRIX_INPUT = Optional[Union[str, Path, tuple[list[str], np.ndarray], Callable[..., tuple[list[str], np.ndarray]]]]
-DictMap = dict[str, list[dict[str, str]]]
-
-
-def count_inter(inter: list[tuple], mode: int) -> Generator[tuple[str, int], None, None]:
-    """
-    Count interactions per entity in a set of interactions.
-
-    Args:
-        inter: List of pairwise interactions of entities
-        mode: Position where to read the data from, first or second entity
-
-    Yields:
-        Pairs of entity name and the number of interactions they participate in
-    """
-    tmp = list(zip(*inter))
-    keys = set(tmp[mode])
-    for key in keys:
-        yield key, tmp[mode].count(key)
-
-
-def read_clustering_file(filepath: Path, sep: str = "\t") -> tuple[list[str], np.ndarray]:
-    """
-    Read a similarity or distance matrix from a file.
-
-    Args:
-        filepath: Path to the file storing the matrix in CSV format
-        sep: Separator used to separate the values of the matrix
-
-    Returns:
-        A list of names of the entities and their pairwise interactions in and numpy array
-    """
-    names = []
-    measures = []
-    with open(filepath, "r") as data:
-        for line in data.readlines()[1:]:
-            parts = line.strip().split(sep)
-            names.append(parts[0])
-            measures.append([float(x) for x in parts[1:]])
-    return names, np.array(measures)
-
-
-def read_csv(filepath: Path, sep: str = ",", num_positions: int = 1) -> Generator[tuple, None, None]:
-    """
-    Read in a CSV file as pairs of data.
-
-    Args:
-        filepath: Path to the CSV file to read 2-tuples from
-        sep: Separator used to separate the values in the CSV file
-        num_positions: number of positions to read from each line
-
-    Yields:
-        num_positions-tuple of strings from the file
-    """
-    df = pd.read_csv(filepath, sep=sep)
-    for index in df.index:
-        yield df.iloc[index, :num_positions]
+from datasail.constants import get_default, DATA_INPUT, MATRIX_INPUT, SIM_ALGOS, DIST_ALGOS, FASTA_FORMATS
 
 
 def read_data(
@@ -169,47 +109,7 @@ def read_data(
     return dataset
 
 
-def read_matrix_input(in_data: MATRIX_INPUT) -> tuple[list[str], Union[np.ndarray, str]]:
-    """
-    Read the data from different types of similarity or distance.
-
-    Args:
-        in_data: Matrix data encoding the similarities/distances and the names of the samples
-
-    Returns:
-        Tuple of names of the data samples and a matrix holding their similarities/distances or a string encoding a
-        method to compute the fore-mentioned
-    """
-    if isinstance(in_data, str):
-        in_data = Path(in_data)
-    if isinstance(in_data, Path) and in_data.is_file():
-        names, similarity = read_clustering_file(in_data)
-    elif isinstance(in_data, tuple):
-        names, similarity = in_data
-    elif isinstance(in_data, Callable):
-        names, similarity = in_data()
-    else:
-        raise ValueError()
-    return names, similarity
-
-
-def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Generator[tuple, None, None]:
-    """
-    Read in all PDB file from a folder and ignore non-PDB files.
-
-    Args:
-        folder_path: Path to the folder storing the PDB files
-        file_extension: File extension to parse, None if the files shall not be filtered
-
-    Yields:
-        Pairs of the PDB files name and the path to the file
-    """
-    for filename in folder_path.iterdir():
-        if file_extension is None or filename.suffix[1:].lower() == file_extension.lower():
-            yield filename.stem, filename
-
-
-def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[DataSet, Path], None]) -> None:
+def read_input_data(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[DataSet, Path], None]) -> None:
     """
     Read in the data from different sources and store it in the dataset.
 
@@ -221,7 +121,7 @@ def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[Data
     if isinstance(data, Path):
         if data.is_file():
             if data.suffix[1:] in FASTA_FORMATS:
-                dataset.data = parse_fasta(data)
+                dataset.data = read_fasta(data)
             elif data.suffix[1:].lower() == "tsv":
                 dataset.data = dict(read_csv(data, sep="\t"))
             elif data.suffix[1:].lower() == "csv":
@@ -253,6 +153,63 @@ def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[Data
         raise ValueError("Unknown data input type.")
 
 
+def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Generator[tuple, None, None]:
+    """
+    Read in all PDB file from a folder and ignore non-PDB files.
+
+    Args:
+        folder_path: Path to the folder storing the PDB files
+        file_extension: File extension to parse, None if the files shall not be filtered
+
+    Yields:
+        Pairs of the PDB files name and the path to the file
+    """
+    for filename in folder_path.iterdir():
+        if file_extension is None or filename.suffix[1:].lower() == file_extension.lower():
+            yield filename.stem, filename
+
+
+def read_matrix_input(in_data: MATRIX_INPUT) -> tuple[list[str], Union[np.ndarray, str]]:
+    """
+    Read the data from different types of similarity or distance.
+
+    Args:
+        in_data: Matrix data encoding the similarities/distances and the names of the samples
+
+    Returns:
+        Tuple of names of the data samples and a matrix holding their similarities/distances or a string encoding a
+        method to compute the fore-mentioned
+    """
+    if isinstance(in_data, str):
+        in_data = Path(in_data)
+    if isinstance(in_data, Path) and in_data.is_file():
+        names, similarity = read_clustering_file(in_data)
+    elif isinstance(in_data, tuple):
+        names, similarity = in_data
+    elif isinstance(in_data, Callable):
+        names, similarity = in_data()
+    else:
+        raise ValueError()
+    return names, similarity
+
+
+def read_csv(filepath: Path, sep: str = ",", num_positions: int = 1) -> Generator[tuple, None, None]:
+    """
+    Read in a CSV file as pairs of data.
+
+    Args:
+        filepath: Path to the CSV file to read 2-tuples from
+        sep: Separator used to separate the values in the CSV file
+        num_positions: number of positions to read from each line
+
+    Yields:
+        num_positions-tuple of strings from the file
+    """
+    df = pd.read_csv(filepath, sep=sep)
+    for index in df.index:
+        yield df.iloc[index, :num_positions]
+
+
 def read_sdf_file(file: Path) -> dict[str, str]:
     """
     Read in a SDF file and return the data as a dataset.
@@ -274,7 +231,7 @@ def read_sdf_file(file: Path) -> dict[str, str]:
     return data
 
 
-def parse_fasta(path: Path = None) -> dict[str, str]:
+def read_fasta(path: Path = None) -> dict[str, str]:
     """
     Parse a FASTA file and do some validity checks if requested.
 
@@ -298,6 +255,44 @@ def parse_fasta(path: Path = None) -> dict[str, str]:
                 seq_map[entry_id] += line
 
     return seq_map
+
+
+def read_clustering_file(filepath: Path, sep: str = "\t") -> tuple[list[str], np.ndarray]:
+    """
+    Read a similarity or distance matrix from a file.
+
+    Args:
+        filepath: Path to the file storing the matrix in CSV format
+        sep: Separator used to separate the values of the matrix
+
+    Returns:
+        A list of names of the entities and their pairwise interactions in and numpy array
+    """
+    names = []
+    measures = []
+    with open(filepath, "r") as data:
+        for line in data.readlines()[1:]:
+            parts = line.strip().split(sep)
+            names.append(parts[0])
+            measures.append([float(x) for x in parts[1:]])
+    return names, np.array(measures)
+
+
+def count_inter(inter: list[tuple], mode: int) -> Generator[tuple[str, int], None, None]:
+    """
+    Count interactions per entity in a set of interactions.
+
+    Args:
+        inter: List of pairwise interactions of entities
+        mode: Position where to read the data from, first or second entity
+
+    Yields:
+        Pairs of entity name and the number of interactions they participate in
+    """
+    tmp = list(zip(*inter))
+    keys = set(tmp[mode])
+    for key in keys:
+        yield key, tmp[mode].count(key)
 
 
 def get_prefix_args(prefix, **kwargs) -> dict[str, Any]:

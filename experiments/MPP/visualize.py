@@ -11,7 +11,7 @@ from matplotlib.colors import LinearSegmentedColormap
 import deepchem as dc
 import cairosvg
 
-from datasail.reader.utils import DataSet
+from datasail.dataset import DataSet
 from experiments.ablation import david
 from experiments.ablation.david import run_ecfp
 from experiments.utils import DATASETS, COLORS, set_subplot_label, HSPACE, METRICS, embed, plot_embeds, dc2pd, RUNS, \

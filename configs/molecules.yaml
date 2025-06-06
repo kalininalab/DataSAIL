@@ -1,0 +1,15 @@
+threads: 8
+verbose: I
+splits: [7, 2, 1]
+names: [train, val, test]
+delta: 0.1
+epsilon: 0.1
+runs: 1
+solver: SCIP
+techniques: [I1, S1]
+output: results
+data:
+  - type: M
+    data: tests/data/drugs.tsv
+    weights: tests/data/drugs_weights.tsv
+    sim: ECFP

@@ -22,7 +22,8 @@ from datasail.cluster.tmalign import run_tmalign
 from datasail.cluster.wlk import run_wlk
 
 from datasail.reader.read_proteins import read_folder
-from datasail.reader.utils import DataSet, read_csv, parse_fasta
+from datasail.reader.utils import read_csv, read_fasta
+from datasail.dataset import DataSet
 from datasail.validation.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
     check_mash_arguments, check_mmseqspp_arguments, check_diamond_arguments
 from datasail.sail import datasail
@@ -132,7 +133,7 @@ def test_force_clustering():
 
 
 def protein_fasta_data(algo):
-    data = parse_fasta(Path("data") / "pipeline" / "seqs.fasta")
+    data = read_fasta(Path("data") / "pipeline" / "seqs.fasta")
     if algo == CDHIT:
         args = check_cdhit_arguments("")
     elif algo == MMSEQS:
@@ -330,7 +331,7 @@ def test_wlkernel_molecule():
 @pytest.mark.parametrize("algo", [CDHIT, MMSEQS])
 def test_clustering(algo):
     base = Path("data") / "rw_data"
-    seqs = parse_fasta(base / "pdbbind_clean.fasta")
+    seqs = read_fasta(base / "pdbbind_clean.fasta")
     dataset = cluster(
         DataSet(
             type=P_TYPE,

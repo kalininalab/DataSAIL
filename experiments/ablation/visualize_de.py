@@ -11,7 +11,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from datasail.reader.read_molecules import read_molecule_data
-from datasail.reader.utils import DataSet
+from datasail.dataset import DataSet
 from experiments.ablation.david import eval, run_ecfp
 from experiments.utils import RUNS, DATASETS, dc2pd, COLORS
 

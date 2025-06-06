@@ -7,7 +7,7 @@ import numpy as np
 from rdkit import Chem
 from rdkit.Chem import MolFromSmiles
 
-from datasail.reader.utils import DataSet
+from datasail.dataset import DataSet
 from datasail.constants import LOGGER, MAX_PATH
 
 Point = tuple[float, float, float]

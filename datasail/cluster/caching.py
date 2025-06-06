@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 from pip._internal.utils.appdirs import user_cache_dir
 
-from datasail.reader.utils import DataSet
+from datasail.dataset import DataSet
 from datasail.constants import KW_CACHE_DIR
 
 

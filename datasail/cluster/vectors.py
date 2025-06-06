@@ -5,7 +5,7 @@ import numpy as np
 import scipy
 from rdkit import DataStructs
 
-from datasail.reader.utils import DataSet
+from datasail.dataset import DataSet
 from datasail.constants import LOGGER
 
 SIM_OPTIONS = Literal[

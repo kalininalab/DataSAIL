@@ -7,8 +7,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
 
-from datasail.reader.utils import DataSet, DictMap
-from datasail.constants import LOGGER, NOT_ASSIGNED, DIM_2, MODE_F, MODE_E, SRC_CL
+from datasail.dataset import DataSet
+from datasail.constants import NOT_ASSIGNED, DIM_2, MODE_F, MODE_E, DictMap
 
 
 def report(
@@ -109,11 +109,11 @@ def individual_report(
     save_assignment(save_dir, dataset, name_split_map.get(technique, None))
 
     # Save clustering-related reports
-    if technique[0] == SRC_CL:
-        save_clusters(save_dir, dataset)
-        save_t_sne(save_dir, dataset, name_split_map.get(technique, None), cluster_split_map.get(technique, None),
-                   split_names)
-        save_cluster_hist(save_dir, dataset)
+    # if technique[0] == SRC_CL:
+    #     save_clusters(save_dir, dataset)
+    #     save_t_sne(save_dir, dataset, name_split_map.get(technique, None), cluster_split_map.get(technique, None),
+    #                split_names)
+    #     save_cluster_hist(save_dir, dataset)
 
     # print statistics on how the sizes of the splits are distributed
     # split_counts = dict((n, 0) for n in split_names)
@@ -280,60 +280,6 @@ def save_cluster_hist(save_dir: Path, dataset: DataSet) -> None:
     plt.title("Size distribution of clusters")
     plt.savefig(save_dir / f"{char2name(dataset.type)}_{dataset.get_name()}_cluster_hist.png")
     plt.clf()
-
-
-def whatever(
-        names: list[str],
-        clusters: dict[str, str],
-        distances: Optional[np.ndarray],
-        similarities: Optional[np.ndarray],
-) -> None:
-    """
-    Compute and print some statistics.
-
-    Args:
-        names: Names of the clusters to investigate
-        clusters: Mapping from entity name to cluster name
-        distances: Distance matrix between entities
-        similarities: Similarity matrix between entities
-    """
-    if distances is not None:
-        val = float("-inf")
-        val2 = float("inf")
-        for i in range(len(names)):
-            for j in range(i + 1, len(names)):
-                if clusters[names[i]] == clusters[names[j]]:
-                    val = max(val, distances[i, j])
-                else:
-                    val2 = min(val2, distances[i, j])
-    else:
-        val = float("inf")
-        val2 = float("-inf")
-        for i in range(len(names)):
-            for j in range(i + 1, len(names)):
-                if clusters[names[i]] == clusters[names[j]]:
-                    val = min(val, similarities[i, j])
-                else:
-                    val2 = max(val, similarities[i, j])
-
-    metric_name = "distance   " if distances is not None else "similarity "
-    metric = distances.flatten() if distances is not None else similarities.flatten()
-    LOGGER.info("Some cluster statistics:")
-    LOGGER.info(f"\tMin {metric_name}: {np.min(metric):.5f}")
-    LOGGER.info(f"\tMax {metric_name}: {np.max(metric):.5f}")
-    LOGGER.info(f"\tAvg {metric_name}: {np.average(metric):.5f}")
-    LOGGER.info(f"\tMean {metric_name[:-1]}: {np.mean(metric):.5f}")
-    LOGGER.info(f"\tVar {metric_name}: {np.var(metric):.5f}")
-    if distances is not None:
-        LOGGER.info(f"\tMaximal distance in same split: {val:.5f}")
-        LOGGER.info(f"\t{(metric > val).sum() / len(metric) * 100:.2}% of distances are larger")
-        LOGGER.info(f"\tMinimal distance between two splits: {val:.5f}")
-        LOGGER.info(f"\t{(metric < val2).sum() / len(metric) * 100:.2}% of distances are smaller")
-    else:
-        LOGGER.info(f"Minimal similarity in same split {val:.5f}")
-        LOGGER.info(f"\t{(metric < val).sum() / len(metric) * 100:.2}% of similarities are smaller")
-        LOGGER.info(f"Maximal similarity between two splits {val:.5f}")
-        LOGGER.info(f"\t{(metric > val).sum() / len(metric) * 100:.2}% of similarities are larger")
 
 
 def stats_string(count: int, split_stats: dict[str, float]) -> str:

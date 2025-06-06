@@ -7,7 +7,7 @@ from typing import Optional
 import pandas as pd
 
 from datasail.cluster.utils import MultiYAMLParser
-from datasail.reader.utils import DataSet
+from datasail.dataset import DataSet
 from datasail.constants import INSTALLED, MMSEQS2, DIAMOND, LOGGER
 
 

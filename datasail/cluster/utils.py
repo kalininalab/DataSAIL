@@ -4,10 +4,9 @@ from pathlib import Path
 from typing import Callable, Literal, Optional, Sequence
 
 import numpy as np
-from matplotlib import pyplot as plt
 import yaml
 
-from datasail.reader.utils import DataSet
+from datasail.dataset import DataSet
 from datasail.constants import LOGGER, YAML_FILE_NAMES
 
 
@@ -129,22 +128,6 @@ def cluster_param_binary_search(
             return cluster_names, cluster_map, cluster_sim
         else:
             max_args = args
-
-
-def heatmap(matrix: np.ndarray, output_file: Path) -> None:
-    """
-    Create a heatmap from a numpy array and two lists of labels.
-
-    Args:
-        matrix: A 2D numpy array of shape (M, N).
-        output_file: Filename to store the matrix in.
-    """
-    fig, ax = plt.subplots()
-    im = ax.imshow(matrix)
-    ax.figure.colorbar(im, ax=ax)
-    fig.tight_layout()
-    plt.savefig(output_file)
-    plt.clf()
 
 
 class MultiYAMLParser(argparse.ArgumentParser):

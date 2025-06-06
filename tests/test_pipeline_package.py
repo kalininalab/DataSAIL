@@ -3,7 +3,8 @@ from typing import Optional
 
 from pytest_cases import lazy_value
 
-from datasail.reader.utils import DataSet, read_data
+from datasail.reader.utils import read_data
+from datasail.dataset import DataSet
 from datasail.sail import datasail
 from tests.pipeline_package_fixtures import *
 

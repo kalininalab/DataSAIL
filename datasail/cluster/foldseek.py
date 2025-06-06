@@ -10,7 +10,7 @@ from collections import defaultdict
 from tqdm import tqdm
 
 from datasail.cluster.utils import MultiYAMLParser
-from datasail.reader.utils import DataSet
+from datasail.dataset import DataSet
 from datasail.constants import LOGGER, FOLDSEEK, INSTALLED
 
 

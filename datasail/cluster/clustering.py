@@ -15,11 +15,9 @@ from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
 from datasail.cluster.mmseqspp import run_mmseqspp
 from datasail.cluster.vectors import run_vector
-from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
-from datasail.reader.utils import DataSet
-from datasail.report import whatever
-from datasail.constants import KW_SPLITS, LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
+from datasail.dataset import DataSet
+from datasail.constants import KW_SPLITS, LOGGER, KW_THREADS, KW_LOGDIR, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
     FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND,TANIMOTO, KW_LINKAGE
 
 
@@ -63,13 +61,6 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         while dataset.num_clusters < len(dataset.cluster_names) < num_old_cluster:
             num_old_cluster = len(dataset.cluster_names)
             dataset = additional_clustering(dataset, dataset.num_clusters, kwargs[KW_LINKAGE])
-
-        if isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
-            whatever(dataset.names, dataset.cluster_map, dataset.distance, dataset.similarity)
-            metric = dataset.similarity if dataset.similarity is not None else dataset.distance
-            form = "similarity" if dataset.similarity is not None else "distance"
-            if kwargs[KW_OUTDIR] is not None:
-                heatmap(metric, kwargs[KW_OUTDIR] / (dataset.get_name() + f"_{form}.png"))
 
     if len(dataset.cluster_names) > dataset.num_clusters:
         dataset = force_clustering(dataset, kwargs[KW_LINKAGE])

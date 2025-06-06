@@ -12,8 +12,8 @@ from matplotlib import pyplot as plt, gridspec, cm, colors as mpl_colors
 from matplotlib.lines import Line2D
 from sklearn.manifold import TSNE
 
-from datasail.reader import read
-from datasail.reader.utils import DataSet
+from datasail import routine
+from datasail.dataset import DataSet
 from datasail.cluster.diamond import run_diamond
 from datasail.cluster.ecfp import run_ecfp
 from datasail.constants import *
@@ -115,25 +115,27 @@ def read_lp_pdbbind():
     """
     df = pd.read_csv(Path(__file__).parent / "lppdbbind" / "dataset" / "LP_PDBBind.csv")
     df.rename(columns={"Unnamed: 0": "ids"}, inplace=True)
-    e_dataset, f_dataset, inter = read.read_data(**{
-        KW_INTER: [(x[0], x[0]) for x in df[["ids"]].values.tolist()],
-        KW_E_TYPE: "M",
-        KW_E_DATA: df[["ids", "smiles"]].values.tolist(),
-        KW_E_WEIGHTS: None,
-        KW_E_STRAT: None,
-        KW_E_SIM: "ecfp",
-        KW_E_DIST: None,
-        KW_E_ARGS: "",
-        KW_E_CLUSTERS: 50,
-        KW_F_TYPE: "P",
-        KW_F_DATA: df[["ids", "seq"]].values.tolist(),
-        KW_F_WEIGHTS: None,
-        KW_F_STRAT: None,
-        KW_F_SIM: "mmseqs",
-        KW_F_DIST: None,
-        KW_F_ARGS: "",
-        KW_F_CLUSTERS: 50,
-    })
+    inter = routine.read_inter(**kwargs)
+    datasets = routine.read_data(inter, kwargs[KW_DATA])
+    # e_dataset, f_dataset, inter = read_data(**{
+    #     KW_INTER: [(x[0], x[0]) for x in df[["ids"]].values.tolist()],
+    #     KW_E_TYPE: "M",
+    #     KW_E_DATA: df[["ids", "smiles"]].values.tolist(),
+    #     KW_E_WEIGHTS: None,
+    #     KW_E_STRAT: None,
+    #     KW_E_SIM: "ecfp",
+    #     KW_E_DIST: None,
+    #     KW_E_ARGS: "",
+    #     KW_E_CLUSTERS: 50,
+    #     KW_F_TYPE: "P",
+    #     KW_F_DATA: df[["ids", "seq"]].values.tolist(),
+    #     KW_F_WEIGHTS: None,
+    #     KW_F_STRAT: None,
+    #     KW_F_SIM: "mmseqs",
+    #     KW_F_DIST: None,
+    #     KW_F_ARGS: "",
+    #     KW_F_CLUSTERS: 50,
+    # })
     out = pd.DataFrame(
         [(e_dataset.data[e_dataset.id_map[idx]], f_dataset.data[f_dataset.id_map[idx]]) for idx, _ in inter if
          idx in e_dataset.id_map and idx in f_dataset.id_map], columns=["smiles", "seq"])
