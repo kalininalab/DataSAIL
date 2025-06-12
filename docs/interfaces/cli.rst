@@ -1,8 +1,8 @@
+.. _cli-label:
+
 #####################
 Commandline Interface
 #####################
-
-.. _datasail-cli-label:
 
 Here, we discuss the arguments for the Commandline Interface in more detail. As they are more or less the same as for
 the package usage of DataSAIL, this is also an extended description of package.
@@ -15,7 +15,7 @@ python function and the CLI. Their functionality does not change, but some of th
 package version. This is noted accordingly. What might change is the type of input accepted. The package version of
 DataSAIL usually accepts string input to a file, a dictionary or a list (depending on the argument), and a function or
 generator therefore. For more details on the supported types, please checkout the type annotations of the
-:ref:`package entry to DataSAIL <datasail-doc-label>`.
+:ref:`package entry to DataSAIL <doc-label>`.
 
 -o / -\-output
 ==============

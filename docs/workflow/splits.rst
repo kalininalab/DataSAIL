@@ -1,3 +1,5 @@
+.. _splits-label:
+
 ######
 Splits
 ######

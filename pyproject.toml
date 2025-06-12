@@ -1,0 +1,47 @@
+[tool.poetry]
+name = "datasail"
+version = "1.1.3"
+repository = "https://github.com/kalininalab/DataSAIL"
+readme = "README.md"
+description = "A package to compute hard out-of-distribution data splits for machine learning, challenging generalization of models."
+authors = ["Roman Joeres <roman.joeres@helmholtz-hips.de>"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.9, <3.13.0"
+numpy = "<2"
+pandas = "*"
+networkx = "*"
+matplotlib = "*"
+pyscipopt = "*"
+scip = "<=9.1"
+scikit-learn = "*"
+cvxpy = "==1.5.3"
+rdkit = "*"
+pyyaml = "*"
+cvxopt = "*"
+h5py = "*"
+pyarrow = "*"
+tqdm = "*"
+grakel = "<0.1.10"
+
+[tool.poetry.dev-dependencies]
+setuptools = "*"
+pytest = "*"
+pytest-cov = "*"
+notebook = "^6.4.12"
+sphinx-rtd-theme = "^1.0.0"
+nbsphinx = "==0.8.9"
+nbsphinx-link = "==1.3.0"
+
+[tool.poetry.scripts]
+glyles = "datasail.sail:sail"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

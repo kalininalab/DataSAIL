@@ -4,6 +4,7 @@
 .vscode/
 .idea/
 docs/build/
+dict/
 tests/data/raw_data/
 tests/tmp/
 *.ipynb

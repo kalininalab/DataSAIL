@@ -90,7 +90,7 @@
 
         // Update the text based on the conditions
         if (package === "pip") {
-            preElement.textContent = '# datasail is not yet available on pip';
+            preElement.textContent = 'pip install datasail';
         }
         else if (os === "linux" || os === "osx") {
             preElement.textContent = 'mamba install -c conda-force -c bioconda -c kalininalab datasail  # or datasail-lite\n\npip install grakel<0.1.10';
