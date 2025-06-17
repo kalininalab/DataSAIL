@@ -33,11 +33,6 @@ The filepath to the TSV file of interactions between two entities. More details 
 The maximal time to spend optimizing the objective in seconds. This does not include preparatory work such as parsing
 data and clustering the input.
 
--\-to-sol
-=========
-The maximal number of solutions to compute until end of search (in case no optimum was found). This argument is ignored
-so far.
-
 -\-threads
 ==========
 The number of threads to use throughout the computation. This number of threads is also forwarded to clustering

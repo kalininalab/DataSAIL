@@ -237,10 +237,12 @@ def sample_categorical(
 
 def collect_results_2d(
         problem: cvxpy.Problem,
-        names: List[str],
-        splits: List[float],
         e_entities: List[str],
+        e_names: List[str],
+        e_splits: List[float],
         f_entities: List[str],
+        f_names: List[str],
+        f_splits: List[float],
         x_e: Variable,
         x_f: Variable,
 ) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[object, str], Dict[object, str]]]:
@@ -249,10 +251,12 @@ def collect_results_2d(
 
     Args:
         problem: Problem object after solving.
-        names: List of names of the splits.
-        splits: List of the relative sizes of the splits.
         e_entities: List of names of entities in the e-dataset.
+        e_names: List of names of the splits of the e-dataset.
+        e_splits: List of the relative sizes of the splits of the e-dataset.
         f_entities: List of names of entities in the f-dataset.
+        f_names: List of names of the splits of the e-dataset.
+        f_splits: List of the relative sizes of the splits of the e-dataset.
         x_e: Optimization variables for the e-dataset.
         x_f: Optimization variables for the f-dataset.
 
@@ -263,8 +267,8 @@ def collect_results_2d(
         return None
 
     # report the found solution
-    return {e: names[s] for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[s, i].value > 0.1}, \
-           {f: names[s] for s in range(len(splits)) for j, f in enumerate(f_entities) if x_f[s, j].value > 0.1}
+    return {e: e_names[s] for s in range(len(e_splits)) for i, e in enumerate(e_entities) if x_e[s, i].value > 0.1}, \
+           {f: f_names[s] for s in range(len(f_splits)) for j, f in enumerate(f_entities) if x_f[s, j].value > 0.1}
 
 
 # def generate_baseline(

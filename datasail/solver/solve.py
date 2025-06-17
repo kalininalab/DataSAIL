@@ -1,12 +1,11 @@
 from pathlib import Path
-from typing import Optional, Union
 
 import numpy as np
 from cvxpy import SolverError
 
 from datasail.cluster.clustering import reverse_clustering
 from datasail.reader.utils import DataSet, DictMap
-from datasail.settings import LOGGER, MODE_F, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MMSEQS, CDHIT, MMSEQS2
+from datasail.settings import LOGGER, MODE_F, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MMSEQS, CDHIT, MMSEQS2, MODE_E, MODE_F
 from datasail.solver.id_1d import solve_i1
 from datasail.solver.id_2d import solve_i2
 from datasail.solver.cluster_1d import solve_c1
@@ -60,7 +59,6 @@ def run_solver(
         split_ratios: List of split sizes
         split_names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
-        max_sol: Maximal number of solution to consider
         solver: Solving algorithm to use to solve the formulated program
         log_dir: path to folder to store log files in
 
@@ -139,15 +137,17 @@ def run_solver(
                             e_dataset.strat2oh(name=n) for n in e_dataset.names
                         ]) if e_dataset.stratification is not None and len(e_dataset.classes) > 1 else None,
                         e_weights=[e_dataset.weights.get(c, 0) for c in e_dataset.names],
+                        e_splits=split_ratios[TEC_I1 + MODE_E],
+                        e_names=split_names[TEC_I1 + MODE_E],
                         f_entities=f_dataset.names,
                         f_stratification=np.stack([
                             f_dataset.strat2oh(name=n) for n in f_dataset.names
                         ]) if f_dataset.stratification is not None and len(f_dataset.classes) > 1 else None,
                         f_weights=[f_dataset.weights.get(c, 0) for c in f_dataset.names],
+                        f_splits=split_ratios[TEC_I1 + MODE_F],
+                        f_names=split_names[TEC_I1 + MODE_F],
                         delta=delta,
                         epsilon=epsilon,
-                        splits=split_ratios[technique],
-                        names=split_names[technique],
                         max_sec=max_sec,
                         solver=solver,
                         log_file=log_file,
@@ -192,6 +192,8 @@ def run_solver(
                         e_similarities=e_dataset.cluster_similarity,
                         e_distances=e_dataset.cluster_distance,
                         e_weights=np.array([e_dataset.cluster_weights.get(c, 1) for c in e_dataset.cluster_names]),
+                        e_splits=split_ratios[TEC_C1 + MODE_E],
+                        e_names=split_names[TEC_C1 + MODE_E],
                         f_clusters=f_dataset.cluster_names,
                         f_s_matrix=np.stack([
                             f_dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
@@ -200,10 +202,10 @@ def run_solver(
                         f_similarities=f_dataset.cluster_similarity,
                         f_distances=f_dataset.cluster_distance,
                         f_weights=np.array([f_dataset.cluster_weights.get(c, 1) for c in f_dataset.cluster_names]),
+                        f_splits=split_ratios[TEC_C1 + MODE_F],
+                        f_names=split_names[TEC_C1 + MODE_F],
                         delta=delta,
                         epsilon=epsilon,
-                        splits=split_ratios[technique],
-                        names=split_names[technique],
                         max_sec=max_sec,
                         solver=solver,
                         log_file=log_file,

@@ -55,4 +55,4 @@ def test_overflow_full(overflow):
         splits=[2, 2, 2, 2, 2],
         overflow=overflow,
     )
-    assert len(e_splits["C1e"]) > 240
+    assert len(e_splits["C1e"][0]) > 240

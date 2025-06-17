@@ -13,7 +13,7 @@ def read_tsv(filepath: Path):
 
 
 def run_sail(
-        inter=None, output: Path = "", max_sec: int = 100, max_sol: int = 1000, verbosity: str = "I",
+        inter=None, output: Path = "", max_sec: int = 100, verbosity: str = "I",
         splits: List[float] = None, names: List[str] = None, epsilon: float = 0.05, delta: float = 0.05, runs: int = 1,
         linkage: Literal["single", "complete", "average"] = "average", solver: str = "SCIP",
         techniques: List[str] = None, cache: bool = False, cache_dir: str = None, e_type: str = None, e_data=None,
@@ -22,7 +22,7 @@ def run_sail(
         f_dist=None, f_args: str = "", f_clusters: int = 50, threads: int = 1, overflow: Literal["assgin", "break"] = "assign",
 ):
     sail(
-        inter=inter, output=output, max_sec=max_sec, max_sol=max_sol, verbosity=verbosity, techniques=techniques,
+        inter=inter, output=output, max_sec=max_sec, verbosity=verbosity, techniques=techniques,
         splits=splits, names=names, epsilon=epsilon, delta=delta, runs=runs, linkage=linkage, e_type=e_type,
         e_data=e_data, e_strat=e_strat, e_weights=e_weights, e_sim=e_sim, e_dist=e_dist, e_args=e_args,
         e_clusters=e_clusters, f_type=f_type, f_data=f_data, f_strat=f_strat, f_weights=f_weights, f_sim=f_sim,

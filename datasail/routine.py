@@ -8,7 +8,7 @@ from datasail.reader.read import read_data
 from datasail.reader.utils import DataSet
 from datasail.report import report
 from datasail.settings import LOGGER, KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
-    KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL, KW_DELTA, \
+    KW_MAX_SEC, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL, KW_DELTA, \
     KW_E_CLUSTERS, KW_F_CLUSTERS, KW_CC, CDHIT, INSTALLED, FOLDSEEK, TMALIGN, CDHIT_EST, DIAMOND, MMSEQS, MASH, TEC_R, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MODE_E, MODE_F, KW_LINKAGE, KW_OVERFLOW
 from datasail.solver.overflow import check_dataset
 from datasail.solver.solve import run_solver, random_inter_split
@@ -69,8 +69,24 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
     else:
         new_inter = None
     
-    e_dataset, pre_e_name_split_map, pre_e_cluster_split_map, e_split_ratios, e_split_names = check_dataset(e_dataset, kwargs[KW_SPLITS], kwargs[KW_NAMES], kwargs[KW_OVERFLOW], kwargs[KW_LINKAGE], TEC_I1 + MODE_E if TEC_I1 + MODE_E in kwargs[KW_TECHNIQUES] else None, TEC_C1 + MODE_E if TEC_C1 + MODE_E in kwargs[KW_TECHNIQUES] else None)
-    f_dataset, pre_f_name_split_map, pre_f_cluster_split_map, f_split_ratios, f_split_names = check_dataset(f_dataset, kwargs[KW_SPLITS], kwargs[KW_NAMES], kwargs[KW_OVERFLOW], kwargs[KW_LINKAGE], TEC_I1 + MODE_F if TEC_I1 + MODE_F in kwargs[KW_TECHNIQUES] else None, TEC_C1 + MODE_F if TEC_C1 + MODE_F in kwargs[KW_TECHNIQUES] else None)
+    e_dataset, pre_e_name_split_map, pre_e_cluster_split_map, e_split_ratios, e_split_names = check_dataset(
+        e_dataset, 
+        kwargs[KW_SPLITS], 
+        kwargs[KW_NAMES], 
+        kwargs[KW_OVERFLOW], 
+        kwargs[KW_LINKAGE], 
+        (TEC_I1 + MODE_E) if any(tec in kwargs[KW_TECHNIQUES] for tec in [TEC_I1 + MODE_E, TEC_I2]) else None, 
+        (TEC_C1 + MODE_E) if cluster_e else None
+    )
+    f_dataset, pre_f_name_split_map, pre_f_cluster_split_map, f_split_ratios, f_split_names = check_dataset(
+        f_dataset, 
+        kwargs[KW_SPLITS], 
+        kwargs[KW_NAMES], 
+        kwargs[KW_OVERFLOW], 
+        kwargs[KW_LINKAGE], 
+        (TEC_I1 + MODE_F) if any(tec in kwargs[KW_TECHNIQUES] for tec in [TEC_I1 + MODE_F, TEC_I2]) else None, 
+        (TEC_C1 + MODE_F) if cluster_f else None
+    )
     split_ratios = e_split_ratios | f_split_ratios
     split_names = e_split_names | f_split_names
 

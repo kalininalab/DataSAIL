@@ -58,14 +58,6 @@ def parse_datasail_args(args) -> Dict[str, object]:
              "as parsing data and cluster the input."
     )
     parser.add_argument(
-        "--to-sol",
-        default=1000,
-        dest=KW_MAX_SOL,
-        type=int,
-        help="Maximal number of solutions to compute until end of search (in case no optimum was found). This argument "
-             "is ignored so far."
-    )
-    parser.add_argument(
         "--threads",
         default=0,
         dest=KW_THREADS,

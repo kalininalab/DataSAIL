@@ -22,10 +22,6 @@ def test_validate_args():
     with pytest.raises(ValueError):
         datasail(splits=[0.7, 0.3], max_sec=0)
 
-    # Test that validate_args raises an error when max_sol is less than 1
-    with pytest.raises(ValueError):
-        datasail(splits=[0.7, 0.3], max_sol=0)
-
     # Test that validate_args raises an error when threads is less than 0
     with pytest.raises(ValueError):
         datasail(splits=[0.7, 0.3], threads=-1)

@@ -177,7 +177,6 @@ KW_F_CLUSTERS = "f_clusters"
 KW_INTER = "inter"
 KW_LOGDIR = "logdir"
 KW_MAX_SEC = "max_sec"
-KW_MAX_SOL = "max_sol"
 KW_NAMES = "names"
 KW_OUTDIR = "output"
 KW_RUNS = "runs"
@@ -219,7 +218,6 @@ DEFAULT_KWARGS = {
     KW_INTER: None,
     KW_LOGDIR: None,
     KW_MAX_SEC: 1000,
-    KW_MAX_SOL: 1000,
     KW_NAMES: ["train", "val", "test"],
     KW_OUTDIR: None,
     KW_RUNS: 1,

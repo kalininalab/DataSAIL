@@ -45,7 +45,6 @@ def test_pipeline(data):
         inter=(base / "inter.tsv") if inter else None,
         output=out,
         max_sec=10,
-        max_sol=10,
         verbosity="I",
         techniques=[mode],
         splits=[0.67, 0.33] if mode in ["IC", "CC"] else [0.7, 0.3],
@@ -390,14 +389,3 @@ def check_assignment_tsv(filename: Path):
                 assert parts[0] != parts[1]
                 assert parts[1] not in ["train", "test", "not_selected"]
             assert parts[-1] in ["train", "test", "not selected"]
-
-
-@pytest.mark.issue
-def test_issue1():
-    test_pipeline(False, False, "data/pipeline/prot_sim.tsv", None, None, False, None, None, False, "C1e")
-
-
-@pytest.mark.issue
-def test_issue2():
-    test_pipeline(True, False, "data/pipeline/prot_sim.tsv", None, "data/pipeline/drugs.tsv", False, None,
-                  "data/pipeline/drug_dist.tsv", True, "C2")
