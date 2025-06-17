@@ -1,4 +1,4 @@
-from typing import List, Union, Optional, Dict
+from typing import Optional, Union
 from pathlib import Path
 
 import cvxpy
@@ -8,20 +8,19 @@ from datasail.solver.utils import solve, compute_limits, stratification_constrai
 
 
 def solve_c1(
-        clusters: List[Union[str, int]],
-        weights: List[float],
+        clusters: list[Union[str, int]],
+        weights: list[float],
         s_matrix: Optional[np.ndarray],
         similarities: Optional[np.ndarray],
         distances: Optional[np.ndarray],
         delta: float,
         epsilon: float,
-        splits: List[float],
-        names: List[str],
+        splits: list[float],
+        names: list[str],
         max_sec: int,
-        max_sol: int,
         solver: str,
         log_file: Path,
-) -> Optional[Dict[str, str]]:
+) -> Optional[dict[str, str]]:
     """
     Solve cluster-based cold splitting using disciplined quasi-convex programming and binary quadratic programming.
 
@@ -36,7 +35,6 @@ def solve_c1(
         splits: List of split sizes
         names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
-        max_sol: Maximal number of solution to consider
         solver: Solving algorithm to use to solve the formulated program
         log_file: File to store the detailed log from the solver to
 
@@ -64,7 +62,6 @@ def solve_c1(
 
     loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
     problem = solve(loss, constraints, max_sec, solver, log_file)
-    print(problem)
 
     return None if problem is None else {
         e: names[s] for s in range(len(splits)) for i, e in enumerate(clusters) if x[s, i].value > 0.1

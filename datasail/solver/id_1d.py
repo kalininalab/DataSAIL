@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import Optional
 
 import cvxpy
 import numpy as np
@@ -8,18 +8,17 @@ from datasail.solver.utils import solve, compute_limits, stratification_constrai
 
 
 def solve_i1(
-        entities: List[str],
-        weights: Optional[List[float]],
+        entities: list[str],
+        weights: Optional[list[float]],
         stratification: Optional[np.ndarray],
         delta: float,
         epsilon: float,
-        splits: List[float],
-        names: List[str],
+        splits: list[float],
+        names: list[str],
         max_sec: int,
-        max_sol: int,
         solver: str,
         log_file: Path,
-) -> Optional[Dict[str, str]]:
+) -> Optional[dict[str, str]]:
     """
     Solve identity-based cold splitting using disciplined quasi-convex programming and binary linear programming.
 
@@ -32,7 +31,6 @@ def solve_i1(
         splits: List of split sizes
         names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
-        max_sol: Maximal number of solution to consider
         solver: Solving algorithm to use to solve the formulated program
         log_file: File to store the detailed log from the solver to
 
