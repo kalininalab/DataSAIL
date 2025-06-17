@@ -179,6 +179,7 @@ def datasail(
         cache: bool = False,
         cache_dir: Union[str, Path] = None,
         linkage: Literal["average", "single", "complete"] = "average",
+        overflow: Literal["assign", "break"] = "assign",
         e_type: str = None,
         e_data: DATA_INPUT = None,
         e_weights: DATA_INPUT = None,
@@ -247,7 +248,7 @@ def datasail(
         e_weights=to_path(e_weights), e_strat=to_path(e_strat), e_sim=to_path(e_sim), e_dist=to_path(e_dist),
         e_args=e_args, e_clusters=e_clusters, f_type=f_type, f_data=to_path(f_data), f_weights=to_path(f_weights),
         f_strat=to_path(f_strat), f_sim=to_path(f_sim), f_dist=to_path(f_dist), f_args=f_args, f_clusters=f_clusters,
-        threads=threads, cli=False,
+        threads=threads, cli=False, overflow=overflow,
     )
     return datasail_main(**kwargs)
 

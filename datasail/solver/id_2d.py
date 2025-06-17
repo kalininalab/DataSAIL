@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, List, Set, Dict
+from typing import Optional
 from pathlib import Path
 
 import cvxpy
@@ -9,22 +9,20 @@ from datasail.solver.utils import solve, collect_results_2d, compute_limits, str
 
 
 def solve_i2(
-        e_entities: List[str],
+        e_entities: list[str],
         e_stratification: Optional[np.ndarray],
         e_weights: np.ndarray,
-        f_entities: List[str],
+        f_entities: list[str],
         f_stratification: Optional[np.ndarray],
         f_weights: np.ndarray,
-        inter: Set[Tuple[str, str]],
         delta: float,
         epsilon: float,
-        splits: List[float],
-        names: List[str],
+        splits: list[float],
+        names: list[str],
         max_sec: int,
-        max_sol: int,
         solver: str,
         log_file: Path,
-) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[object, str], Dict[object, str]]]:
+) -> Optional[tuple[dict[object, str], dict[object, str]]]:
     """
     Solve identity-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
     programming.
@@ -40,7 +38,6 @@ def solve_i2(
         splits: List of split sizes
         names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
-        max_sol: Maximal number of solution to consider
         solver: Solving algorithm to use to solve the formulated program
         log_file: File to store the detailed log from the solver to
 
@@ -69,4 +66,4 @@ def solve_i2(
 
     problem = solve(1, constraints, max_sec, solver, log_file)
 
-    return collect_results_2d(problem, names, splits, e_entities, f_entities, x_e, x_f, set(inter))
+    return collect_results_2d(problem, names, splits, e_entities, f_entities, x_e, x_f)

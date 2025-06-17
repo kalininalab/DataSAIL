@@ -1,34 +1,31 @@
-from typing import List, Tuple, Optional, Dict, Union
+from typing import Optional, Union
 from pathlib import Path
 import cvxpy
 import numpy as np
 from scipy.optimize import fsolve
 
-from datasail.solver.utils import solve, interaction_contraints, collect_results_2d, leakage_loss, compute_limits, \
-    stratification_constraints, collect_results_2d2
+from datasail.solver.utils import solve, collect_results_2d, compute_limits, stratification_constraints
 
 
 def solve_c2(
-        e_clusters: List[Union[str, int]],
+        e_clusters: list[Union[str, int]],
         e_s_matrix: Optional[np.ndarray],
         e_similarities: Optional[np.ndarray],
         e_distances: Optional[np.ndarray],
         e_weights: Optional[np.ndarray],
-        f_clusters: List[Union[str, int]],
+        f_clusters: list[Union[str, int]],
         f_s_matrix: Optional[np.ndarray],
         f_similarities: Optional[np.ndarray],
         f_distances: Optional[np.ndarray],
         f_weights: Optional[np.ndarray],
-        inter: np.ndarray,
         delta: float,
         epsilon: float,
-        splits: List[float],
-        names: List[str],
+        splits: list[float],
+        names: list[str],
         max_sec: int,
-        max_sol: int,
         solver: str,
         log_file: Path,
-) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[str, str], Dict[str, str]]]:
+) -> Optional[tuple[dict[str, str], dict[str, str]]]:
     """
     Solve cluster-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
     programming.
@@ -44,13 +41,11 @@ def solve_c2(
         f_similarities: Pairwise similarity matrix of clusters in the order of their names
         f_distances: Pairwise distance matrix of clusters in the order of their names
         f_weights: Weights of the clusters in the order of their names in f_clusters
-        inter: Matrix storing the amount of interactions between the entities in the e-clusters and f-clusters
         delta: Additive bound for stratification imbalance
         epsilon: Additive bound for exceeding the requested split size
         splits: List of split sizes
         names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
-        max_sol: Maximal number of solution to consider
         solver: Solving algorithm to use to solve the formulated program
         log_file: File to store the detailed log from the solver to
 
@@ -94,7 +89,7 @@ def solve_c2(
 
     problem = solve(e_loss + f_loss, constraints, max_sec, solver, log_file)
 
-    return collect_results_2d2(problem, names, splits, e_clusters, f_clusters, x_e, x_f, inter)
+    return collect_results_2d(problem, names, splits, e_clusters, f_clusters, x_e, x_f)
 
 
 def func(x, targets):
@@ -109,4 +104,3 @@ def convert(targets):
         [1 / len(targets) for _ in targets]
     )
     return [s / sum(sol) for s in sol]
-
