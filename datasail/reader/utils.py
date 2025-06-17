@@ -213,7 +213,7 @@ def read_csv(filepath: Path, sep: str = ",") -> Generator[Tuple[str, str], None,
     Yields:
         Pairs of strings from the file
     """
-    df = pd.read_csv(filepath, sep=sep, header=0 if has_csv_header(filepath, sep) else None)
+    df = pd.read_csv(filepath, sep=sep)  # , header=0 if has_csv_header(filepath, sep) else None) Does only work for columns with non-string values
     for index in df.index:
         yield df.iloc[index, :2]
 
