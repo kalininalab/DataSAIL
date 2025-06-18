@@ -5,13 +5,26 @@ from collections import defaultdict
 
 from datasail.reader.utils import DataSet, DictMap
 from datasail.settings import LOGGER
+from datasail.solver.cluster_2d import convert
 
 
-def check_dataset(dataset, split_ratios, split_names, strategy: Literal["break", "assign"], linkage: Literal["average", "single", "complete"], id_tec: Optional[str], cluster_tec: Optional[str]) -> tuple[DataSet, DictMap, DictMap,  list[float], list[str]]:
+def check_dataset(
+    dataset,
+    split_ratios,
+    split_names,
+    strategy: Literal["break", "assign"],
+    linkage: Literal["average", "single", "complete"],
+    id_tec: Optional[str],
+    id_2d_tec: bool,
+    cluster_tec: Optional[str],
+    cluster_2d_tec: bool,
+) -> tuple[DataSet, DictMap, DictMap,  list[float], list[str]]:
     name_split_map, cluster_split_map = {}, {}
     id_split_names, id_split_ratios = copy.deepcopy(split_names), copy.deepcopy(split_ratios)
     tec_split_names, tec_split_ratios = {}, {}
     if id_tec is not None:
+        if id_2d_tec:
+            id_split_ratios = convert(id_split_ratios)
         name_split_map[id_tec] = {}
         cluster_split_map[id_tec] = {}
         i = 0
@@ -23,6 +36,8 @@ def check_dataset(dataset, split_ratios, split_names, strategy: Literal["break",
         tec_split_names[id_tec] = id_split_names
         tec_split_ratios[id_tec] = id_split_ratios
     if cluster_tec is not None:
+        if cluster_2d_tec:
+            split_ratios = convert(split_ratios)
         name_split_map[cluster_tec] = {}
         cluster_split_map[cluster_tec] = {}
         i = 0
@@ -38,7 +53,7 @@ def check_dataset(dataset, split_ratios, split_names, strategy: Literal["break",
 
 def check_points(dataset, split_ratios, split_names, i: int):
     sorted_points = sorted(dataset.weights.items(), key=lambda x: x[1], reverse=True)
-    total_weight = sum([x[1] for x in sorted_points[i:]])
+    total_weight = sum(x[1] for x in sorted_points[i:])
     if [x[1] / total_weight for x in sorted_points[i:len(split_ratios)]] <= sorted(split_ratios, reverse=True):
         return None
     LOGGER.info("")
@@ -50,7 +65,7 @@ def check_points(dataset, split_ratios, split_names, i: int):
 
 def check_clusters(dataset, split_ratios, split_names, strategy: Literal["break", "assign"], linkage: Literal["average", "single", "complete"], i: int):
     sorted_clusters = sorted(dataset.cluster_weights.items(), key=lambda x: x[1], reverse=True)
-    total_weight = sum([x[1] for x in sorted_clusters[i:]])
+    total_weight = sum(x[1] for x in sorted_clusters[i:])
     if [x[1] / total_weight for x in sorted_clusters[i:len(split_ratios)]] <= sorted(split_ratios, reverse=True):
         return None
     LOGGER.info("")
