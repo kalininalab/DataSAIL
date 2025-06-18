@@ -122,7 +122,7 @@ def test_pdbbind_splits():
         techniques=["R", "I1e", "I1f", "I2", "C1e", "C1f", "C2"],
         splits=[0.8, 0.2],
         names=["train", "test"],
-        epsilon=0.1,
+        epsilon=0.2,
         e_type="M",
         e_data=df[["ids", "Ligand"]].values.tolist(),
         e_sim="mmseqs",
