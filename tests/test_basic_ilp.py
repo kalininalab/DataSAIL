@@ -48,24 +48,11 @@ def test_icd():
         log_file=Path("solver.log"),
     )
     assert isinstance(solution, tuple)
-    assert all([isinstance(solution[i], dict) for i in range(3)])
-    i_sol, e_sol, f_sol = solution
+    assert all(isinstance(solution[i], dict) for i in range(2))
+    e_sol, f_sol = solution
     for i in range(1, 6):
         assert e_sol[f"D{i}"] in {"train", "test"}
         assert f_sol[f"P{i}"] in {"train", "test"}
-    selections = {"train": 0, "test": 0}
-    for i in range(1, 4):
-        for j in range(1, 4):
-            assert i_sol[f"D{i}", f"P{j}"] in {"train", "test", "not selected"}
-            if i_sol[f"D{i}", f"P{j}"] != "not selected":
-                selections[i_sol[f"D{i}", f"P{j}"]] += 1
-    for i in range(4, 6):
-        for j in range(4, 6):
-            assert i_sol[f"D{i}", f"P{j}"] in {"train", "test", "not selected"}
-            if i_sol[f"D{i}", f"P{j}"] != "not selected":
-                selections[i_sol[f"D{i}", f"P{j}"]] += 1
-    print(selections)
-    assert selections["train"] >= int(0.7 * 0.99 * (selections["train"] + selections["test"]))
 
 
 def test_ccd():
@@ -81,6 +68,8 @@ def test_ccd():
         e_distances=None,
         e_s_matrix=None,
         e_weights=np.array([3, 3, 3, 3, 3]),
+        e_splits=[0.7, 0.3],
+        e_names=["train", "test"],
         f_clusters=["P1", "P2", "P3", "P4", "P5"],
         f_similarities=np.asarray([
             [5, 5, 5, 0, 0],
@@ -92,33 +81,20 @@ def test_ccd():
         f_distances=None,
         f_s_matrix=None,
         f_weights=np.array([3, 3, 3, 3, 3]),
+        f_splits=[0.7, 0.3],
+        f_names=["train", "test"],
         epsilon=0.05,
         delta=0.05,
-        splits=[0.7, 0.3],
-        names=["train", "test"],
         max_sec=10,
         solver="SCIP",
         log_file=Path("solver.log"),
     )
     assert isinstance(solution, tuple)
-    assert all([isinstance(solution[i], dict) for i in range(3)])
-    i_sol, e_sol, f_sol = solution
+    assert all(isinstance(solution[i], dict) for i in range(2))
+    e_sol, f_sol = solution
     for i in range(1, 6):
         assert e_sol[f"D{i}"] in {"train", "test"}
         assert f_sol[f"P{i}"] in {"train", "test"}
-    selections = {"train": 0, "test": 0}
-    for i in range(1, 4):
-        for j in range(1, 4):
-            assert i_sol[f"D{i}", f"P{j}"] in {"train", "test", "not selected"}
-            if i_sol[f"D{i}", f"P{j}"] != "not selected":
-                selections[i_sol[f"D{i}", f"P{j}"]] += 1
-    for i in range(4, 6):
-        for j in range(4, 6):
-            assert i_sol[f"D{i}", f"P{j}"] in {"train", "test", "not selected"}
-            if i_sol[f"D{i}", f"P{j}"] != "not selected":
-                selections[i_sol[f"D{i}", f"P{j}"]] += 1
-    print(selections)
-    assert selections["train"] >= int(0.7 * 0.99 * (selections["train"] + selections["test"]))
 
 
 def test_ccs_sim():
