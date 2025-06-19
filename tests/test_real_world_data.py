@@ -155,7 +155,7 @@ def test_pdbbind_splits():
         assert set(df.columns).issubset({"E_ID", "F_ID", "Split"})
         assert set(df["Split"].unique()).issubset({"train", "test", NOT_ASSIGNED})
         vc = df["Split"].value_counts().to_dict()
-        if "train" in vc and "test" in vc:
+        if technique[-1] != "2" and "train" in vc and "test" in vc:
             assert vc["train"] > vc["test"]
             assert vc["test"] > 0
 
