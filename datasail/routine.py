@@ -75,9 +75,9 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
         kwargs[KW_NAMES],
         kwargs[KW_OVERFLOW],
         kwargs[KW_LINKAGE],
-        (TEC_I1 + MODE_E) if TEC_I1 + MODE_E in kwargs[KW_TECHNIQUES] else None, 
+        (TEC_I1 + MODE_E) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_I1 + MODE_E, TEC_I2]) else None, 
         TEC_I2 in kwargs[KW_TECHNIQUES],
-        (TEC_C1 + MODE_E) if TEC_C1 + MODE_E in kwargs[KW_TECHNIQUES] else None,
+        (TEC_C1 + MODE_E) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_C1 + MODE_E, TEC_C2]) else None,
         TEC_C2 in kwargs[KW_TECHNIQUES],
     )
     f_dataset, pre_f_name_split_map, pre_f_cluster_split_map, f_split_ratios, f_split_names = check_dataset(
@@ -86,9 +86,9 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
         kwargs[KW_NAMES],
         kwargs[KW_OVERFLOW],
         kwargs[KW_LINKAGE],
-        (TEC_I1 + MODE_F) if TEC_I1 + MODE_F in kwargs[KW_TECHNIQUES] else None,
+        (TEC_I1 + MODE_F) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_I1 + MODE_F, TEC_I2]) else None,
         TEC_I2 in kwargs[KW_TECHNIQUES],
-        (TEC_C1 + MODE_F) if TEC_C1 + MODE_F in kwargs[KW_TECHNIQUES] else None,
+        (TEC_C1 + MODE_F) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_C1 + MODE_F, TEC_C2]) else None,
         TEC_C2 in kwargs[KW_TECHNIQUES],
     )
     split_ratios = e_split_ratios | f_split_ratios

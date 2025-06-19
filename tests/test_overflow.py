@@ -16,7 +16,17 @@ def test_overflow_break():
         num_clusters=50,
     )
     dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average"})
-    dataset, pre_e_name_split_map, pre_e_cluster_split_map, e_split_ratios, e_split_names = check_dataset(dataset, [0.2, 0.2, 0.2, 0.2, 0.2], ["S1", "S2", "S3", "S4", "S5"], "break", "single", None, "C1e")
+    dataset, pre_e_name_split_map, pre_e_cluster_split_map, e_split_ratios, e_split_names = check_dataset(
+        dataset, 
+        [0.2, 0.2, 0.2, 0.2, 0.2], 
+        ["S1", "S2", "S3", "S4", "S5"], 
+        "break", 
+        "single", 
+        None, 
+        False,
+        "C1e",
+        False,
+    )
     assert len(dataset.cluster_names) == 52
     assert "C1e" in pre_e_name_split_map
     assert len(pre_e_name_split_map["C1e"].keys()) == 0
@@ -34,7 +44,17 @@ def test_overflow_assign():
         num_clusters=50,
     )
     dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average"})
-    dataset, pre_e_name_split_map, pre_e_cluster_split_map, e_split_ratios, e_split_names = check_dataset(dataset, [0.2, 0.2, 0.2, 0.2, 0.2], ["S1", "S2", "S3", "S4", "S5"], "assign", "average", None, "C1e")
+    dataset, pre_e_name_split_map, pre_e_cluster_split_map, e_split_ratios, e_split_names = check_dataset(
+        dataset, 
+        [0.2, 0.2, 0.2, 0.2, 0.2], 
+        ["S1", "S2", "S3", "S4", "S5"], 
+        "assign", 
+        "average", 
+        None, 
+        False,
+        "C1e",
+        False,
+    )
     assert len(dataset.cluster_names) == 49
     assert "C1e" in pre_e_name_split_map
     assert len(pre_e_name_split_map["C1e"].keys()) > 0
