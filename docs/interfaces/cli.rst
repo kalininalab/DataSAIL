@@ -76,6 +76,11 @@ The sizes of the individual splits the program shall produce.
 =============
 The names of the splits in order of the -s argument. If left empty, splits will be called Split1, Split2, ...
 
+-\-overflow
+===========
+How to handle overflow of the splits. If 'assign', a cluster that overflows a split size will be assigned to one split. 
+The remaining data is split normally into n-1 splits. If 'break', the cluster will be broken into smaller parts to fit into a split.
+
 -d / -\-delta
 =============
 A multiplicative factor by how much the limits (as defined in the -s / --splits argument defined) of the stratification
