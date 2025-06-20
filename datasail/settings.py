@@ -87,7 +87,7 @@ ALGOS = SIM_ALGOS + DIST_ALGOS
 INSTALLED = {
     CDHIT: os.system("cd-hit -h > /dev/null") == 256,
     CDHIT_EST: os.system("cd-hit-est -h > /dev/null") == 256,
-    DIAMOND: os.system("diamond -h > /dev/null") == 0,
+    DIAMOND: os.system("diamond help > /dev/null") == 0,
     MMSEQS: os.system("mmseqs -h > /dev/null") == 0,
     MMSEQS2: os.system("mmseqs -h > /dev/null") == 0,
     MMSEQSPP: os.system("mmseqs -h > /dev/null") == 0,
@@ -177,7 +177,6 @@ KW_F_CLUSTERS = "f_clusters"
 KW_INTER = "inter"
 KW_LOGDIR = "logdir"
 KW_MAX_SEC = "max_sec"
-KW_MAX_SOL = "max_sol"
 KW_NAMES = "names"
 KW_OUTDIR = "output"
 KW_RUNS = "runs"
@@ -187,6 +186,7 @@ KW_TECHNIQUES = "techniques"
 KW_THREADS = "threads"
 KW_VERBOSE = "verbosity"
 KW_LINKAGE = "linkage"
+KW_OVERFLOW = "overflow"
 
 DEFAULT_KWARGS = {
     KW_CACHE: False,
@@ -218,7 +218,6 @@ DEFAULT_KWARGS = {
     KW_INTER: None,
     KW_LOGDIR: None,
     KW_MAX_SEC: 1000,
-    KW_MAX_SOL: 1000,
     KW_NAMES: ["train", "val", "test"],
     KW_OUTDIR: None,
     KW_RUNS: 1,
@@ -228,6 +227,7 @@ DEFAULT_KWARGS = {
     KW_THREADS: 1,
     KW_VERBOSE: "E",
     KW_LINKAGE: "average",
+    KW_OVERFLOW: "break",  # break or assign
 }
 
 SOLVER_CBC = "CBC"

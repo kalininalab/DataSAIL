@@ -1,12 +1,11 @@
 from pathlib import Path
-from typing import Tuple, Optional, List, Dict, Union
 
 import numpy as np
 from cvxpy import SolverError
 
-from datasail.cluster.clustering import reverse_clustering, cluster_interactions, reverse_interaction_clustering
+from datasail.cluster.clustering import reverse_clustering
 from datasail.reader.utils import DataSet, DictMap
-from datasail.settings import LOGGER, MODE_F, TEC_R, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MMSEQS, CDHIT, MMSEQS2
+from datasail.settings import LOGGER, MODE_F, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MMSEQS, CDHIT, MMSEQS2, MODE_E, MODE_F
 from datasail.solver.id_1d import solve_i1
 from datasail.solver.id_2d import solve_i2
 from datasail.solver.cluster_1d import solve_c1
@@ -29,21 +28,23 @@ def insert(dictionary: dict, key: str, value) -> None:
     dictionary[key].append(value)
 
 
+def random_inter_split(runs, inter, splits, split_names):
+    return [sample_categorical(inter=inter, splits=splits, names=split_names) for _ in range(runs)]
+
+
 def run_solver(
-        techniques: List[str],
+        techniques: list[str],
         e_dataset: DataSet,
         f_dataset: DataSet,
-        inter: Optional[Union[np.ndarray, List[Tuple[str, str]]]],
         delta: float,
         epsilon: float,
         runs: int,
-        splits: List[float],
-        split_names: List[str],
+        split_ratios: dict[str, list[float]],
+        split_names: dict[str, list[str]],
         max_sec: int,
-        max_sol: int,
         solver: str,
         log_dir: Path,
-) -> Tuple[Dict[str, List[Dict[Tuple[str, str], str]]], DictMap, DictMap, DictMap, DictMap]:
+) -> tuple[DictMap, DictMap, DictMap, DictMap]:
     """
     Run a solver based on the selected technique.
 
@@ -55,10 +56,9 @@ def run_solver(
         delta: Additive bound for stratification imbalance
         epsilon: Additive bound for exceeding the requested split size
         runs: Number of runs to perform
-        splits: List of split sizes
+        split_ratios: List of split sizes
         split_names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
-        max_sol: Maximal number of solution to consider
         solver: Solving algorithm to use to solve the formulated program
         log_dir: path to folder to store log files in
 
@@ -66,8 +66,7 @@ def run_solver(
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
         dataset
     """
-    output_inter, output_e_entities, output_f_entities, output_e_clusters, output_f_clusters = \
-        dict(), dict(), dict(), dict(), dict()
+    output_e_entities, output_f_entities, output_e_clusters, output_f_clusters = {}, {}, {}, {}
 
     LOGGER.info("Define optimization problem")
 
@@ -77,19 +76,12 @@ def run_solver(
             f_dataset.shuffle()
         for technique in techniques:
             try:
-                LOGGER.info(technique)
+                LOGGER.info(f"Splitting technique {technique} of run {run + 1} of {runs}")
                 mode = technique[-1]
                 dataset = f_dataset if mode == MODE_F else e_dataset
                 log_file = None if log_dir is None else log_dir / f"{dataset.get_name()}_{technique}.log"
-
-                if technique == TEC_R:
-                    solution = sample_categorical(
-                        inter=inter,
-                        splits=splits,
-                        names=split_names,
-                    )
-                    insert(output_inter, technique, solution)
-                elif technique.startswith(TEC_I1) or \
+                
+                if technique.startswith(TEC_I1) or \
                         (technique.startswith(TEC_C1) and isinstance(dataset.similarity, str) and
                          dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]):
                     if technique.startswith(TEC_C1) and (isinstance(dataset.similarity, str) and
@@ -114,10 +106,9 @@ def run_solver(
                         stratification=stratification,
                         delta=delta,
                         epsilon=epsilon,
-                        splits=splits,
-                        names=split_names,
+                        splits=split_ratios[technique],
+                        names=split_names[technique],
                         max_sec=max_sec,
-                        max_sol=max_sol,
                         solver=solver,
                         log_file=log_file,
                     )
@@ -146,25 +137,24 @@ def run_solver(
                             e_dataset.strat2oh(name=n) for n in e_dataset.names
                         ]) if e_dataset.stratification is not None and len(e_dataset.classes) > 1 else None,
                         e_weights=[e_dataset.weights.get(c, 0) for c in e_dataset.names],
+                        e_splits=split_ratios[TEC_I1 + MODE_E],
+                        e_names=split_names[TEC_I1 + MODE_E],
                         f_entities=f_dataset.names,
                         f_stratification=np.stack([
                             f_dataset.strat2oh(name=n) for n in f_dataset.names
                         ]) if f_dataset.stratification is not None and len(f_dataset.classes) > 1 else None,
                         f_weights=[f_dataset.weights.get(c, 0) for c in f_dataset.names],
-                        inter=set(inter),
+                        f_splits=split_ratios[TEC_I1 + MODE_F],
+                        f_names=split_names[TEC_I1 + MODE_F],
                         delta=delta,
                         epsilon=epsilon,
-                        splits=splits,
-                        names=split_names,
                         max_sec=max_sec,
-                        max_sol=max_sol,
                         solver=solver,
                         log_file=log_file,
                     )
                     if solution is not None:
-                        insert(output_inter, technique, solution[0])
-                        insert(output_e_entities, technique, solution[1])
-                        insert(output_f_entities, technique, solution[2])
+                        insert(output_e_entities, technique, solution[0])
+                        insert(output_f_entities, technique, solution[1])
                 elif technique.startswith(TEC_C1):
                     cluster_split = solve_c1(
                         clusters=dataset.cluster_names,
@@ -177,10 +167,9 @@ def run_solver(
                         distances=dataset.cluster_distance,
                         delta=delta,
                         epsilon=epsilon,
-                        splits=splits,
-                        names=split_names,
+                        splits=split_ratios[technique],
+                        names=split_names[technique],
                         max_sec=max_sec,
-                        max_sol=max_sol,
                         solver=solver,
                         log_file=log_file,
                     )
@@ -194,7 +183,6 @@ def run_solver(
                             insert(output_e_entities, technique,
                                    reverse_clustering(cluster_split, e_dataset.cluster_map))
                 elif technique.startswith(TEC_C2):
-                    cluster_inter = cluster_interactions(inter, e_dataset, f_dataset)
                     cluster_split = solve_c2(
                         e_clusters=e_dataset.cluster_names,
                         e_s_matrix=np.stack([
@@ -204,6 +192,8 @@ def run_solver(
                         e_similarities=e_dataset.cluster_similarity,
                         e_distances=e_dataset.cluster_distance,
                         e_weights=np.array([e_dataset.cluster_weights.get(c, 1) for c in e_dataset.cluster_names]),
+                        e_splits=split_ratios[TEC_C1 + MODE_E],
+                        e_names=split_names[TEC_C1 + MODE_E],
                         f_clusters=f_dataset.cluster_names,
                         f_s_matrix=np.stack([
                             f_dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
@@ -212,31 +202,23 @@ def run_solver(
                         f_similarities=f_dataset.cluster_similarity,
                         f_distances=f_dataset.cluster_distance,
                         f_weights=np.array([f_dataset.cluster_weights.get(c, 1) for c in f_dataset.cluster_names]),
-                        inter=cluster_inter,
+                        f_splits=split_ratios[TEC_C1 + MODE_F],
+                        f_names=split_names[TEC_C1 + MODE_F],
                         delta=delta,
                         epsilon=epsilon,
-                        splits=splits,
-                        names=split_names,
                         max_sec=max_sec,
-                        max_sol=max_sol,
                         solver=solver,
                         log_file=log_file,
                     )
 
                     if cluster_split is not None:
-                        insert(output_e_clusters, technique, cluster_split[1])
-                        insert(output_f_clusters, technique, cluster_split[2])
-                        insert(output_inter, technique, reverse_interaction_clustering(
-                            cluster_split[0],
-                            e_dataset.cluster_map,
-                            f_dataset.cluster_map,
-                            inter,
-                        ))
+                        insert(output_e_clusters, technique, cluster_split[0])
+                        insert(output_f_clusters, technique, cluster_split[1])
                         insert(output_e_entities, technique,
-                               reverse_clustering(cluster_split[1], e_dataset.cluster_map))
+                               reverse_clustering(cluster_split[0], e_dataset.cluster_map))
                         insert(output_f_entities, technique,
-                               reverse_clustering(cluster_split[2], f_dataset.cluster_map))
+                               reverse_clustering(cluster_split[1], f_dataset.cluster_map))
             except SolverError:
                 LOGGER.error(f"Splitting failed for {technique}, try to increase the timelimit or the epsilon value.")
 
-    return output_inter, output_e_entities, output_f_entities, output_e_clusters, output_f_clusters
+    return output_e_entities, output_f_entities, output_e_clusters, output_f_clusters

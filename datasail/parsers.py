@@ -58,14 +58,6 @@ def parse_datasail_args(args) -> Dict[str, object]:
              "as parsing data and cluster the input."
     )
     parser.add_argument(
-        "--to-sol",
-        default=1000,
-        dest=KW_MAX_SOL,
-        type=int,
-        help="Maximal number of solutions to compute until end of search (in case no optimum was found). This argument "
-             "is ignored so far."
-    )
-    parser.add_argument(
         "--threads",
         default=0,
         dest=KW_THREADS,
@@ -117,6 +109,16 @@ def parse_datasail_args(args) -> Dict[str, object]:
         nargs="+",
         type=str,
         help="Names of the splits in order of the -s argument. If left empty, splits will be called Split1, Split2, ..."
+    )
+    split.add_argument(
+        "--overflow",
+        default="assign",
+        type=str,
+        dest=KW_OVERFLOW,
+        help="How to handle overflow of the splits. If 'assign', a cluster that overflows a split size will be "
+             "assigned to one split. The remaining data is split normally into n-1 splits. If 'break', the cluster will be "
+             "broken into smaller parts to fit into a split.",
+        choices=["assign", "break"],
     )
     split.add_argument(
         "-d",

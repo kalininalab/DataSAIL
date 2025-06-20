@@ -213,9 +213,25 @@ def read_csv(filepath: Path, sep: str = ",") -> Generator[Tuple[str, str], None,
     Yields:
         Pairs of strings from the file
     """
-    df = pd.read_csv(filepath, sep=sep)
+    df = pd.read_csv(filepath, sep=sep)  # , header=0 if has_csv_header(filepath, sep) else None) Does only work for columns with non-string values
     for index in df.index:
         yield df.iloc[index, :2]
+
+
+def has_csv_header(filepath: Path, sep: str = ",") -> bool:
+    """
+    Check if a CSV file has a header.
+
+    Args:
+        filepath: Path to the CSV file to check
+        sep: Separator used to separate the values in the CSV file
+
+    Returns:
+        True if the file has a header, False otherwise
+    """
+    df = pd.read_csv(filepath, sep=sep, header=None, nrows=5)
+    df_header = pd.read_csv(filepath, sep=sep, nrows=5)
+    return tuple(df.dtypes) != tuple(df_header.dtypes)
 
 
 def read_matrix_input(

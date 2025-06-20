@@ -33,11 +33,6 @@ The filepath to the TSV file of interactions between two entities. More details 
 The maximal time to spend optimizing the objective in seconds. This does not include preparatory work such as parsing
 data and clustering the input.
 
--\-to-sol
-=========
-The maximal number of solutions to compute until end of search (in case no optimum was found). This argument is ignored
-so far.
-
 -\-threads
 ==========
 The number of threads to use throughout the computation. This number of threads is also forwarded to clustering
@@ -80,6 +75,11 @@ The sizes of the individual splits the program shall produce.
 -n / -\-names
 =============
 The names of the splits in order of the -s argument. If left empty, splits will be called Split1, Split2, ...
+
+-\-overflow
+===========
+How to handle overflow of the splits. If 'assign', a cluster that overflows a split size will be assigned to one split. 
+The remaining data is split normally into n-1 splits. If 'break', the cluster will be broken into smaller parts to fit into a split.
 
 -d / -\-delta
 =============

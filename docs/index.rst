@@ -82,6 +82,7 @@ For frequently asked questions, please refer to the :ref:`FAQ <faq-label>` secti
 
     interfaces/cli
     interfaces/package
+    interfaces/dl_eval
 
 .. toctree::
     :maxdepth: 1

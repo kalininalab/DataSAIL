@@ -78,9 +78,6 @@ def validate_args(**kwargs) -> Dict[str, object]:
     # check search termination criteria
     if kwargs[KW_MAX_SEC] < 1:
         error("The maximal search time must be a positive integer.", 3, kwargs[KW_CLI])
-    if kwargs[KW_MAX_SOL] < 1:
-        error("The maximal number of solutions to look at has to be a positive integer.", 4,
-              kwargs[KW_CLI])
     if kwargs[KW_THREADS] < 0:
         error("The number of threads to use has to be a non-negative integer.", 23, kwargs[KW_CLI])
     if kwargs[KW_THREADS] == 0:
@@ -168,7 +165,6 @@ def datasail(
             Union[str, Path, List[Tuple[str, str]], Callable[..., List[str]], Generator[str, None, None]]
         ] = None,
         max_sec: int = 100,
-        max_sol: int = 1000,
         verbose: str = "W",
         splits: List[float] = None,
         names: List[str] = None,
@@ -179,6 +175,7 @@ def datasail(
         cache: bool = False,
         cache_dir: Union[str, Path] = None,
         linkage: Literal["average", "single", "complete"] = "average",
+        overflow: Literal["assign", "break"] = "assign",
         e_type: str = None,
         e_data: DATA_INPUT = None,
         e_weights: DATA_INPUT = None,
@@ -204,7 +201,6 @@ def datasail(
         techniques: List of techniques to split based on
         inter: Filepath to a TSV file storing interactions of the e-entities and f-entities.
         max_sec: Maximal number of seconds to take for optimizing a found solution.
-        max_sol: Maximal number of solutions to look at when optimizing.
         verbose: Verbosity level for logging.
         splits: List of splits, have to add up to one, otherwise scaled accordingly.
         names: List of names of the splits.
@@ -241,13 +237,13 @@ def datasail(
         return Path(x) if isinstance(x, str) and x not in ALGOS else x
 
     kwargs = validate_args(
-        output=None, techniques=techniques, inter=to_path(inter), max_sec=max_sec, max_sol=max_sol, verbosity=verbose,
+        output=None, techniques=techniques, inter=to_path(inter), max_sec=max_sec, verbosity=verbose,
         splits=splits, names=names, delta=delta, epsilon=epsilon, runs=runs, solver=solver, cache=cache,
         cache_dir=to_path(cache_dir), linkage=linkage, e_type=e_type, e_data=to_path(e_data),
         e_weights=to_path(e_weights), e_strat=to_path(e_strat), e_sim=to_path(e_sim), e_dist=to_path(e_dist),
         e_args=e_args, e_clusters=e_clusters, f_type=f_type, f_data=to_path(f_data), f_weights=to_path(f_weights),
         f_strat=to_path(f_strat), f_sim=to_path(f_sim), f_dist=to_path(f_dist), f_args=f_args, f_clusters=f_clusters,
-        threads=threads, cli=False,
+        threads=threads, cli=False, overflow=overflow,
     )
     return datasail_main(**kwargs)
 
