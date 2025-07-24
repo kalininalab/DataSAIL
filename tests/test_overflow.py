@@ -12,7 +12,7 @@ def test_overflow_break():
     dataset = read_protein_data(
         Path("data") / "rw_data" / "overflow_data" / "goldstandard.protein_sequences.fasta",
         Path("data") / "rw_data" / "overflow_data" / "weight_map_for_datasail.tsv",
-        sim="mmseqspp",
+        sim="mmseqs",
         num_clusters=50,
     )
     dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average"})
@@ -40,7 +40,7 @@ def test_overflow_assign():
     dataset = read_protein_data(
         Path("data") / "rw_data" / "overflow_data" / "goldstandard.protein_sequences.fasta",
         Path("data") / "rw_data" / "overflow_data" / "weight_map_for_datasail.tsv",
-        sim="mmseqspp",
+        sim="mmseqs",
         num_clusters=50,
     )
     dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average"})
@@ -71,7 +71,7 @@ def test_overflow_full(overflow):
         e_type="P",
         e_data=Path("data") / "rw_data" / "overflow_data" / "goldstandard.protein_sequences.fasta",
         e_weights=Path("data") / "rw_data" / "overflow_data" / "weight_map_for_datasail.tsv",
-        e_sim="mmseqspp",
+        e_sim="mmseqs",
         splits=[2, 2, 2, 2, 2],
         overflow=overflow,
     )
