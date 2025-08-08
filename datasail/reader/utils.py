@@ -1,3 +1,4 @@
+import hashlib
 import pickle
 from argparse import Namespace
 from dataclasses import dataclass, fields
@@ -42,7 +43,7 @@ class DataSet:
     distance: Optional[Union[np.ndarray, str]] = None
     cluster_distance: Optional[Union[np.ndarray, str]] = None
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> str:
         """
         Compute the hash value for this dataset to be used in caching. Therefore, the hash is computed on properties
         that do not change during clustering.
@@ -50,23 +51,14 @@ class DataSet:
         Returns:
             The cluster-insensitive hash-value of the instance.
         """
-        hash_val = 0
-        for field in filter(lambda f: "cluster" not in f.name, fields(DataSet)):
-            obj = getattr(self, field.name)
-            if obj is None:
-                hv = 0
-            elif isinstance(obj, dict):
-                hv = hash(tuple(obj.items()))
-            elif isinstance(obj, list):
-                hv = hash(tuple(obj))
-            elif isinstance(obj, np.ndarray):
-                hv = 0
-            elif isinstance(obj, Namespace):
-                hv = hash(tuple(obj.__dict__.items()))
-            else:
-                hv = hash(obj)
-            hash_val ^= hv
-        return hash_val
+        serialized = pickle.dumps(self, protocol=pickle.HIGHEST_PROTOCOL)
+        hasher = hashlib.sha256()
+
+        # Update the hash object with the serialized data.
+        hasher.update(serialized)
+
+        # Return the hexadecimal representation of the hash.
+        return hasher.hexdigest()
 
     def __eq__(self, other: Any) -> bool:
         """
@@ -366,7 +358,12 @@ def convert_stratification(dataset: DataSet) -> dict[str, Any]:
         stratification = {name: [0] for name in dataset.names}
     else:
         val = next(iter(dataset.stratification.values()))
-        if not hasattr(val, "__getitem__") or isinstance(val, str):
+        if isinstance(val, set):
+            classes = list(sorted(set.union(*[set(x) for x in dataset.stratification.values()])))
+            ohe = np.eye(len(classes))
+            ohe_map = {c: ohe[i] for i, c in enumerate(classes)}
+            stratification = {name: np.sum(np.stack([ohe_map[n] for n in dataset.stratification[name]]), axis=0) for name in dataset.names}
+        elif not hasattr(val, "__getitem__") or isinstance(val, str):
             classes = list(set(dataset.stratification.values()))
             ohe = np.eye(len(classes))
             ohe_map = {c: ohe[i] for i, c in enumerate(classes)}
