@@ -43,7 +43,7 @@ class DataSet:
     distance: Optional[Union[np.ndarray, str]] = None
     cluster_distance: Optional[Union[np.ndarray, str]] = None
 
-    def __hash__(self) -> str:
+    def __hash__(self) -> int:
         """
         Compute the hash value for this dataset to be used in caching. Therefore, the hash is computed on properties
         that do not change during clustering.
@@ -58,7 +58,7 @@ class DataSet:
         hasher.update(serialized)
 
         # Return the hexadecimal representation of the hash.
-        return hasher.hexdigest()
+        return int(hasher.hexdigest(), 16)
 
     def __eq__(self, other: Any) -> bool:
         """
