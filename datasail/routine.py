@@ -1,6 +1,9 @@
+import random
 import time
 import pickle
 from typing import Dict, Tuple, Optional
+
+import numpy as np
 
 from datasail.argparse_patch import remove_patch
 from datasail.cluster.clustering import cluster
@@ -37,6 +40,10 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
     if kwargs.get(KW_CC, False):
         list_cluster_algos()
         return None
+
+    # seed the stuff
+    random.seed(42)
+    np.random.seed(42)
 
     start = time.time()
     LOGGER.info("Read data")

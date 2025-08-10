@@ -51,7 +51,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         dataset.cluster_similarity = dataset.similarity
         dataset.cluster_distance = dataset.distance
         dataset.cluster_weights = dataset.weights
-        dataset.cluster_stratification = {name: dataset.strat2oh(name) for name in dataset.cluster_names}
+        dataset.cluster_stratification = dataset.stratification
 
     if dataset.cluster_names is None:  # No clustering to do?!
         return dataset
@@ -160,7 +160,7 @@ def finish_clustering(dataset: DataSet) -> None:
     if dataset.stratification is not None and len(dataset.classes) > 1:
         dataset.cluster_stratification = defaultdict(lambda: np.zeros(len(dataset.classes)))
         for key, value in dataset.cluster_map.items():
-            dataset.cluster_stratification[value] += dataset.strat2oh(name=key)
+            dataset.cluster_stratification[value] += dataset.stratification[key]
     else:
         dataset.cluster_stratification = None
 

@@ -174,7 +174,7 @@ def break_cluster(dataset: DataSet, cluster_name: Any, split_ratio: float, linka
     if dataset.stratification is not None and len(dataset.classes) > 1:
         cluster_stratification = defaultdict(lambda: np.zeros(len(dataset.classes)))
         for key, value in dataset.cluster_map.items():
-            cluster_stratification[value] += dataset.strat2oh(name=key)
+            cluster_stratification[value] += dataset.stratification[key]
     else:
         cluster_stratification = None
     
