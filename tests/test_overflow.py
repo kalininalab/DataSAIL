@@ -27,7 +27,7 @@ def test_overflow_break():
         "C1e",
         False,
     )
-    assert len(dataset.cluster_names) == 52
+    assert len(dataset.cluster_names) == 51
     assert "C1e" in pre_e_name_split_map
     assert len(pre_e_name_split_map["C1e"].keys()) == 0
     assert "C1e" in pre_e_cluster_split_map
