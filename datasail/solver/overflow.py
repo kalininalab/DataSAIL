@@ -82,12 +82,12 @@ def check_clusters(dataset, split_ratios, split_names, strategy: Literal["break"
 
 
 def assign_cluster(dataset: DataSet, cluster_name: Any, split_ratios, split_names, split_index) -> DataSet:
-    cluster_index = dataset.cluster_names.index(cluster_name)
     split_name = split_names[split_index]
     split_ratios = split_ratios[:split_index] + split_ratios[split_index + 1:]
     split_names = split_names[:split_index] + split_names[split_index + 1:]
 
     if dataset.cluster_map is not None:
+        cluster_index = dataset.cluster_names.index(cluster_name)
         name_split_map = {}
         cluster_split_map = {cluster_name: split_name}
         for n in dataset.names:
