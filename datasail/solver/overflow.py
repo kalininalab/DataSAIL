@@ -59,7 +59,7 @@ def check_points(dataset, split_ratios, split_names, i: int):
     LOGGER.info("")
     overflows = [(pn, s) if ps > s else (None, None) for (pn, ps), s in zip(sorted_points, sorted(split_ratios, reverse=True))]
     overflow_point = next((i, pn, s) for i, (pn, s) in enumerate(overflows) if pn is not None)
-    dataset, name_split_map, cluster_split_map, split_ratios, split_names = assign_cluster(dataset, overflow_point[1], split_ratios, split_names, overflow_point[0])
+    dataset, name_split_map, cluster_split_map, split_ratios, split_names = assign_cluster(dataset, overflow_point[1], split_ratios, split_names, overflow_point[0], clusters=False)
     return dataset, name_split_map, cluster_split_map, split_ratios, split_names
 
 
@@ -81,12 +81,12 @@ def check_clusters(dataset, split_ratios, split_names, strategy: Literal["break"
     return dataset, name_split_map, cluster_split_map, split_ratios, split_names
 
 
-def assign_cluster(dataset: DataSet, cluster_name: Any, split_ratios, split_names, split_index) -> DataSet:
+def assign_cluster(dataset: DataSet, cluster_name: Any, split_ratios, split_names, split_index, clusters: bool = True) -> DataSet:
     split_name = split_names[split_index]
     split_ratios = split_ratios[:split_index] + split_ratios[split_index + 1:]
     split_names = split_names[:split_index] + split_names[split_index + 1:]
 
-    if dataset.cluster_map is not None:
+    if clusters:
         cluster_index = dataset.cluster_names.index(cluster_name)
         name_split_map = {}
         cluster_split_map = {cluster_name: split_name}
@@ -94,6 +94,9 @@ def assign_cluster(dataset: DataSet, cluster_name: Any, split_ratios, split_name
             if dataset.cluster_map[n] == cluster_name:
                 name_split_map[n] = split_name
         dataset.cluster_names = dataset.cluster_names[:cluster_index] + dataset.cluster_names[cluster_index + 1:]
+        del dataset.cluster_weights[cluster_name]
+        if dataset.cluster_stratification is not None:
+            del dataset.cluster_stratification[cluster_name]
         if dataset.cluster_similarity is not None:
             dataset.cluster_similarity = np.delete(dataset.cluster_similarity, cluster_index, axis=0)
             dataset.cluster_similarity = np.delete(dataset.cluster_similarity, cluster_index, axis=1)
@@ -105,6 +108,9 @@ def assign_cluster(dataset: DataSet, cluster_name: Any, split_ratios, split_name
         cluster_split_map = {}
         name_index = dataset.names.index(cluster_name)
         dataset.names =  dataset.names[:name_index] + dataset.names[name_index + 1:]
+        del dataset.weights[cluster_name]
+        if dataset.stratification is not None:
+            del dataset.stratification[cluster_name]
         if dataset.similarity is not None:
             dataset.similarity = np.delete(dataset.similarity, name_index, axis=0)
             dataset.similarity = np.delete(dataset.similarity, name_index, axis=1)
