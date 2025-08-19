@@ -52,7 +52,7 @@ def check_dataset(
 
 
 def check_points(dataset, split_ratios, split_names, i: int):
-    sorted_points = sorted([dataset.weights[name] for name in dataset.names], key=lambda x: x[1], reverse=True)
+    sorted_points = sorted([(name, dataset.weights[name]) for name in dataset.names], key=lambda x: x[1], reverse=True)
     total_weight = sum(x[1] for x in sorted_points[i:])
     if [x[1] / total_weight for x in sorted_points[i:len(split_ratios)]] <= sorted(split_ratios, reverse=True):
         return None
@@ -64,7 +64,7 @@ def check_points(dataset, split_ratios, split_names, i: int):
 
 
 def check_clusters(dataset, split_ratios, split_names, strategy: Literal["break", "assign"], linkage: Literal["average", "single", "complete"], i: int):
-    sorted_clusters = sorted([dataset.cluster_weights[name] for name in dataset.cluster_names], key=lambda x: x[1], reverse=True)
+    sorted_clusters = sorted([(name, dataset.cluster_weights[name]) for name in dataset.cluster_names], key=lambda x: x[1], reverse=True)
     total_weight = sum(x[1] for x in sorted_clusters[i:])
     if [x[1] / total_weight for x in sorted_clusters[i:len(split_ratios)]] <= sorted(split_ratios, reverse=True):
         return None
@@ -94,9 +94,6 @@ def assign_cluster(dataset: DataSet, cluster_name: Any, split_ratios, split_name
             if dataset.cluster_map[n] == cluster_name:
                 name_split_map[n] = split_name
         dataset.cluster_names = dataset.cluster_names[:cluster_index] + dataset.cluster_names[cluster_index + 1:]
-        del dataset.cluster_weights[cluster_name]
-        if dataset.cluster_stratification is not None:
-            del dataset.cluster_stratification[cluster_name]
         if dataset.cluster_similarity is not None:
             dataset.cluster_similarity = np.delete(dataset.cluster_similarity, cluster_index, axis=0)
             dataset.cluster_similarity = np.delete(dataset.cluster_similarity, cluster_index, axis=1)
@@ -108,9 +105,6 @@ def assign_cluster(dataset: DataSet, cluster_name: Any, split_ratios, split_name
         cluster_split_map = {}
         name_index = dataset.names.index(cluster_name)
         dataset.names =  dataset.names[:name_index] + dataset.names[name_index + 1:]
-        del dataset.weights[cluster_name]
-        if dataset.stratification is not None:
-            del dataset.stratification[cluster_name]
         if dataset.similarity is not None:
             dataset.similarity = np.delete(dataset.similarity, name_index, axis=0)
             dataset.similarity = np.delete(dataset.similarity, name_index, axis=1)
@@ -179,8 +173,8 @@ def break_cluster(dataset: DataSet, cluster_name: Any, split_ratio: float, linka
 
     if dataset.stratification is not None and len(dataset.classes) > 1:
         cluster_stratification = defaultdict(lambda: np.zeros(len(dataset.classes)))
-        for key, value in dataset.cluster_map.items():
-            cluster_stratification[value] += dataset.stratification[key]
+        for name in dataset.names:  # key, value in dataset.cluster_map.items():
+            cluster_stratification[dataset.cluster_map[name]] += dataset.stratification[name]
     else:
         cluster_stratification = None
     
