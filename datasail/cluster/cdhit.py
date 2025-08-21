@@ -87,7 +87,6 @@ def cdhit_trial(
         cmd = f"rm -rf {results_folder} && " + cmd
 
     LOGGER.info(cmd)
-    print(cmd)
     os.system(cmd)
 
     if not (results_folder / "clusters.clstr").is_file():

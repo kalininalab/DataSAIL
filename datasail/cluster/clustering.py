@@ -49,7 +49,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         dataset.cluster_similarity = dataset.similarity
         dataset.cluster_distance = dataset.distance
         dataset.cluster_weights = dataset.weights
-        dataset.cluster_stratification = {name: dataset.strat2oh(name) for name in dataset.cluster_names}
+        dataset.cluster_stratification = dataset.stratification
 
     if dataset.cluster_names is None:  # No clustering to do?!
         return dataset
@@ -64,9 +64,6 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
 
     if len(dataset.cluster_names) > dataset.num_clusters:
         dataset = force_clustering(dataset, kwargs[KW_LINKAGE])
-    
-    while max(dataset.cluster_weights.values()) > max(kwargs[KW_SPLITS]) * sum(dataset.cluster_weights.values()):
-        dataset = break_biggest_cluster(dataset, kwargs[KW_LINKAGE])
 
     # store_to_cache(dataset, **kwargs)
 
@@ -154,7 +151,7 @@ def finish_clustering(dataset: DataSet) -> None:
     if dataset.stratification is not None and len(dataset.classes) > 1:
         dataset.cluster_stratification = defaultdict(lambda: np.zeros(len(dataset.classes)))
         for key, value in dataset.cluster_map.items():
-            dataset.cluster_stratification[value] += dataset.strat2oh(name=key)
+            dataset.cluster_stratification[value] += dataset.stratification[key]
     else:
         dataset.cluster_stratification = None
 
@@ -330,50 +327,6 @@ def force_clustering(dataset: DataSet, linkage: Literal["average", "single", "co
     return labels2clusters(labels, dataset, matrix, linkage)
 
 
-def break_biggest_cluster(dataset: DataSet, linkage: Literal["average", "single", "complete"]) -> DataSet:
-    highest_weight, big_cluster_name = 0, ""
-    for cluster_name, weight in dataset.cluster_weights.items():
-        if weight > highest_weight:
-            highest_weight = weight
-            big_cluster_name = cluster_name
-    labels, gap_map = [], {}
-    for name in dataset.names:
-        if (c := dataset.cluster_map[name]) != big_cluster_name:
-            labels.append(c)
-        else:
-            gap_map[name] = len(labels)
-            labels.append("?")
-    re_assigns = sorted(gap_map.keys(), key=lambda x: -dataset.weights[x])
-    max_size = highest_weight // 2 + 1
-    size_cluster_a = 0
-    for name in re_assigns:
-        if size_cluster_a + dataset.weights[name] < max_size:
-            labels[gap_map[name]] = str(big_cluster_name) + "_A"
-            size_cluster_a += dataset.weights[name]
-        else:
-            labels[gap_map[name]] = str(big_cluster_name) + "_B"
-    
-    unique_labels = {}
-    new_labels = []
-    for label in labels:
-        if label not in unique_labels:
-            unique_labels[label] = len(unique_labels)
-        new_labels.append(unique_labels[label])
-    
-    dataset.cluster_names = dataset.names  # sorted(dataset.cluster_weights.keys())
-    dataset.cluster_map = {n: n for n in dataset.cluster_names}
-    dataset.cluster_weights = dataset.weights
-    dataset.cluster_stratification = dataset.stratification
-    if isinstance(dataset.similarity, np.ndarray):
-        cluster_matrix = dataset.similarity
-    elif isinstance(dataset.distance, np.ndarray):
-        cluster_matrix = dataset.distance
-    else:
-        raise ValueError("Neither the similarity nor the distance of the dataset are matrices.")
-    
-    return labels2clusters(new_labels, dataset, cluster_matrix, linkage)
-
-
 def cluster_interactions(
         inter: list[tuple],
         e_dataset: DataSet,
@@ -402,18 +355,18 @@ def cluster_interactions(
     return output
 
 
-def reverse_clustering(cluster_split: dict[str, str], name_cluster: dict[str, str]) -> dict[str, str]:
+def reverse_clustering(cluster_split_map: Dict[str, str], name_cluster_map: Dict[str, str]) -> Dict[str, str]:
     """
     Reverse clustering to uncover which entity is assigned to which split.
 
     Args:
-        cluster_split: Assignment of clusters to splits
-        name_cluster: Assignment of names to clusters
+        cluster_split_map: Assignment of clusters to splits
+        name_cluster_map: Assignment of names to clusters
 
     Returns:
         Assignment of names to splits
     """
-    return {n: cluster_split[c] for n, c in name_cluster.items()}
+    return {n: cluster_split_map[c] for n, c in name_cluster_map.items() if c in cluster_split_map}
 
 
 def reverse_interaction_clustering(

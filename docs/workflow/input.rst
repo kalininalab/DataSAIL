@@ -1,3 +1,5 @@
+.. _input-label:
+
 #############
 Input formats
 #############

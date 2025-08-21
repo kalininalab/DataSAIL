@@ -1,8 +1,8 @@
+.. _solver-label:
+
 #################
 Supported Solvers
 #################
-
-.. _solver-label:
 
 With the default installation settings, DataSAIL supports SCIP. This is a free solver that performed best among the
 free solvers during development. Additional solvers are supported upon user installation. All installation steps shall
@@ -24,7 +24,7 @@ Main Solvers
 Our top suggestion is to use GUROBI. It is a commercial solver, but offers a free academic license. It showed to be the
 fastest and most accurate solver during development. If you do not want to use a commercial solver, we suggest to use
 SCIP. It is a free solver, but slower than GUROBI (factor 2-3). MOSEK is a commercial solver but offers a free academic
-too. Its runtime ranges between SCIP and GUROBI.
+too. Its runtime ranges between SCIP and GUROBI. Upon installation, DataSAIL comes with SCIP as the default, preinstalled solver.
 
 GUROBI
 ======

@@ -1,6 +1,10 @@
-import time
 from pathlib import Path
-from typing import Any, Callable, Generator, Optional
+import random
+import time
+import pickle
+from typing import Any, Callable, Dict, Tuple, Optional
+
+import numpy as np
 
 from datasail.reader.read_genomes import read_genome_data
 from datasail.reader.read_molecules import read_molecule_data
@@ -11,9 +15,10 @@ from datasail.dataset import DataSet
 from datasail.cluster.clustering import cluster
 from datasail.solver.solve import run_solver
 from datasail.report import report
-from datasail.constants import G_TYPE, KW_ARGS, KW_CLUSTERS, KW_DATA, KW_DIST, KW_INTER, KW_SIM, KW_STRAT, KW_TYPE, KW_WEIGHTS, M_TYPE, O_TYPE, P_TYPE, \
-    KW_DATA, LOGGER, KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
-    KW_MAX_SEC, KW_MAX_SOL, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, DIM_2, SRC_CL, KW_DELTA
+from datasail.constants import G_TYPE, KW_ARGS, KW_CC, KW_CLUSTERS, KW_DATA, KW_DIST, KW_INTER, KW_LINKAGE, \
+    KW_OVERFLOW, KW_SIM, KW_STRAT, KW_TYPE, KW_WEIGHTS, M_TYPE, MODE_E, MODE_F, O_TYPE, P_TYPE, KW_DATA, LOGGER, \
+    KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, KW_MAX_SEC, KW_SOLVER, KW_LOGDIR, \
+    NOT_ASSIGNED, KW_OUTDIR, DIM_2, SRC_CL, KW_DELTA, TEC_C1, TEC_C2, TEC_I1, TEC_I2
 
 
 def datasail_main(**kwargs) -> Optional[tuple[dict, dict, dict]]:
@@ -23,16 +28,25 @@ def datasail_main(**kwargs) -> Optional[tuple[dict, dict, dict]]:
     Args:
         **kwargs: Parsed commandline arguments to DataSAIL.
     """
+    kwargs = remove_patch(**kwargs)
+    if kwargs.get(KW_CC, False):
+        list_cluster_algos()
+        return None
+
+    # seed the stuff
+    random.seed(42)
+    np.random.seed(42)
+
     start = time.time()
     LOGGER.info("Read data")
 
     # read e-entities and f-entities
     inter = read_inter(**kwargs)
-    datasets = read_data(inter, kwargs[KW_DATA])
+    datasets = read_data(inter, **kwargs[KW_DATA])
 
     # if required, cluster the input otherwise define the cluster-maps to be None
     clusters = list(filter(lambda x: x[0].startswith(SRC_CL), kwargs[KW_TECHNIQUES]))
-    clusterings = [len(clusters) != 0 and any(d + 1 in set(c[1:].split(".")) for c in clusters) for d in len(datasets)]
+    clusterings = [len(clusters) != 0 and any(d + 1 in set(c[1:].split(".")) for c in clusters) for d in range(len(datasets))]
 
     for i, (clustering, dataset) in enumerate(zip(clusterings, datasets)):
         if clustering:
@@ -52,48 +66,90 @@ def datasail_main(**kwargs) -> Optional[tuple[dict, dict, dict]]:
             new_inter.append(build)
     else:
         new_inter = None
+    
+    e_dataset, pre_e_name_split_map, pre_e_cluster_split_map, e_split_ratios, e_split_names = check_dataset(
+        e_dataset,
+        kwargs[KW_SPLITS],
+        kwargs[KW_NAMES],
+        kwargs[KW_OVERFLOW],
+        kwargs[KW_LINKAGE],
+        (TEC_I1 + MODE_E) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_I1 + MODE_E, TEC_I2]) else None, 
+        TEC_I2 in kwargs[KW_TECHNIQUES],
+        (TEC_C1 + MODE_E) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_C1 + MODE_E, TEC_C2]) else None,
+        TEC_C2 in kwargs[KW_TECHNIQUES],
+    )
+    f_dataset, pre_f_name_split_map, pre_f_cluster_split_map, f_split_ratios, f_split_names = check_dataset(
+        f_dataset,
+        kwargs[KW_SPLITS],
+        kwargs[KW_NAMES],
+        kwargs[KW_OVERFLOW],
+        kwargs[KW_LINKAGE],
+        (TEC_I1 + MODE_F) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_I1 + MODE_F, TEC_I2]) else None,
+        TEC_I2 in kwargs[KW_TECHNIQUES],
+        (TEC_C1 + MODE_F) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_C1 + MODE_F, TEC_C2]) else None,
+        TEC_C2 in kwargs[KW_TECHNIQUES],
+    )
+    split_ratios = e_split_ratios | f_split_ratios
+    split_names = e_split_names | f_split_names
 
     LOGGER.info("Split data")
 
     # split the data into dictionaries mapping interactions, e-entities, and f-entities into the splits
-    inter_split_map, dataset_name_split_maps = run_solver(
+    inter_split_map = {}
+    if TEC_R in kwargs[KW_TECHNIQUES]:
+        inter_split_map[TEC_R] = random_inter_split(kwargs[KW_RUNS], inter, kwargs[KW_SPLITS], kwargs[KW_NAMES])
+    
+    e_name_split_map, f_name_split_map, e_cluster_split_map, f_cluster_split_map = run_solver(
         techniques=kwargs[KW_TECHNIQUES],
-        inter=new_inter,
+        e_dataset=e_dataset,
+        f_dataset=f_dataset,
         delta=kwargs[KW_DELTA],
         epsilon=kwargs[KW_EPSILON],
         runs=kwargs[KW_RUNS],
-        splits=kwargs[KW_SPLITS],
-        split_names=kwargs[KW_NAMES],
+        split_ratios=split_ratios,
+        split_names=split_names,
         max_sec=kwargs[KW_MAX_SEC],
-        max_sol=kwargs[KW_MAX_SOL],
         solver=kwargs[KW_SOLVER],
         log_dir=kwargs[KW_LOGDIR],
-        datasets=datasets,
     )
+    # integrate pre_maps into the split maps
+    for run in range(kwargs[KW_RUNS]):
+        for technique in kwargs[KW_TECHNIQUES]:
+            for map_, pre_map in [(e_name_split_map, pre_e_name_split_map),
+                                  (f_name_split_map, pre_f_name_split_map),
+                                  (e_cluster_split_map, pre_e_cluster_split_map),
+                                  (f_cluster_split_map, pre_f_cluster_split_map)]:
+                if technique not in pre_map:
+                    continue
+                if technique not in map_:
+                    map_[technique] = []
+                if run >= len(map_[technique]):
+                    map_[technique].append({})
+                map_[technique][run].update(pre_map[technique])
 
     LOGGER.info("Store results")
 
     # infer interaction assignment from entity assignment if necessary and possible
-    output_inter_split_map = dict()
     if new_inter is not None:
         for technique in kwargs[KW_TECHNIQUES]:
-            output_inter_split_map[technique] = []
+            if technique == TEC_R:
+                continue
+            inter_split_map[technique] = []
             for run in range(kwargs[KW_RUNS]):
-                output_inter_split_map[technique].append(dict())
+                inter_split_map[technique].append({})
                 for e, f in inter:
-                    if technique.endswith(DIM_2) or technique == "R":
-                        output_inter_split_map[technique][-1][(e, f)] = inter_split_map[technique][run].get(
-                            (e_dataset.id_map.get(e, ""), f_dataset.id_map.get(f, "")), NOT_ASSIGNED)
+                    if technique.endswith(DIM_2):
+                        e_assi = e_name_split_map[technique][run].get(e_dataset.id_map.get(e, ""), NOT_ASSIGNED)
+                        f_assi = f_name_split_map[technique][run].get(f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
+                        inter_split_map[technique][-1][(e, f)] = e_assi if e_assi == f_assi else NOT_ASSIGNED
                     elif technique in e_name_split_map:
-                        output_inter_split_map[technique][-1][(e, f)] = e_name_split_map[technique][run].get(
-                            e_dataset.id_map.get(e, ""), NOT_ASSIGNED)
+                        inter_split_map[technique][-1][(e, f)] = e_name_split_map[technique][run].get(e_dataset.id_map.get(e, ""), NOT_ASSIGNED)
                     elif technique in f_name_split_map:
-                        output_inter_split_map[technique][-1][(e, f)] = f_name_split_map[technique][run].get(
-                            f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
+                        inter_split_map[technique][-1][(e, f)] = f_name_split_map[technique][run].get(f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
                     else:
                         raise ValueError()
 
-    LOGGER.info("BQP splitting finished and results stored.")
+    LOGGER.info("ILP finished and results stored.")
     LOGGER.info(f"Total runtime: {time.time() - start:.5f}s")
 
     if kwargs[KW_OUTDIR] is not None:
@@ -104,7 +160,7 @@ def datasail_main(**kwargs) -> Optional[tuple[dict, dict, dict]]:
             f_name_split_map=f_name_split_map,
             e_cluster_split_map=e_cluster_split_map,
             f_cluster_split_map=f_cluster_split_map,
-            inter_split_map=output_inter_split_map,
+            inter_split_map=inter_split_map,
             runs=kwargs[KW_RUNS],
             output_dir=kwargs[KW_OUTDIR],
             split_names=kwargs[KW_NAMES],
@@ -137,15 +193,11 @@ def read_inter(**kwargs: Any) -> Optional[list[tuple]]:
                 raise ValueError()
         else:
             raise ValueError()
-    elif isinstance(kwargs[KW_INTER], (list, tuple, Generator)):
-        return [x[:num_entities] for x in kwargs[KW_INTER]]
-    elif isinstance(kwargs[KW_INTER], Callable):
-        return [x[:num_entities] for x in kwargs[KW_INTER]()]
     else:
         raise ValueError(f"Unknown type {type(kwargs[KW_INTER])} found for ")
 
 
-def read_data(inter: list[tuple], **kwargs) -> list[DataSet]:
+def read_data(inter: Optional[list[tuple]], **kwargs) -> list[DataSet]:
     """
     Read data from the input arguments.
 
@@ -163,7 +215,7 @@ def read_data(inter: list[tuple], **kwargs) -> list[DataSet]:
     ]
 
 
-def read_data_type(data_type: chr) -> Callable:
+def read_data_type(data_type: str) -> Callable:
     """
     Convert single-letter representation of the type of data to handle to the full name.
 
@@ -197,11 +249,11 @@ def fill_split_maps(dataset: DataSet, name_split_map: dict) -> dict:
         Converted mapping
     """
     if dataset.type is not None:
-        full_name_split_map = dict()
+        full_name_split_map = {}
         for technique, runs in name_split_map.items():
             full_name_split_map[technique] = []
-            for r, run in enumerate(runs):
-                full_name_split_map[technique].append(dict())
+            for r in range(len(runs)):
+                full_name_split_map[technique].append({})
                 for name, rep in dataset.id_map.items():
                     full_name_split_map[technique][-1][name] = name_split_map[technique][r][rep]
         return full_name_split_map

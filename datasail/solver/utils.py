@@ -132,8 +132,6 @@ def solve(
         f"The problem has {sum([functools.reduce(operator.mul, v.shape, 1) for v in problem.variables()])} variables "
         f"and {sum([functools.reduce(operator.mul, c.shape, 1) for c in problem.constraints])} constraints.")
 
-    print(max_sec)
-
     if solver == SOLVER_CBC:
         kwargs = {
             "maximumSeconds": max_sec,
@@ -235,6 +233,42 @@ def sample_categorical(
     return output
 
 
+def collect_results_2d(
+        problem: cvxpy.Problem,
+        e_entities: list[str],
+        e_names: list[str],
+        e_splits: list[float],
+        f_entities: list[str],
+        f_names: list[str],
+        f_splits: list[float],
+        x_e: Variable,
+        x_f: Variable,
+) -> Optional[tuple[dict[tuple[str, str], str], dict[object, str], dict[object, str]]]:
+    """
+    Report the found solution for two-dimensional splits.
+
+    Args:
+        problem: Problem object after solving.
+        e_entities: List of names of entities in the e-dataset.
+        e_names: List of names of the splits of the e-dataset.
+        e_splits: List of the relative sizes of the splits of the e-dataset.
+        f_entities: List of names of entities in the f-dataset.
+        f_names: List of names of the splits of the e-dataset.
+        f_splits: List of the relative sizes of the splits of the e-dataset.
+        x_e: Optimization variables for the e-dataset.
+        x_f: Optimization variables for the f-dataset.
+
+    Returns:
+        A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
+    """
+    if problem is None:
+        return None
+
+    # report the found solution
+    return {e: e_names[s] for s in range(len(e_splits)) for i, e in enumerate(e_entities) if x_e[s, i].value > 0.1}, \
+           {f: f_names[s] for s in range(len(f_splits)) for j, f in enumerate(f_entities) if x_f[s, j].value > 0.1}
+
+
 # def generate_baseline(
 #         splits: List[float],
 #         weights: Union[np.ndarray, List[float]],
@@ -288,168 +322,115 @@ def sample_categorical(
 #     return float(np.sum(leak_matrix))
 
 
-def interaction_contraints(
-        e_entities: list[str],
-        f_entities: list[str],
-        x_i: dict[tuple, Variable],
-        constraints: list,
-        splits: list[float],
-        x_e: Variable,
-        x_f: Variable,
-        min_lim: list[float],
-        weighting: Callable,
-        is_valid: Callable
-) -> None:
-    """
-    Generate constraints for the interactions in the cluster-based double-cold splitting.
+# def interaction_contraints(
+#         e_entities: List[str],
+#         f_entities: List[str],
+#         x_i: Dict[Tuple[str, str], Variable],
+#         constraints: List,
+#         splits: List[float],
+#         x_e: Variable,
+#         x_f: Variable,
+#         min_lim: List[float],
+#         weighting: Callable,
+#         is_valid: Callable
+# ) -> None:
+#     """
+#     Generate constraints for the interactions in the cluster-based double-cold splitting.
 
-    Args:
-        e_entities: List of names of the entities in the e-dataset
-        f_entities: List of names of the entities in the f-dataset
-        x_i: Optimization variables for the interactions
-        constraints: List of constraints
-        splits: List of splits
-        x_e: Optimization variables for the e-dataset
-        x_f: Optimization variables for the f-dataset
-        min_lim: List of lower limits for the split sizes
-        weighting: Function to compute the weight of an interaction
-        is_valid: Function to check if an interaction is valid
-    """
-    for s, split in enumerate(splits):
-        constraints.append(min_lim[s] <= cvxpy.sum([x_i[key][s] * weighting(key) for key in x_i]))
-        for i in range(len(e_entities)):
-            for j in range(len(f_entities)):
-                index = is_valid(i, j)
-                if index is not None:
-                    constraints.append(x_i[index][s] >= cvxpy.maximum(x_e[s][i] + x_f[s][j] - 1, 0))
-                    constraints.append(x_i[index][s] <= 0.75 * (x_e[s][i] + x_f[s][j]))
-
-
-def collect_results_2d(
-        problem: cvxpy.Problem,
-        names: list[str],
-        splits: list[float],
-        e_entities: list[str],
-        f_entities: list[str],
-        x_e: cvxpy.Variable,
-        x_f: cvxpy.Variable,
-        inter: set[tuple],
-) -> Optional[tuple[dict[tuple, str], dict[object, str], dict[object, str]]]:
-    """
-    Report the found solution for two-dimensional splits.
-
-    Args:
-        problem: Problem object after solving.
-        names: List of names of the splits.
-        splits: List of the relative sizes of the splits.
-        e_entities: List of names of entities in the e-dataset.
-        f_entities: List of names of entities in the f-dataset.
-        x_e: Optimization variables for the e-dataset.
-        x_f: Optimization variables for the f-dataset.
-        x_i: Optimization variables for the interactions.
-        is_valid: Function to check if an interaction is valid.
-
-    Returns:
-        A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
-    """
-    if problem is None:
-        return None
-
-    # report the found solution
-    output = (
-        {},
-        {e: names[s] for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[s, i].value > 0.1},
-        {f: names[s] for s in range(len(splits)) for j, f in enumerate(f_entities) if x_f[s, j].value > 0.1},
-    )
-    for i, e in enumerate(e_entities):
-        for j, f in enumerate(f_entities):
-            if (e, f) not in inter:
-                continue
-            if output[1][e] == output[2][f]:
-                output[0][e, f] = output[1][e]
-            else:
-                output[0][e, f] = NOT_ASSIGNED
-
-    return output
+#     Args:
+#         e_entities: List of names of the entities in the e-dataset
+#         f_entities: List of names of the entities in the f-dataset
+#         x_i: Optimization variables for the interactions
+#         constraints: List of constraints
+#         splits: List of splits
+#         x_e: Optimization variables for the e-dataset
+#         x_f: Optimization variables for the f-dataset
+#         min_lim: List of lower limits for the split sizes
+#         weighting: Function to compute the weight of an interaction
+#         is_valid: Function to check if an interaction is valid
+#     """
+#     for s, split in enumerate(splits):
+#         constraints.append(min_lim[s] <= cvxpy.sum([x_i[key][s] * weighting(key) for key in x_i]))
+#         for i in range(len(e_entities)):
+#             for j in range(len(f_entities)):
+#                 index = is_valid(i, j)
+#                 if index is not None:
+#                     constraints.append(x_i[index][s] >= cvxpy.maximum(x_e[s][i] + x_f[s][j] - 1, 0))
+#                     constraints.append(x_i[index][s] <= 0.75 * (x_e[s][i] + x_f[s][j]))
 
 
-def collect_results_2d2(
-        problem: cvxpy.Problem,
-        names: list[str],
-        splits: list[float],
-        e_entities: list[str],
-        f_entities: list[str],
-        x_e: cvxpy.Variable,
-        x_f: cvxpy.Variable,
-        inter: np.ndarray,
-) -> Optional[tuple[dict[tuple, str], dict[object, str], dict[object, str]]]:
-    """
-    Report the found solution for two-dimensional splits.
+# def collect_results_2d(
+#         problem: cvxpy.Problem,
+#         names: List[str],
+#         splits: List[float],
+#         e_entities: List[str],
+#         f_entities: List[str],
+#         x_e: Variable,
+#         x_f: Variable,
+#         inter: set[tuple[str, str]],
+# ) -> Optional[Tuple[Dict[Tuple[str, str], str], Dict[object, str], Dict[object, str]]]:
+#     """
+#     Report the found solution for two-dimensional splits.
 
-    Args:
-        problem: Problem object after solving.
-        names: List of names of the splits.
-        splits: List of the relative sizes of the splits.
-        e_entities: List of names of entities in the e-dataset.
-        f_entities: List of names of entities in the f-dataset.
-        x_e: Optimization variables for the e-dataset.
-        x_f: Optimization variables for the f-dataset.
+#     Args:
+#         problem: Problem object after solving.
+#         names: List of names of the splits.
+#         splits: List of the relative sizes of the splits.
+#         e_entities: List of names of entities in the e-dataset.
+#         f_entities: List of names of entities in the f-dataset.
+#         x_e: Optimization variables for the e-dataset.
+#         x_f: Optimization variables for the f-dataset.
+#         x_i: Optimization variables for the interactions.
+#         is_valid: Function to check if an interaction is valid.
 
-    Returns:
-        A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
-    """
-    if problem is None:
-        return None
+#     Returns:
+#         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
+#     """
+#     if problem is None:
+#         return None
 
-    # report the found solution
-    output = (
-        {},
-        {e: names[s] for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[s, i].value > 0.1},
-        {f: names[s] for s in range(len(splits)) for j, f in enumerate(f_entities) if x_f[s, j].value > 0.1},
-    )
-    for i, e in enumerate(e_entities):
-        for j, f in enumerate(f_entities):
-            if inter[i, j] == 0:
-                continue
-            if output[1][e] == output[2][f]:
-                output[0][e, f] = output[1][e]
-            else:
-                output[0][e, f] = NOT_ASSIGNED
-    return output
+#     # report the found solution
+#     output = (
+#         {},
+#         {e: names[s] for s in range(len(splits)) for i, e in enumerate(e_entities) if x_e[s, i].value > 0.1},
+#         {f: names[s] for s in range(len(splits)) for j, f in enumerate(f_entities) if x_f[s, j].value > 0.1},
+#     )
+
+#     return output
 
 
-def leakage_loss(
-        uniform: bool,
-        intra_weights,
-        x,
-        clusters,
-        weights,
-        num_splits: int,
-) -> Union[int, cvxpy.Expression]:
-    """
-    Compute the leakage loss for the cluster-based double-cold splitting.
+# def leakage_loss(
+#         uniform: bool,
+#         intra_weights,
+#         x,
+#         clusters,
+#         weights,
+#         num_splits: int,
+# ) -> Union[int, cvxpy.Expression]:
+#     """
+#     Compute the leakage loss for the cluster-based double-cold splitting.
 
-    Args:
-        uniform: Boolean flag if the cluster metric is uniform
-        intra_weights: Weights of the intra-cluster edges
-        x: Variables of the optimization problem
-        clusters: List of cluster names
-        weights: Weights of the clusters
-        num_splits: Number of splits
+#     Args:
+#         uniform: Boolean flag if the cluster metric is uniform
+#         intra_weights: Weights of the intra-cluster edges
+#         x: Variables of the optimization problem
+#         clusters: List of cluster names
+#         weights: Weights of the clusters
+#         num_splits: Number of splits
 
-    Returns:
-        Loss describing the leakage between clusters
-    """
-    if uniform:
-        return 0
-    else:
-        tmp = [[
-            weights[e1] * weights[e2] * intra_weights[e1, e2] * cvxpy.max(
-                cvxpy.vstack([x[s, e1] - x[s, e2] for s in range(num_splits)])
-            ) for e2 in range(e1 + 1, len(clusters))
-        ] for e1 in range(len(clusters))]
-        loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
-        return loss
+#     Returns:
+#         Loss describing the leakage between clusters
+#     """
+#     if uniform:
+#         return 0
+#     else:
+#         tmp = [[
+#             weights[e1] * weights[e2] * intra_weights[e1, e2] * cvxpy.max(
+#                 cvxpy.vstack([x[s, e1] - x[s, e2] for s in range(num_splits)])
+#             ) for e2 in range(e1 + 1, len(clusters))
+#         ] for e1 in range(len(clusters))]
+#         loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
+#         return loss
 
 
 #def leakage_loss(

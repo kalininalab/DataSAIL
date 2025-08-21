@@ -38,7 +38,7 @@ jobs:
       if: matrix.datasail-versions == 'full'
       shell: bash -l {0}
       run: |
-        conda-build -q -c conda-forge -c bioconda --output-folder . --no-test --append-file base_recipe.yaml recipe
+        conda-build -q -c conda-forge -c bioconda --output-folder . --no-test --package-format tar.bz2 --append-file base_recipe.yaml recipe
 
     - name: Convert DataSAIL to osx-64
       if: matrix.datasail-versions == 'full'
@@ -59,7 +59,7 @@ jobs:
       if: matrix.datasail-versions == 'lite'
       shell: bash -l {0}
       run: |
-        conda-build -q -c conda-forge -c bioconda --output-folder . --no-test --append-file base_recipe.yaml recipe_lite
+        conda-build -q -c conda-forge -c bioconda --output-folder . --no-test --package-format tar.bz2 --append-file base_recipe.yaml recipe_lite
 
     - name: Convert DataSAIL to osx-64, osx-arm64, win-64
       if: matrix.datasail-versions == 'lite'

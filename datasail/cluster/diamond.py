@@ -30,7 +30,6 @@ def run_diamond(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = No
     with open("diamond.fasta", "w") as out:
         for name, seq in dataset.data.items():
             seq = re.sub(r'[^ACDEFGHIKLMNPQRSTVWY]', 'G', seq)
-            print(":" in seq)
             out.write(f">{name}\n{seq}\n")
 
     result_folder = Path("diamond_results")

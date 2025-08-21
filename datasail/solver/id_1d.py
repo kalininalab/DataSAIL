@@ -16,7 +16,6 @@ def solve_i1(
         splits: list[float],
         names: list[str],
         max_sec: int,
-        max_sol: int,
         solver: str,
         log_file: Path,
 ) -> Optional[dict[str, str]]:
@@ -32,7 +31,6 @@ def solve_i1(
         splits: List of split sizes
         names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
-        max_sol: Maximal number of solution to consider
         solver: Solving algorithm to use to solve the formulated program
         log_file: File to store the detailed log from the solver to
 

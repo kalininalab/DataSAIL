@@ -18,3 +18,4 @@ pyyaml
 notebook
 lxml_html_clean
 h5py
+myst_parser

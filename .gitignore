@@ -4,6 +4,7 @@
 .vscode/
 .idea/
 docs/build/
+dict/
 tests/data/raw_data/
 tests/tmp/
 *.ipynb
@@ -12,8 +13,10 @@ tests/tmp/
 *.log
 *.pkl
 *.pdf
+*.pyc
 test.py
 
 tests/data/genomes/out/*
 tests/*.log
 tests/*.fasta
+dist/*

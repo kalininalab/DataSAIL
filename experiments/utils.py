@@ -415,7 +415,16 @@ def plot_bars_2y(df: pd.DataFrame, ax: plt.Axes, color) -> plt.Axes:
 
     # Adding labels and title
     il.set_ylabel('scaled $L(\pi)$ (↓)')
-    plt.xticks(np.arange(len(df.columns)) + width / 2, df.columns)
+    labels_new = df.columns.tolist()
+    if "DeepDTA" in labels_new:
+        labels_new[labels_new.index("DeepDTA")] = "Deep\nDTA"
+    # if "D-MPNN" in labels_new:
+    #     labels_new[labels_new.index("D-MPNN")] = "D-\nMPNN"
+    if "Split" in labels_new:
+        labels_new[labels_new.index("Split")] = "IL"
+    if "Splits" in labels_new:
+        labels_new[labels_new.index("Splits")] = "IL"
+    plt.xticks(np.arange(len(df.columns)) + width / 2, labels_new)
     return il
 
 

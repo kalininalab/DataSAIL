@@ -1,8 +1,8 @@
+.. _clustering-label:
+
 ##########
 Clustering
 ##########
-
-.. _clustering-label:
 
 Clustering is an essential step in DataSAIL as it groups similar samples together such that they cannot be assigned to
 different splits. This reduces the information leakage even more. In the following table you can see which clustering

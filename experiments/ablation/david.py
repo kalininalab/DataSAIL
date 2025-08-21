@@ -257,8 +257,8 @@ def visualize(full_path: Path, clusters: list[int], solvers, ax: Optional[tuple]
 
     ax_p.set_xlabel("Number of clusters")
     ax_t.set_xlabel("Number of clusters")
-    ax_t.set_ylabel("Time for solving [s] (↓)")
     ax_p.set_ylabel("scaled $L(\pi)$ (↓)")
+    ax_t.set_ylabel("Time for solving [s] (↓)")
 
     ax_t.plot(times["GUROBI"][:, 0], times["GUROBI"][:, 1], label="GUROBI", color=COLORS["train"], marker="o")
     ax_t.plot(times["MOSEK"][:, 0], times["MOSEK"][:, 1], label="MOSEK", color=COLORS["test"], marker="x")

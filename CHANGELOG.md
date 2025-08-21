@@ -2,7 +2,6 @@
 
 ## [Planned - Long-term project ideas]
 
-- [ ] Normalization of objectives for better comparability and better splits in solvers
 - [ ] Multi-threading support for pre-solving (Snakemake as backbone)
 - [ ] Make (more) deterministic ([Issue #6](https://github.com/kalininalab/DataSAIL/issues/6))
 - [ ] Reports of results with plots and tables a PDF and or HTML
@@ -12,6 +11,26 @@
 - [ ] Include [MashMap3](https://github.com/marbl/MashMap)
 - [ ] Include MASH for amino acid sequences
 - [ ] Custom clustering methods ([Issue #25](https://github.com/kalininalab/DataSAIL/issues/25))
+
+## v1.2.1 (2025-08-19)
+
+- Improved stratification and testing thereof to better handle mutliclass and multilabel-multiclass stratification
+
+## v1.2.0 (2025-07-20)
+
+- New Features!!!
+  - DataSAIL can now handle clusters that are too big for one split. The new parameter `overflow` takes `break` or `assign` as arguments.
+  - It is now possible to quantify the similarity-induced leakage with DataSAIL in the `datasail.eval` module.
+- Parallel publication of PyPI and conda packages
+- Major update of documentation
+
+## v1.1.2 and 1.1.3 (2025-06-06) [PyPI only]
+
+- Publication of DataSAIL-lite as `datasail` on the Python Package Index
+
+## v1.1.1 (2025-05-03)
+
+- Bug fix in C2 splitting
 
 ## v1.1.0 (2025-0?-??)
 

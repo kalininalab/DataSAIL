@@ -13,21 +13,21 @@ def read_tsv(filepath: Path):
 
 
 def run_sail(
-        inter=None, output: Path = "", max_sec: int = 100, max_sol: int = 1000, verbosity: str = "I",
+        inter=None, output: Path = "", max_sec: int = 100, verbosity: str = "I",
         splits: list[float] = None, names: list[str] = None, epsilon: float = 0.05, delta: float = 0.05, runs: int = 1,
         linkage: Literal["single", "complete", "average"] = "average", solver: str = "SCIP",
         techniques: list[str] = None, cache: bool = False, cache_dir: str = None, e_type: str = None, e_data=None,
         e_strat=None, e_weights=None, e_sim=None, e_dist=None, e_args: str = "", e_clusters: int = 50,
         f_type: str = None, f_data=None, f_strat=None, f_weights=None, f_sim=None,
-        f_dist=None, f_args: str = "", f_clusters: int = 50, threads: int = 1,
+        f_dist=None, f_args: str = "", f_clusters: int = 50, threads: int = 1, overflow: Literal["assgin", "break"] = "assign",
 ):
     sail(
-        inter=inter, output=output, max_sec=max_sec, max_sol=max_sol, verbosity=verbosity, techniques=techniques,
+        inter=inter, output=output, max_sec=max_sec, verbosity=verbosity, techniques=techniques,
         splits=splits, names=names, epsilon=epsilon, delta=delta, runs=runs, linkage=linkage, e_type=e_type,
         e_data=e_data, e_strat=e_strat, e_weights=e_weights, e_sim=e_sim, e_dist=e_dist, e_args=e_args,
         e_clusters=e_clusters, f_type=f_type, f_data=f_data, f_strat=f_strat, f_weights=f_weights, f_sim=f_sim,
         f_dist=f_dist, f_args=f_args, f_clusters=f_clusters, cache=cache, cache_dir=cache_dir, solver=solver,
-        threads=threads,
+        threads=threads,  overflow=overflow,
     )
 
 

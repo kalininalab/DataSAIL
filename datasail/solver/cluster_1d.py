@@ -1,3 +1,4 @@
+from typing import Optional, Union
 from pathlib import Path
 from typing import Union, Optional
 
@@ -18,7 +19,6 @@ def solve_c1(
         splits: list[float],
         names: list[str],
         max_sec: int,
-        max_sol: int,
         solver: str,
         log_file: Path,
 ) -> Optional[dict[str, str]]:
@@ -36,7 +36,6 @@ def solve_c1(
         splits: List of split sizes
         names: List of names of the splits in the order of the splits argument
         max_sec: Maximal number of seconds to take when optimizing the problem (not for finding an initial solution)
-        max_sol: Maximal number of solution to consider
         solver: Solving algorithm to use to solve the formulated program
         log_file: File to store the detailed log from the solver to
 
@@ -64,7 +63,6 @@ def solve_c1(
 
     loss = cvxpy.sum([t for tmp_list in tmp for t in tmp_list])
     problem = solve(loss, constraints, max_sec, solver, log_file)
-    print(problem)
 
     return None if problem is None else {
         e: names[s] for s in range(len(splits)) for i, e in enumerate(clusters) if x[s, i].value > 0.1

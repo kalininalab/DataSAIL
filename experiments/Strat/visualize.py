@@ -20,10 +20,10 @@ def plot_perf(base_path, ax):
     values = np.array(values.reindex(["rf", "svm", "xgb", "mlp", "d-mpnn"])[["datasail", "deepchem"]], dtype=float)
     df = pd.DataFrame(values, columns=["DataSAIL split (S1 w/ classes)", "Stratified baseline"], index=models)
     df.loc["IL"] = [np.average([x for x, _ in leakage[k]]) for k in ["datasail", "deepchem"]]
-    il = plot_bars_2y(df.T, ax, color=[COLORS["s1d"], COLORS["r1d"]])
+    il = plot_bars_2y(df.T, ax, color=[COLORS["r1d"], COLORS["s1d"]])
     ax.set_ylabel("ROC-AUC (↑)")
     ax.set_xlabel("ML Models")
-    ax.legend(loc="lower left")
+    ax.legend(loc="lower left", framealpha=1)
     ax.set_title(f"Performance comparison")
 
 

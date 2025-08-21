@@ -1,8 +1,8 @@
+.. _embeddings-label:
+
 ########################
 Clustering of Embeddings
 ########################
-
-.. _embeddings-label:
 
 DataSAIL offers different clustering algorithms implemented in SciPy and RDKit to cluster the embeddings.
 The clustering algorithms are:
