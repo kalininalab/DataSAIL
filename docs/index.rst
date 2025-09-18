@@ -88,6 +88,7 @@ For frequently asked questions, please refer to the :ref:`FAQ <faq-label>` secti
     :maxdepth: 1
     :caption: Examples
 
+    other
     examples/qm9
     examples/bace
     examples/pdbbind
