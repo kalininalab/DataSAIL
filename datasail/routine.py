@@ -140,16 +140,19 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
             for run in range(kwargs[KW_RUNS]):
                 inter_split_map[technique].append({})
                 for e, f in inter:
-                    if technique.endswith(DIM_2):
-                        e_assi = e_name_split_map[technique][run].get(e_dataset.id_map.get(e, ""), NOT_ASSIGNED)
-                        f_assi = f_name_split_map[technique][run].get(f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
-                        inter_split_map[technique][-1][(e, f)] = e_assi if e_assi == f_assi else NOT_ASSIGNED
-                    elif technique in e_name_split_map:
-                        inter_split_map[technique][-1][(e, f)] = e_name_split_map[technique][run].get(e_dataset.id_map.get(e, ""), NOT_ASSIGNED)
-                    elif technique in f_name_split_map:
-                        inter_split_map[technique][-1][(e, f)] = f_name_split_map[technique][run].get(f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
-                    else:
-                        raise ValueError()
+                    try:
+                        if technique.endswith(DIM_2):
+                            e_assi = e_name_split_map[technique][run].get(e_dataset.id_map.get(e, ""), NOT_ASSIGNED)
+                            f_assi = f_name_split_map[technique][run].get(f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
+                            inter_split_map[technique][-1][(e, f)] = e_assi if e_assi == f_assi else NOT_ASSIGNED
+                        elif technique in e_name_split_map:
+                            inter_split_map[technique][-1][(e, f)] = e_name_split_map[technique][run].get(e_dataset.id_map.get(e, ""), NOT_ASSIGNED)
+                        elif technique in f_name_split_map:
+                            inter_split_map[technique][-1][(e, f)] = f_name_split_map[technique][run].get(f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
+                        else:
+                            raise ValueError()
+                    except:
+                        pass
 
     LOGGER.info("ILP finished and results stored.")
     LOGGER.info(f"Total runtime: {time.time() - start:.5f}s")
