@@ -98,7 +98,7 @@ def run_solver(
                         if dataset.stratification is None or len(dataset.classes) <= 1:
                             stratification = None
                         else:
-                            stratification = np.stack([dataset.strat2oh(name=n) for n in dataset.names])
+                            stratification = np.stack([dataset.stratification[n] for n in dataset.names])
 
                     solution = solve_i1(
                         entities=names,
@@ -134,14 +134,14 @@ def run_solver(
                     solution = solve_i2(
                         e_entities=e_dataset.names,
                         e_stratification=np.stack([
-                            e_dataset.strat2oh(name=n) for n in e_dataset.names
+                            e_dataset.stratification.get(n, np.zeros(len(dataset.classes))) for n in e_dataset.names
                         ]) if e_dataset.stratification is not None and len(e_dataset.classes) > 1 else None,
                         e_weights=[e_dataset.weights.get(c, 0) for c in e_dataset.names],
                         e_splits=split_ratios[TEC_I1 + MODE_E],
                         e_names=split_names[TEC_I1 + MODE_E],
                         f_entities=f_dataset.names,
                         f_stratification=np.stack([
-                            f_dataset.strat2oh(name=n) for n in f_dataset.names
+                            f_dataset.stratification.get(n, np.zeros(len(dataset.classes))) for n in f_dataset.names
                         ]) if f_dataset.stratification is not None and len(f_dataset.classes) > 1 else None,
                         f_weights=[f_dataset.weights.get(c, 0) for c in f_dataset.names],
                         f_splits=split_ratios[TEC_I1 + MODE_F],

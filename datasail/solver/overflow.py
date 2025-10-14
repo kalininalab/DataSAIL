@@ -52,19 +52,19 @@ def check_dataset(
 
 
 def check_points(dataset, split_ratios, split_names, i: int):
-    sorted_points = sorted(dataset.weights.items(), key=lambda x: x[1], reverse=True)
+    sorted_points = sorted([(name, dataset.weights[name]) for name in dataset.names], key=lambda x: x[1], reverse=True)
     total_weight = sum(x[1] for x in sorted_points[i:])
     if [x[1] / total_weight for x in sorted_points[i:len(split_ratios)]] <= sorted(split_ratios, reverse=True):
         return None
     LOGGER.info("")
     overflows = [(pn, s) if ps > s else (None, None) for (pn, ps), s in zip(sorted_points, sorted(split_ratios, reverse=True))]
     overflow_point = next((i, pn, s) for i, (pn, s) in enumerate(overflows) if pn is not None)
-    dataset, name_split_map, cluster_split_map, split_ratios, split_names = assign_cluster(dataset, overflow_point[1], split_ratios, split_names, overflow_point[0])
+    dataset, name_split_map, cluster_split_map, split_ratios, split_names = assign_cluster(dataset, overflow_point[1], split_ratios, split_names, overflow_point[0], clusters=False)
     return dataset, name_split_map, cluster_split_map, split_ratios, split_names
 
 
 def check_clusters(dataset, split_ratios, split_names, strategy: Literal["break", "assign"], linkage: Literal["average", "single", "complete"], i: int):
-    sorted_clusters = sorted(dataset.cluster_weights.items(), key=lambda x: x[1], reverse=True)
+    sorted_clusters = sorted([(name, dataset.cluster_weights[name]) for name in dataset.cluster_names], key=lambda x: x[1], reverse=True)
     total_weight = sum(x[1] for x in sorted_clusters[i:])
     if [x[1] / total_weight for x in sorted_clusters[i:len(split_ratios)]] <= sorted(split_ratios, reverse=True):
         return None
@@ -81,13 +81,13 @@ def check_clusters(dataset, split_ratios, split_names, strategy: Literal["break"
     return dataset, name_split_map, cluster_split_map, split_ratios, split_names
 
 
-def assign_cluster(dataset: DataSet, cluster_name: Any, split_ratios, split_names, split_index) -> DataSet:
-    cluster_index = dataset.cluster_names.index(cluster_name)
+def assign_cluster(dataset: DataSet, cluster_name: Any, split_ratios, split_names, split_index, clusters: bool = True) -> DataSet:
     split_name = split_names[split_index]
     split_ratios = split_ratios[:split_index] + split_ratios[split_index + 1:]
     split_names = split_names[:split_index] + split_names[split_index + 1:]
 
-    if dataset.cluster_map is not None:
+    if clusters:
+        cluster_index = dataset.cluster_names.index(cluster_name)
         name_split_map = {}
         cluster_split_map = {cluster_name: split_name}
         for n in dataset.names:
@@ -173,8 +173,8 @@ def break_cluster(dataset: DataSet, cluster_name: Any, split_ratio: float, linka
 
     if dataset.stratification is not None and len(dataset.classes) > 1:
         cluster_stratification = defaultdict(lambda: np.zeros(len(dataset.classes)))
-        for key, value in dataset.cluster_map.items():
-            cluster_stratification[value] += dataset.strat2oh(name=key)
+        for name in dataset.names:  # key, value in dataset.cluster_map.items():
+            cluster_stratification[dataset.cluster_map[name]] += dataset.stratification[name]
     else:
         cluster_stratification = None
     

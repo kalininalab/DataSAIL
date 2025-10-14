@@ -132,8 +132,6 @@ def solve(
         f"The problem has {sum([functools.reduce(operator.mul, v.shape, 1) for v in problem.variables()])} variables "
         f"and {sum([functools.reduce(operator.mul, c.shape, 1) for c in problem.constraints])} constraints.")
 
-    print(max_sec)
-
     if solver == SOLVER_CBC:
         kwargs = {
             "maximumSeconds": max_sec,

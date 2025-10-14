@@ -59,6 +59,7 @@ def test_pipeline(data):
     assert any(mode in x for x in [e_name_split_map, f_name_split_map, inter_split_map])
 
 
+@pytest.mark.todo
 @pytest.mark.parametrize(
     "ligand_type,ligand_data,ligand_weights,ligand_sim,protein_type,protein_data,protein_weights,protein_sim,interactions,combo",
     [

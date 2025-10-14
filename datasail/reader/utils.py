@@ -1,3 +1,4 @@
+import hashlib
 import pickle
 from argparse import Namespace
 from dataclasses import dataclass, fields
@@ -50,23 +51,14 @@ class DataSet:
         Returns:
             The cluster-insensitive hash-value of the instance.
         """
-        hash_val = 0
-        for field in filter(lambda f: "cluster" not in f.name, fields(DataSet)):
-            obj = getattr(self, field.name)
-            if obj is None:
-                hv = 0
-            elif isinstance(obj, dict):
-                hv = hash(tuple(obj.items()))
-            elif isinstance(obj, list):
-                hv = hash(tuple(obj))
-            elif isinstance(obj, np.ndarray):
-                hv = 0
-            elif isinstance(obj, Namespace):
-                hv = hash(tuple(obj.__dict__.items()))
-            else:
-                hv = hash(obj)
-            hash_val ^= hv
-        return hash_val
+        serialized = pickle.dumps(self, protocol=pickle.HIGHEST_PROTOCOL)
+        hasher = hashlib.sha256()
+
+        # Update the hash object with the serialized data.
+        hasher.update(serialized)
+
+        # Return the hexadecimal representation of the hash.
+        return int(hasher.hexdigest(), 16)
 
     def __eq__(self, other: Any) -> bool:
         """
@@ -308,6 +300,21 @@ def read_data(
     else:
         dataset.weights = {k: 1 for k in dataset.data.keys()}
 
+    # parse the similarity or distance measure
+    if sim is None and dist is None:
+        dataset.similarity, dataset.distance = get_default(dataset.type, dataset.format)
+        dataset.names = list(dataset.data.keys())
+    elif sim is not None and not (isinstance(sim, str) and sim.lower() in SIM_ALGOS):
+        dataset.names, dataset.similarity = read_matrix_input(sim)
+    elif dist is not None and not (isinstance(dist, str) and dist.lower() in DIST_ALGOS):
+        dataset.names, dataset.distance = read_matrix_input(dist)
+    else:
+        if sim is not None:
+            dataset.similarity = sim
+        else:
+            dataset.distance = dist
+        dataset.names = list(dataset.data.keys())
+
     # parse the stratification
     if isinstance(strats, Path) and strats.is_file():
         if strats.suffix[1:].lower() == "csv":
@@ -324,36 +331,56 @@ def read_data(
         dataset.stratification = dict(strats)
     else:
         dataset.stratification = {k: 0 for k in dataset.data.keys()}
+    
+    dataset.stratification = convert_stratification(dataset)
+    num_classes = len(next(iter(dataset.stratification.values())))
+    dataset.class_oh = np.eye(num_classes)
+    dataset.classes = {s: i for i, s in enumerate(range(num_classes))}
 
-    # .classes maps the individual classes to their index in one-hot encoding, important for non-numeric classes
-    tmp_classes = set()
-    for value in dataset.stratification.values():
-        if isinstance(value, set):
-            tmp_classes.update(value)
-        else:
-            tmp_classes.add(value)
-    dataset.classes = {s: i for i, s in enumerate(tmp_classes)}
-    dataset.class_oh = np.eye(len(dataset.classes))
-    dataset.num_clusters = num_clusters
-
-    # parse the similarity or distance measure
-    if sim is None and dist is None:
-        dataset.similarity, dataset.distance = get_default(dataset.type, dataset.format)
-        dataset.names = list(dataset.data.keys())
-    elif sim is not None and not (isinstance(sim, str) and sim.lower() in SIM_ALGOS):
-        dataset.names, dataset.similarity = read_matrix_input(sim)
-    elif dist is not None and not (isinstance(dist, str) and dist.lower() in DIST_ALGOS):
-        dataset.names, dataset.distance = read_matrix_input(dist)
-    else:
-        if sim is not None:
-            dataset.similarity = sim
-        else:
-            dataset.distance = dist
-        dataset.names = list(dataset.data.keys())
+    # # .classes maps the individual classes to their index in one-hot encoding, important for non-numeric classes
+    # tmp_classes = set()
+    # for value in dataset.stratification.values():
+    #     if isinstance(value, set):
+    #         tmp_classes.update(value)
+    #     else:
+    #         tmp_classes.add(value)
+    # dataset.classes = {s: i for i, s in enumerate(tmp_classes)}
+    # dataset.class_oh = np.eye(len(dataset.classes))
+    # dataset.num_clusters = num_clusters
 
     dataset.args = validate_user_args(dataset.type, dataset.format, sim, dist, tool_args)
 
     return dataset
+
+
+def convert_stratification(dataset: DataSet) -> dict[str, Any]:
+    if dataset.stratification is None:
+        stratification = {name: [0] for name in dataset.names}
+    else:
+        val = next(iter(dataset.stratification.values()))
+        if isinstance(val, set):
+            classes = list(sorted(set.union(*[set(x) for x in dataset.stratification.values()])))
+            ohe = np.eye(len(classes))
+            ohe_map = {c: ohe[i] for i, c in enumerate(classes)}
+            stratification = {name: np.sum(np.stack([ohe_map[n] for n in dataset.stratification[name]]), axis=0) for name in dataset.names}
+        elif not hasattr(val, "__getitem__") or isinstance(val, str):
+            classes = list(set(dataset.stratification.values()))
+            ohe = np.eye(len(classes))
+            ohe_map = {c: ohe[i] for i, c in enumerate(classes)}
+            stratification = {name: ohe_map[dataset.stratification[name]] for name in dataset.names}
+        else:
+            strat = pd.DataFrame(dataset.stratification).T
+            for col in strat.columns:
+                vals = strat[col].unique().size
+                if vals > 2:
+                    # convert to one-hot encoding
+                    ohe = pd.get_dummies(strat[col], prefix=col)
+                    strat = pd.concat([strat, ohe], axis=1)
+                    strat = strat.astype({c: int for c in ohe.columns}, errors="ignore")
+                if vals != 2:
+                    strat.drop(columns=col, inplace=True, errors="ignore")
+            stratification = strat.T.to_dict(orient="list")
+    return stratification
 
 
 def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Generator[Tuple[str, str], None, None]:
