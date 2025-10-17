@@ -1,6 +1,6 @@
 # DataSAIL: Data Splitting Against Information Leaking 
 
-![testing](https://github.com/kalininalab/glyles/actions/workflows/test.yaml/badge.svg)
+![testing](https://github.com/kalininalab/datasail/actions/workflows/test.yaml/badge.svg)
 [![docs-image](https://readthedocs.org/projects/glyles/badge/?version=latest)](https://datasail.readthedocs.io/en/latest/index.html)
 [![codecov](https://codecov.io/gh/kalininalab/DataSAIL/branch/main/graph/badge.svg)](https://codecov.io/gh/kalininalab/DataSAIL)
 [![anaconda](https://anaconda.org/kalininalab/datasail/badges/version.svg)](https://anaconda.org/kalininalab/datasail)
