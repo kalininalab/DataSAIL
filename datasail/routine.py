@@ -137,6 +137,8 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
                                 (e_cluster_split_map, pre_e_cluster_split_map),
                                 (f_cluster_split_map, pre_f_cluster_split_map)]:    
             for technique in kwargs[KW_TECHNIQUES]:
+                if technique == "R":
+                    continue
                 if technique[1] == DIM_1:
                     if technique not in pre_map:
                         continue
