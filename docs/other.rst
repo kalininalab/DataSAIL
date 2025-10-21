@@ -24,7 +24,10 @@ MoleculeNet
 This benchmark suite provides multiple datasets for molecular property prediction with different properties to predict. Each dataset 
 contains a predefined split, some of which are scaffold-based or time-based, but most are random. Here, we compare these default split to similarity-based DataSAIL splits.
 
-*comparison coming soon*
+.. raw:: html
+    :file: tables/moleculenet.html
+
+|
 
 Leak Proof PDBBind (LP-PDBBind)
 ----------------------------------
@@ -41,18 +44,6 @@ while ligand similarity was measured as the Dice similarity between Morgan finge
     :file: tables/lppdbbind.html
 
 |
-
-Gold Standard Human Proteome Dataset for sequence-based PPI prediction
-----------------------------------------------------------------------
-| Bernett et al. (2023)
-| DOI: `10.1093/bib/bbae076 <https://doi.org/10.1093/bib/bbae076>`_
-
-The authors first show that all sequence-based protein-protein interaction (PPI) predictors they evaluated perform no better than random when sequence similarity 
-between splits is removed. They further develop a PPI dataset based on the human proteome where they separate the proteins into three blocks 
-using KaHIP over SIMAP2 bitscores. Then, the PPIs are assigned to the blocks if and only if the interacting proteins are both in the corresponding block. In 
-a last step, CDHIT is used to remove redundancy (max 40% sequence similarity) within each block.
-
-*comparison coming soon*
 
 Protein Ligand INteraction Dataset and Evaluation Resource (PLINDER)
 --------------------------------------------------------------------
@@ -76,4 +67,28 @@ Protein INteraction Dataset and Evaluation Resource (PINDER)
 | Kovtun et al. (2024)
 | DOI: `10.1101/2024.07.17.603980 <https://doi.org/10.1101/2024.07.17.603980>`_
 
-*coming soon*
+The Protein INteraction Dataset and Evaluation Resource (PINDER) contains curated and highly annotated protein-protein interactions obtained from the 
+RCSB NextGen database. After data cleaning and preprocessing, PINDER provides a data leakage removed split. To measure the leakage between two systems 
+(interacting protein-protein pairs), the authors employed FoldSeek and MMseqs. Here, we compare DataSAIL to version 1 of PINDER, released in November 2023.
+
+Other than the LP-PDBBind dataset, we can define a similarity metric between the two dimensions interacting in this two-dimensional dataset. 
+Therefore, we did not directly use DataSAILs S2 splitting module but rather the S1 with all protein sequences from both dimensions, weighted with the number 
+of interactions each protein participates in. From the resulting assignment, we assigned an interaction to a split if and only if both proteins are assigned 
+to that same split.
+
+.. raw:: html
+    :file: tables/pinder.html
+
+|
+
+Gold Standard Human Proteome Dataset for sequence-based PPI prediction
+----------------------------------------------------------------------
+| Bernett et al. (2023)
+| DOI: `10.1093/bib/bbae076 <https://doi.org/10.1093/bib/bbae076>`_
+
+The authors first show that all sequence-based protein-protein interaction (PPI) predictors they evaluated perform no better than random when sequence similarity 
+between splits is removed. They further develop a PPI dataset based on the human proteome where they separate the proteins into three blocks 
+using KaHIP over SIMAP2 bitscores. Then, the PPIs are assigned to the blocks if and only if the interacting proteins are both in the corresponding block. In 
+a last step, CDHIT is used to remove redundancy (max 40% sequence similarity) within each block.
+
+*comparison coming soon*

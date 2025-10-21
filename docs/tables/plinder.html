@@ -62,6 +62,11 @@
             border-top-left-radius: 0;
         }
         
+        th:nth-child(3) {
+            border-top-right-radius: 0;
+            text-align: center;
+        }
+        
         th:last-child {
             border-top-right-radius: 0;
             text-align: center;
@@ -71,6 +76,13 @@
             padding: 16px 20px;
             border-bottom: 1px solid #e1e5e9;
             transition: background-color 0.2s ease;
+        }
+        
+        td:nth-child(3) {
+            text-align: center;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            color: #2d3748;
         }
         
         td:last-child {
@@ -88,7 +100,7 @@
             border-bottom: none;
         }
         
-        /* Style for DataSAIL rows */
+        /* Style for DataSAIL rows 
         tr:nth-child(4) {
             background-color: #edf2f7;
         }
@@ -96,6 +108,13 @@
             background-color: #edf2f7;
         }
         tr:nth-child(6) {
+            background-color: #edf2f7;
+        }*/
+        .datasail-row {
+            background-color: #edf2f7;
+        }
+
+        .datasail-cell {
             background-color: #edf2f7;
         }
         

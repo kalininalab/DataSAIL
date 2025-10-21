@@ -12,6 +12,10 @@
 - [ ] Include MASH for amino acid sequences
 - [ ] Custom clustering methods ([Issue #25](https://github.com/kalininalab/DataSAIL/issues/25))
 
+## v1.2.2 (2025-10-14)
+
+- Bug fixed in the evaluation module.
+
 ## v1.2.1 (2025-08-19)
 
 - Improved stratification and testing thereof to better handle mutliclass and multilabel-multiclass stratification
