@@ -10,7 +10,7 @@ from datasail.cluster.clustering import cluster
 from datasail.reader.read import read_data
 from datasail.reader.utils import DataSet
 from datasail.report import report
-from datasail.settings import LOGGER, KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
+from datasail.settings import DIM_1, LOGGER, KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
     KW_MAX_SEC, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL, KW_DELTA, \
     KW_E_CLUSTERS, KW_F_CLUSTERS, KW_CC, CDHIT, INSTALLED, FOLDSEEK, TMALIGN, CDHIT_EST, DIAMOND, MMSEQS, MASH, TEC_R, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MODE_E, MODE_F, KW_LINKAGE, KW_OVERFLOW
 from datasail.solver.overflow import check_dataset
@@ -27,6 +27,15 @@ def list_cluster_algos():
                        (MASH, "MASH"), (FOLDSEEK, "FoldSeek"), (TMALIGN, "TMalign")]:
         if INSTALLED[algo]:
             print("\t", name, sep="")
+
+
+def tech2oneD(tech: str) -> tuple[str, str]:
+    if tech == TEC_I2:
+        return TEC_I1 + MODE_E, TEC_I1 + MODE_F
+    elif tech == TEC_C2:
+        return TEC_C1 + MODE_E, TEC_C1 + MODE_F
+    else:
+        raise ValueError(f"Technique {tech} is not a two-dimensional technique.")
 
 
 def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
@@ -123,18 +132,28 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
     )
     # integrate pre_maps into the split maps
     for run in range(kwargs[KW_RUNS]):
-        for technique in kwargs[KW_TECHNIQUES]:
-            for map_, pre_map in [(e_name_split_map, pre_e_name_split_map),
-                                  (f_name_split_map, pre_f_name_split_map),
-                                  (e_cluster_split_map, pre_e_cluster_split_map),
-                                  (f_cluster_split_map, pre_f_cluster_split_map)]:
-                if technique not in pre_map:
-                    continue
-                if technique not in map_:
-                    map_[technique] = []
-                if run >= len(map_[technique]):
-                    map_[technique].append({})
-                map_[technique][run].update(pre_map[technique])
+        for map_, pre_map in [(e_name_split_map, pre_e_name_split_map),
+                                (f_name_split_map, pre_f_name_split_map),
+                                (e_cluster_split_map, pre_e_cluster_split_map),
+                                (f_cluster_split_map, pre_f_cluster_split_map)]:    
+            for technique in kwargs[KW_TECHNIQUES]:
+                if technique[1] == DIM_1:
+                    if technique not in pre_map:
+                        continue
+                    if technique not in map_:
+                        map_[technique] = []
+                    if run >= len(map_[technique]):
+                        map_[technique].append({})
+                    map_[technique][run].update(pre_map[technique])
+                else:
+                    for one_d_tech in tech2oneD(technique):
+                        if one_d_tech not in pre_map:
+                            continue
+                        if technique not in map_:
+                            map_[technique] = []
+                        if run >= len(map_[technique]):
+                            map_[technique].append({})
+                        map_[technique][run].update(pre_map[one_d_tech])
 
     LOGGER.info("Store results")
 
