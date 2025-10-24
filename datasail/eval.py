@@ -55,16 +55,18 @@ def eval_single_split(datatype, data: Optional[Union[dict[str, Any], str, Path]]
     
     dataset = read_data_type(datatype)(data=data, weights=weights, sim=similarity, dist=distance, num_clusters=np.inf)
     dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average"})
-    in_split_mask = np.zeros((len(dataset.names), len(dataset.names)))
+    in_split_mask = np.zeros((len(dataset.cluster_names), len(dataset.cluster_names)))
     for split in set(split_assignment.values()):
-        split_array = np.array([split_assignment[name] == split for name in dataset.names], dtype=int).reshape(-1, 1)
+        if split == "not assigned":
+            continue
+        split_array = np.array([split_assignment[name] == split for name in dataset.cluster_names], dtype=int).reshape(-1, 1)
         in_split_mask += split_array @ split_array.T
     
     metric, mode = dataset.cluster_similarity, "sim"
     if metric is None:
         metric, mode = dataset.cluster_distance, "dist"
     
-    weight_array = np.array([dataset.weights[name] for name in dataset.names]).reshape(-1, 1)
+    weight_array = np.array([dataset.cluster_weights[name] for name in dataset.cluster_names]).reshape(-1, 1)
     weight_matrix = weight_array @ weight_array.T
     metric *= weight_matrix
 
@@ -72,4 +74,4 @@ def eval_single_split(datatype, data: Optional[Union[dict[str, Any], str, Path]]
     leakage = np.sum(in_split_mask * metric)
     if mode == "dist":
         leakage = metric_total - leakage
-    return leakage / metric_total, leakage, metric_total
+    return 1 - (leakage / metric_total), leakage, metric_total

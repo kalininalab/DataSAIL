@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "datasail"
-version = "1.2.1"
+version = "1.2.3"
 repository = "https://github.com/kalininalab/DataSAIL"
 readme = "README.md"
 description = "A package to compute hard out-of-distribution data splits for machine learning, challenging generalization of models."
@@ -29,6 +29,7 @@ h5py = "*"
 pyarrow = "*"
 tqdm = "*"
 grakel = "<0.1.10"
+importlib_resources = "*"
 
 [tool.poetry.dev-dependencies]
 setuptools = "*"

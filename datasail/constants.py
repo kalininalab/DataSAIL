@@ -8,7 +8,7 @@ import platform
 
 import cvxpy
 import numpy as np
-import pkg_resources
+import importlib_resources
 
 
 def get_default(data_type: str, data_format: str) -> tuple[Optional[str], Optional[str]]:
@@ -143,17 +143,17 @@ MAX_CLUSTERS = 50
 
 # YAML-files storing the arguments to the tools
 YAML_FILE_NAMES = {
-    MMSEQS: pkg_resources.resource_filename("datasail", "args/mmseqs2.yaml"),
-    MMSEQS2: pkg_resources.resource_filename("datasail", "args/mmseqs2.yaml"),
-    MMSEQSPP: pkg_resources.resource_filename("datasail", "args/mmseqspp.yaml"),
-    CDHIT: pkg_resources.resource_filename("datasail", "args/cdhit.yaml"),
-    CDHIT_EST: pkg_resources.resource_filename("datasail", "args/cdhit_est.yaml"),
-    DIAMOND: pkg_resources.resource_filename("datasail", "args/diamond.yaml"),
-    FOLDSEEK: pkg_resources.resource_filename("datasail", "args/foldseek.yaml"),
-    ECFP: pkg_resources.resource_filename("datasail", "args/.yaml"),
-    MASH: pkg_resources.resource_filename("datasail", "args/mash.yaml"),
-    MASH_SKETCH: pkg_resources.resource_filename("datasail", "args/mash_sketch.yaml"),
-    MASH_DIST: pkg_resources.resource_filename("datasail", "args/mash_dist.yaml"),
+    MMSEQS: importlib_resources.files("datasail") / "args/mmseqs2.yaml",
+    MMSEQS2: importlib_resources.files("datasail") / "args/mmseqs2.yaml",
+    MMSEQSPP: importlib_resources.files("datasail") / "args/mmseqspp.yaml",
+    CDHIT: importlib_resources.files("datasail") / "args/cdhit.yaml",
+    CDHIT_EST: importlib_resources.files("datasail") / "args/cdhit_est.yaml",
+    DIAMOND: importlib_resources.files("datasail") / "args/diamond.yaml",
+    FOLDSEEK: importlib_resources.files("datasail") / "args/foldseek.yaml",
+    ECFP: importlib_resources.files("datasail") / "args/.yaml",
+    MASH: importlib_resources.files("datasail") / "args/mash.yaml",
+    MASH_SKETCH: importlib_resources.files("datasail") / "args/mash_sketch.yaml",
+    MASH_DIST: importlib_resources.files("datasail") / "args/mash_dist.yaml",
 }
 
 KW_CACHE = "cache"

@@ -15,10 +15,19 @@ from datasail.dataset import DataSet
 from datasail.cluster.clustering import cluster
 from datasail.solver.solve import run_solver
 from datasail.report import report
-from datasail.constants import G_TYPE, KW_ARGS, KW_CC, KW_CLUSTERS, KW_DATA, KW_DIST, KW_INTER, KW_LINKAGE, \
+from datasail.constants import DIM_1, G_TYPE, KW_ARGS, KW_CC, KW_CLUSTERS, KW_DATA, KW_DIST, KW_INTER, KW_LINKAGE, \
     KW_OVERFLOW, KW_SIM, KW_STRAT, KW_TYPE, KW_WEIGHTS, M_TYPE, MODE_E, MODE_F, O_TYPE, P_TYPE, KW_DATA, LOGGER, \
     KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, KW_MAX_SEC, KW_SOLVER, KW_LOGDIR, \
     NOT_ASSIGNED, KW_OUTDIR, DIM_2, SRC_CL, KW_DELTA, TEC_C1, TEC_C2, TEC_I1, TEC_I2
+
+
+def tech2oneD(tech: str) -> tuple[str, str]:
+    if tech == TEC_I2:
+        return TEC_I1 + MODE_E, TEC_I1 + MODE_F
+    elif tech == TEC_C2:
+        return TEC_C1 + MODE_E, TEC_C1 + MODE_F
+    else:
+        raise ValueError(f"Technique {tech} is not a two-dimensional technique.")
 
 
 def datasail_main(**kwargs) -> Optional[tuple[dict, dict, dict]]:
@@ -114,18 +123,30 @@ def datasail_main(**kwargs) -> Optional[tuple[dict, dict, dict]]:
     )
     # integrate pre_maps into the split maps
     for run in range(kwargs[KW_RUNS]):
-        for technique in kwargs[KW_TECHNIQUES]:
-            for map_, pre_map in [(e_name_split_map, pre_e_name_split_map),
-                                  (f_name_split_map, pre_f_name_split_map),
-                                  (e_cluster_split_map, pre_e_cluster_split_map),
-                                  (f_cluster_split_map, pre_f_cluster_split_map)]:
-                if technique not in pre_map:
+        for map_, pre_map in [(e_name_split_map, pre_e_name_split_map),
+                                (f_name_split_map, pre_f_name_split_map),
+                                (e_cluster_split_map, pre_e_cluster_split_map),
+                                (f_cluster_split_map, pre_f_cluster_split_map)]:    
+            for technique in kwargs[KW_TECHNIQUES]:
+                if technique == "R":
                     continue
-                if technique not in map_:
-                    map_[technique] = []
-                if run >= len(map_[technique]):
-                    map_[technique].append({})
-                map_[technique][run].update(pre_map[technique])
+                if technique[1] == DIM_1:
+                    if technique not in pre_map:
+                        continue
+                    if technique not in map_:
+                        map_[technique] = []
+                    if run >= len(map_[technique]):
+                        map_[technique].append({})
+                    map_[technique][run].update(pre_map[technique])
+                else:
+                    for one_d_tech in tech2oneD(technique):
+                        if one_d_tech not in pre_map:
+                            continue
+                        if technique not in map_:
+                            map_[technique] = []
+                        if run >= len(map_[technique]):
+                            map_[technique].append({})
+                        map_[technique][run].update(pre_map[one_d_tech])
 
     LOGGER.info("Store results")
 
@@ -138,16 +159,19 @@ def datasail_main(**kwargs) -> Optional[tuple[dict, dict, dict]]:
             for run in range(kwargs[KW_RUNS]):
                 inter_split_map[technique].append({})
                 for e, f in inter:
-                    if technique.endswith(DIM_2):
-                        e_assi = e_name_split_map[technique][run].get(e_dataset.id_map.get(e, ""), NOT_ASSIGNED)
-                        f_assi = f_name_split_map[technique][run].get(f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
-                        inter_split_map[technique][-1][(e, f)] = e_assi if e_assi == f_assi else NOT_ASSIGNED
-                    elif technique in e_name_split_map:
-                        inter_split_map[technique][-1][(e, f)] = e_name_split_map[technique][run].get(e_dataset.id_map.get(e, ""), NOT_ASSIGNED)
-                    elif technique in f_name_split_map:
-                        inter_split_map[technique][-1][(e, f)] = f_name_split_map[technique][run].get(f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
-                    else:
-                        raise ValueError()
+                    try:
+                        if technique.endswith(DIM_2):
+                            e_assi = e_name_split_map[technique][run].get(e_dataset.id_map.get(e, ""), NOT_ASSIGNED)
+                            f_assi = f_name_split_map[technique][run].get(f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
+                            inter_split_map[technique][-1][(e, f)] = e_assi if e_assi == f_assi else NOT_ASSIGNED
+                        elif technique in e_name_split_map:
+                            inter_split_map[technique][-1][(e, f)] = e_name_split_map[technique][run].get(e_dataset.id_map.get(e, ""), NOT_ASSIGNED)
+                        elif technique in f_name_split_map:
+                            inter_split_map[technique][-1][(e, f)] = f_name_split_map[technique][run].get(f_dataset.id_map.get(f, ""), NOT_ASSIGNED)
+                        else:
+                            raise ValueError()
+                    except:
+                        pass
 
     LOGGER.info("ILP finished and results stored.")
     LOGGER.info(f"Total runtime: {time.time() - start:.5f}s")
