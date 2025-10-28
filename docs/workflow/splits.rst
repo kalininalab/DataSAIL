@@ -53,7 +53,7 @@ Random Split (R)
 This is the most simple split and the most widely used one. Here, datapoints are randomly assigned to splits.
 Therefore, the amount of leaked data is the biggest here.
 
-.. image:: ../imgs/pli_r.png
+.. image:: ../imgs/PLI_r.png
     :width: 600
 
 Identity-based One-dimensional split (I1)
@@ -63,7 +63,7 @@ The easiest step in reducing information leaks is to make sure that all samples 
 end up in the same split. Therefore, a model cannot memorize this ID between training, validation, and test. In this
 case DataSAIL only optimizes the sizes of the splits towards the request by the user.
 
-.. image:: ../imgs/pli_i1.png
+.. image:: ../imgs/PLI_i1.png
     :width: 600
 
 Identity-based Two-dimensional split (I2)
@@ -74,7 +74,7 @@ from wither either dimension, there are samples having their IDs in different sp
 to any set and therefore are lost. In this scenario, DataSAIL reduces the number of lost samples while keeping the
 sizes of the splits close to what the user requested.
 
-.. image:: ../imgs/pli_i2.png
+.. image:: ../imgs/PLI_i2.png
     :width: 600
 
 Similarity-based One-dimensional split (S1)
@@ -85,7 +85,7 @@ other. By making sure all datapoints of similar IDs remain in the same split, th
 IDs and extrapolate them between splits. Here, DataSAIL optimizes for the overall information leak as well as for the
 size of the splits to be similar to what has been requested.
 
-.. image:: ../imgs/pli_c1.png
+.. image:: ../imgs/PLI_c1.png
     :width: 600
 
 Similarity-based Two-Dimensional split (S2)
@@ -94,5 +94,5 @@ Similarity-based Two-Dimensional split (S2)
 Lastly, this cluster-based splitting can be enforced on both dimensions of a two-dimensional dataset to reduce
 information leaks further more. Here, DataSAIL extends the objective from above with a penalty for lost samples.
 
-.. image:: ../imgs/pli_c2.png
+.. image:: ../imgs/PLI_c2.png
     :width: 600
