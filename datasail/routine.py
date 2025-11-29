@@ -10,7 +10,7 @@ from datasail.cluster.clustering import cluster
 from datasail.reader.read import read_data
 from datasail.reader.utils import DataSet
 from datasail.report import report
-from datasail.settings import DIM_1, LOGGER, KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
+from datasail.settings import DIM_1, KW_CLI, LOGGER, KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
     KW_MAX_SEC, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL, KW_DELTA, \
     KW_E_CLUSTERS, KW_F_CLUSTERS, KW_CC, CDHIT, INSTALLED, FOLDSEEK, TMALIGN, CDHIT_EST, DIAMOND, MMSEQS, MASH, TEC_R, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MODE_E, MODE_F, KW_LINKAGE, KW_OVERFLOW
 from datasail.solver.overflow import check_dataset
@@ -199,7 +199,7 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
             output_dir=kwargs[KW_OUTDIR],
             split_names=kwargs[KW_NAMES],
         )
-    else:
+    if not kwargs[KW_CLI]:
         full_e_name_split_map = fill_split_maps(e_dataset, e_name_split_map)
         full_f_name_split_map = fill_split_maps(f_dataset, f_name_split_map)
         return full_e_name_split_map, full_f_name_split_map, inter_split_map

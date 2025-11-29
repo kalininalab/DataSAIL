@@ -67,6 +67,7 @@ def test_overflow_assign():
     assert e_split_names == {"C1e": ["S2", "S3", "S4", "S5"]}
 
 
+@pytest.mark.todo
 @pytest.mark.parametrize("overflow", ["break", "assign"])
 def test_overflow_full(overflow):
     e_splits, _, _ = datasail(

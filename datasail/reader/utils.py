@@ -28,7 +28,7 @@ class DataSet:
     names: Optional[List[str]] = None
     id_map: Optional[Dict[str, str]] = None
     cluster_names: Optional[List[str]] = None
-    num_clusters: int = 50
+    num_clusters: Optional[int] = 50
     data: Optional[Dict[str, Union[str, np.ndarray]]] = None
     cluster_map: Optional[Dict[str, str]] = None
     location: Optional[Path] = None
@@ -259,7 +259,7 @@ def read_data(
         dist: MATRIX_INPUT,
         inter: Optional[List[Tuple[str, str]]],
         index: Optional[int],
-        num_clusters: int,
+        num_clusters: Optional[int],
         tool_args: str,
         dataset: DataSet,
 ) -> DataSet:
@@ -346,7 +346,7 @@ def read_data(
     #         tmp_classes.add(value)
     # dataset.classes = {s: i for i, s in enumerate(tmp_classes)}
     # dataset.class_oh = np.eye(len(dataset.classes))
-    # dataset.num_clusters = num_clusters
+    dataset.num_clusters = num_clusters
 
     dataset.args = validate_user_args(dataset.type, dataset.format, sim, dist, tool_args)
 

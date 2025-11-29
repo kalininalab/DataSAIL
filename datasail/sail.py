@@ -159,11 +159,16 @@ def validate_args(**kwargs) -> Dict[str, object]:
     return kwargs
 
 
+def to_path(x):
+    return Path(x) if isinstance(x, str) and x not in ALGOS else x
+
+
 def datasail(
         techniques: Union[str, List[str], Callable[..., List[str]], Generator[str, None, None]] = None,
         inter: Optional[
             Union[str, Path, List[Tuple[str, str]], Callable[..., List[str]], Generator[str, None, None]]
         ] = None,
+        output: Optional[Union[str, Path]] = None,
         max_sec: int = 100,
         verbose: str = "W",
         splits: List[float] = None,
@@ -200,6 +205,7 @@ def datasail(
     Args:
         techniques: List of techniques to split based on
         inter: Filepath to a TSV file storing interactions of the e-entities and f-entities.
+        output: Output directory to store the results in.
         max_sec: Maximal number of seconds to take for optimizing a found solution.
         verbose: Verbosity level for logging.
         splits: List of splits, have to add up to one, otherwise scaled accordingly.
@@ -233,11 +239,8 @@ def datasail(
         Three dictionaries mapping techniques to another dictionary. The inner dictionary maps input id to their splits.
     """
 
-    def to_path(x):
-        return Path(x) if isinstance(x, str) and x not in ALGOS else x
-
     kwargs = validate_args(
-        output=None, techniques=techniques, inter=to_path(inter), max_sec=max_sec, verbosity=verbose,
+        output=to_path(output), techniques=techniques, inter=to_path(inter), max_sec=max_sec, verbosity=verbose,
         splits=splits, names=names, delta=delta, epsilon=epsilon, runs=runs, solver=solver, cache=cache,
         cache_dir=to_path(cache_dir), linkage=linkage, e_type=e_type, e_data=to_path(e_data),
         e_weights=to_path(e_weights), e_strat=to_path(e_strat), e_sim=to_path(e_sim), e_dist=to_path(e_dist),
@@ -257,5 +260,9 @@ def sail(args=None, **kwargs) -> None:
         kwargs = parse_datasail_args(args or sys.argv[1:])
     kwargs = {key: (kwargs[key] if key in kwargs else val) for key, val in DEFAULT_KWARGS.items()}
     kwargs[KW_CLI] = True
+    for kwarg in [KW_OUTDIR, KW_INTER, KW_CACHE_DIR, KW_E_DATA, KW_E_WEIGHTS, KW_E_STRAT,
+                  KW_E_SIM, KW_E_DIST, KW_F_DATA, KW_F_WEIGHTS, KW_F_STRAT, KW_F_SIM, KW_F_DIST]:
+        if kwarg in kwargs:
+            kwargs[kwarg] = to_path(kwargs[kwarg])
     kwargs = validate_args(**kwargs)
     datasail_main(**kwargs)

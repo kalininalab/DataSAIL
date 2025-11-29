@@ -123,7 +123,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     split.add_argument(
         "-d",
         "--delta",
-        default=0.3,
+        default=0.05,
         type=float,
         dest=KW_DELTA,
         help="Relative error for stratification. This is only used if stratification is provided."
@@ -131,7 +131,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     split.add_argument(
         "-e",
         "--epsilon",
-        default=0.3,
+        default=0.05,
         type=float,
         dest=KW_EPSILON,
         help="Relative error how much the limits of the splits can be exceeded.",

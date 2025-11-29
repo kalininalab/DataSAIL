@@ -1,16 +1,37 @@
-# Change Log
+# Change Log and Look-Ahead
 
 ## [Planned - Long-term project ideas]
 
 - [ ] Multi-threading support for pre-solving (Snakemake as backbone)
 - [ ] Make (more) deterministic ([Issue #6](https://github.com/kalininalab/DataSAIL/issues/6))
 - [ ] Reports of results with plots and tables a PDF and or HTML
-- [ ] Generalization to R-dimensional datasets (see [paper](https://doi.org/10.1101/2023.11.15.566305))
-- [ ] Input from config files
 - [ ] Replace GraKel with something "modern" and fully "conda-installable" to make DataSAIL fully conda-installable
 - [ ] Include [MashMap3](https://github.com/marbl/MashMap)
 - [ ] Include MASH for amino acid sequences
+
+## Roadmap to DataSAIL v2.0
+
+### Most have features for v2.0
+
+- [ ] Input from config files
+- [ ] Generalization to R-dimensional datasets (see [paper](https://doi.org/10.1101/2023.11.15.566305))
+- [ ] Support for large molecular datasets, based on sampling and heuristical assignments
+- [ ] UMAP (or tSNE?)-based splitting
+- [ ] MCES-based splitting
+
+### Nice to have features for v2.0
+
 - [ ] Custom clustering methods ([Issue #25](https://github.com/kalininalab/DataSAIL/issues/25))
+- [ ] Support for multi-modal data, i.e., combination of different metrics (e.g., sequence similarity and structural similarity)
+- [ ] "Stratification" based on continuous labels (e.g., regression tasks)
+
+## Change Log
+
+## v1.2.4 (2025-11-??)
+
+- New ``output`` parameter for Python API to specify output directory and save cluster assignments and splits there.
+- Default values of ``epsilon`` and ``delta`` in CLI and API aligned to `0.05`.
+- Two bugs in parameter handling fixed.
 
 ## v1.2.3 (2025-10-21)
 
