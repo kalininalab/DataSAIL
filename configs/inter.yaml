@@ -6,15 +6,16 @@ delta: 0.1
 epsilon: 0.1
 runs: 1
 solver: SCIP
-inter: tests/data/inter.tsv
+inter: tests/data/pipeline/inter.tsv
 techniques: [I1, I2, S1, S2, I1-2, S1-2]
 output: results
+max_sec: 100
 data:
   - type: M
-    data: tests/data/drugs.tsv
-    weights: tests/data/drugs_weights.tsv
+    data: tests/data/pipeline/drugs.tsv
+    weights: tests/data/pipeline/drug_weights.tsv
     sim: ECFP
   - type: P
-    data: tests/data/seqs.fasta
-    weights: tests/data/prot_weights.tsv
+    data: tests/data/pipeline/seqs.fasta
+    weights: tests/data/pipeline/prot_weights.tsv
     sim: mmseqspp

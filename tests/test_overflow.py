@@ -4,7 +4,7 @@ import pytest
 from datasail.sail import datasail
 from datasail.reader.read_proteins import read_protein_data
 from datasail.cluster.clustering import cluster
-from datasail.settings import KW_THREADS, KW_LOGDIR, KW_LINKAGE
+from datasail.constants import KW_THREADS, KW_LOGDIR, KW_LINKAGE
 from datasail.solver.overflow import check_dataset
 
 

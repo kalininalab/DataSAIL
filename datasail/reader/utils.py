@@ -1,7 +1,7 @@
 import hashlib
 import pickle
 from pathlib import Path
-from typing import Generator, Optional, Union, Any, Callable, Iterable
+from typing import Generator, Literal, Optional, Union, Any, Callable, Iterable
 from collections.abc import Iterable
 
 import h5py
@@ -11,7 +11,77 @@ from rdkit import Chem
 
 from datasail.dataset import DataSet
 from datasail.validation.validate import validate_user_args
-from datasail.constants import get_default, DATA_INPUT, MATRIX_INPUT, SIM_ALGOS, DIST_ALGOS, FASTA_FORMATS
+from datasail.constants import SRC_CL, SRC_ID, TEC_R, get_default, DATA_INPUT, MATRIX_INPUT, SIM_ALGOS, DIST_ALGOS, FASTA_FORMATS
+
+
+class DimTechnique:
+    def __init__(self, clustering: bool, dim: int):
+        self.clustering = clustering
+        self.dim = dim
+        
+    def __str__(self) -> str:
+        return f"{SRC_CL if self.clustering else SRC_ID}{self.dim}"
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class Technique:
+    def __init__(self, dims: list[DimTechnique] | Literal["R"]):
+        if dims == TEC_R:
+            self.dims = [DimTechnique(False, -1)]
+        else:
+            self.dims = dims
+    
+    def is_random(self) -> bool:
+        return self.dims[0].dim == -1
+    
+    def is_oned(self) -> bool:
+        return len(self.dims) == 1 and self.dims[0].dim != -1
+    
+    def is_clustered(self) -> bool:
+        return any(d.clustering for d in self.dims)
+
+    def __len__(self) -> int:
+        return len(self.dims)
+
+    def __getitem__(self, index: int) -> DimTechnique:
+        return self.dims[index]
+    
+    def __str__(self) -> str:
+        if self.is_random():
+            return TEC_R
+        return "-".join([str(d) for d in self.dims])
+    
+    def __repr__(self) -> str:
+        return self.__str__()
+    
+    def __hash__(self) -> int:
+        return self.__str__().__hash__()
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Technique):
+            return False
+        return str(self) == str(other)
+    
+    @staticmethod
+    def read_techniques(techniques: list[str]) -> list["Technique"]:
+        output = []
+        for request in techniques:
+            if request == TEC_R:
+                output.append(Technique(TEC_R))
+                continue
+            global_cluster = request[0] == SRC_CL
+            tech_list = []
+            for tech in request.split("-"):
+                if tech[0].isdigit():
+                    tech_list.append(DimTechnique(global_cluster, int(tech)))
+                    continue
+                if tech[0] not in {SRC_CL, SRC_ID}:
+                    raise ValueError(f"Unknown clustering specifier {tech[0]} in technique {tech}.")
+                tech_list.append(DimTechnique(tech[0] == SRC_CL, int(tech[1:])))
+            output.append(Technique(tech_list))
+        return output
 
 
 def read_data(
@@ -229,7 +299,7 @@ def read_matrix_input(in_data: MATRIX_INPUT) -> tuple[list[str], Union[np.ndarra
     return names, similarity
 
 
-def read_csv(filepath: Path, sep: str = ",", num_positions: int = 1) -> Generator[tuple, None, None]:
+def read_csv(filepath: Path, sep: str = ",", num_positions: int = 2) -> Generator[tuple, None, None]:
     """
     Read in a CSV file as pairs of data.
 

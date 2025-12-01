@@ -27,7 +27,7 @@ def run_sail(
         e_data=e_data, e_strat=e_strat, e_weights=e_weights, e_sim=e_sim, e_dist=e_dist, e_args=e_args,
         e_clusters=e_clusters, f_type=f_type, f_data=f_data, f_strat=f_strat, f_weights=f_weights, f_sim=f_sim,
         f_dist=f_dist, f_args=f_args, f_clusters=f_clusters, cache=cache, cache_dir=cache_dir, solver=solver,
-        threads=threads,  overflow=overflow,
+        threads=threads, overflow=overflow, list_cluster=False, cc=False, config=None,
     )
 
 

@@ -6,24 +6,16 @@ import cvxpy
 import numpy as np
 from scipy.optimize import fsolve
 
-from datasail.solver.utils import solve, compute_limits, stratification_constraints
+from datasail.dataset import DataSet
+from datasail.reader.utils import DimTechnique
+from datasail.solver.utils import solve, compute_limits, stratification_constraints, collect_results_2d2
 
 
-def solve_c2(
-        e_clusters: list[Union[str, int]],
-        e_s_matrix: Optional[np.ndarray],
-        e_similarities: Optional[np.ndarray],
-        e_distances: Optional[np.ndarray],
-        e_weights: Optional[np.ndarray],
-        e_splits: list[float],
-        e_names: list[str],
-        f_clusters: list[Union[str, int]],
-        f_s_matrix: Optional[np.ndarray],
-        f_similarities: Optional[np.ndarray],
-        f_distances: Optional[np.ndarray],
-        f_weights: Optional[np.ndarray],
-        f_splits: list[float],
-        f_names: list[str],
+def solve_multi_d(
+        dim_techs: list[DimTechnique],
+        datasets: list[DataSet],
+        splits: list[list[float]],
+        names: list[list[str]],
         delta: float,
         epsilon: float,
         max_sec: int,
@@ -59,13 +51,8 @@ def solve_c2(
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
         dataset
     """
-    e_splits = convert(e_splits)
-    f_splits = convert(f_splits)
-    min_lim_e = compute_limits(epsilon, sum(e_weights), e_splits)
-    min_lim_f = compute_limits(epsilon, sum(f_weights), f_splits)
-
-    x_e = cvxpy.Variable((len(e_splits), len(e_clusters)), boolean=True)
-    x_f = cvxpy.Variable((len(f_splits), len(f_clusters)), boolean=True)
+    min_limits = [compute_limits(epsilon, sum(dataset.cluster_weights), splits[i]) for i, dataset in enumerate(datasets)]
+    xs = [cvxpy.Variable((len(splits[i]), len(dataset.cluster_weights)), boolean=True) for i, dataset in enumerate(datasets)]
 
     # check if the cluster relations are uniform
     e_intra_weights = e_similarities if e_similarities is not None else 1 - e_distances
@@ -83,35 +70,3 @@ def solve_c2(
         constraints.append(stratification_constraints(e_s_matrix, e_splits, delta, x_e))
     if f_s_matrix is not None:
         constraints.append(stratification_constraints(f_s_matrix, f_splits, delta, x_f))
-
-    e_tmp = [[e_weights[e1] * e_weights[e2] * e_intra_weights[e1, e2] * cvxpy.max(
-        cvxpy.vstack([x_e[s, e1] - x_e[s, e2] for s in range(len(e_splits))])
-    ) for e2 in range(e1 + 1, len(e_clusters))] for e1 in range(len(e_clusters))]
-    f_tmp = [[f_weights[f1] * f_weights[f2] * f_intra_weights[f1, f2] * cvxpy.max(
-        cvxpy.vstack([x_f[s, f1] - x_f[s, f2] for s in range(len(f_splits))])
-    ) for f2 in range(f1 + 1, len(f_clusters))] for f1 in range(len(f_clusters))]
-    e_loss = cvxpy.sum([e for e_tmp_list in e_tmp for e in e_tmp_list])
-    f_loss = cvxpy.sum([f for f_tmp_list in f_tmp for f in f_tmp_list])
-
-    problem = solve(e_loss + f_loss, constraints, max_sec, solver, log_file)
-
-    if problem is None:
-        return None
-
-    # report the found solution
-    return {e: e_names[s] for s in range(len(e_splits)) for i, e in enumerate(e_clusters) if x_e[s, i].value > 0.1}, \
-           {f: f_names[s] for s in range(len(f_splits)) for j, f in enumerate(f_clusters) if x_f[s, j].value > 0.1}
-
-
-def func(x, targets, exp: int = 2):
-    denom = sum([a ** exp for a in x])
-    return [(x[i] ** exp / denom - targets[i]) + (1e6 if x[i] < 0 else 0) for i in range(len(x))]
-
-
-def convert(targets, dimensions: int = 2):
-    targets = [t / sum(targets) for t in targets]
-    sol = fsolve(
-        lambda x: func(x, targets, exp=dimensions),
-        [1 / len(targets) for _ in targets]
-    )
-    return [s / sum(sol) for s in sol]

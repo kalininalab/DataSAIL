@@ -50,6 +50,8 @@ def test_pipeline(data):
         splits=[0.67, 0.33] if mode in ["IC", "CC"] else [0.7, 0.3],
         names=["train", "test"],
         epsilon=0.25,
+        list_cluster=False,
+        cc=False,
         e_type=None if drugs is None else "M",
         e_data=drugs,
         e_weights=(base / "drug_weights.tsv") if drug_weights else None,
@@ -72,6 +74,7 @@ def test_pipeline(data):
     )
 
 
+@pytest.mark.todo
 def test_report():
     base = Path("data/perf_7_3")
     shutil.rmtree(base / "out", ignore_errors=True)

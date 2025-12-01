@@ -5,7 +5,6 @@ from typing import Dict, List, Sequence, Literal
 
 import yaml
 
-from datasail.argparse_patch import insert_patch
 from datasail.constants import *
 from datasail.version import __version__
 
@@ -26,11 +25,24 @@ def parse_datasail_args(args) -> Dict[str, object]:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
+        "config", 
+        type=str,
+        nargs="?",
+        help="Path to the configuration file."
+    )
+    parser.add_argument(
         "--cc",
         default=False,
         action='store_true',
         dest=KW_CC,
         help="List available clustering algorithms."
+    )
+    parser.add_argument(
+        "-lc", "--list-cluster",
+        dest="list_cluster",
+        action="store_true",
+        help="Flag indicating to list available clustering algorithms. " \
+        "This flag will terminate the program after printing the availabilities.",
     )
     parser.add_argument(
         "-o",
@@ -85,12 +97,12 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "--techniques",
         type=str,
         required=True,
-        choices=[TEC_R, TEC_I1 + MODE_E, TEC_I1 + MODE_F, TEC_I2, TEC_C1 + MODE_E, TEC_C1 + MODE_F, TEC_C2],
+        choices=[TEC_R, TEC_I1 + MODE_E, TEC_I1 + MODE_F, TEC_I2, "C1" + MODE_E, "C1" + MODE_F, "C2"],
         nargs="+",
         dest=KW_TECHNIQUES,
         help=f"Select the mode to split the data. Choices: {TEC_R}: Random split, "
              f"{TEC_I1}: identity-based one-dimensional split, {TEC_I2}: identity-based two-dimensional split, "
-             f"{TEC_C1}: cluster-based one-dimensional split, {TEC_C2}: cluster-based two_dimensional split"
+             f"C1: cluster-based one-dimensional split, C2: cluster-based two_dimensional split"
     )
     split.add_argument(
         "-s",
@@ -214,7 +226,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         type=str,
         dest=KW_E_ARGS,
         default="",
-        help="Additional arguments for the clustering algorithm used in --e-dist or --e-sim."
+        help="Additional arguments for the clustering algorithm used in --e-dist or --e-sim. Due to parsing problems of the shells, this argument has to be given as --e-args=\"...\"."
     )
     e_ent.add_argument(
         "--e-strat",
@@ -275,23 +287,22 @@ def parse_datasail_args(args) -> Dict[str, object]:
         type=str,
         dest=KW_F_ARGS,
         default="",
-        help="Additional arguments for the clustering algorithm used in --f-dist or --f-sim."
+        help="Additional arguments for the clustering algorithm used in --f-dist or --f-sim. Due to parsing problems of the shells, this argument has to be given as --f-args=\"...\"."
     )
-    e_ent.add_argument(
+    f_ent.add_argument(
         "--f-strat",
         type=str,
         dest=KW_F_STRAT,
         default=None,
         help="Provide the filename of a CSV file specifying the classes for the samples of the F-Dataset."
     )
-    e_ent.add_argument(
+    f_ent.add_argument(
         "--f-num-classes",
         type=int,
         dest=KW_F_CLUSTERS,
         default=50,
         help="Number of classes to use for clustering the f-data."
     )
-    args = insert_patch(args)
     return vars(parser.parse_args(args))
 
 

@@ -16,7 +16,7 @@ def test_cdhit_cargs_1():
         "--e-type", "P",
         "--e-data", str(Path("data") / "pipeline" / "seqs.fasta"),
         "--e-sim", "cdhit",
-        "--e-args", "-c 0.55 -n 3",
+        "--e-args", "\"-c 0.55 -n 3\"",
     ])
 
     assert out.is_dir()
@@ -37,7 +37,7 @@ def test_cdhit_cargs_2():
         "--e-type", "P",
         "--e-data", str(Path("data") / "pipeline" / "seqs.fasta"),
         "--e-sim", "cdhit",
-        "--e-args", "-c 0.8 -g 1",
+        "--e-args", "\"-c 0.8 -g 1\"",
     ])
 
     assert out.is_dir()
@@ -58,7 +58,7 @@ def test_cdhitest_cargs_1():
         "--e-type", "G",
         "--e-data", str(Path("data") / "rw_data" / "RBD" / "RBD_small.fasta"),
         "--e-sim", "cdhit_est",
-        "--e-args", "-c 0.95 -n 9",
+        "--e-args", "\"-c 0.95 -n 9\"",
     ])
 
     assert out.is_dir()
@@ -79,7 +79,7 @@ def test_cdhitest_cargs_2():
         "--e-type", "G",
         "--e-data", str(Path("data") / "rw_data" / "RBD" / "RBD_small.fasta"),
         "--e-sim", "cdhit_est",
-        "--e-args", "-c 0.95 -g 1",
+        "--e-args", "\"-c 0.95 -g 1\"",
     ])
 
     assert out.is_dir()
@@ -100,7 +100,7 @@ def test_foldseek_cargs():
         "--e-type", "P",
         "--e-data", str(Path("data") / "pipeline" / "pdbs"),
         "--e-sim", "foldseek",
-        "--e-args", "-s 1",
+        "--e-args", "\"-s 1\"",
     ])
 
     assert out.is_dir()
@@ -121,7 +121,7 @@ def test_mash_cargs():
         "--e-type", "G",
         "--e-data", str(Path("data") / "genomes"),
         "--e-dist", "mash",
-        "--e-args", "-v 0.9 -s 10000",
+        "--e-args", "\"-v 0.9 -s 10000\"",
     ])
 
     assert out.is_dir()
@@ -142,7 +142,7 @@ def test_diamond_cargs():
         "--e-type", "P",
         "--e-data", str(Path('data') / 'pipeline' / 'seqs.fasta'),
         "--e-sim", "diamond",
-        "--e-args", "--gapopen 10"
+        "--e-args", "\"--gapopen 10\""
     ])
 
     assert out.is_dir()
@@ -163,7 +163,7 @@ def test_mmseqs_cargs():
         "--e-type", "P",
         "--e-data", str(Path('data') / 'pipeline' / 'seqs.fasta'),
         "--e-sim", "mmseqs",
-        "--e-args", "-c 0.9 --cov-mode 1"
+        "--e-args", "\"-c 0.9 --cov-mode 1\""
     ])
 
     assert out.is_dir()
@@ -184,7 +184,7 @@ def test_mmseqspp_cargs():
         "--e-type", "P",
         "--e-data", str(Path("data") / "pipeline" / "seqs.fasta"),
         "--e-sim", "mmseqspp",
-        "--e-args", "--mask-lower-case 1 --alignment-mode 1 --cov-mode 1",
+        "--e-args", "\"--mask-lower-case 1 --alignment-mode 1 --cov-mode 1\"",
     ])
 
     assert out.is_dir()

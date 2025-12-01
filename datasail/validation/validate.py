@@ -58,6 +58,8 @@ def check_cdhit_est_arguments(args: str = "") -> Namespace:
         args: String of the arguments that can be set by user
     """
     # args = args.split(" ") if " " in args else (args if isinstance(args, list) else [args])
+    if len(args) > 0 and args[0] == "\"":
+        args = args[1:-1]
     args = MultiYAMLParser(CDHIT_EST).parse_args(args)
     # Check if -c, -s, -aL, -aS, -uL, -uS values are within the valid range
     if not (0 <= args.c <= 1):
@@ -131,6 +133,8 @@ def check_cdhit_arguments(args: str = "") -> Namespace:
         args: String of the arguments that can be set by user
     """
     # args = args.split(" ") if " " in args else (args if isinstance(args, list) else [args])
+    if len(args) > 0 and args[0] == "\"":
+        args = args[1:-1]
     args = MultiYAMLParser(CDHIT).parse_args(args)
     # Check if -c, -s, -aL, -aS, -uL, -uS values are within the valid range
     if not (0 <= args.c <= 1):
@@ -220,6 +224,8 @@ def check_diamond_arguments(args: str = "") -> Optional[Namespace]:
     Returns:
         The namespace containing the parsed and validated arguments
     """
+    if len(args) > 0 and args[0] == "\"":
+        args = args[1:-1]
     args = MultiYAMLParser(DIAMOND).parse_args(args)
 
     # Checking --comp-based-stats
@@ -474,6 +480,8 @@ def check_mmseqs_arguments(args: str = "") -> Optional[Namespace]:
         The namespace containing the parsed and validated arguments.
     """
     # Reference: https://github.com/soedinglab/MMseqs2/blob/master/src/commons/Parameters.cpp
+    if len(args) > 0 and args[0] == "\"":
+        args = args[1:-1]
     args = MultiYAMLParser(MMSEQS2).parse_args(args)
 
     # Define a function to check valid range
@@ -575,6 +583,8 @@ def check_mmseqspp_arguments(args: str = "") -> Optional[Namespace]:
     Returns:
         The namespace containing the parsed and validated arguments.
     """
+    if len(args) > 0 and args[0] == "\"":
+        args = args[1:-1]
     args = MultiYAMLParser(MMSEQSPP).parse_args(args)
 
     # Check specific conditions for certain arguments
@@ -696,6 +706,8 @@ def check_foldseek_arguments(args: str = "") -> Namespace:
     Returns:
         args: Validated Namespace object
     """
+    if len(args) > 0 and args[0] == "\"":
+        args = args[1:-1]
     args = MultiYAMLParser(FOLDSEEK).parse_args(args)
 
     if not (0 <= args.comp_bias_corr <= 1):
@@ -801,6 +813,8 @@ def check_foldseek_arguments(args: str = "") -> Namespace:
 
 
 def check_mash_arguments(args: str = "") -> Namespace:
+    if len(args) > 0 and args[0] == "\"":
+        args = args[1:-1]
     args = MultiYAMLParser(MASH).parse_args(args)
 
     if not (0 <= args.v <= 1):

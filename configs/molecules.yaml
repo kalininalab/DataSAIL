@@ -1,4 +1,4 @@
-threads: 8
+threads: 1
 verbose: I
 splits: [7, 2, 1]
 names: [train, val, test]
@@ -8,8 +8,9 @@ runs: 1
 solver: SCIP
 techniques: [I1, S1]
 output: results
+max_sec: 100
 data:
   - type: M
-    data: tests/data/drugs.tsv
-    weights: tests/data/drugs_weights.tsv
+    data: tests/data/pipeline/drugs.tsv
+    weights: tests/data/pipeline/drug_weights.tsv
     sim: ECFP

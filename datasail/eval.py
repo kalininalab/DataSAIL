@@ -3,9 +3,9 @@ from typing import Any, Optional, Union
 
 import numpy as np
 
-from datasail.reader.read import read_data_type
+from datasail.routine import read_data_type
 from datasail.cluster.clustering import cluster
-from datasail.settings import KW_THREADS, KW_LOGDIR, KW_LINKAGE
+from datasail.constants import KW_THREADS, KW_LOGDIR, KW_LINKAGE, NOT_ASSIGNED
 
 SPLIT_ASSIGNMENT_TYPE = Union[dict[str, Any], str, Path]
 
@@ -57,7 +57,7 @@ def eval_single_split(datatype, data: Optional[Union[dict[str, Any], str, Path]]
     dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average"})
     in_split_mask = np.zeros((len(dataset.cluster_names), len(dataset.cluster_names)))
     for split in set(split_assignment.values()):
-        if split == "not assigned":
+        if split == NOT_ASSIGNED:
             continue
         split_array = np.array([split_assignment[name] == split for name in dataset.cluster_names], dtype=int).reshape(-1, 1)
         in_split_mask += split_array @ split_array.T

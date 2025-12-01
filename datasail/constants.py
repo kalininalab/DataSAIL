@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
+import shutil
 import subprocess
-import os
 import sys
 from typing import Callable, Generator, Optional, Union
 import platform
@@ -40,9 +40,18 @@ def get_default(data_type: str, data_format: str) -> tuple[Optional[str], Option
     return None, None
 
 
-def check_algo_presence(command: str, expected_value: int):
+def check_algo_presence(name: str) -> bool:
+    """
+    Check if a specific command-line tool is installed.
+
+    Args:
+        name: Name of the command-line tool to check
+    
+    Returns:
+        True if the tool is installed, False otherwise
+    """
     try:
-        return subprocess.run(command.split(" "), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == expected_value
+        return shutil.which(name) is not None
     except:
         return False
 
@@ -87,20 +96,20 @@ TMALIGN = "tmalign"
 TANIMOTO = "tanimoto"
 
 # List of all available algorithms
-SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND, ]
+SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND, TMALIGN, ]
 DIST_ALGOS = [MASH, ]
 ALGOS = SIM_ALGOS + DIST_ALGOS
 
 
 # Check if the tools are installed
 INSTALLED = {
-    CDHIT: check_algo_presence("cd-hit -h", 256),
-    CDHIT_EST: check_algo_presence("cd-hit-este -h", 256),
-    DIAMOND: check_algo_presence("diamond version", 0),
-    MMSEQS: check_algo_presence("mmseqs -h", 0),
-    MASH: check_algo_presence("mash -h", 0),
-    FOLDSEEK: check_algo_presence("foldseek -h", 0),
-    TMALIGN: check_algo_presence("TMalign -h", 0),
+    CDHIT: check_algo_presence("cd-hit"),
+    CDHIT_EST: check_algo_presence("cd-hit-est"),
+    DIAMOND: check_algo_presence("diamond"),
+    MMSEQS: check_algo_presence("mmseqs"),
+    MASH: check_algo_presence("mash"),
+    FOLDSEEK: check_algo_presence("foldseek"),
+    TMALIGN: check_algo_presence("TMalign"),
 }
 INSTALLED[MMSEQS2] = INSTALLED[MMSEQS]
 INSTALLED[MMSEQSPP] = INSTALLED[MMSEQS]

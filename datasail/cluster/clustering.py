@@ -355,7 +355,7 @@ def cluster_interactions(
     return output
 
 
-def reverse_clustering(cluster_split_map: Dict[str, str], name_cluster_map: Dict[str, str]) -> Dict[str, str]:
+def reverse_clustering(cluster_split_map: dict[str, str], name_cluster_map: dict[str, str]) -> dict[str, str]:
     """
     Reverse clustering to uncover which entity is assigned to which split.
 
