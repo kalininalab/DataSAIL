@@ -5,7 +5,7 @@ import numpy as np
 
 from datasail.reader.read import read_data_type
 from datasail.cluster.clustering import cluster
-from datasail.settings import KW_THREADS, KW_LOGDIR, KW_LINKAGE
+from datasail.settings import KW_OUTDIR, KW_THREADS, KW_LOGDIR, KW_LINKAGE
 
 SPLIT_ASSIGNMENT_TYPE = Union[dict[str, Any], str, Path]
 
@@ -54,7 +54,7 @@ def eval_single_split(datatype, data: Optional[Union[dict[str, Any], str, Path]]
         split_assignment = Path(split_assignment)
     
     dataset = read_data_type(datatype)(data=data, weights=weights, sim=similarity, dist=distance, num_clusters=np.inf)
-    dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average"})
+    dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average", KW_OUTDIR: None})
     in_split_mask = np.zeros((len(dataset.cluster_names), len(dataset.cluster_names)))
     for split in set(split_assignment.values()):
         if split == "not assigned":
