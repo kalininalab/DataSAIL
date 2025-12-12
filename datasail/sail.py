@@ -119,14 +119,11 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The filepath to the weights of the E-data is invalid.", 8, kwargs[KW_CLI])
     if kwargs[KW_E_STRAT] is not None and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
         error("The filepath to the stratification of the E-data is invalid.", 11, kwargs[KW_CLI])
-    if kwargs[KW_E_SIM] is not None and isinstance(kwargs[KW_E_SIM], str) and kwargs[KW_E_SIM].lower() not in SIM_ALGOS:
-        kwargs[KW_E_SIM] = Path(kwargs[KW_E_SIM])
+    if kwargs[KW_E_SIM] is not None and (isinstance(kwargs[KW_E_SIM], Path) or kwargs[KW_E_SIM].lower() not in SIM_ALGOS):
         if not kwargs[KW_E_SIM].is_file():
             error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.",
                   9, kwargs[KW_CLI])
-    if kwargs[KW_E_DIST] is not None and isinstance(kwargs[KW_E_DIST], str) and \
-            kwargs[KW_E_DIST].lower() not in DIST_ALGOS:
-        kwargs[KW_E_DIST] = Path(kwargs[KW_E_DIST])
+    if kwargs[KW_E_DIST] is not None and (isinstance(kwargs[KW_E_DIST], Path) or kwargs[KW_E_DIST].lower() not in DIST_ALGOS):
         if not kwargs[KW_E_DIST].is_file():
             error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.",
                   10, kwargs[KW_CLI])
@@ -142,13 +139,11 @@ def validate_args(**kwargs) -> Dict[str, object]:
         error("The filepath to the weights of the F-data is invalid.", 14, kwargs[KW_CLI])
     if kwargs[KW_E_STRAT] is not None and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
         error("The filepath to the stratification of the E-data is invalid.", 20, kwargs[KW_CLI])
-    if kwargs[KW_F_SIM] is not None and isinstance(kwargs[KW_F_SIM], str) and kwargs[KW_F_SIM].lower() not in SIM_ALGOS:
-        kwargs[KW_F_SIM] = Path(kwargs[KW_F_SIM])
+    if kwargs[KW_F_SIM] is not None and (isinstance(kwargs[KW_F_SIM], Path) or kwargs[KW_F_SIM].lower() not in SIM_ALGOS):
         if not kwargs[KW_F_SIM].is_file():
             error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.",
                   15, kwargs[KW_CLI])
-    if kwargs[KW_F_DIST] is not None and isinstance(kwargs[KW_F_DIST], str) and \
-            kwargs[KW_F_DIST].lower() not in DIST_ALGOS:
+    if kwargs[KW_F_DIST] is not None and (isinstance(kwargs[KW_F_DIST], Path) or kwargs[KW_F_DIST].lower() not in DIST_ALGOS):
         if not kwargs[KW_F_DIST].is_file():
             error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.",
                   16, kwargs[KW_CLI])

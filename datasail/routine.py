@@ -38,7 +38,7 @@ def tech2oneD(tech: str) -> tuple[str, str]:
         raise ValueError(f"Technique {tech} is not a two-dimensional technique.")
 
 
-def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
+def datasail_main(**kwargs) -> Optional[Tuple[Optional[Dict], Optional[Dict], Optional[Dict]]]:
     """
     Main routine of DataSAIL. Here the parsed input is aggregated into structures and then split and saved.
 
@@ -157,6 +157,10 @@ def datasail_main(**kwargs) -> Optional[Tuple[Dict, Dict, Dict]]:
                             map_[technique].append({})
                         map_[technique][run].update(pre_map[one_d_tech])
 
+    if all(len(e_run) == 0 for e_techs in e_name_split_map.values() for e_run in e_techs) and \
+            all(len(f_run) == 0 for f_techs in f_name_split_map.values() for f_run in f_techs):
+        LOGGER.error("No assignments could be made for any technique! Please check your input data and values for cluster-numbers, delta, and epsilon.")
+        return None, None, None
     LOGGER.info("Store results")
 
     # infer interaction assignment from entity assignment if necessary and possible
