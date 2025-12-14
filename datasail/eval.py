@@ -71,7 +71,15 @@ def eval_single_split(datatype, data: Optional[Union[dict[str, Any], str, Path]]
     metric *= weight_matrix
 
     metric_total = np.sum(metric)
-    leakage = np.sum(in_split_mask * metric)
+    # leakage = np.sum(in_split_mask * metric)
+    if mode == "sim":
+        leakage = metric_total - np.sum(in_split_mask * metric)
+        # return leakage / metric_total, leakage, metric_total
     if mode == "dist":
-        leakage = metric_total - leakage
-    return 1 - (leakage / metric_total), leakage, metric_total
+        leakage = np.sum(in_split_mask * metric)
+    return leakage / metric_total, leakage, metric_total
+
+    
+    # if mode == "dist":
+    #     leakage = metric_total - leakage
+    # return 1 - (leakage / metric_total), metric_total - leakage, metric_total

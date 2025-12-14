@@ -6,23 +6,10 @@ import scipy
 from rdkit import DataStructs
 
 from datasail.reader.utils import DataSet
-from datasail.settings import LOGGER
-
-SIM_OPTIONS = Literal[
-    "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "onbit", "rogotgoldberg",
-    "russel", "sokal", "tanimoto"
-]
-
-# unbounded: chebyshev, cityblock, euclidean, mahalanobis, manhattan, mcconnaughey, minkowski, sqeuclidean
-# produces inf or nan: correlation, cosine, jensenshannon, seuclidean, braycurtis
-# boolean only: dice, kulczynski1, russelrao, sokalsneath
-# matching == hamming, manhattan == cityblock (inofficial)
-DIST_OPTIONS = Literal[
-    "canberra", "hamming", "jaccard", "matching", "rogerstanimoto", "sokalmichener", "yule"
-]
+from datasail.settings import DIST_OPTIONS, LOGGER, SIM_OPTIONS
 
 
-def get_rdkit_fct(method: SIM_OPTIONS) -> Callable[[Any, Any], np.ndarray]:
+def get_rdkit_fct(method: str) -> Callable[[Any, Any], np.ndarray]:
     """
     Get the RDKit function for the given similarity measure.
 
@@ -57,7 +44,7 @@ def get_rdkit_fct(method: SIM_OPTIONS) -> Callable[[Any, Any], np.ndarray]:
     raise ValueError(f"Unknown method {method}")
 
 
-def rdkit_sim(fps, method: SIM_OPTIONS) -> np.ndarray:
+def rdkit_sim(fps, method: str) -> np.ndarray:
     """
     Compute the similarity between elements of a list of rdkit vectors.
 
@@ -108,7 +95,7 @@ def iterable2bitvect(it) -> DataStructs.ExplicitBitVect:
     return output
 
 
-def run_vector(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
+def run_vector(dataset: DataSet, method: str = "tanimoto") -> None:
     """
     Compute pairwise Tanimoto-Scores of the given dataset.
 
@@ -120,7 +107,7 @@ def run_vector(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
     method = method.lower()
 
     embed = dataset.data[dataset.names[0]]
-    if method in get_args(SIM_OPTIONS):
+    if method in SIM_OPTIONS:
         if isinstance(embed, (list, tuple, np.ndarray)):
             if isinstance(embed[0], int) or np.issubdtype(embed[0].dtype, int):
                 if method in ["allbit", "asymmetric", "braunblanquet", "cosine", "kulczynski", "onbit",
@@ -137,7 +124,7 @@ def run_vector(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
             raise ValueError(
                 f"Unsupported embedding type {type(embed)}. Please use either RDKit datastructures, lists, "
                 f"tuples or one-dimensional numpy arrays.")
-    elif method in get_args(DIST_OPTIONS):
+    elif method in DIST_OPTIONS:
         dtype = np.bool_ if ["jaccard", "rogerstanimoto", "sokalmichener", "yule"] else np.float64
         if isinstance(embed, (
                 list, tuple, DataStructs.ExplicitBitVect, DataStructs.LongSparseIntVect, DataStructs.IntSparseIntVect)):
@@ -159,7 +146,7 @@ def run(
         dataset: DataSet,
         fps: Union[np.ndarray, DataStructs.ExplicitBitVect, DataStructs.LongSparseIntVect,
         DataStructs.IntSparseIntVect],
-        method: Union[SIM_OPTIONS, DIST_OPTIONS],
+        method: str,
 ) -> None:
     """
     Compute pairwise similarities of the given fingerprints.
@@ -169,11 +156,11 @@ def run(
         fps: The fingerprints to compute pairwise similarities for.
         method: The similarity measure to use.
     """
-    if method in get_args(SIM_OPTIONS):
+    if method in SIM_OPTIONS:
         dataset.cluster_similarity = rdkit_sim(fps, method)
         if method == "mcconnaughey":
             dataset.cluster_similarity = dataset.cluster_similarity + 1 / 2
-    elif method in get_args(DIST_OPTIONS):
+    elif method in DIST_OPTIONS:
         if method == "mahalanobis" and len(fps) <= len(fps[0]):
             raise ValueError(
                 f"For clustering with the Mahalanobis method, you have to have more observations that dimensions in "
@@ -185,6 +172,8 @@ def run(
             dataset.cluster_distance = dataset.cluster_distance / len(fps[0])
         elif method == "yule":
             dataset.cluster_distance /= 2
+    else:
+        raise ValueError(f"Unknown method to compare fingerprints. Found: {method}")
 
 
 if __name__ == '__main__':

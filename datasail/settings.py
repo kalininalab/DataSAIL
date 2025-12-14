@@ -83,6 +83,15 @@ SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, D
 DIST_ALGOS = [MASH, ]
 ALGOS = SIM_ALGOS + DIST_ALGOS
 
+SIM_OPTIONS = ["allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "onbit", "rogotgoldberg", "russel", "sokal", "tanimoto"]
+
+# unbounded: chebyshev, cityblock, euclidean, mahalanobis, manhattan, mcconnaughey, minkowski, sqeuclidean
+# produces inf or nan: correlation, cosine, jensenshannon, seuclidean, braycurtis
+# boolean only: dice, kulczynski1, russelrao, sokalsneath
+# matching == hamming, manhattan == cityblock (inofficial)
+DIST_OPTIONS = ["canberra", "hamming", "jaccard", "matching", "rogerstanimoto", "sokalmichener", "yule"]
+FP_OPTIONS = SIM_OPTIONS + DIST_OPTIONS
+
 # Check if the tools are installed
 INSTALLED = {
     CDHIT: os.system("cd-hit -h > /dev/null") == 256,

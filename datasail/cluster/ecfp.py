@@ -6,7 +6,7 @@ from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER
 
 
-def run_ecfp(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
+def run_ecfp(dataset: DataSet, method: str = "tanimoto") -> None:
     """
     Compute 1024Bit-ECPFs for every molecule in the dataset and then compute pairwise Tanimoto-Scores of them.
 

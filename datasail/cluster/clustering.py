@@ -19,7 +19,7 @@ from datasail.cluster.utils import heatmap
 from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
+from datasail.settings import DIST_OPTIONS, FP_OPTIONS, LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, SIM_OPTIONS, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
     FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND,TANIMOTO, KW_LINKAGE
 
 
@@ -112,8 +112,11 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
         run_mmseqs(dataset, threads, log_dir)
     elif dataset.similarity.lower() == MMSEQSPP:
         run_mmseqspp(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == TANIMOTO:
-        run_vector(dataset)
+    elif dataset.similarity.lower() in SIM_OPTIONS:
+        if isinstance(dataset.data[dataset.names[0]], str):
+            run_ecfp(dataset, method=dataset.similarity.lower())
+        else:
+            run_vector(dataset, dataset.similarity.lower())
     else:
         raise ValueError(f"Unknown cluster method: {dataset.similarity}")
 
@@ -139,6 +142,11 @@ def distance_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[st
     """
     if dataset.distance.lower() == "mash":
         run_mash(dataset, threads, log_dir)
+    elif dataset.distance.lower() in DIST_OPTIONS:
+        if isinstance(dataset.data[dataset.names[0]], str):
+            run_ecfp(dataset, method=dataset.distance.lower())
+        else:
+            run_vector(dataset, dataset.distance.lower())
     else:
         raise ValueError(f"Unknown cluster method: {dataset.distance}")
 

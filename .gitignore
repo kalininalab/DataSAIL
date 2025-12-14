@@ -19,4 +19,10 @@ test.py
 tests/data/genomes/out/*
 tests/*.log
 tests/*.fasta
+
+# Exclude build artifacts
 dist/*
+*64/*
+noarch/*
+channeldata/*
+index.html

@@ -12,7 +12,7 @@ import pandas as pd
 from rdkit import Chem
 
 from datasail.reader.validate import validate_user_args
-from datasail.settings import get_default, SIM_ALGOS, DIST_ALGOS, UNK_LOCATION, format2ending, FASTA_FORMATS
+from datasail.settings import DIST_OPTIONS, SIM_OPTIONS, get_default, SIM_ALGOS, DIST_ALGOS, UNK_LOCATION, format2ending, FASTA_FORMATS
 
 DATA_INPUT = Optional[Union[str, Path, Dict[str, Union[str, np.ndarray]],
     Callable[..., Dict[str, Union[str, np.ndarray]]], Generator[Tuple[str, Union[str, np.ndarray]], None, None]]]
@@ -304,9 +304,9 @@ def read_data(
     if sim is None and dist is None:
         dataset.similarity, dataset.distance = get_default(dataset.type, dataset.format)
         dataset.names = list(dataset.data.keys())
-    elif sim is not None and not (isinstance(sim, str) and sim.lower() in SIM_ALGOS):
+    elif sim is not None and not (isinstance(sim, str) and sim.lower() in SIM_ALGOS + SIM_OPTIONS):
         dataset.names, dataset.similarity = read_matrix_input(sim)
-    elif dist is not None and not (isinstance(dist, str) and dist.lower() in DIST_ALGOS):
+    elif dist is not None and not (isinstance(dist, str) and dist.lower() in DIST_ALGOS + DIST_OPTIONS):
         dataset.names, dataset.distance = read_matrix_input(dist)
     else:
         if sim is not None:
