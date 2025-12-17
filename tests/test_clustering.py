@@ -306,7 +306,7 @@ def test_cosine(md_calculator):
 ])
 def test_vector_edge(method):
     dataset = DataSet(
-        names=["A", "B", "C", "D", "E", "F", "G", "H"],
+        names=["A", "B", "C", "D", "E", "F", "G"],
         data={
             "A": np.array([1, 1, 1]),
             "B": np.array([1, 1, 0]),
