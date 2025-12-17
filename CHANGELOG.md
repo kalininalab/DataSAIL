@@ -27,7 +27,16 @@
 
 ## Change Log
 
-## v1.2.4 (2025-11-??)
+## v1.3.0 (2025-12-18)
+
+IMPORTANT: This version changes the eval functions' API. Now, the only eval function is `eval_split`, which evaluates a given split with an updated signature. Check the documentation for more information. The previous `eval_single_split` function is no longer available.
+
+- Bug fix when evaluating the leakage of a datasplit based on distance matrices.
+- Cosine distance and similarity metric.
+- Updated documentation
+- Minor bug fixes
+
+## v1.2.4 (2025-12-03)
 
 - New ``output`` parameter for Python API to specify output directory and save cluster assignments and splits there.
 - Default values of ``epsilon`` and ``delta`` in CLI and API aligned to `0.05`.

@@ -167,6 +167,8 @@ def run(
                 f"the embeddings. The number of samples ({len(fps)}) is too small; the covariance matrix is singular. "
                 f"For observations with {len(fps[0])} dimensions, at least {len(fps[0]) + 1} observations are required."
             )
+        if method == "cosine" and np.any(np.all(np.array(fps) == 0, axis=1)):
+            raise ValueError(f"The cosine metric is not defined for zero-vectors. At least one of your embeddings is a zero-vector. Please check your dataset and embedding method.")
         dataset.cluster_distance = scipy.spatial.distance.cdist(fps, fps, metric=method)
         if method == "canberra":
             dataset.cluster_distance = dataset.cluster_distance / len(fps[0])

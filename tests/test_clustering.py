@@ -276,7 +276,7 @@ def test_vector(md_calculator, algo, in_type, method) :
     else:
         wrap = lambda x: np.array([max(-2_147_483_648, min(2_147_483_647, int(y))) for y in x])
     data.data = dict((k, wrap(embed(v))) for k, v in data.data.items())
-    if (algo == "MD" and in_type == "Original" and method in SIM_OPTIONS) or method == "mahalanobis":
+    if (algo == "MD" and in_type == "Original" and method in SIM_OPTIONS and method != "cosine") or method == "mahalanobis":
         with pytest.raises(ValueError):
             run_vector(data, method)
     else:
@@ -315,7 +315,6 @@ def test_vector_edge(method):
             "E": np.array([1, 0, 0]),
             "F": np.array([0, 1, 0]),
             "G": np.array([0, 0, 1]),
-            "H": np.array([0, 0, 0]),
         },
     )
     run_vector(dataset, method)

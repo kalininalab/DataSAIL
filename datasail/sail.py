@@ -114,42 +114,30 @@ def validate_args(**kwargs) -> Dict[str, object]:
     # syntactically parse the input data for the E-dataset
     if kwargs[KW_E_DATA] is not None and isinstance(kwargs[KW_E_DATA], Path) and not kwargs[KW_E_DATA].exists():
         error("The filepath to the E-data is invalid.", 7, kwargs[KW_CLI])
-    if kwargs[KW_E_WEIGHTS] is not None and isinstance(kwargs[KW_E_WEIGHTS], Path) and \
-            not kwargs[KW_E_WEIGHTS].is_file():
+    if kwargs[KW_E_WEIGHTS] is not None and isinstance(kwargs[KW_E_WEIGHTS], Path) and not kwargs[KW_E_WEIGHTS].is_file():
         error("The filepath to the weights of the E-data is invalid.", 8, kwargs[KW_CLI])
     if kwargs[KW_E_STRAT] is not None and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
         error("The filepath to the stratification of the E-data is invalid.", 11, kwargs[KW_CLI])
-    if kwargs[KW_E_SIM] is not None and (isinstance(kwargs[KW_E_SIM], Path) or kwargs[KW_E_SIM].lower() not in SIM_ALGOS + SIM_OPTIONS):
-        if not kwargs[KW_E_SIM].is_file():
-            error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.",
-                  9, kwargs[KW_CLI])
-    if kwargs[KW_E_DIST] is not None and (isinstance(kwargs[KW_E_DIST], Path) or kwargs[KW_E_DIST].lower() not in DIST_ALGOS + DIST_OPTIONS):
-        if not kwargs[KW_E_DIST].is_file():
-            error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.",
-                  10, kwargs[KW_CLI])
+    if kwargs[KW_E_SIM] is not None and isinstance(kwargs[KW_E_SIM], Path) and not kwargs[KW_E_SIM].is_file():
+        error(f"The similarity metric for the E-data seems to be a file-input but the filepath is invalid.", 9, kwargs[KW_CLI])
+    if kwargs[KW_E_DIST] is not None and isinstance(kwargs[KW_E_DIST], Path) and not kwargs[KW_E_DIST].is_file():
+        error(f"The distance metric for the E-data seems to be a file-input but the filepath is invalid.", 10, kwargs[KW_CLI])
     if kwargs[KW_E_CLUSTERS] < 1:
-        error("The number of clusters to find in the E-data has to be a positive integer.", 12,
-              kwargs[KW_CLI])
+        error("The number of clusters to find in the E-data has to be a positive integer.", 12, kwargs[KW_CLI])
 
     # syntactically parse the input data for the F-dataset
     if kwargs[KW_F_DATA] is not None and isinstance(kwargs[KW_F_DATA], Path) and not kwargs[KW_F_DATA].exists():
         error("The filepath to the F-data is invalid.", 13, kwargs[KW_CLI])
-    if kwargs[KW_F_WEIGHTS] is not None and isinstance(kwargs[KW_F_WEIGHTS], Path) and \
-            not kwargs[KW_F_WEIGHTS].is_file():
+    if kwargs[KW_F_WEIGHTS] is not None and isinstance(kwargs[KW_F_WEIGHTS], Path) and not kwargs[KW_F_WEIGHTS].is_file():
         error("The filepath to the weights of the F-data is invalid.", 14, kwargs[KW_CLI])
     if kwargs[KW_E_STRAT] is not None and isinstance(kwargs[KW_E_STRAT], Path) and not kwargs[KW_E_STRAT].is_file():
         error("The filepath to the stratification of the E-data is invalid.", 20, kwargs[KW_CLI])
-    if kwargs[KW_F_SIM] is not None and (isinstance(kwargs[KW_F_SIM], Path) or kwargs[KW_F_SIM].lower() not in SIM_ALGOS + SIM_OPTIONS):
-        if not kwargs[KW_F_SIM].is_file():
-            error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.",
-                  15, kwargs[KW_CLI])
-    if kwargs[KW_F_DIST] is not None and (isinstance(kwargs[KW_F_DIST], Path) or kwargs[KW_F_DIST].lower() not in DIST_ALGOS + DIST_OPTIONS):
-        if not kwargs[KW_F_DIST].is_file():
-            error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.",
-                  16, kwargs[KW_CLI])
+    if kwargs[KW_F_SIM] is not None and isinstance(kwargs[KW_F_SIM], Path) and not kwargs[KW_F_SIM].is_file():
+        error(f"The similarity metric for the F-data seems to be a file-input but the filepath is invalid.", 15, kwargs[KW_CLI])
+    if kwargs[KW_F_DIST] is not None and isinstance(kwargs[KW_F_DIST], Path) and not kwargs[KW_F_DIST].is_file():
+        error(f"The distance metric for the F-data seems to be a file-input but the filepath is invalid.", 16, kwargs[KW_CLI])
     if kwargs[KW_F_CLUSTERS] < 1:
-        error("The number of clusters to find in the F-data has to be a positive integer.", 17,
-              kwargs[KW_CLI])
+        error("The number of clusters to find in the F-data has to be a positive integer.", 17, kwargs[KW_CLI])
 
     return kwargs
 
