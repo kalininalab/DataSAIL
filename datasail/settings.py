@@ -89,7 +89,7 @@ SIM_OPTIONS = ["allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulcz
 # produces inf or nan: correlation, cosine, jensenshannon, seuclidean, braycurtis
 # boolean only: dice, kulczynski1, russelrao, sokalsneath
 # matching == hamming, manhattan == cityblock (inofficial)
-DIST_OPTIONS = ["canberra", "hamming", "jaccard", "matching", "rogerstanimoto", "sokalmichener", "yule"]
+DIST_OPTIONS = ["canberra", "cosine", "hamming", "jaccard", "matching", "rogerstanimoto", "sokalmichener", "yule"]
 FP_OPTIONS = SIM_OPTIONS + DIST_OPTIONS
 
 # Check if the tools are installed

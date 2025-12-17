@@ -54,5 +54,8 @@ def run_ecfp(dataset: DataSet, method: str = "tanimoto") -> None:
     LOGGER.info("Compute Tanimoto Coefficients")
 
     run(dataset, fps, method)
+    if method == "cosine":
+        dataset.cluster_similarity = 1 - dataset.cluster_distance
+        dataset.cluster_distance = None
 
     dataset.cluster_map = {name: name for name in dataset.names}

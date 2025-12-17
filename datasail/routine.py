@@ -158,7 +158,8 @@ def datasail_main(**kwargs) -> Optional[Tuple[Optional[Dict], Optional[Dict], Op
                         map_[technique][run].update(pre_map[one_d_tech])
 
     if all(len(e_run) == 0 for e_techs in e_name_split_map.values() for e_run in e_techs) and \
-            all(len(f_run) == 0 for f_techs in f_name_split_map.values() for f_run in f_techs):
+            all(len(f_run) == 0 for f_techs in f_name_split_map.values() for f_run in f_techs) and \
+            "R" not in inter_split_map:
         LOGGER.error("No assignments could be made for any technique! Please check your input data and values for cluster-numbers, delta, and epsilon.")
         return None, None, None
     LOGGER.info("Store results")

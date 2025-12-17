@@ -116,7 +116,10 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
         if isinstance(dataset.data[dataset.names[0]], str):
             run_ecfp(dataset, method=dataset.similarity.lower())
         else:
-            run_vector(dataset, dataset.similarity.lower())
+            run_vector(dataset, method := dataset.similarity.lower())
+            if method == "cosine":
+                dataset.cluster_similarity = 1 - dataset.cluster_distance
+                dataset.cluster_distance = None
     else:
         raise ValueError(f"Unknown cluster method: {dataset.similarity}")
 

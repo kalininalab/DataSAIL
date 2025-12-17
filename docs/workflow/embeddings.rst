@@ -7,7 +7,7 @@ Clustering of Embeddings
 DataSAIL offers different clustering algorithms implemented in SciPy and RDKit to cluster the embeddings.
 The clustering algorithms are:
 
-.. list-table:: Title
+.. list-table:: Overview over embedding-based metrics readily available in DataSAIL.
     :widths: 30 15 15 15 15 15
     :header-rows: 1
 
@@ -17,108 +17,117 @@ The clustering algorithms are:
       - Integer
       - Float
       - RDKit or SciPy
-    * - AllBit
+    * - :ref:`AllBit <metric-allbit>`
       - Sim
       - X
       - \-
       - \-
       - RDKit
-    * - Asymmetric
+    * - :ref:`Asymmetric <metric-asymmetric>`
       - Sim
       - X
       - \-
       - \-
       - RDKit
-    * - Braun-Blanquet
+    * - :ref:`Braun-Blanquet <metric-braun-blanquet>`
       - Sim
       - X
       - \-
       - \-
       - RDKit
-    * - Canberra
+    * - :ref:`Canberra <metric-canberra>`
       - Dist
       - X
       - X
       - X
       - SciPy
-    * - Dice
+    * - :ref:`Cosine <metric-cosine>`
+      - Sim and Dist
+      - X
+      - X
+      - X
+      - SciPy
+    * - :ref:`Dice <metric-dice>`
       - Sim
       - X
       - X
       - \-
       - RDKit
-    * - Hamming
+    * - :ref:`Hamming <metric-hamming>`
       - Dist
       - X
       - X
       - X
       - SciPy
-    * - Kulczynski
-      - Sim
-      - X
-      - \-
-      - \-
-      - RDKit
-    * - Jaccard
+    * - :ref:`Jaccard <metric-jaccard>`
       - Dist
       - X
       - \-
       - \-
       - SciPy
-    * - Matching
+    * - :ref:`Kulczynski <metric-kulczynski>`
+      - Sim
+      - X
+      - \-
+      - \-
+      - RDKit
+    * - :ref:`Matching <metric-hamming>`
       - Dist
       - X
       - X
       - X
       - SciPy
-    * - OnBit
+    * - :ref:`OnBit <metric-onbit>`
       - Sim
       - X
       - \-
       - \-
       - RDKit
-    * - Rogers-Tanimoto
+    * - :ref:`Rogers-Tanimoto <metric-rogers-tanimoto>`
       - Dist
       - X
       - \-
       - \-
       - SciPy
-    * - Rogot-Goldberg
+    * - :ref:`Rogot-Goldberg <metric-rogot-goldberg>`
       - Sim
       - X
       - \-
       - \-
       - RDKit
-    * - Russel
+    * - :ref:`Russel <metric-russel>`
       - Sim
       - X
       - \-
       - \-
       - RDKit
-    * - Sokal
+    * - :ref:`Sokal <metric-sokal>`
       - Sim
       - X
       - \-
       - \-
       - RDKit
-    * - Sokal-Michener
+    * - :ref:`Sokal-Michener <metric-sokal-michener>`
       - Dist
       - X
       - \-
       - \-
       - SciPy
-    * - Tanimoto
+    * - :ref:`Tanimoto <metric-tanimoto>`
       - Sim
       - X
       - X
       - \-
       - RDKit
-    * - Yule
+    * - :ref:`Yule <metric-yule>`
       - Dist
       - X
       - \-
       - \-
       - SciPy
+
+Note that the cosine metric can be used both as similarity and distance metric where the relation is
+:math:`\text{CosineDistance}(u, v) = 1 - \text{CosineSimilarity}(u, v)`.
 
 Individual Algorithms
 #####################
@@ -131,6 +140,8 @@ used, :math:`u` and :math:`v` can be float-vectors but may also be restricted to
     We will use the `Iverson bracket <https://en.wikipedia.org/wiki/Iverson_bracket>`__ notation :math:`[P]` to
     denote the indicator function that is 1 if the predicate :math:`P` is true and 0 otherwise.
 
+.. _metric-allbit:
+
 AllBit
 ======
 
@@ -139,6 +150,8 @@ This is the ratio of equal bits in the two bit vectors :math:`u` and :math:`v`.
 .. math::
 
     \text{AllBit}(u, v) = \frac{\sum_{i=1}^{n} [u[i] = v[i]]}{n}
+
+.. _metric-asymmetric:
 
 Asymmetric
 ==========
@@ -155,6 +168,8 @@ minimum number of bits set in either of the two vectors. The implementation is g
         \frac{\sum_{i=1}^{n} [u[i] = v[i] = 1]}{\min(u_1, v_1)} &\text{otherwise}
     \end{cases}
 
+.. _metric-braun-blanquet:
+
 Braun-Blanquet
 ==============
 
@@ -170,6 +185,8 @@ maximum number of bits set in either of the two vectors. The implementation is g
         \frac{\sum_{i=1}^{n} [u[i] = v[i] = 1]}{\max(u_1, v_1)} &\text{otherwise}
     \end{cases}
 
+.. _metric-canberra:
+
 Canberra
 ========
 
@@ -179,6 +196,20 @@ sum of the absolute values of the two vectors. The implementation is given in `S
 .. math::
 
     \text{Canberra}(u, v) = \sum_{i=1}^{n} \frac{|u[i] - v[i]|}{|u[i]| + |v[i]|}
+
+.. _metric-cosine:
+
+Cosine
+======
+
+The Cosine similarity is the dot product of the two vectors :math:`u` and :math:`v` divided by the product of the
+Euclidean norms of the two vectors. The implementation is given in `SciPy <https://github.com/scipy/scipy/blob/7dcd8c59933524986923cde8e9126f5fc2e6b30b/scipy/spatial/distance.py#L652>`__.
+
+.. math::
+
+    \text{CosineSimilarity}(u, v) = \frac{\sum_{i=1}^{n} u[i] \cdot v[i]}{\sqrt{\sum_{i=1}^{n} u[i]^2} \cdot \sqrt{\sum_{i=1}^{n} v[i]^2}}
+
+.. _metric-dice:
 
 Dice
 ====
@@ -190,6 +221,8 @@ number of bits set in either of the two vectors. The implementation is given in 
 
     \text{Dice}(u, v) = \frac{2 \sum_{i=1}^{n} [u[i] = v[i] = 1]}{\sum_{i=1}^{n} [u[i]] + \sum_{i=1}^{n} [v[i]]}
 
+.. _metric-hamming:
+
 Hamming or Matching
 ===================
 
@@ -199,6 +232,8 @@ The Hamming distance (a.k.a. Matching distance) is the number of bits that are d
 .. math::
 
     \text{Hamming}(u, v) = \sum_{i=1}^{n} [u[i] \neq v[i]]
+
+.. _metric-jaccard:
 
 Jaccard
 =======
@@ -210,6 +245,8 @@ in the two bit vectors :math:`u` and :math:`v`. The implementation is given in `
 .. math::
 
     \text{Jaccard}(u, v) = \frac{\sum_{i=1}^{n} [u[i] \neq v[i]]}{n}
+
+.. _metric-kulczynski:
 
 Kulczynski
 ==========
@@ -232,6 +269,8 @@ Matching
 
 see Hamming
 
+.. _metric-onbit:
+
 OnBit
 =====
 
@@ -246,6 +285,8 @@ implementation is given in `RDKit <https://github.com/rdkit/rdkit/blob/722cbba89
         \frac{(\sum_{i=1}^{n} [u[i] = v[i] = 1])}{\sum_{i=1}^{n} [u[i] \lor v[i]]} &\text{otherwise}
     \end{cases}
 
+.. _metric-rogers-tanimoto:
+
 Rogers-Tanimoto
 ===============
 
@@ -256,6 +297,8 @@ plus the number of bits that are equal in the vectors. The implementation is giv
 .. math::
 
     \text{Rogers-Tanimoto}(u, v) = \frac{2 \cdot \sum_{i=1}^{n} [u[i] \neq v[i]]}{\sum_{i=1}^{n} [u[i] \neq v[i]] + \sum_{i=1}^{n} [u[i] = v[i]]}
+
+.. _metric-rogot-goldberg:
 
 Rogot-Goldberg
 ==============
@@ -275,6 +318,8 @@ the two bit vectors :math:`u` and :math:`v`. The implementation is given in `RDK
         \frac{x}{x + z} + \frac{d}{2 \cdot n - y - z} &\text{otherwise}
     \end{cases}
 
+.. _metric-russel:
+
 Russel
 ======
 
@@ -284,6 +329,8 @@ number of one-bits in the two bit vectors :math:`u` and :math:`v`. The implement
 .. math::
 
     \text{Russel}(u, v) = \frac{\sum_{i=1}^{n} [u[i] = v[i] = 1]}{n}
+
+.. _metric-sokal:
 
 Sokal
 =====
@@ -296,6 +343,8 @@ vectors :math:`u` and :math:`v`. The implementation is given in `RDKit <https://
 
     \text{Sokal}(u, v) = \frac{\sum_{i=1}^{n} [u[i] = v[i] = 1]}{2 \cdot \sum_{i=1}^{n} [u[i]] + [v[i]] - \sum_{i=1}^{n} [u[i] = v[i] = 1]}
 
+.. _metric-sokal-michener:
+
 Sokal-Michener
 ==============
 
@@ -306,6 +355,8 @@ plus the number of bits that are equal in the vectors. The implementation is giv
 .. math::
 
     \text{Sokal-Michener}(u, v) = \frac{2 \cdot \sum_{i=1}^{n} [u[i] \neq v[i]]}{\sum_{i=1}^{n} 2 \cdot [u[i] \neq v[i]] + [u[i] = v[i]]}
+
+.. _metric-tanimoto:
 
 Tanimoto
 ========
@@ -322,6 +373,8 @@ vectors :math:`u` and :math:`v`. The implementation is given in `RDKit <https://
         1, &\text{if} t = 0,\\
         \frac{c}{t - c} &\text{otherwise}
     \end{cases}
+
+.. _metric-yule:
 
 Yule
 ====

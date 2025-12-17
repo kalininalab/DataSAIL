@@ -107,10 +107,10 @@ def run_vector(dataset: DataSet, method: str = "tanimoto") -> None:
     method = method.lower()
 
     embed = dataset.data[dataset.names[0]]
-    if method in SIM_OPTIONS:
+    if method in SIM_OPTIONS and method != "cosine":
         if isinstance(embed, (list, tuple, np.ndarray)):
             if isinstance(embed[0], int) or np.issubdtype(embed[0].dtype, int):
-                if method in ["allbit", "asymmetric", "braunblanquet", "cosine", "kulczynski", "onbit",
+                if method in ["allbit", "asymmetric", "braunblanquet", "kulczynski", "onbit",
                               "rogotgoldberg", "russel", "sokal"]:
                     dataset.data = {k: iterable2bitvect(v) for k, v in dataset.data.items()}
                 else:
@@ -156,10 +156,10 @@ def run(
         fps: The fingerprints to compute pairwise similarities for.
         method: The similarity measure to use.
     """
-    if method in SIM_OPTIONS:
+    if method in SIM_OPTIONS and method != "cosine":
         dataset.cluster_similarity = rdkit_sim(fps, method)
         if method == "mcconnaughey":
-            dataset.cluster_similarity = dataset.cluster_similarity + 1 / 2
+            dataset.cluster_similarity = (dataset.cluster_similarity + 1) / 2
     elif method in DIST_OPTIONS:
         if method == "mahalanobis" and len(fps) <= len(fps[0]):
             raise ValueError(
