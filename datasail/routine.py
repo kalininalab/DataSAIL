@@ -75,10 +75,10 @@ def datasail_main(**kwargs) -> Optional[tuple[dict, dict, dict]]:
         for interaction in inter:
             build = []
             for dataset, entity in zip(datasets, interaction):
-                if dataset.type is not None:
+                if dataset.type is None:
                     build.append(entity)
                 else:
-                    new_inter.append(dataset.id_map[entity])
+                    build.append(dataset.id_map[entity])
             new_inter.append(build)
     else:
         new_inter = None
@@ -90,7 +90,7 @@ def datasail_main(**kwargs) -> Optional[tuple[dict, dict, dict]]:
         # split the data into dictionaries mapping interactions, e-entities, and f-entities into the splits
         if tech.is_random():  # random split
             LOGGER.info("Perform random splitting")
-            inter_split_map[Technique(TEC_R)] = random_inter_split(kwargs[KW_RUNS], inter, kwargs[KW_SPLITS], kwargs[KW_NAMES])
+            inter_split_map[Technique(TEC_R)] = random_inter_split(kwargs[KW_RUNS], new_inter, kwargs[KW_SPLITS], kwargs[KW_NAMES])
             continue
         
         tmp_name_split_map, tmp_cluster_split_map = run_solver(
