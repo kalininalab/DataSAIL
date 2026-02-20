@@ -20,7 +20,15 @@ Therefore, when used for hyperparameter tuning, they help in selecting models (a
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The most time and memory consuming step in DataSAIL is the clustering of the data. For most datatypes, this is done by third-party programms such as FoldSeek, 
 DIAMOND, or MASH. In that case, DataSAIL has no influence on the runtime and memory consumption. The user may provide their own commandline arguments to these 
-programs. 
+programs.
+
+3. DataSAIL does not offer time-based splits. Why is that?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Time-based splits are often used in time series data to simulate real-world scenarios where future data is predicted based on past data. However, time-based 
+splits do not inherently prevent information leakage, as data points that are temporally close may still share significant similarities. Furthermore, time-based splits
+can be computed by simple sorting and partitioning of the data, which does not require the complex optimization techniques employed by DataSAIL.
+
+To split time series data while preventing information leakage, one transfer the time series data into a feature space using techniques 
 
 Practical Questions
 -------------------

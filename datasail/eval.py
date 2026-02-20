@@ -18,8 +18,9 @@ def eval_split(
         similarity: MATRIX_INPUT, 
         distance: MATRIX_INPUT, 
         dist_conv: Optional[Union[int, float, Callable]], 
-        split_assignment: Union[dict[str, Any], str, Path]
-    ) -> tuple[float, float, float]:
+        split_assignment: Union[dict[str, Any], str, Path],
+        return_matrix: bool = False,
+    ) -> tuple[float, float, float, Optional[np.ndarray]]:
     """
     Evaluate the leakage of a single split assignment on a dataset. The inputs are mostly the same as for a normal DataSAIL run.
 
@@ -36,12 +37,14 @@ def eval_split(
         distance: Optional distance matrix, can be a string (path) or Path object.
         dist_conv: Optional distance conversion function or maximum distance value.
         split_assignment: A single split assignment, can be a dictionary, string (path), or Path object.
+        return_matrix: Whether to return the similarity/distance matrix used for evaluation. If True, the function will return a tuple of (leakage_ratio, leakage_value, total_value, matrix).
 
     Returns:
         A tuple containing 
             - the leakage ratio (lower is better), 
             - the absolute leakage value, and 
             - the total metric value for the split assignment (maximal leakage possible).
+            - the similarity/distance matrix used for evaluation (if return_matrix is True otherwise this will be None).
     """
     if distance is not None:
         if dist_conv is None:
@@ -89,7 +92,7 @@ def eval_split(
     
     weight_array = np.array([dataset.cluster_weights[name] for name in dataset.cluster_names]).reshape(-1, 1)
     weight_matrix = weight_array @ weight_array.T
-    metric *= weight_matrix
+    # metric *= weight_matrix
 
     if mode == "sim":
         total = np.sum(metric * weight_matrix)
@@ -97,4 +100,4 @@ def eval_split(
     if mode == "dist":
         total = np.sum((1 - metric) * weight_matrix)
         leakage = np.sum((1 - in_split_mask) * weight_matrix * (1 - metric))
-    return leakage / total, leakage, total
+    return leakage / total, leakage, total, metric if return_matrix else None
