@@ -51,7 +51,7 @@ from datasail.sail import datasail
 splits = datasail(...)
 ````
 
-For more information about the parameters, please read through the [documentation page]()
+For more information about the parameters, please read through the [documentation page](https://datasail.readthedocs.io/en/latest/interfaces/cli.html).
 
 ## When to use DataSAIL and when not to use
 

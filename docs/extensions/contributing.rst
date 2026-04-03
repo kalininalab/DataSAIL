@@ -19,10 +19,10 @@ advice you to create pull requests always against the dev-branch where we accumu
 versions that are published in non-regular intervals. We distinguish two types of pull requests:
 
  4. A fast pull requests is sufficient to make small changes to DataSAIL, e.g., quickly fixing a small bug/typo/etc.
-    For this, we offer a `fast RP template <https://github.com/kalininalab/DataSAIL/blob/main/.github/PULL_REQUEST_TEMPLATE/fast_pr_template.md>`_
+    For this, we offer a `fast RP template <https://github.com/kalininalab/DataSAIL/tree/main/.github/PULL_REQUEST_TEMPLATE/fast_pr_template.md>`_
     to collect some information that helps the developers reviewing and accepting the PR.
  5. For implementing bigger updates and new features, we request you to submit a more detailed PR following this
-    `detailed PR template <https://github.com/kalininalab/DataSAIL/blob/main/.github/PULL_REQUEST_TEMPLATE/detailed_pr_template.md>`_.
+    `detailed PR template <https://github.com/kalininalab/DataSAIL/tree/main/.github/PULL_REQUEST_TEMPLATE/detailed_pr_template.md>`_.
 
 Applying the PR templates to your PR can be a bit tedious, as (other then for the issue templates) GitHub does not
 automatically suggest a template when creating the PR. You can either manually add the template to your PR or paste
