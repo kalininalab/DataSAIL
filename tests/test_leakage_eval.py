@@ -8,7 +8,7 @@ from datasail.settings import M_TYPE
 
 def test_eval_split():
     seqs = pd.read_csv(Path("data") / "pipeline" / "seqs.tsv", sep="\t")["ID"].values.tolist()
-    scaled_dl, total_dl, max_dl = eval_split(
+    scaled_dl, total_dl, max_dl, _ = eval_split(
         "P",
         Path("data") / "pipeline" / "seqs.fasta",
         Path("data") / "pipeline" / "prot_weights.tsv",

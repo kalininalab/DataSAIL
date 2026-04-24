@@ -1,8 +1,9 @@
 from argparse import Namespace
 from typing import Tuple, Union, Optional
+import scipy
 
 from datasail.parsers import MultiYAMLParser
-from datasail.settings import CDHIT, MMSEQS2, MASH, FOLDSEEK, MMSEQS, get_default, CDHIT_EST, MMSEQSPP, DIAMOND
+from datasail.settings import CDHIT, MMSEQS2, MASH, FOLDSEEK, MMSEQS, get_default, CDHIT_EST, MMSEQSPP, DIAMOND, LOGGER
 
 
 def validate_user_args(
@@ -25,6 +26,11 @@ def validate_user_args(
     Returns:
         The namespace containing the parsed and validated arguments
     """
+    
+    if scipy.__version__ >= "1.17" and distance in {"kulczynski", "sokalmichener"}:
+        LOGGER.error("The distance metrics kulczynski and sokalmichener are deprecated from SciPy v1.17 on.")
+        return 
+    
     sim_on, dist_on = isinstance(similarity, str), isinstance(distance, str)
     both_none = not sim_on and not dist_on
     if (sim_on and similarity.lower().startswith(CDHIT_EST)) or \

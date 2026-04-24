@@ -8,6 +8,7 @@ import pytest
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors
 from rdkit.ML.Descriptors import MoleculeDescriptors
+import scipy
 
 from datasail.cluster.cdhit import run_cdhit
 from datasail.cluster.clustering import additional_clustering, cluster, distance_clustering, force_clustering, similarity_clustering
@@ -263,7 +264,10 @@ def test_mmseqspp_protein():
     "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "onbit", "rogotgoldberg", "russel",
     "sokal", "tanimoto", "canberra", "hamming", "jaccard", "matching", "rogerstanimoto", "sokalmichener", "yule"
 ])
-def test_vector(md_calculator, algo, in_type, method) :
+def test_vector(md_calculator, algo, in_type, method):
+    if scipy.__version__ >= "1.17" and method in {"kulczynski", "sokalmichener"}:
+        pytest.skip("The distance metrics kulczynski and sokalmichener are deprecated from SciPy v1.17 on.")
+
     data = molecule_data()
     if algo == "FP":
         embed = lambda x: AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(x), 2, nBits=1024)
