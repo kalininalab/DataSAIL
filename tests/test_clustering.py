@@ -309,6 +309,9 @@ def test_cosine(md_calculator):
     "sokal", "canberra", "hamming", "jaccard", "matching", "rogerstanimoto", "sokalmichener", "yule"
 ])
 def test_vector_edge(method):
+    if scipy.__version__ >= "1.17" and method in {"kulczynski", "sokalmichener"}:
+        pytest.skip("The distance metrics kulczynski and sokalmichener are deprecated from SciPy v1.17 on.")
+
     dataset = DataSet(
         names=["A", "B", "C", "D", "E", "F", "G"],
         data={
