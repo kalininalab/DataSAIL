@@ -1,9 +1,10 @@
 from argparse import Namespace
 from typing import Tuple, Union, Optional
 import scipy
+import numpy as np
 
 from datasail.parsers import MultiYAMLParser
-from datasail.settings import CDHIT, MMSEQS2, MASH, FOLDSEEK, MMSEQS, get_default, CDHIT_EST, MMSEQSPP, DIAMOND, LOGGER
+from datasail.settings import CDHIT, MMSEQS2, MASH, FOLDSEEK, MMSEQS, WLK, get_default, CDHIT_EST, MMSEQSPP, DIAMOND, LOGGER
 
 
 def validate_user_args(
@@ -33,6 +34,8 @@ def validate_user_args(
     
     sim_on, dist_on = isinstance(similarity, str), isinstance(distance, str)
     both_none = not sim_on and not dist_on
+    if sim_on and similarity.lower().startswith(WLK) and np.version.version > "2":
+        LOGGER.error("WLK metric is not available for numpy v2")
     if (sim_on and similarity.lower().startswith(CDHIT_EST)) or \
             (both_none and get_default(dtype, dformat)[0] == CDHIT_EST):
         return check_cdhit_est_arguments(tool_args)

@@ -9,16 +9,23 @@ on:
     branches:
       - main
       - dev
+      - main_numpy
   pull_request:
     branches:
       - main
       - dev
+      - main_numpy
   workflow_dispatch:  # make is manually start-able
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "test"
   test:
+    strategy:
+      matrix:
+        numpy-version:
+          - '1'
+          - '2'
     runs-on: 'ubuntu-latest'
     steps:
       - uses: actions/checkout@v4
@@ -26,15 +33,23 @@ jobs:
       - name: Setup Mamba
         uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: '3.9'
+          python-version: '3.12'
           miniforge-version: latest
           activate-environment: MPP
           use-mamba: true
           
-      - name: Install environment
+      - name: Install environment w/ Numpy 1.26.4
+        if: matrix.numpy-version == '1'
         shell: bash -l {0}
         run: |
           mamba install -c conda-forge -c bioconda -y numpy"<2" pandas networkx matplotlib pytest setuptools pyscipopt scip"<=9.1" foldseek mmseqs2 cd-hit mash tmalign diamond cvxpy=1.5.3 pytest-cov rdkit">=2023.09.1" pytest-cases scikit-learn pyyaml h5py pyarrow tqdm importlib_resources
+          pip install grakel
+          
+      - name: Install environment w/ Numpy 2
+        if: matrix.numpy-version == '2'
+        shell: bash -l {0}
+        run: |
+          mamba install -c conda-forge -c bioconda -y numpy">2" pandas networkx matplotlib pytest setuptools pyscipopt scip"<=9.1" foldseek mmseqs2 cd-hit mash tmalign diamond cvxpy=1.5.3 pytest-cov rdkit">=2023.09.1" pytest-cases scikit-learn pyyaml h5py pyarrow tqdm importlib_resources
           pip install grakel
         
       - name: Run tests

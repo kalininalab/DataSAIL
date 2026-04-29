@@ -20,7 +20,8 @@ from datasail.cluster.mmseqs2 import run_mmseqs
 from datasail.cluster.mmseqspp import run_mmseqspp
 from datasail.cluster.vectors import run_vector, SIM_OPTIONS
 from datasail.cluster.tmalign import run_tmalign
-from datasail.cluster.wlk import run_wlk
+if np.version.version < "2":
+    from datasail.cluster.wlk import run_wlk
 
 from datasail.reader.read_proteins import read_folder
 from datasail.reader.utils import DataSet, read_csv, parse_fasta
@@ -340,12 +341,16 @@ def test_tmalign_protein():
 
 @pytest.mark.full
 def test_wlkernel_protein():
+    if np.version.version > "2":
+        pytest.skip("WLK metric is not available for numpy v2")
     protein_data = protein_pdb_data(FOLDSEEK)
     run_wlk(protein_data)
     check_clustering(protein_data)
 
 
 def test_wlkernel_molecule():
+    if np.version.version > "2":
+        pytest.skip("WLK metric is not available for numpy v2")
     data = molecule_data()
     run_wlk(data)
     check_clustering(data)

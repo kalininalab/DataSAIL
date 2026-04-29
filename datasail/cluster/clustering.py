@@ -16,7 +16,8 @@ from datasail.cluster.mmseqs2 import run_mmseqs
 from datasail.cluster.mmseqspp import run_mmseqspp
 from datasail.cluster.vectors import run_vector
 from datasail.cluster.utils import heatmap
-from datasail.cluster.wlk import run_wlk
+if np.version.version < "2":
+    from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
 from datasail.settings import DIST_OPTIONS, FP_OPTIONS, LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, SIM_OPTIONS, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
