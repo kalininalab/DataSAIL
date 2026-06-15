@@ -29,12 +29,15 @@ jobs:
           - '3.13'
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+      
       - name: Setup Mamba
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
-          python-version: {{ matrix.python-version }}
-          miniforge-version: latest
+          python-version: ${{ matrix.python-version }}
+          mamba-version: "*"
+          channels: conda-forge
+          channel-priority: true
           activate-environment: MPP
           use-mamba: true
 
