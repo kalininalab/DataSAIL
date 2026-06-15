@@ -17,18 +17,6 @@ from datasail.solver.overflow import check_dataset
 from datasail.solver.solve import run_solver, random_inter_split
 
 
-def list_cluster_algos():
-    """
-    List all available clustering algorithms.
-    """
-
-    print("Available clustering algorithms:", "\tECFP", sep="\n")
-    for algo, name in [(CDHIT, "CD-HIT"), (CDHIT_EST, "CD-HIT-EST"), (DIAMOND, "DIAMOND"), (MMSEQS, "MMseqs, MMseqs2"),
-                       (MASH, "MASH"), (FOLDSEEK, "FoldSeek"), (TMALIGN, "TMalign")]:
-        if INSTALLED[algo]:
-            print("\t", name, sep="")
-
-
 def tech2oneD(tech: str) -> tuple[str, str]:
     if tech == TEC_I2:
         return TEC_I1 + MODE_E, TEC_I1 + MODE_F
@@ -46,9 +34,6 @@ def datasail_main(**kwargs) -> Optional[Tuple[Optional[Dict], Optional[Dict], Op
         **kwargs: Parsed commandline arguments to DataSAIL.
     """
     kwargs = remove_patch(**kwargs)
-    if kwargs.get(KW_CC, False):
-        list_cluster_algos()
-        return None
 
     # seed the stuff
     random.seed(42)

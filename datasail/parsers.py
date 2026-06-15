@@ -4,10 +4,47 @@ from pydoc import locate
 from typing import Dict, List, Sequence, Literal
 
 import yaml
+import numpy as np
 
 from datasail.argparse_patch import insert_patch
 from datasail.settings import *
 from datasail.version import __version__
+
+
+def list_cluster_algos():
+    """
+    List all available clustering algorithms in DataSAIL. This includes both algorithms that are available by default 
+    and algorithms that can be used if the user has them installed. The availability of the algorithms is determined 
+    by checking if the required dependencies are installed. The output is printed to the console.
+
+    Returns:
+        None
+    """
+    print("Available clustering algorithms:\n")
+    print("       Algorithm :  Availability")
+    print("================================")
+    print("            ECFP :     available")
+
+    for algo, name in [(CDHIT, "CD-HIT"), (CDHIT_EST, "CD-HIT-EST"), (DIAMOND, "DIAMOND"), (MMSEQS, "MMseqs, MMseqs2"),
+                       (MASH, "MASH"), (FOLDSEEK, "FoldSeek"), (TMALIGN, "TMalign")]:
+        sign = "available" if INSTALLED[algo] else "not available"
+        print(f"{name:>16} : {sign:>13}")
+    
+    if np.version.version < "2":
+        try:
+            import grakel
+            print("\t", "WLK", sep="")
+        except ImportError:
+            pass
+
+
+class AlgorithmAction(argparse.Action):
+    def __init__(self, option_strings, dest, **kwargs):
+        super().__init__(option_strings, dest, nargs=0, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        list_cluster_algos()
+        exit(0)
 
 
 def parse_datasail_args(args) -> Dict[str, object]:
@@ -26,17 +63,17 @@ def parse_datasail_args(args) -> Dict[str, object]:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--cc",
+        "--ac",
         default=False,
-        action='store_true',
+        action=AlgorithmAction,
         dest=KW_CC,
-        help="List available clustering algorithms."
+        help="List the available clustering algorithms."
     )
     parser.add_argument(
         "-o",
         "--output",
         type=Path,
-        required=True,
+        default=None,
         dest=KW_OUTDIR,
         help="Output directory to store the splits in.",
     )
@@ -84,7 +121,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
         "-t",
         "--techniques",
         type=str,
-        required=True,
+        default=[],
         choices=[TEC_R, TEC_I1 + MODE_E, TEC_I1 + MODE_F, TEC_I2, TEC_C1 + MODE_E, TEC_C1 + MODE_F, TEC_C2],
         nargs="+",
         dest=KW_TECHNIQUES,

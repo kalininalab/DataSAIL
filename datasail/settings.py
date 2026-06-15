@@ -92,18 +92,34 @@ SIM_OPTIONS = ["allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulcz
 DIST_OPTIONS = ["canberra", "cosine", "hamming", "jaccard", "matching", "rogerstanimoto", "sokalmichener", "yule"]
 FP_OPTIONS = SIM_OPTIONS + DIST_OPTIONS
 
+def check_algo_presence(name: str) -> bool:
+    """
+    Check if a specific command-line tool is installed.
+
+    Args:
+        name: Name of the command-line tool to check
+    
+    Returns:
+        True if the tool is installed, False otherwise
+    """
+    try:
+        return shutil.which(name) is not None
+    except:
+        return False
+
+
 # Check if the tools are installed
 INSTALLED = {
-    CDHIT: os.system("cd-hit -h > /dev/null") == 256,
-    CDHIT_EST: os.system("cd-hit-est -h > /dev/null") == 256,
-    DIAMOND: os.system("diamond help > /dev/null") == 0,
-    MMSEQS: os.system("mmseqs -h > /dev/null") == 0,
-    MMSEQS2: os.system("mmseqs -h > /dev/null") == 0,
-    MMSEQSPP: os.system("mmseqs -h > /dev/null") == 0,
-    MASH: os.system("mash -h > /dev/null") == 0,
-    FOLDSEEK: os.system("foldseek -h > /dev/null") == 0,
-    TMALIGN: os.system("TMalign -h > /dev/null") == 0,
+    CDHIT: check_algo_presence("cd-hit"),
+    CDHIT_EST: check_algo_presence("cd-hit-est"),
+    DIAMOND: check_algo_presence("diamond"),
+    MMSEQS: check_algo_presence("mmseqs"),
+    MASH: check_algo_presence("mash"),
+    FOLDSEEK: check_algo_presence("foldseek"),
+    TMALIGN: check_algo_presence("TMalign"),
 }
+INSTALLED[MMSEQS2] = INSTALLED[MMSEQS]
+INSTALLED[MMSEQSPP] = INSTALLED[MMSEQS]
 
 
 def format2ending(fmt: str) -> str:
@@ -158,7 +174,7 @@ YAML_FILE_NAMES = {
 
 KW_CACHE = "cache"
 KW_CACHE_DIR = "cache_dir"
-KW_CC = "cc"
+KW_CC = "ac"
 KW_CLI = "cli"
 KW_DELTA = "delta"
 KW_EPSILON = "epsilon"

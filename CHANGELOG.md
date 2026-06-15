@@ -27,6 +27,13 @@
 
 ## Change Log
 
+## v1.4.0 (2026-06-16)
+
+- We unify the installation of DataSAIL and DataSAIL-lite. Now, installing `datasail` from PyPI or conda will give you the same version without third-party clustering software.
+- Support for Python 3.13 and stopping support for Python 3.9. Now, DataSAIL supports Python 3.10 to 3.13.
+- Support for NumPy v2. Now, DataSAIL can be used with both, NumPy v1 and v2.
+- Updated documentation
+
 ## v1.3.0 (2025-12-18)
 
 IMPORTANT: This version changes the eval functions' API. Now, the only eval function is `eval_split`, which evaluates a given split with an updated signature. Check the documentation for more information. The previous `eval_single_split` function is no longer available.

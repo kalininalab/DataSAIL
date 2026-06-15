@@ -24,6 +24,7 @@ extensions = [
     "nbsphinx_link",
     "IPython.sphinxext.ipython_console_highlighting",
     "myst_parser",
+    'sphinx_copybutton',
 ]
 
 suppress_warnings = ["config.cache"]

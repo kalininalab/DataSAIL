@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 from typing import Dict, List, Callable, Generator, Union, Literal
 
-from datasail.parsers import parse_datasail_args
+from datasail.parsers import parse_datasail_args, list_cluster_algos as avail_clustering_algos
+from datasail.eval import eval_split
 from datasail.reader.utils import DATA_INPUT, MATRIX_INPUT
 from datasail.routine import datasail_main
 from datasail.settings import *
@@ -243,6 +244,8 @@ def sail(args=None, **kwargs) -> None:
         kwargs = parse_datasail_args(args or sys.argv[1:])
     kwargs = {key: (kwargs[key] if key in kwargs else val) for key, val in DEFAULT_KWARGS.items()}
     kwargs[KW_CLI] = True
+    if kwargs[KW_OUTDIR] is None:
+        error("When calling from the commmandline, you have to set the ", 25, True)
     for kwarg in [KW_OUTDIR, KW_INTER, KW_CACHE_DIR, KW_E_DATA, KW_E_WEIGHTS, KW_E_STRAT,
                   KW_E_SIM, KW_E_DIST, KW_F_DATA, KW_F_WEIGHTS, KW_F_STRAT, KW_F_SIM, KW_F_DIST]:
         if kwarg in kwargs:

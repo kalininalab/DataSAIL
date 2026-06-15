@@ -44,7 +44,7 @@ jobs:
       - name: Install environment
         shell: bash -l {0}
         run: |
-          pip install numpy pandas networkx matplotlib pyscipopt scip cvxpy rdkit">=2023.09.1" scikit-learn pyyaml h5py pyarrow tqdm importlib_resources setuptools pytest"==9.0.3" pytest-cov pytest-cases
+          pip install numpy pandas networkx matplotlib pyscipopt cvxpy rdkit">=2023.09.1" scikit-learn pyyaml h5py pyarrow tqdm importlib_resources setuptools pytest"==9.0.3" pytest-cov pytest-cases
           mamba install -c conda-forge -c bioconda --override-channels -y foldseek mmseqs2 cd-hit mash tmalign diamond
 
       - name: Run tests

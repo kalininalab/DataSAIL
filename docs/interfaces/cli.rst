@@ -19,7 +19,6 @@ generator therefore. For more details on the supported types, please checkout th
 
 -o / -\-output
 ==============
-CLI only! Required!
 
 The path to the output directory to store the splits in. This folder will contain all splits, reports, and logs from
 the execution.
@@ -48,6 +47,10 @@ CLI only!
 
 Get the number of the installed version of DataSAIL.
 
+-\-ac
+=====
+Print a list of all available clustering methods for the -\-X-sim and -\-X-dist arguments.
+
 Splitting Arguments
 ###################
 
@@ -56,7 +59,6 @@ for the CLI and the package version of DataSAIL.
 
 -t / -\-techniques
 ==================
-Required!
 
 Select the mode to split the data. Choices are
   * R: Random split,

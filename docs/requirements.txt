@@ -3,7 +3,7 @@ numpy
 pandas
 networkx
 matplotlib
-pytest
+pytest<9.1.0
 setuptools
 cvxpy
 pytest-cov
@@ -20,3 +20,5 @@ lxml_html_clean
 h5py
 myst_parser
 importlib-resources
+pyarrow
+tqdm

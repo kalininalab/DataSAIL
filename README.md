@@ -17,41 +17,61 @@ in an overestimation of the model's performance in certain training regimes.
 DataSAIL was initially developed for machine learning workflows involving biological datasets, but its utility extends to
 any type of datasets. It can be used through a command line interface or integrated as a Python package, making it
 accessible and user-friendly. The tool is licensed under the MIT license, ensuring it remains open source and freely
-available here on GitHub.
+available here on [GitHub](https://github.com/kalininalab/datasail).
 
 A detailed documentation of the package, explanations, examples, and much more are given on DataSAIL's [ReadTheDocs page](https://datasail.readthedocs.io/en/latest/index.html). 
 
 ## Installation
 
-DataSAIL is available for all modern versions of Python (v3.9 or newer). We ship two versions of DataSAIL:
-- `DataSAIL`: The full version of DataSAIL, which includes all third-party clustering algorithms and is available on conda for linux and OSX (called `datasail`).
-- `DataSAIL-lite`: A lightweight version of DataSAIL, which does not include any third-party clustering algorithms and is available on PyPI (called `datasail`) and conda (called `datasail-lite`).
+**_NOTE:_** This installation instruction changed in version 1.4.0 compared to previous versions. The usage remains the same, both as a python package and as a commandline tool.
 
-**_NOTE:_** There is a naming-inconsitency between the conda and PyPI versions of DataSAIL. The lite version is called `datasail-lite` on conda, while it is called `datasail` on PyPI. This will be fixed in the future, but for now, please be aware of this inconsistency.
+DataSAIL is available for all modern versions of Python (v3.10 or newer). You can install DataSAIL using either pip (recommended).
 
-## Usage
+```shell
+pip install datasail
+```
+or conda/mamba
 
-DataSAIL is installed as a command-line tool. So, in the conda environment, DataSAIL has been installed to, you can run 
+```shell
+mamba install -c conda-forge -c kalininalab datasail
+```
 
-````shell
-datasail --e-type P --e-data <path_to_fasta> --e-sim mmseqs --output <path_to_output_path> --technique C1e
-````
+Until version 1.3.0, DataSAIL was available in two versions. From version 1.4.0 onwards, we have merged the two versions into a single one. Both verions come without third-party clustering algorithms such as MMseqs2, CD-HIT, FoldSeek or MASH. If you want to use these tools, please install them separately and make sure they are in your PATH. For more information on how to install these tools, please see the [documentation page](https://datasail.readthedocs.io/en/latest/installation.html#external-clustering-tools).
 
-to split a set of proteins that have been clustered using mmseqs. For a full list of arguments, run `datasail -h` and checkout [ReadTheDocs](https://datasail.readthedocs.io/). There is a more detailed explanation of the arguments and example notebooks. The runtime largy depends on the number and type of splits to be computed and the size of the dataset. For small datasets (less then 10k samples) DataSAIL finished within minutes. On large datasets (more than 100k samples) it can take several hours to complete.
-Regardless of which installation command was used, DataSAIL can be executed by running
+**_NOTE:_** If you install DataSAIL from conda, it is recommended to use `mamba <https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html>`_
+    because conda might not be able to resolve the dependencies of DataSAIL successfully.
 
-````shell
-datasail -h
-````
+By default, DataSAIL v1.4 installs NumPy v2. If you want to use DataSAIL with NumPy v1, please use 
 
-in the command line and see the parameters DataSAIL takes. DataSAIL can also directly be included as a normal package into your Python program using
+```shell
+pip install datasail numpy<2
+```
 
-````python
+for installing from the PyPI or
+
+```shell
+mamba install -c conda-forge -c kalininalab datasail numpy<2
+```
+
+to install from conda/mamba.
+
+## Quick start
+
+DataSAIL comes with a command-line interface and as a Python package. The main functionality can be accessed by, e.g., running the following command in the terminal: 
+
+```shell
+datasail --output <path_to_output_path> --technique C1e --e-type P --e-data <path_to_fasta> --e-sim mmseqs
+```
+
+or in a Python program by
+
+```python
 from datasail.sail import datasail
-splits = datasail(...)
-````
 
-For more information about the parameters, please read through the [documentation page](https://datasail.readthedocs.io/en/latest/interfaces/cli.html).
+splits = datasail(technique=["C1e"], e_type="P", e_data="<path_to_fasta>", e_sim="mmseqs", output="<path_to_output_path>")
+```
+
+Here, the output argument is optional and saves the results in a folder in addition to returning them. For more information about the parameters, please read through the [documentation page](https://datasail.readthedocs.io/en/latest/interfaces/cli.html).
 
 ## When to use DataSAIL and when not to use
 
@@ -60,7 +80,11 @@ DataSAIL offers a variety of ways to split one-dimensional and multi-dimensional
 
 The datasplit employed should always reflect the inference reality the model is facing. So, if the model is intended to perform well on unseen data, the validation and test data shall be new between splits.
 
-For more information, please see our [guideline to selecting datasplits]() in the documentation.
+For more information, please see our [guideline to selecting datasplits](https://datasail.readthedocs.io/en/latest/workflow/splits.html) in the documentation.
+
+## FAQ
+
+For frequently asked questions, please refer to the [FAQ section](https://datasail.readthedocs.io/en/latest/faq.html).
 
 ## Citation
 
