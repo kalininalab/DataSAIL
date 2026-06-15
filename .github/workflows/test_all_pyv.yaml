@@ -30,11 +30,10 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - uses: actions/checkout@v4
-      
       - name: Setup Mamba
         uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: {{ matrix.python-version }}
           miniforge-version: latest
           activate-environment: MPP
           use-mamba: true
@@ -42,7 +41,8 @@ jobs:
       - name: Install environment
         shell: bash -l {0}
         run: |
-          mamba install -c conda-forge -c bioconda --override-channels -y numpy pandas networkx matplotlib pytest setuptools pyscipopt scip foldseek mmseqs2 cd-hit mash tmalign diamond cvxpy pytest-cov rdkit">=2023.09.1" pytest-cases scikit-learn pyyaml h5py pyarrow tqdm importlib_resources
+          pip install numpy pandas networkx matplotlib pytest setuptools pyscipopt scip cvxpy pytest-cov rdkit">=2023.09.1" pytest-cases scikit-learn pyyaml h5py pyarrow tqdm importlib_resources
+          mamba install -c conda-forge -c bioconda --override-channels -y foldseek mmseqs2 cd-hit mash tmalign diamond
 
       - name: Run tests
         shell: bash -l {0}
