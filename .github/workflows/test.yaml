@@ -42,14 +42,14 @@ jobs:
         if: matrix.numpy-version == '1'
         shell: bash -l {0}
         run: |
-          pip install numpy"<2" pandas networkx matplotlib pytest setuptools pyscipopt scip cvxpy"==1.5.3" pytest-cov rdkit">=2023.09.1" pytest-cases scikit-learn pyyaml h5py pyarrow tqdm importlib_resources grakel
+          pip install numpy"<2" pandas networkx matplotlib pyscipopt scip cvxpy rdkit">=2023.09.1" scikit-learn pyyaml h5py pyarrow tqdm importlib_resources setuptools pytest"==9.0.3" pytest-cov pytest-cases grakel
           mamba install -c conda-forge -c bioconda --override-channels -y foldseek mmseqs2 cd-hit mash tmalign diamond
                 
       - name: Install environment w/ Numpy 2
         if: matrix.numpy-version == '2'
         shell: bash -l {0}
         run: |
-          pip install numpy">=2" pandas networkx matplotlib pytest setuptools pyscipopt scip cvxpy pytest-cov rdkit">=2023.09.1" pytest-cases scikit-learn pyyaml h5py pyarrow tqdm importlib_resources grakel
+          pip install numpy">=2" pandas networkx matplotlib pyscipopt scip cvxpy rdkit">=2023.09.1" scikit-learn pyyaml h5py pyarrow tqdm importlib_resources setuptools pytest"==9.0.3" pytest-cov pytest-cases grakel
           mamba install -c conda-forge -c bioconda --override-channels -y foldseek mmseqs2 cd-hit mash tmalign diamond
         
       - name: Run tests
