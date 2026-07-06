@@ -1,5 +1,6 @@
 package:
   version: '1.4.0'
+  name: "datasail"
 
 source:
   path: ..
@@ -16,8 +17,8 @@ requirements:
     - setuptools_scm
     - pip
   run:
-    - python>=3.9,<3.13.0
-    - numpy<2
+    - python>=3.10,<3.14.0
+    - numpy
     - pandas
     - networkx
     - matplotlib
@@ -26,7 +27,7 @@ requirements:
     - pyscipopt
     - scip<=9.1
     - scikit-learn
-    - cvxpy=1.5.3
+    - cvxpy
     - pytest-cov
     - rdkit
     - pytest-cases

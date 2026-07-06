@@ -158,6 +158,13 @@ def parse_datasail_args(args) -> Dict[str, object]:
         choices=["assign", "break"],
     )
     split.add_argument(
+        "--linkage",
+        default="average",
+        choices=["average", "single", "complete"],
+        dest=KW_LINKAGE,
+        help="Linkage method to use for hierarchical clustering. This is only used if stratification is provided. Choices are: [single], [complete], [average], [weighted], [centroid], [median], [ward]",
+    )
+    split.add_argument(
         "-d",
         "--delta",
         default=0.05,
