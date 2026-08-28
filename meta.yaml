@@ -20,23 +20,22 @@ requirements:
     - python>=3.10,<3.14.0
     - numpy
     - pandas
-    - networkx
     - matplotlib
-    - pytest
     - setuptools
     - pyscipopt
     - scip<=9.1
     - scikit-learn
     - cvxpy
-    - pytest-cov
     - rdkit
-    - pytest-cases
     - pyyaml
     - cvxopt
     - h5py
     - pyarrow
     - tqdm
     - importlib_resources
+    - pytest
+    - pytest-cov
+    - pytest-cases
 
 about:
   home: https://github.com/kalininalab/DataSAIL
