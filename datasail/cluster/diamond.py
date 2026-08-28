@@ -20,8 +20,8 @@ def run_diamond(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = No
         threads: Number of threads to be used by the clustering algorithm.
         log_dir: Directory to store the logs.
     """
-    if not INSTALLED[MMSEQS2]:
-        raise ValueError("MMseqs is not installed.")
+    if not INSTALLED[DIAMOND]:
+        raise ValueError("DIAMOND is not installed.")
 
     parser = MultiYAMLParser(DIAMOND)
     makedb_args = parser.get_user_arguments(dataset.args, [], 0)
@@ -44,7 +44,7 @@ def run_diamond(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = No
     if log_dir is None:
         cmd = cmd("> /dev/null 2>&1")
     else:
-        cmd = cmd(f">> {(Path(log_dir) / f'{dataset.get_name()}_mmseqspp.log').resolve()}")
+        cmd = cmd(f">> {(Path(log_dir) / f'{dataset.get_name()}_diamond.log').resolve()}")
 
     if result_folder.exists():
         cmd = f"rm -rf {result_folder} && " + cmd
