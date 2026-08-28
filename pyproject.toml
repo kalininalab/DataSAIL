@@ -16,7 +16,6 @@ classifiers = [
 python = ">=3.10, <3.14.0"
 numpy = "*"
 pandas = "*"
-networkx = "*"
 matplotlib = "*"
 pyscipopt = "*"
 scikit-learn = "*"
@@ -32,7 +31,7 @@ importlib_resources = "*"
 
 [tool.poetry.dev-dependencies]
 setuptools = "*"
-pytest = "<9.1.0"
+pytest = "<9.0.0"
 pytest-cov = "*"
 notebook = "^6.4.12"
 sphinx-rtd-theme = "^1.0.0"

@@ -62,3 +62,20 @@ Therefore, you can use that :code:`optimal_inaccurate` solution without problems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 When you set the :code:`runs` variable to values greater than :code:`1`, DataSAIL will shuffle the dataset inbetween splitting rounds to run the optimization from different initializations.
 But since many datasets have a unique optimal solution, DataSAIL might find the same solution multiple times and output it mutliple times.
+
+4. How can I install an older version of DataSAIL?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _faq-old-installation:
+
+:code:`DataSAIL v1.3` and older is available for all modern versions of Python (v3.9 or newer) in two versions:
+
+- :code:`DataSAIL`: The full version of DataSAIL, which includes all third-party clustering algorithms and is available on conda for linux and OSX (called :code:`datasail`).
+
+- :code:`DataSAIL-lite`: A lightweight version of DataSAIL, which does not include any third-party clustering algorithms and is available on PyPI (called :code:`datasail`) and conda (called :code:`datasail-lite`).
+
+.. note::
+
+    There is a naming-inconsistency between the conda and PyPI versions of DataSAIL. The lite version is called :code:`datasail-lite` on conda, while it is called :code:`datasail` on PyPI. This was fixed with v1.4.0.
+
+.. raw:: html
+    :file: install.html

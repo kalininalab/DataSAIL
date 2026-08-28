@@ -90,13 +90,13 @@
 
         // Update the text based on the conditions
         if (package === "pip") {
-            preElement.textContent = 'pip install datasail';
+            preElement.textContent = 'pip install datasail==1.3';
         }
         else if (os === "linux" || os === "osx") {
-            preElement.textContent = 'mamba install -c conda-forge -c bioconda -c kalininalab datasail\n# or \n# mamba install -c conda-forge -c bioconda -c kalininalab datasail-lite\n\npip install grakel<0.1.10';
+            preElement.textContent = 'mamba install -c conda-forge -c bioconda -c kalininalab datasail\n# or \n# mamba install -c conda-forge -c bioconda -c kalininalab datasail-lite==1.3\n\npip install grakel<0.1.10';
         }
         else {
-            preElement.textContent = `mamba install -c conda-forge -c bioconda -c kalininalab datasail-lite\n\npip install grakel<0.1.10`;
+            preElement.textContent = `mamba install -c conda-forge -c bioconda -c kalininalab datasail-lite==1.3\n\npip install grakel<0.1.10`;
         }
     }
 

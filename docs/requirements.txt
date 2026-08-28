@@ -1,7 +1,6 @@
 sphinx-rtd-theme==1.0.0
 numpy
 pandas
-networkx
 matplotlib
 pytest<9.1.0
 setuptools

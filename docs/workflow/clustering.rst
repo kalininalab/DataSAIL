@@ -143,6 +143,7 @@ algorithms and arguments for each type of input.
 
 Details about the clustering algorithms
 #######################################
+.. _clustering-algorithms:
 
 For all algorithms, the given general commands can be extended by user defined arguments according to the specification
 of the respective tool. Apart from this, DataSAIL offers multiple options to compute similarities or distances between
