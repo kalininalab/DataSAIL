@@ -8,20 +8,19 @@ source:
 build:
   entry_points:
     - datasail = datasail.sail:sail
-  script: python setup.py install
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
+  # script: python setup.py install
 
 requirements:
-  build:
+  host:
     - python
-    - setuptools
-    - setuptools_scm
     - pip
+    - poetry-core
   run:
     - python>=3.10,<3.14.0
     - numpy
     - pandas
     - matplotlib
-    - setuptools
     - pyscipopt
     - scip<=9.1
     - scikit-learn
@@ -33,9 +32,16 @@ requirements:
     - pyarrow
     - tqdm
     - importlib_resources
+
+test:
+  requires:
     - pytest
     - pytest-cov
     - pytest-cases
+  imports:
+    - datasail
+  commands:
+    - datasail --help
 
 about:
   home: https://github.com/kalininalab/DataSAIL
