@@ -239,7 +239,7 @@ def save_matrix_tsne(
         n_components=2,
         learning_rate="auto",
         init="random",
-        perplexity=max(min(math.sqrt(len(distances)), 50), 5),
+        perplexity=min(math.sqrt(len(distances)), 50),  # max(min(math.sqrt(len(distances)), 50), 5),
         random_state=42,
     ).fit_transform(distances)
 

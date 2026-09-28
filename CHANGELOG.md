@@ -1,16 +1,53 @@
-# Change Log
+# Change Log and Look-Ahead
 
 ## [Planned - Long-term project ideas]
 
 - [ ] Multi-threading support for pre-solving (Snakemake as backbone)
 - [ ] Make (more) deterministic ([Issue #6](https://github.com/kalininalab/DataSAIL/issues/6))
 - [ ] Reports of results with plots and tables a PDF and or HTML
-- [ ] Generalization to R-dimensional datasets (see [paper](https://doi.org/10.1101/2023.11.15.566305))
-- [ ] Input from config files
 - [ ] Replace GraKel with something "modern" and fully "conda-installable" to make DataSAIL fully conda-installable
 - [ ] Include [MashMap3](https://github.com/marbl/MashMap)
 - [ ] Include MASH for amino acid sequences
+
+## Roadmap to DataSAIL v2.0
+
+### Most have features for v2.0
+
+- [ ] Input from config files
+- [ ] Generalization to R-dimensional datasets (see [paper](https://doi.org/10.1101/2023.11.15.566305))
+- [ ] Support for large molecular datasets, based on sampling and heuristical assignments
+- [ ] UMAP (or tSNE?)-based splitting
+- [ ] MCES-based splitting
+
+### Nice to have features for v2.0
+
 - [ ] Custom clustering methods ([Issue #25](https://github.com/kalininalab/DataSAIL/issues/25))
+- [ ] Support for multi-modal data, i.e., combination of different metrics (e.g., sequence similarity and structural similarity)
+- [ ] "Stratification" based on continuous labels (e.g., regression tasks)
+
+## Change Log
+
+## v1.4.0 (2026-06-16)
+
+- We unify the installation of DataSAIL and DataSAIL-lite. Now, installing `datasail` from PyPI or conda will give you the same version without third-party clustering software.
+- Support for Python 3.13 and stopping support for Python 3.9. Now, DataSAIL supports Python 3.10 to 3.13.
+- Support for NumPy v2. Now, DataSAIL can be used with both, NumPy v1 and v2.
+- Updated documentation
+
+## v1.3.0 (2025-12-18)
+
+IMPORTANT: This version changes the eval functions' API. Now, the only eval function is `eval_split`, which evaluates a given split with an updated signature. Check the documentation for more information. The previous `eval_single_split` function is no longer available.
+
+- Bug fix when evaluating the leakage of a datasplit based on distance matrices.
+- Cosine distance and similarity metric.
+- Updated documentation
+- Minor bug fixes
+
+## v1.2.4 (2025-12-03)
+
+- New ``output`` parameter for Python API to specify output directory and save cluster assignments and splits there.
+- Default values of ``epsilon`` and ``delta`` in CLI and API aligned to `0.05`.
+- Two bugs in parameter handling fixed.
 
 ## v1.2.3 (2025-10-21)
 

@@ -9,10 +9,12 @@ on:
     branches:
       - main
       - dev
+      - main_numpy
   pull_request:
     branches:
       - main
       - dev
+      - main_numpy
   workflow_dispatch:  # make is manually start-able
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -24,24 +26,26 @@ jobs:
         python-version:
           - '3.10'
           - '3.11'
-          - '3.12'
+          - '3.13'
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Setup Mamba
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
           python-version: ${{ matrix.python-version }}
-          miniforge-version: latest
+          mamba-version: "*"
+          channels: conda-forge
+          channel-priority: true
           activate-environment: MPP
           use-mamba: true
 
       - name: Install environment
         shell: bash -l {0}
         run: |
-          mamba install -c conda-forge -c bioconda -y numpy"<2" pandas networkx matplotlib pytest setuptools pyscipopt scip"<=9.1" foldseek mmseqs2 cd-hit mash tmalign diamond cvxpy=1.5.3 pytest-cov rdkit">=2023.09.1" pytest-cases scikit-learn pyyaml h5py pyarrow tqdm importlib_resources
-          pip install grakel
+          pip install numpy pandas networkx matplotlib pyscipopt cvxpy rdkit">=2023.09.1" scikit-learn pyyaml h5py pyarrow tqdm importlib_resources setuptools pytest"==9.0.3" pytest-cov pytest-cases
+          mamba install -c conda-forge -c bioconda --override-channels -y foldseek mmseqs2 cd-hit mash tmalign diamond
 
       - name: Run tests
         shell: bash -l {0}

@@ -6,7 +6,7 @@ from datasail.dataset import DataSet
 from datasail.constants import LOGGER
 
 
-def run_ecfp(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
+def run_ecfp(dataset: DataSet, method: str = "tanimoto") -> None:
     """
     Compute 1024Bit-ECPFs for every molecule in the dataset and then compute pairwise Tanimoto-Scores of them.
 
@@ -54,5 +54,8 @@ def run_ecfp(dataset: DataSet, method: SIM_OPTIONS = "tanimoto") -> None:
     LOGGER.info("Compute Tanimoto Coefficients")
 
     run(dataset, fps, method)
+    if method == "cosine":
+        dataset.cluster_similarity = 1 - dataset.cluster_distance
+        dataset.cluster_distance = None
 
     dataset.cluster_map = {name: name for name in dataset.names}

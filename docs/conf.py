@@ -24,6 +24,7 @@ extensions = [
     "nbsphinx_link",
     "IPython.sphinxext.ipython_console_highlighting",
     "myst_parser",
+    'sphinx_copybutton',
 ]
 
 suppress_warnings = ["config.cache"]
@@ -42,7 +43,7 @@ copyright = f"{datetime.datetime.now().year}, {author}"
 release = __version__
 
 html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+# html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 doctest_default_flags = doctest.NORMALIZE_WHITESPACE
 autodoc_member_order = "bysource"

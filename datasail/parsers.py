@@ -4,9 +4,46 @@ from pydoc import locate
 from typing import Dict, List, Sequence, Literal
 
 import yaml
+import numpy as np
 
 from datasail.constants import *
 from datasail.version import __version__
+
+
+def list_cluster_algos():
+    """
+    List all available clustering algorithms in DataSAIL. This includes both algorithms that are available by default 
+    and algorithms that can be used if the user has them installed. The availability of the algorithms is determined 
+    by checking if the required dependencies are installed. The output is printed to the console.
+
+    Returns:
+        None
+    """
+    print("Available clustering algorithms:\n")
+    print("       Algorithm :  Availability")
+    print("================================")
+    print("            ECFP :     available")
+
+    for algo, name in [(CDHIT, "CD-HIT"), (CDHIT_EST, "CD-HIT-EST"), (DIAMOND, "DIAMOND"), (MMSEQS, "MMseqs, MMseqs2"),
+                       (MASH, "MASH"), (FOLDSEEK, "FoldSeek"), (TMALIGN, "TMalign")]:
+        sign = "available" if INSTALLED[algo] else "not available"
+        print(f"{name:>16} : {sign:>13}")
+    
+    if np.version.version < "2":
+        try:
+            import grakel
+            print("\t", "WLK", sep="")
+        except ImportError:
+            pass
+
+
+class AlgorithmAction(argparse.Action):
+    def __init__(self, option_strings, dest, **kwargs):
+        super().__init__(option_strings, dest, nargs=0, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        list_cluster_algos()
+        exit(0)
 
 
 def parse_datasail_args(args) -> Dict[str, object]:
@@ -31,24 +68,17 @@ def parse_datasail_args(args) -> Dict[str, object]:
         help="Path to the configuration file."
     )
     parser.add_argument(
-        "--cc",
+        "--ac",
         default=False,
-        action='store_true',
+        action=AlgorithmAction,
         dest=KW_CC,
-        help="List available clustering algorithms."
-    )
-    parser.add_argument(
-        "-lc", "--list-cluster",
-        dest="list_cluster",
-        action="store_true",
-        help="Flag indicating to list available clustering algorithms. " \
-        "This flag will terminate the program after printing the availabilities.",
+        help="List the available clustering algorithms."
     )
     parser.add_argument(
         "-o",
         "--output",
         type=Path,
-        required=True,
+        default=None,
         dest=KW_OUTDIR,
         help="Output directory to store the splits in.",
     )
@@ -133,9 +163,16 @@ def parse_datasail_args(args) -> Dict[str, object]:
         choices=["assign", "break"],
     )
     split.add_argument(
+        "--linkage",
+        default="average",
+        choices=["average", "single", "complete"],
+        dest=KW_LINKAGE,
+        help="Linkage method to use for hierarchical clustering. This is only used if stratification is provided. Choices are: [single], [complete], [average], [weighted], [centroid], [median], [ward]",
+    )
+    split.add_argument(
         "-d",
         "--delta",
-        default=0.3,
+        default=0.05,
         type=float,
         dest=KW_DELTA,
         help="Relative error for stratification. This is only used if stratification is provided."
@@ -143,7 +180,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     split.add_argument(
         "-e",
         "--epsilon",
-        default=0.3,
+        default=0.05,
         type=float,
         dest=KW_EPSILON,
         help="Relative error how much the limits of the splits can be exceeded.",

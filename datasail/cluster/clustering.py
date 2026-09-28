@@ -15,9 +15,10 @@ from datasail.cluster.mash import run_mash
 from datasail.cluster.mmseqs2 import run_mmseqs
 from datasail.cluster.mmseqspp import run_mmseqspp
 from datasail.cluster.vectors import run_vector
-from datasail.cluster.wlk import run_wlk
+if np.version.version < "2":
+    from datasail.cluster.wlk import run_wlk
 from datasail.dataset import DataSet
-from datasail.constants import KW_SPLITS, LOGGER, KW_THREADS, KW_LOGDIR, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
+from datasail.constants import KW_SPLITS, DIST_OPTIONS, FP_OPTIONS, LOGGER, KW_THREADS, KW_LOGDIR, SIM_OPTIONS, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
     FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND,TANIMOTO, KW_LINKAGE
 
 
@@ -103,8 +104,14 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
         run_mmseqs(dataset, threads, log_dir)
     elif dataset.similarity.lower() == MMSEQSPP:
         run_mmseqspp(dataset, threads, log_dir)
-    elif dataset.similarity.lower() == TANIMOTO:
-        run_vector(dataset)
+    elif dataset.similarity.lower() in SIM_OPTIONS:
+        if isinstance(dataset.data[dataset.names[0]], str):
+            run_ecfp(dataset, method=dataset.similarity.lower())
+        else:
+            run_vector(dataset, method := dataset.similarity.lower())
+            if method == "cosine":
+                dataset.cluster_similarity = 1 - dataset.cluster_distance
+                dataset.cluster_distance = None
     else:
         raise ValueError(f"Unknown cluster method: {dataset.similarity}")
 
@@ -130,6 +137,11 @@ def distance_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[st
     """
     if dataset.distance.lower() == "mash":
         run_mash(dataset, threads, log_dir)
+    elif dataset.distance.lower() in DIST_OPTIONS:
+        if isinstance(dataset.data[dataset.names[0]], str):
+            run_ecfp(dataset, method=dataset.distance.lower())
+        else:
+            run_vector(dataset, dataset.distance.lower())
     else:
         raise ValueError(f"Unknown cluster method: {dataset.distance}")
 

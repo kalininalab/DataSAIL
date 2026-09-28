@@ -100,6 +100,30 @@ SIM_ALGOS = [WLK, MMSEQS, MMSEQS2, MMSEQSPP, FOLDSEEK, CDHIT, CDHIT_EST, ECFP, D
 DIST_ALGOS = [MASH, ]
 ALGOS = SIM_ALGOS + DIST_ALGOS
 
+SIM_OPTIONS = ["allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "onbit", "rogotgoldberg", "russel", "sokal", "tanimoto"]
+
+# unbounded: chebyshev, cityblock, euclidean, mahalanobis, manhattan, mcconnaughey, minkowski, sqeuclidean
+# produces inf or nan: correlation, cosine, jensenshannon, seuclidean, braycurtis
+# boolean only: dice, kulczynski1, russelrao, sokalsneath
+# matching == hamming, manhattan == cityblock (inofficial)
+DIST_OPTIONS = ["canberra", "cosine", "hamming", "jaccard", "matching", "rogerstanimoto", "sokalmichener", "yule"]
+FP_OPTIONS = SIM_OPTIONS + DIST_OPTIONS
+
+def check_algo_presence(name: str) -> bool:
+    """
+    Check if a specific command-line tool is installed.
+
+    Args:
+        name: Name of the command-line tool to check
+    
+    Returns:
+        True if the tool is installed, False otherwise
+    """
+    try:
+        return shutil.which(name) is not None
+    except:
+        return False
+
 
 # Check if the tools are installed
 INSTALLED = {
@@ -167,7 +191,7 @@ YAML_FILE_NAMES = {
 
 KW_CACHE = "cache"
 KW_CACHE_DIR = "cache_dir"
-KW_CC = "cc"
+KW_CC = "ac"
 KW_CLI = "cli"
 KW_DELTA = "delta"
 KW_EPSILON = "epsilon"

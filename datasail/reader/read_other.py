@@ -17,6 +17,7 @@ def read_other_data(
         index: Optional[int] = None,
         num_clusters: Optional[int] = None,
         tool_args: str = "",
+        detect_duplicates: bool = True,
 ) -> DataSet:
     """
     Read in other data, i.e., non-protein, non-molecular, and non-genomic data, compute the weights, and distances or

@@ -7,7 +7,8 @@ from typing import Callable, Generator, Literal, Optional, Union
 
 import yaml
 
-from datasail.parsers import parse_datasail_args
+from datasail.parsers import parse_datasail_args, list_cluster_algos as avail_clustering_algos
+from datasail.eval import eval_split
 from datasail.version import __version__
 from datasail.routine import datasail_main
 from datasail.constants import CDHIT, CDHIT_EST, DATA_INPUT, DIAMOND, DIST_ALGOS, FOLDSEEK, FORMATTER, INSTALLED, KW_ARGS, KW_CACHE, KW_CACHE_DIR, KW_CC, KW_CLI, KW_CLUSTERS, KW_DATA, KW_DELTA, \
@@ -218,11 +219,16 @@ def create_config(**kwargs) -> dict[str, object]:
     return config
 
 
+def to_path(x):
+    return Path(x) if isinstance(x, str) and x not in ALGOS + FP_OPTIONS else x
+
+
 def datasail(
         techniques: Optional[Union[str, list[str], Callable[..., list[str]], Generator[str, None, None]]] = None,
         splits: Optional[list[float]] = None,
         names: Optional[list[str]] = None,
         inter: Optional[Union[str, Path, list[tuple[str, str]], Callable[..., list[str]], Generator[str, None, None]]] = None,
+        output: Optional[Union[str, Path]] = None,
         max_sec: int = 100,
         verbose: str = "W",
         delta: float = 0.05,
@@ -256,6 +262,37 @@ def datasail(
     Entry point for the Python Package. Invocation routine of DataSAIL.
 
     Args:
+        techniques: List of techniques to split based on
+        inter: Filepath to a TSV file storing interactions of the e-entities and f-entities.
+        output: Output directory to store the results in.
+        max_sec: Maximal number of seconds to take for optimizing a found solution.
+        verbose: Verbosity level for logging.
+        splits: List of splits, have to add up to one, otherwise scaled accordingly.
+        names: List of names of the splits.
+        epsilon: Fraction by how much the provided split sizes may be undercut
+        delta: Fraction by how much the stratification may be undercut
+        runs: Number of runs to perform per split. This may introduce some variance in the splits.
+        solver: Solving algorithm to use.
+        cache: Boolean flag indicating to store or load results from cache.
+        cache_dir: Directory to store the cache in if not the default location.
+        linkage: Linkage method to use to compute metrics between merged clusters.
+        e_type: Data format of the first batch of data
+        e_data: Data file of the first batch of data
+        e_weights: Weighting of the datapoints from e_data
+        e_strat: Stratification of the datapoints from e_data
+        e_sim: Similarity measure to apply for the e-data
+        e_dist: Distance measure to apply for the e-data
+        e_args: Additional arguments for the tools in e_sim or e_dist
+        e_clusters: Number of clusters to find in the e-data
+        f_type: Data format of the second batch of data
+        f_data: Data file of the second batch of data
+        f_weights: Weighting of the datapoints from f-data
+        f_strat: Stratification of the datapoints from f-data
+        f_sim: Similarity measure to apply for the f-data
+        f_dist: Distance measure to apply for the f-data
+        f_args: Additional arguments for the tools in f_sim or f-dist
+        f_clusters: Number of clusters to find in the f-data
+        threads: number of threads to use for one CD-HIT run
         config: Dictionary with the configuration of DataSAIL
 
     Returns:

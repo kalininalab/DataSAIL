@@ -84,6 +84,29 @@ class Technique:
         return output
 
 
+def permute(names, similarity=None, distance=None) -> Tuple[List[str], Optional[np.ndarray], Optional[np.ndarray]]:
+    """
+    Permute the order of the data the names list and the according distance or similarity matrix.
+
+    Args:
+        names: List of names of samples in the dataset
+        similarity: Similarity matrix of datapoints in the dataset
+        distance: Distance matrix of datapoints in the dataset
+
+    Returns:
+        Permuted names, similarity and distance matrix
+    """
+    permutation = np.random.permutation(len(names))
+    names = [names[x] for x in permutation]
+    if isinstance(similarity, np.ndarray):
+        similarity = similarity[permutation, :]
+        similarity = similarity[:, permutation]
+    if isinstance(distance, np.ndarray):
+        distance = distance[permutation, :]
+        distance = distance[:, permutation]
+    return names, similarity, distance
+
+
 def read_data(
         weights: DATA_INPUT,
         strats: DATA_INPUT,

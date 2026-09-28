@@ -5,8 +5,9 @@ Clustering
 ##########
 
 Clustering is an essential step in DataSAIL as it groups similar samples together such that they cannot be assigned to
-different splits. This reduces the information leakage even more. In the following table you can see which clustering
-algorithms are available, what output they produce and what input they take for which type of data.
+different splits. This reduces the information leakage while simplifying the constrained optimization problem. In the 
+following table you can see which clustering algorithms are available, what output they produce and what input they 
+take for which type of data.
 
 By the term `clustering` in DataSAIL, we understand two things. Either group samples together (what you usually mean
 when talking about clustering). But also computing a pairwise similarity or distance matrix for the samples is a form
@@ -17,8 +18,8 @@ Usually in DataSAIL, clustering is performed in multiple rounds and there are tw
 
 #. Either, DataSAIL computes a pairwise similarity or distance matrix for your input data. Then, DataSAIL performs
    additional clustering until the number of clusters cannot be further reduced or reaches a window such that the
-   problem for the constraint optimizer is feasible in reasonable time.
-#. Or DataSAIL uses a clustering algorithm that does not return a pairwise matrix (CD-HIT or MMseqs2). Then, the
+   problem is feasible in reasonable time for the optimizer.
+#. Or DataSAIL uses a clustering algorithm that does not return a pairwise matrix (e.g., CD-HIT or MMseqs2). Then, the
    parameters of the algorithm are tweaked using binary search to find a set of parameters that results in the minimal
    number of clusters or reaches a window as described in 1.
 
@@ -27,9 +28,9 @@ Overview
 
 The following table shows an overview over the different input types and which clustering algorithms are available.
 The ability to cluster "other" data (such as Ferrari cars) is a side effect of the implementation. It is listed in the
-table despite there is no clustering algorithm for this. Therefore, the only way to determine similarities or distances
-of entities of "other" input type is to provide them as a matrix in a file and then apply additional clustering based
-on these matrices.
+table despite there is no dedicated clustering algorithm for this. Therefore, the only way to determine similarities 
+or distances of entities of "other" input type is to provide them as a matrix in a file and then apply additional 
+clustering based on these matrices.
 
 .. list-table:: Input molecule types and their available clustering algorithms
     :widths: 25 20 15 15 15 15 15
@@ -155,6 +156,16 @@ CD-HIT is used to cluster protein sequences, for more information on CD-HIT, vis
 `GitHub repository <https://github.com/weizhongli/cdhit>`__, or read the
 `paper <https://doi.org/10.1093/bioinformatics/bts565>`__.
 
+Installation
+------------
+
+.. code-block:: shell
+
+    mamba install -y -c bioconda cd-hit
+
+Usage
+-----
+
 CD-HIT has two parameters to adjust how fine or coarse the clustering will be. Those are :code:`-n` and :code:`-c`.
 Those are automatically adjusted and searched to find a good clustering to start splitting the data.
 
@@ -177,6 +188,16 @@ inter-sample similarities instead of just clusters. More information about DIAMO
 `GitHub repository <https://github.com/bbuchfink/diamond>`__ and in the
 `paper <https://doi.org/10.1038/s41592-021-01101-x>`__.
 
+Installation
+------------
+
+.. code-block:: shell
+
+    mamba install -y -c bioconda diamond
+
+Usage
+-----
+
 The general command to run DIAMOND in DataSAIL is
 
 .. code-block:: shell
@@ -192,8 +213,7 @@ compute Scaffolds following `RDKits MakeScaffoldGeneric <https://rdkit.org/docs/
 This way, molecules are simplified by replacing every heavy atom with carbon atoms and every bond with a single bond.
 The second step is to compute a 1024-bit `Morgan fingerprint <https://doi.org/10.1021/ci100050t>`__ with radius 2.
 Lastly, DataSAIL computes the similarity of these fingerprints as
-`Tanimoto-Similarities <https://en.wikipedia.org/wiki/Jaccard_index>`__
-of the bit-vectors.
+`Tanimoto-Similarities <https://en.wikipedia.org/wiki/Jaccard_index>`__ of the bit-vectors.
 
 FoldSeek
 ========
@@ -205,6 +225,16 @@ FoldSeek is used to cluster protein structures based on PDB input. For more info
 As FoldSeek produces a pairwise similarity matrix, it is not optimizes such as CD-HIT, but will be followed by some
 additional clustering. This is very similar to DIAMOND and their scores have a correlation above 0.98 (measured in
 internal experiments).
+
+Installation
+------------
+
+.. code-block:: shell
+
+    mamba install -y -c bioconda foldseek
+
+Usage
+-----
 
 The general command to run FoldSeek in DataSAIL is
 
@@ -220,6 +250,16 @@ produces a pairwise distance matrix which is used in subsequent rounds of additi
 information on MASH, read the `paper <https://doi.org/10.1186/s13059-016-0997-x>`__ and the
 `ReadTheDocs page <https://mash.readthedocs.io/en/latest/>`__.
 
+Installation
+------------
+
+.. code-block:: shell
+
+    mamba install -y -c bioconda mash
+
+Usage
+-----
+
 DataSAIl calls MASH in two steps. First to compute the sketches and then to compute their distance
 
 .. code-block:: shell
@@ -233,6 +273,16 @@ MMseqs2
 An alternative to CD-HIT to cluster protein sequences is MMseqs2. To get more information on the functionality of
 MMseqs2, checkout the `GitHub repository <https://github.com/soedinglab/MMseqs2>`__ and the
 `paper <https://doi.org/10.1038/nbt.3988>`__.
+
+Installation
+------------
+
+.. code-block:: shell
+
+    mamba install -y -c bioconda mmseqs
+
+Usage
+-----
 
 To interact with MMseqs2, DataSAIL calls it through commandline with
 
@@ -256,4 +306,16 @@ WL-Kernel
 
 The last method to compute similarities of graph-structured data such as PDB files is to use Weisfeiler-Lehman kernels.
 This method is not established and mostly experimental, therefore there is no literature to link, but you can have a
-look at `grakel <https://ysig.github.io/GraKeL/0.1a8/>`__, the Python package DataSAIL uses to apply WLKernel.
+look at `grakel <https://ysig.github.io/GraKeL/>`__, the Python package DataSAIL uses to apply WLKernels to compute 
+similarities between molecular or protein graphs.
+
+.. note::
+    This package only works if numpy v1 is installed. It does not work with numpy v2.
+
+Installation
+------------
+
+.. code-block:: shell
+
+    pip install grakel
+

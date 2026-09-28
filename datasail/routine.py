@@ -15,11 +15,11 @@ from datasail.dataset import DataSet
 from datasail.cluster.clustering import cluster
 from datasail.solver.solve import run_solver, random_inter_split
 from datasail.report import report
+from datasail.constants import DIM_1, LOGGER, KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
+    KW_MAX_SEC, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL, KW_DELTA, \
+    KW_E_CLUSTERS, KW_F_CLUSTERS, KW_CC, CDHIT, INSTALLED, FOLDSEEK, TMALIGN, CDHIT_EST, DIAMOND, MMSEQS, MASH, TEC_R, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MODE_E, MODE_F, KW_LINKAGE, KW_OVERFLOW
 from datasail.solver.overflow import check_dataset
-from datasail.constants import CDHIT, CDHIT_EST, DIAMOND, DIM_1, FOLDSEEK, G_TYPE, INSTALLED, KW_ARGS, KW_CC, KW_CLUSTERS, KW_DATA, KW_DIST, KW_INTER, KW_LINKAGE, \
-    KW_OVERFLOW, KW_SIM, KW_STRAT, KW_TYPE, KW_WEIGHTS, M_TYPE, MASH, MMSEQS, MODE_E, MODE_F, O_TYPE, P_TYPE, KW_DATA, LOGGER, \
-    KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, KW_MAX_SEC, KW_SOLVER, KW_LOGDIR, \
-    NOT_ASSIGNED, KW_OUTDIR, DIM_2, SRC_CL, KW_DELTA, TEC_C1, TEC_C2, TEC_I1, TEC_I2, TEC_R, TMALIGN
+from datasail.solver.solve import run_solver, random_inter_split
 
 
 def list_cluster_algos():
@@ -137,7 +137,12 @@ def datasail_main(**kwargs) -> Optional[tuple[dict, dict, dict]]:
         #                         map_[technique].append({})
         #                     map_[technique][run].update(pre_map[one_d_tech])
 
-    LOGGER.info("Store results")
+    # if all(len(e_run) == 0 for e_techs in e_name_split_map.values() for e_run in e_techs) and \
+    #         all(len(f_run) == 0 for f_techs in f_name_split_map.values() for f_run in f_techs) and \
+    #         "R" not in inter_split_map:
+    #     LOGGER.error("No assignments could be made for any technique! Please check your input data and values for cluster-numbers, delta, and epsilon.")
+    #     return None, None, None
+    # LOGGER.info("Store results")
 
     # infer interaction assignment from entity assignment if necessary and possible
     # if new_inter is not None:

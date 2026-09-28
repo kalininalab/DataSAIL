@@ -8,9 +8,10 @@ import pytest
 from rdkit import Chem
 from rdkit.Chem import AllChem, Descriptors
 from rdkit.ML.Descriptors import MoleculeDescriptors
+import scipy
 
 from datasail.cluster.cdhit import run_cdhit
-from datasail.cluster.clustering import additional_clustering, cluster, force_clustering
+from datasail.cluster.clustering import additional_clustering, cluster, distance_clustering, force_clustering, similarity_clustering
 from datasail.cluster.diamond import run_diamond
 from datasail.cluster.ecfp import run_ecfp
 from datasail.cluster.foldseek import run_foldseek
@@ -19,7 +20,8 @@ from datasail.cluster.mmseqs2 import run_mmseqs
 from datasail.cluster.mmseqspp import run_mmseqspp
 from datasail.cluster.vectors import run_vector, SIM_OPTIONS
 from datasail.cluster.tmalign import run_tmalign
-from datasail.cluster.wlk import run_wlk
+if np.version.version < "2":
+    from datasail.cluster.wlk import run_wlk
 
 from datasail.reader.read_proteins import read_folder
 from datasail.reader.utils import read_csv, read_fasta
@@ -170,6 +172,9 @@ def molecule_data():
         type="M",
         data=data,
         names=list(sorted(data.keys())),
+        weights={k: 1 for k in data.keys()},
+        stratification={k: 0 for k in data.keys()},
+        classes={0: 0},
         location=Path("data") / "pipeline" / "drugs.tsv",
     )
 
@@ -261,7 +266,10 @@ def test_mmseqspp_protein():
     "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "onbit", "rogotgoldberg", "russel",
     "sokal", "tanimoto", "canberra", "hamming", "jaccard", "matching", "rogerstanimoto", "sokalmichener", "yule"
 ])
-def test_vector(md_calculator, algo, in_type, method) :
+def test_vector(md_calculator, algo, in_type, method):
+    if scipy.__version__ >= "1.17" and method in {"kulczynski", "sokalmichener"}:
+        pytest.skip("The distance metrics kulczynski and sokalmichener are deprecated from SciPy v1.17 on.")
+
     data = molecule_data()
     if algo == "FP":
         embed = lambda x: AllChem.GetMorganFingerprintAsBitVect(Chem.MolFromSmiles(x), 2, nBits=1024)
@@ -274,7 +282,7 @@ def test_vector(md_calculator, algo, in_type, method) :
     else:
         wrap = lambda x: np.array([max(-2_147_483_648, min(2_147_483_647, int(y))) for y in x])
     data.data = dict((k, wrap(embed(v))) for k, v in data.data.items())
-    if (algo == "MD" and in_type == "Original" and method in get_args(SIM_OPTIONS)) or method == "mahalanobis":
+    if (algo == "MD" and in_type == "Original" and method in SIM_OPTIONS and method != "cosine") or method == "mahalanobis":
         with pytest.raises(ValueError):
             run_vector(data, method)
     else:
@@ -282,13 +290,32 @@ def test_vector(md_calculator, algo, in_type, method) :
         check_clustering(data)
 
 
+def test_cosine(md_calculator):
+    embed = lambda x: md_calculator.CalcDescriptors(Chem.MolFromSmiles(x))
+
+    data_sim = molecule_data()
+    data_sim.data = dict((k, embed(v)) for k, v in data_sim.data.items())
+    data_sim.similarity = "cosine"
+    similarity_clustering(data_sim)
+    
+    data_dist = molecule_data()
+    data_dist.data = dict((k, embed(v)) for k, v in data_dist.data.items())
+    data_dist.distance = "cosine"
+    distance_clustering(data_dist)
+
+    assert np.isclose(data_sim.cluster_similarity + data_dist.cluster_distance, 1).all()
+
+
 @pytest.mark.parametrize("method", [
     "allbit", "asymmetric", "braunblanquet", "cosine", "dice", "kulczynski", "onbit", "rogotgoldberg", "russel",
     "sokal", "canberra", "hamming", "jaccard", "matching", "rogerstanimoto", "sokalmichener", "yule"
 ])
 def test_vector_edge(method):
+    if scipy.__version__ >= "1.17" and method in {"kulczynski", "sokalmichener"}:
+        pytest.skip("The distance metrics kulczynski and sokalmichener are deprecated from SciPy v1.17 on.")
+
     dataset = DataSet(
-        names=["A", "B", "C", "D", "E", "F", "G", "H"],
+        names=["A", "B", "C", "D", "E", "F", "G"],
         data={
             "A": np.array([1, 1, 1]),
             "B": np.array([1, 1, 0]),
@@ -297,7 +324,6 @@ def test_vector_edge(method):
             "E": np.array([1, 0, 0]),
             "F": np.array([0, 1, 0]),
             "G": np.array([0, 0, 1]),
-            "H": np.array([0, 0, 0]),
         },
     )
     run_vector(dataset, method)
@@ -316,12 +342,16 @@ def test_tmalign_protein():
 
 @pytest.mark.full
 def test_wlkernel_protein():
+    if np.version.version > "2":
+        pytest.skip("WLK metric is not available for numpy v2")
     protein_data = protein_pdb_data(FOLDSEEK)
     run_wlk(protein_data)
     check_clustering(protein_data)
 
 
 def test_wlkernel_molecule():
+    if np.version.version > "2":
+        pytest.skip("WLK metric is not available for numpy v2")
     data = molecule_data()
     run_wlk(data)
     check_clustering(data)
