@@ -1,11 +1,10 @@
-from pathlib import Path
-from typing import Union
 import math
+from pathlib import Path
 
-from grakel import Graph, WeisfeilerLehman, VertexHistogram
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import MolFromSmiles
+from grakel import Graph, WeisfeilerLehman, VertexHistogram
 
 from datasail.dataset import DataSet
 from datasail.constants import LOGGER, MAX_PATH
@@ -129,7 +128,7 @@ class PDBStructure:
             [(res.num, (node_encoding.get(res.name.lower(), 20))) for i, res in enumerate(self.residues.values())])
 
 
-def pdb_to_grakel(pdb: Union[Path, PDBStructure], threshold: float = 7) -> Graph:
+def pdb_to_grakel(pdb: Path | PDBStructure, threshold: float = 7) -> Graph:
     """
     Convert a PDB file into a grakel graph to compute WLKs over them.
 

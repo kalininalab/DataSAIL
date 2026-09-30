@@ -1,13 +1,13 @@
 import copy
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal
 
 import numpy as np
 from cvxpy import SolverError
 
-from datasail.cluster.clustering import reverse_clustering, cluster_interactions, reverse_interaction_clustering
+from datasail.cluster.clustering import reverse_clustering
 from datasail.dataset import DataSet
-from datasail.constants import LOGGER, MODE_F, TEC_R, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MMSEQS, CDHIT, MMSEQS2, DictMap
+from datasail.constants import LOGGER, MMSEQS, CDHIT, MMSEQS2, DictMap
 from datasail.reader.utils import Technique
 from datasail.solver.id_1d import solve_i1
 from datasail.solver.id_2d import solve_i2

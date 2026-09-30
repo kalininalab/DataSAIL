@@ -69,9 +69,7 @@ def parse_datasail_args(args) -> Dict[str, object]:
     )
     parser.add_argument(
         "--ac",
-        default=False,
         action=AlgorithmAction,
-        dest=KW_CC,
         help="List the available clustering algorithms."
     )
     parser.add_argument(
@@ -356,7 +354,7 @@ class MultiYAMLParser(argparse.ArgumentParser):
         if algo_name is not None:
             self.add_yaml_arguments(YAML_FILE_NAMES[algo_name])
 
-    def parse_args(self, args: Optional[Sequence[str]] = ...) -> argparse.Namespace:
+    def parse_args(self, args: Sequence[str] | None) -> argparse.Namespace:
         """
         Parse the arguments provided by the user. This prepends some preprocessing to the arguments before sending them
         to the actual parsing.

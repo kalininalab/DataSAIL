@@ -9,6 +9,7 @@ from datasail.solver.overflow import check_dataset
 
 
 @pytest.mark.todo
+@pytest.mark.full
 def test_overflow_break():
     dataset = read_protein_data(
         Path("data") / "rw_data" / "overflow_data" / "goldstandard.protein_sequences.fasta",
@@ -39,6 +40,7 @@ def test_overflow_break():
 
 
 @pytest.mark.todo
+@pytest.mark.full
 def test_overflow_assign():
     dataset = read_protein_data(
         Path("data") / "rw_data" / "overflow_data" / "goldstandard.protein_sequences.fasta",
@@ -68,6 +70,7 @@ def test_overflow_assign():
 
 
 @pytest.mark.todo
+@pytest.mark.full
 @pytest.mark.parametrize("overflow", ["break", "assign"])
 def test_overflow_full(overflow):
     e_splits, _, _ = datasail(

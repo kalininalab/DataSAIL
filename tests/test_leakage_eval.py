@@ -1,11 +1,13 @@
+import pytest
 from pathlib import Path
 
 import pandas as pd
 
 from datasail.eval import eval_split
-from datasail.settings import M_TYPE
+from datasail.constants import M_TYPE
 
 
+@pytest.mark.full
 def test_eval_split():
     seqs = pd.read_csv(Path("data") / "pipeline" / "seqs.tsv", sep="\t")["ID"].values.tolist()
     scaled_dl, total_dl, max_dl, _ = eval_split(

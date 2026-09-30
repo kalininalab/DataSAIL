@@ -1,7 +1,6 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 
@@ -10,7 +9,7 @@ from datasail.dataset import DataSet
 from datasail.constants import LOGGER, INSTALLED, MASH
 
 
-def run_mash(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
+def run_mash(dataset: DataSet, threads: int = 1, log_dir: Path | None = None) -> None:
     """
     Run MASH on the provided dataset.
 

@@ -1,14 +1,11 @@
-from typing import Optional, Union
 from pathlib import Path
-from typing import Optional, Union
 
 import cvxpy
 import numpy as np
-from scipy.optimize import fsolve
 
 from datasail.dataset import DataSet
 from datasail.reader.utils import DimTechnique
-from datasail.solver.utils import solve, compute_limits, stratification_constraints, collect_results_2d2
+from datasail.solver.utils import compute_limits, stratification_constraints
 
 
 def solve_multi_d(
@@ -21,7 +18,7 @@ def solve_multi_d(
         max_sec: int,
         solver: str,
         log_file: Path,
-) -> Optional[tuple[dict[str, str], dict[str, str]]]:
+) -> tuple[dict[str, str], dict[str, str]] | None:
     """
     Solve cluster-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
     programming.

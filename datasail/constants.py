@@ -1,17 +1,17 @@
-import logging
-from pathlib import Path
-import shutil
-import subprocess
 import sys
-from typing import Callable, Generator, Optional, Union
+import shutil
+import logging
 import platform
+import subprocess
+from pathlib import Path
+from typing import Callable, Generator
 
 import cvxpy
 import numpy as np
 import importlib_resources
 
 
-def get_default(data_type: str, data_format: str) -> tuple[Optional[str], Optional[str]]:
+def get_default(data_type: str, data_format: str) -> tuple[str | None, str | None]:
     """
     Return the default clustering method for a specific type of data and a specific format.
 
@@ -191,7 +191,6 @@ YAML_FILE_NAMES = {
 
 KW_CACHE = "cache"
 KW_CACHE_DIR = "cache_dir"
-KW_CC = "ac"
 KW_CLI = "cli"
 KW_DELTA = "delta"
 KW_EPSILON = "epsilon"
@@ -332,7 +331,15 @@ SOLVERS = {
     # 0 "SCIPY": cvxpy.SCIPY,
 }
 
-DATA_INPUT = Optional[Union[str, Path, dict[str, Union[str, np.ndarray]],
-    Callable[..., dict[str, Union[str, np.ndarray]]], Generator[tuple[str, Union[str, np.ndarray]], None, None]]]
-MATRIX_INPUT = Optional[Union[str, Path, tuple[list[str], np.ndarray], Callable[..., tuple[list[str], np.ndarray]]]]
+DATA_INPUT = str \
+    | Path \
+    | dict[str, str | np.ndarray] \
+    | Callable[..., dict[str, str | np.ndarray]] \
+    | Generator[tuple[str, str | np.ndarray], None, None] \
+    | None
+MATRIX_INPUT = str \
+    | Path \
+    | tuple[list[str], np.ndarray] \
+    | Callable[..., tuple[list[str], np.ndarray]] \
+    | None
 DictMap = dict[str, list[dict[str, str]]]

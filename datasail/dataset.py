@@ -1,14 +1,14 @@
 from argparse import Namespace
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Any, Iterable, Optional, Union
+from typing import Any, Iterable
 
 import numpy as np
 
 from datasail.constants import UNK_LOCATION, format2ending
 
 
-def permute(names, similarity=None, distance=None) -> tuple[list[str], Optional[np.ndarray], Optional[np.ndarray]]:
+def permute(names, similarity=None, distance=None) -> tuple[list[str], np.ndarray | None, np.ndarray | None]:
     """
     Permute the order of the data the names list and the according distance or similarity matrix.
 
@@ -33,26 +33,26 @@ def permute(names, similarity=None, distance=None) -> tuple[list[str], Optional[
 
 @dataclass
 class DataSet:
-    type: Optional[str] = None  # Type of data, e.g., Protein, Molecule, Genomic, or Other
-    format: Optional[str] = None  # Format of the data, e.g., FASTA, PDB, ...
+    type: str | None = None  # Type of data, e.g., Protein, Molecule, Genomic, or Other
+    format: str | None = None  # Format of the data, e.g., FASTA, PDB, ...
     num_clusters: int = 50  # Number of clusters to compute
-    location: Optional[Path] = None  # Path to where the data is stored in memory, if it's stored in memeory
-    id_map: Optional[dict[str, str]] = None  # Mapping of input data point names to "names" (used for duplicate removal, or similar)
-    names: Optional[list[str]] = None  # Names of individual, unique datapoints
-    data: Optional[dict[str, Union[str, np.ndarray]]] = None  # Mapping of "names" to their data, i.e. FASTA/SMILES sequence or PDF file location
-    weights: Optional[dict[str, float]] = None  # Mapping of "names" to their weights
-    classes: Optional[dict[Any, int]] = None  # Mapping of input data classes to numerical representations theirof
-    class_oh: Optional[np.ndarray] = None  # OneHot encodings of the "classes", i.e., basically an identity matrix of dimension max(classes)^2
-    stratification: Optional[dict[str, Any]] = None  # Mapping of "names" to the classes to be considered in this dataset
-    args: Optional[Namespace] = None  # Custom arguments to the cluster algorithm
-    cluster_names: Optional[list[str]] = None  # Names of clusters
-    cluster_map: Optional[dict[str, str]] = None  # Mapping of "names" to "cluster_names"
-    cluster_weights: Optional[dict[str, float]] = None  # Mapping of "clusters_names" to their weights
-    cluster_stratification: Optional[dict[str, np.ndarray]] = None  # Mapping of "cluster_names" to the number of classes present in each cluster
-    similarity: Optional[Union[np.ndarray, str]] = None  # Name of similarity algorithm or a pairwise similarities matrix of data points in order of "names"
-    cluster_similarity: Optional[np.ndarray] = None  # Pairwise similarity matrix of custers in order of "cluster_names"
-    distance: Optional[Union[np.ndarray, str]] = None  # Name of distance algorithm or a pairwise distance matrix of data points in order of "names"
-    cluster_distance: Optional[np.ndarray] = None  # Pairwise distance matrix of custers in order of "cluster_names"
+    location: Path | str | None = None  # Path to where the data is stored in memory, if it's stored in memeory
+    id_map: dict[str, str] | None = None  # Mapping of input data point names to "names" (used for duplicate removal, or similar)
+    names: list[str] | None = None  # Names of individual, unique datapoints
+    data: dict[str, str | np.ndarray] | None = None  # Mapping of "names" to their data, i.e. FASTA/SMILES sequence or PDF file location
+    weights: dict[str, float] | None = None  # Mapping of "names" to their weights
+    classes: dict[Any, int] | None = None  # Mapping of input data classes to numerical representations theirof
+    class_oh: np.ndarray | None = None  # OneHot encodings of the "classes", i.e., basically an identity matrix of dimension max(classes)^2
+    stratification: dict[str, Any] | None = None  # Mapping of "names" to the classes to be considered in this dataset
+    args: Namespace | None = None  # Custom arguments to the cluster algorithm
+    cluster_names: list[str] | None = None  # Names of clusters
+    cluster_map: dict[str, str] | None = None  # Mapping of "names" to "cluster_names"
+    cluster_weights: dict[str, float] | None = None  # Mapping of "clusters_names" to their weights
+    cluster_stratification: dict[str, np.ndarray] | None = None  # Mapping of "cluster_names" to the number of classes present in each cluster
+    similarity: np.ndarray| str | None = None  # Name of similarity algorithm or a pairwise similarities matrix of data points in order of "names"
+    cluster_similarity: np.ndarray | None = None  # Pairwise similarity matrix of custers in order of "cluster_names"
+    distance: np.ndarray| str | None = None  # Name of distance algorithm or a pairwise distance matrix of data points in order of "names"
+    cluster_distance: np.ndarray | None = None  # Pairwise distance matrix of custers in order of "cluster_names"
 
     def __hash__(self) -> int:
         """
@@ -118,7 +118,7 @@ class DataSet:
             return Path("unknown." + format2ending(self.format))
         return self.location
 
-    def strat2oh(self, name: Optional[str] = None, classes: Optional[Union[str, set[str]]] = None) -> Optional[np.ndarray]:
+    def strat2oh(self, name: str | None = None, classes: str | set[str] | None = None) -> np.ndarray | None:
         """
         Convert the stratification to a one-hot encoding.
 

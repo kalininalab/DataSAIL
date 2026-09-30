@@ -1,13 +1,12 @@
 import pickle
 from pathlib import Path
-from typing import Optional
 from pip._internal.utils.appdirs import user_cache_dir
 
 from datasail.dataset import DataSet
 from datasail.constants import KW_CACHE_DIR
 
 
-def load_from_cache(dataset: DataSet, **kwargs) -> Optional[DataSet]:
+def load_from_cache(dataset: DataSet, **kwargs) -> DataSet | None:
     """
     Load a dataset from cache.
 

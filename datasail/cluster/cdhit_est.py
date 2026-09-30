@@ -1,7 +1,6 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 
@@ -10,7 +9,7 @@ from datasail.dataset import DataSet
 from datasail.constants import LOGGER, INSTALLED, CDHIT_EST
 
 
-def run_cdhit_est(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
+def run_cdhit_est(dataset: DataSet, threads: int = 1, log_dir: Path | None = None) -> None:
     """
     Run the CD-HIT-EST tool for DNA or RNA input.
 
@@ -45,7 +44,7 @@ def cdhit_est_trial(
         tune_args: tuple,
         user_args: str,
         threads: int = 1,
-        log_file: Optional[Path] = None
+        log_file: Path | None = None,
 ) -> tuple[list[str], dict[str, str], np.ndarray]:
     """
     Run CD-HIT on the dataset with the given sequence similarity defined by add_args.

@@ -1,6 +1,4 @@
-from typing import Optional, Union
 from pathlib import Path
-from typing import Optional, Union
 
 import cvxpy
 import numpy as np
@@ -10,18 +8,18 @@ from datasail.solver.utils import solve, compute_limits, stratification_constrai
 
 
 def solve_c2(
-        e_clusters: list[Union[str, int]],
-        e_s_matrix: Optional[np.ndarray],
-        e_similarities: Optional[np.ndarray],
-        e_distances: Optional[np.ndarray],
-        e_weights: Optional[np.ndarray],
+        e_clusters: list[str | int],
+        e_s_matrix: np.ndarray | None,
+        e_similarities: np.ndarray | None,
+        e_distances: np.ndarray | None,
+        e_weights: np.ndarray | None,
         e_splits: list[float],
         e_names: list[str],
-        f_clusters: list[Union[str, int]],
-        f_s_matrix: Optional[np.ndarray],
-        f_similarities: Optional[np.ndarray],
-        f_distances: Optional[np.ndarray],
-        f_weights: Optional[np.ndarray],
+        f_clusters: list[str | int],
+        f_s_matrix: np.ndarray | None,
+        f_similarities: np.ndarray | None,
+        f_distances: np.ndarray | None,
+        f_weights: np.ndarray | None,
         f_splits: list[float],
         f_names: list[str],
         delta: float,
@@ -29,7 +27,7 @@ def solve_c2(
         max_sec: int,
         solver: str,
         log_file: Path,
-) -> Optional[tuple[dict[str, str], dict[str, str]]]:
+) -> tuple[dict[str, str], dict[str, str]] | None:
     """
     Solve cluster-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
     programming.

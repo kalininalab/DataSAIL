@@ -1,7 +1,7 @@
 import argparse
 from pydoc import locate
 from pathlib import Path
-from typing import Callable, Literal, Optional, Sequence
+from typing import Callable, Literal, Sequence
 
 import numpy as np
 import yaml
@@ -42,7 +42,7 @@ def cluster_param_binary_search(
     Returns:
         Return the cluster names, the mapping from names to cluster names, and a similarity or distance matrix
     """
-    def args2log(x: tuple) -> Optional[Path]:
+    def args2log(x: tuple) -> Path | None:
         """
         Compute the name of the log file based on the provided arguments.
 
@@ -143,7 +143,7 @@ class MultiYAMLParser(argparse.ArgumentParser):
         if algo_name is not None:
             self.add_yaml_arguments(YAML_FILE_NAMES[algo_name])
 
-    def parse_args(self, args: Optional[Sequence[str]] = ...) -> argparse.Namespace:
+    def parse_args(self, args: Sequence[str] | None = ...) -> argparse.Namespace:
         """
         Parse the arguments provided by the user. This prepends some preprocessing to the arguments before sending them
         to the actual parsing.

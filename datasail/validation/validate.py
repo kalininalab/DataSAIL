@@ -1,5 +1,5 @@
 from argparse import Namespace
-from typing import Union, Optional
+
 import scipy
 import numpy as np
 
@@ -13,7 +13,7 @@ def validate_user_args(
         similarity: str,
         distance: str,
         tool_args: str,
-) -> Optional[Union[Namespace, tuple[Optional[Namespace], Optional[Namespace]]]]:
+) -> Namespace | tuple[Namespace | None, Namespace | None] | None:
     """
     Validate the arguments from the user for an external clustering program.
 
@@ -223,7 +223,7 @@ def check_cdhit_arguments(args: str = "") -> Namespace:
     return args
 
 
-def check_diamond_arguments(args: str = "") -> Optional[Namespace]:
+def check_diamond_arguments(args: str = "") -> Namespace | None:
     """
     Validate the custom arguments provided to DataSAIL for executing DIAMOND.
 
@@ -478,7 +478,7 @@ def check_diamond_arguments(args: str = "") -> Optional[Namespace]:
     return args
 
 
-def check_mmseqs_arguments(args: str = "") -> Optional[Namespace]:
+def check_mmseqs_arguments(args: str = "") -> Namespace | None:
     """
     Validate the custom arguments provided to DataSAIL for executing MMSEQS2.
 
@@ -581,7 +581,7 @@ def check_mmseqs_arguments(args: str = "") -> Optional[Namespace]:
     return args
 
 
-def check_mmseqspp_arguments(args: str = "") -> Optional[Namespace]:
+def check_mmseqspp_arguments(args: str = "") -> Namespace | None:
     """
     Validate the custom arguments provided to DataSAIL for executing MMSEQS++. That is mmseqs used for computing
     similarity matrix between the sequences.

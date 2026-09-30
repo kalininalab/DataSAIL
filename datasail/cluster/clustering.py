@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Union, Optional, Literal
+from typing import Literal
 
 import numpy as np
 import sklearn
@@ -18,8 +18,8 @@ from datasail.cluster.vectors import run_vector
 if np.version.version < "2":
     from datasail.cluster.wlk import run_wlk
 from datasail.dataset import DataSet
-from datasail.constants import KW_SPLITS, DIST_OPTIONS, FP_OPTIONS, LOGGER, KW_THREADS, KW_LOGDIR, SIM_OPTIONS, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
-    FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND,TANIMOTO, KW_LINKAGE
+from datasail.constants import DIST_OPTIONS, LOGGER, KW_THREADS, KW_LOGDIR, SIM_OPTIONS, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
+    FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND, KW_LINKAGE
 
 
 def cluster(dataset: DataSet, **kwargs) -> DataSet:
@@ -71,7 +71,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     return dataset
 
 
-def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[str] = None) -> None:
+def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: str | None = None) -> None:
     """
     Compute the similarity based cluster based on a cluster method.
 
@@ -118,7 +118,7 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
     finish_clustering(dataset)
 
 
-def distance_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[str] = None) -> None:
+def distance_clustering(dataset: DataSet, threads: int = 1, log_dir: str | None = None) -> None:
     """
     Compute the distance based cluster based on a cluster method or a file to extract pairwise distance from.
 
@@ -220,7 +220,7 @@ def additional_clustering(
 
 
 def labels2clusters(
-        labels: Union[list, np.ndarray],
+        labels: list | np.ndarray,
         dataset: DataSet,
         cluster_matrix: np.ndarray,
         linkage: Literal["average", "single", "complete"],

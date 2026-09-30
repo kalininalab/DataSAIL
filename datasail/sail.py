@@ -3,7 +3,7 @@ import logging
 import os
 from pathlib import Path
 import sys
-from typing import Callable, Generator, Literal, Optional, Union
+from typing import Callable, Generator, Literal
 
 import yaml
 
@@ -11,7 +11,7 @@ from datasail.parsers import parse_datasail_args, list_cluster_algos as avail_cl
 from datasail.eval import eval_split
 from datasail.version import __version__
 from datasail.routine import datasail_main
-from datasail.constants import CDHIT, CDHIT_EST, DATA_INPUT, DIAMOND, DIST_ALGOS, FOLDSEEK, FORMATTER, INSTALLED, KW_ARGS, KW_CACHE, KW_CACHE_DIR, KW_CC, KW_CLI, KW_CLUSTERS, KW_DATA, KW_DELTA, \
+from datasail.constants import CDHIT, CDHIT_EST, DATA_INPUT, DIAMOND, DIST_ALGOS, FOLDSEEK, FORMATTER, INSTALLED, KW_ARGS, KW_CACHE, KW_CACHE_DIR, KW_CLI, KW_CLUSTERS, KW_DATA, KW_DELTA, \
         KW_DIST, KW_EPSILON, KW_INTER, KW_LINKAGE, KW_LOGDIR, KW_MAX_SEC, KW_NAMES, KW_OUTDIR, KW_OVERFLOW, KW_RUNS, \
         KW_SIM, KW_SOLVER, KW_SPLITS, KW_STRAT, KW_TECHNIQUES, KW_THREADS, KW_VERBOSE, KW_WEIGHTS, LOGGER, MASH, MATRIX_INPUT, MMSEQS, SIM_ALGOS, SOLVER_SCIP, TMALIGN, VERB_MAP, ALGOS
 
@@ -32,7 +32,7 @@ def error(msg: str, cli: bool) -> None:
         raise ValueError(msg)
 
 
-def default_pathable_arg(kwargs: dict, key: str) -> Optional[Union[dict, Path]]:
+def default_pathable_arg(kwargs: dict, key: str) -> dict | Path | None:
     """
     Set a default path argument if not given.
 
@@ -61,7 +61,7 @@ def validate_general_args(**kwargs) -> dict[str, object]:
         The kwargs in case something has been adjusted, e.g. splits normalization or naming
     """
     # set default arguments
-    kwargs[KW_OUTDIR] = Path(kwargs[KW_OUTDIR]) if KW_OUTDIR in kwargs else None
+    kwargs[KW_OUTDIR] = Path(kwargs[KW_OUTDIR]) if kwargs.get(KW_OUTDIR, None) is not None else None
     kwargs[KW_VERBOSE] = kwargs.get(KW_VERBOSE, "I")
     kwargs[KW_MAX_SEC] = kwargs.get(KW_MAX_SEC, 1000)
     kwargs[KW_RUNS] = kwargs.get(KW_RUNS, 1)
@@ -224,11 +224,11 @@ def to_path(x):
 
 
 def datasail(
-        techniques: Optional[Union[str, list[str], Callable[..., list[str]], Generator[str, None, None]]] = None,
-        splits: Optional[list[float]] = None,
-        names: Optional[list[str]] = None,
-        inter: Optional[Union[str, Path, list[tuple[str, str]], Callable[..., list[str]], Generator[str, None, None]]] = None,
-        output: Optional[Union[str, Path]] = None,
+        techniques: str | list[str] | Callable[..., list[str]] | Generator[str, None, None] | None = None,
+        splits: list[float] | None = None,
+        names: list[str] | None = None,
+        inter: str| Path | list[tuple[str, str]] | Callable[..., list[str]] | Generator[str, None, None] | None = None,
+        output: str | Path | None = None,
         max_sec: int = 100,
         verbose: str = "W",
         delta: float = 0.05,
@@ -236,10 +236,10 @@ def datasail(
         runs: int = 1,
         solver: str = SOLVER_SCIP,
         cache: bool = False,
-        cache_dir: Optional[Union[str, Path]] = None,
+        cache_dir: str | Path | None = None,
         linkage: Literal["average", "single", "complete"] = "average",
         overflow: Literal["assign", "break"] = "assign",
-        e_type: Optional[str] = None,
+        e_type: str | None = None,
         e_data: DATA_INPUT = None,
         e_weights: DATA_INPUT = None,
         e_strat: DATA_INPUT = None,
@@ -247,7 +247,7 @@ def datasail(
         e_dist: MATRIX_INPUT = None,
         e_args: str = "",
         e_clusters: int = 50,
-        f_type: Optional[str] = None,
+        f_type: str | None = None,
         f_data: DATA_INPUT = None,
         f_weights: DATA_INPUT = None,
         f_strat: DATA_INPUT = None,
@@ -256,8 +256,8 @@ def datasail(
         f_args: str = "",
         f_clusters: int = 50,
         threads: int = 1,
-        config: Optional[dict[str, object]] = None
-    ) -> Optional[tuple[dict, dict, dict]]:
+        config: dict[str, object] | None = None
+    ) -> tuple[dict, dict, dict] | None:
     """
     Entry point for the Python Package. Invocation routine of DataSAIL.
 
@@ -299,7 +299,7 @@ def datasail(
 
     """
     if config is None:
-        config = create_config(**{"techniques": techniques, "splits": splits, "names": names, "inter": inter, "max_sec": max_sec, 
+        config = create_config(**{"output": output, "techniques": techniques, "splits": splits, "names": names, "inter": inter, "max_sec": max_sec, 
                                   "verbose": verbose, "delta": delta, "epsilon": epsilon, "runs": runs, "solver":solver, "cache": cache,
                                   "cache_dir": cache_dir, "linkage": linkage, "overflow": overflow, "e_type": e_type, "e_data": e_data, 
                                   "e_weights": e_weights, "e_strat": e_strat, "e_sim": e_sim, "e_dist": e_dist, "e_args": e_args, 
@@ -323,16 +323,6 @@ def sail(args=None, **kwargs) -> None:
     """
     if kwargs is None or len(kwargs) == 0:
         kwargs = parse_datasail_args(args or sys.argv[1:])
-
-    if kwargs["list_cluster"] or kwargs[KW_CC]:
-        if kwargs[KW_CC]:
-            LOGGER.critical("The argument --cc is deprecated and will be removed in DataSAIL v2. Please use -lc or --list-cluster instead.")
-        print("Available clustering algorithms:", "\tECFP", sep="\n")
-        for algo, name in [(CDHIT, "CD-HIT"), (CDHIT_EST, "CD-HIT-EST"), (DIAMOND, "DIAMOND"), (MMSEQS, "MMseqs, MMseqs2"), 
-                           (MASH, "MASH"), (FOLDSEEK, "FoldSeek"), (TMALIGN, "TMalign")]:
-            if INSTALLED[algo]:
-                print("\t", name)
-        exit(0)
 
     if kwargs.get("config", None) is not None:
         with open(kwargs["config"], "r") as f:

@@ -1,7 +1,7 @@
 import hashlib
 import pickle
 from pathlib import Path
-from typing import Generator, Literal, Optional, Union, Any, Callable, Iterable
+from typing import Generator, Literal, Any, Callable, Iterable
 from collections.abc import Iterable
 
 import h5py
@@ -11,7 +11,7 @@ from rdkit import Chem
 
 from datasail.dataset import DataSet
 from datasail.validation.validate import validate_user_args
-from datasail.constants import SRC_CL, SRC_ID, TEC_R, get_default, DATA_INPUT, MATRIX_INPUT, SIM_ALGOS, DIST_ALGOS, FASTA_FORMATS
+from datasail.constants import DIST_OPTIONS, SIM_OPTIONS, SRC_CL, SRC_ID, TEC_R, get_default, DATA_INPUT, MATRIX_INPUT, SIM_ALGOS, DIST_ALGOS, FASTA_FORMATS
 
 
 class DimTechnique:
@@ -84,7 +84,7 @@ class Technique:
         return output
 
 
-def permute(names, similarity=None, distance=None) -> Tuple[List[str], Optional[np.ndarray], Optional[np.ndarray]]:
+def permute(names, similarity=None, distance=None) -> tuple[list[str], np.ndarray | None, np.ndarray | None]:
     """
     Permute the order of the data the names list and the according distance or similarity matrix.
 
@@ -112,8 +112,8 @@ def read_data(
         strats: DATA_INPUT,
         sim: MATRIX_INPUT,
         dist: MATRIX_INPUT,
-        inter: Optional[list[tuple]],
-        index: Optional[int],
+        inter: list[tuple] | None,
+        index: int | None,
         num_clusters: int,
         tool_args: str,
         dataset: DataSet,
@@ -159,9 +159,9 @@ def read_data(
     if sim is None and dist is None:
         dataset.similarity, dataset.distance = get_default(dataset.type, dataset.format)
         dataset.names = list(dataset.data.keys())
-    elif sim is not None and not (isinstance(sim, str) and sim.lower() in SIM_ALGOS):
+    elif sim is not None and not (isinstance(sim, str) and sim.lower() in SIM_ALGOS + SIM_OPTIONS):
         dataset.names, dataset.similarity = read_matrix_input(sim)
-    elif dist is not None and not (isinstance(dist, str) and dist.lower() in DIST_ALGOS):
+    elif dist is not None and not (isinstance(dist, str) and dist.lower() in DIST_ALGOS + DIST_OPTIONS):
         dataset.names, dataset.distance = read_matrix_input(dist)
     else:
         if sim is not None:
@@ -191,6 +191,7 @@ def read_data(
     num_classes = len(next(iter(dataset.stratification.values())))
     dataset.class_oh = np.eye(num_classes)
     dataset.classes = {s: i for i, s in enumerate(range(num_classes))}
+    dataset.num_clusters = num_clusters
 
     # # .classes maps the individual classes to their index in one-hot encoding, important for non-numeric classes
     # tmp_classes = set()
@@ -201,7 +202,6 @@ def read_data(
     #         tmp_classes.add(value)
     # dataset.classes = {s: i for i, s in enumerate(tmp_classes)}
     # dataset.class_oh = np.eye(len(dataset.classes))
-    # dataset.num_clusters = num_clusters
 
     dataset.args = validate_user_args(dataset.type, dataset.format, sim, dist, tool_args)
 
@@ -282,7 +282,7 @@ def read_input_data(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[Data
         raise ValueError("Unknown data input type.")
 
 
-def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Generator[tuple, None, None]:
+def read_folder(folder_path: Path, file_extension: str | None = None) -> Generator[tuple, None, None]:
     """
     Read in all PDB file from a folder and ignore non-PDB files.
 
@@ -298,7 +298,7 @@ def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Gene
             yield filename.stem, filename
 
 
-def read_matrix_input(in_data: MATRIX_INPUT) -> tuple[list[str], Union[np.ndarray, str]]:
+def read_matrix_input(in_data: MATRIX_INPUT) -> tuple[list[str], np.ndarray | str]:
     """
     Read the data from different types of similarity or distance.
 

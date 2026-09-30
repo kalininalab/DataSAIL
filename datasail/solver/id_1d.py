@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 import cvxpy
 import numpy as np
@@ -9,8 +8,8 @@ from datasail.solver.utils import solve, compute_limits, stratification_constrai
 
 def solve_i1(
         entities: list[str],
-        weights: Optional[list[float]],
-        stratification: Optional[np.ndarray],
+        weights: list[float] | None,
+        stratification: np.ndarray | None,
         delta: float,
         epsilon: float,
         splits: list[float],
@@ -18,7 +17,7 @@ def solve_i1(
         max_sec: int,
         solver: str,
         log_file: Path,
-) -> Optional[dict[str, str]]:
+) -> dict[str, str] | None:
     """
     Solve identity-based cold splitting using disciplined quasi-convex programming and binary linear programming.
 

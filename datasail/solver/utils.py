@@ -4,15 +4,13 @@ import operator
 import sys
 from pathlib import Path
 
-from typing import Optional, Callable, Union
-
 import cvxpy
 from cvxpy import Variable
 from cvxpy.constraints.constraint import Constraint
 import numpy as np
 
 from datasail.constants import LOGGER, SOLVER_CPLEX, SOLVER_XPRESS, SOLVER_SCIP, SOLVER_MOSEK, \
-    SOLVER_GUROBI, SOLVERS, NOT_ASSIGNED, SOLVER_GLPK_MI, SOLVER_CBC
+    SOLVER_GUROBI, SOLVERS, SOLVER_GLPK_MI, SOLVER_CBC
 
 
 def compute_limits(epsilon: float, total: int, splits: list[float]) -> list[float]:
@@ -105,13 +103,13 @@ class LoggerRedirect:
 
 
 def solve(
-        loss: Union[float, cvxpy.Expression],
+        loss: float | cvxpy.Expression,
         constraints: list,
         max_sec: int,
         solver: str,
         log_file: Path,
         num_threads: int = 14
-) -> Optional[cvxpy.Problem]:
+) -> cvxpy.Problem | None:
     """
     Minimize the loss function based on the constraints with the timelimit specified by max_sec.
 
@@ -243,7 +241,7 @@ def collect_results_2d(
         f_splits: list[float],
         x_e: Variable,
         x_f: Variable,
-) -> Optional[tuple[dict[tuple[str, str], str], dict[object, str], dict[object, str]]]:
+) -> tuple[dict[tuple[str, str], str], dict[object, str], dict[object, str]] | None:
     """
     Report the found solution for two-dimensional splits.
 

@@ -1,5 +1,5 @@
 import copy
-from typing import Literal, get_args, Union, Callable, Any
+from typing import Callable, Any
 
 import numpy as np
 import scipy
@@ -144,8 +144,7 @@ def run_vector(dataset: DataSet, method: str = "tanimoto") -> None:
 
 def run(
         dataset: DataSet,
-        fps: Union[np.ndarray, DataStructs.ExplicitBitVect, DataStructs.LongSparseIntVect,
-        DataStructs.IntSparseIntVect],
+        fps: np.ndarray | DataStructs.ExplicitBitVect | DataStructs.LongSparseIntVect | DataStructs.IntSparseIntVect,
         method: str,
 ) -> None:
     """

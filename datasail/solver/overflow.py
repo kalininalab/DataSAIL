@@ -1,10 +1,10 @@
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 import copy
 import numpy as np
 from collections import defaultdict
 
 from datasail.reader.utils import DataSet
-from datasail.constants import LOGGER, DictMap
+from datasail.constants import LOGGER
 from datasail.solver.cluster_2d import convert
 
 

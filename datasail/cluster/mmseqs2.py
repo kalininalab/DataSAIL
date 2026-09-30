@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Optional
 import shutil
 
 import numpy as np
@@ -10,7 +9,7 @@ from datasail.dataset import DataSet
 from datasail.constants import LOGGER, MMSEQS2, INSTALLED
 
 
-def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path]) -> None:
+def run_mmseqs(dataset: DataSet, threads: int, log_dir: Path | None) -> None:
     """
     Run mmseqs in the commandline and read in the results into clusters.
 
@@ -44,7 +43,7 @@ def mmseqs_trial(
         tune_args: tuple,
         user_args: str,
         threads: int = 1,
-        log_file: Optional[Path] = None
+        log_file: Path | None = None,
 ) -> tuple[list[str], dict[str, str], np.ndarray]:
     """
     Run MMseqs2 on the dataset with the given sequence similarity defined by add_args.

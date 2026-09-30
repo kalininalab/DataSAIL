@@ -1,8 +1,6 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Optional
-import pickle
 
 import numpy as np
 from pyarrow import compute, csv
@@ -14,7 +12,7 @@ from datasail.dataset import DataSet
 from datasail.constants import LOGGER, FOLDSEEK, INSTALLED
 
 
-def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
+def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Path | None = None) -> None:
     """
     Run FoldSeek to cluster the proteins based on their structure.
 

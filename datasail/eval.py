@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable
 import copy
 import numpy as np
 
@@ -8,19 +8,19 @@ from datasail.cluster.clustering import cluster
 from datasail.reader.utils import MATRIX_INPUT
 from datasail.constants import DIST_OPTIONS, KW_OUTDIR, KW_THREADS, KW_LOGDIR, KW_LINKAGE, NOT_ASSIGNED
 
-SPLIT_ASSIGNMENT_TYPE = Union[dict[str, Any], str, Path]
+SPLIT_ASSIGNMENT_TYPE = dict[str, Any] | str | Path
 
 
 def eval_split(
         datatype, 
-        data: Optional[Union[dict[str, Any], str, Path]], 
-        weights: Optional[Union[dict[str, float], str, Path]], 
+        data: dict[str, Any] | str | Path | None, 
+        weights: dict[str, float] | str | Path | None, 
         similarity: MATRIX_INPUT, 
         distance: MATRIX_INPUT, 
-        dist_conv: Optional[Union[int, float, Callable]], 
-        split_assignment: Union[dict[str, Any], str, Path],
+        dist_conv: int | float | Callable | None, 
+        split_assignment: dict[str, Any] | str | Path | None,
         return_matrix: bool = False,
-    ) -> tuple[float, float, float, Optional[np.ndarray]]:
+    ) -> tuple[float, float, float, np.ndarray | None]:
     """
     Evaluate the leakage of a single split assignment on a dataset. The inputs are mostly the same as for a normal DataSAIL run.
 

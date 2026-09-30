@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 
@@ -15,9 +14,9 @@ def read_protein_data(
         strats: DATA_INPUT = None,
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
-        inter: Optional[list[tuple]] = None,
-        index: Optional[int] = None,
-        num_clusters: Optional[int] = None,
+        inter: list[tuple] | None = None,
+        index: int | None = None,
+        num_clusters: int | None = None,
         tool_args: str = "",
         detect_duplicates: bool = True
 ) -> DataSet:

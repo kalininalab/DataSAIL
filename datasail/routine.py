@@ -1,8 +1,7 @@
-import copy
-from pathlib import Path
 import random
 import time
-from typing import Any, Callable, Optional, Union
+from pathlib import Path
+from typing import Any, Callable
 
 import numpy as np
 
@@ -15,10 +14,9 @@ from datasail.dataset import DataSet
 from datasail.cluster.clustering import cluster
 from datasail.solver.solve import run_solver, random_inter_split
 from datasail.report import report
-from datasail.constants import DIM_1, LOGGER, KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
-    KW_MAX_SEC, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL, KW_DELTA, \
-    KW_E_CLUSTERS, KW_F_CLUSTERS, KW_CC, CDHIT, INSTALLED, FOLDSEEK, TMALIGN, CDHIT_EST, DIAMOND, MMSEQS, MASH, TEC_R, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MODE_E, MODE_F, KW_LINKAGE, KW_OVERFLOW
-from datasail.solver.overflow import check_dataset
+from datasail.constants import G_TYPE, KW_ARGS, KW_CLUSTERS, KW_DATA, KW_DIST, KW_SIM, KW_STRAT, KW_TYPE, KW_WEIGHTS, LOGGER, KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
+    KW_MAX_SEC, KW_SOLVER, KW_LOGDIR, M_TYPE, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, KW_DELTA, \
+    CDHIT, INSTALLED, FOLDSEEK, O_TYPE, P_TYPE, TMALIGN, CDHIT_EST, DIAMOND, MMSEQS, MASH, TEC_R, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MODE_E, MODE_F, KW_LINKAGE, KW_OVERFLOW
 from datasail.solver.solve import run_solver, random_inter_split
 
 
@@ -43,7 +41,7 @@ def tech2oneD(tech: str) -> tuple[str, str]:
         raise ValueError(f"Technique {tech} is not a two-dimensional technique.")
 
 
-def datasail_main(**kwargs) -> Optional[tuple[dict, dict, dict]]:
+def datasail_main(**kwargs) -> tuple[dict, dict, dict] | None:
     """
     Main routine of DataSAIL. Here the parsed input is aggregated into structures and then split and saved.
 
@@ -210,7 +208,7 @@ def datasail_main(**kwargs) -> Optional[tuple[dict, dict, dict]]:
         return full_e_name_split_map, full_f_name_split_map, inter_split_map
 
 
-def read_inter(**kwargs: Any) -> Optional[list[tuple]]:
+def read_inter(**kwargs: Any) -> list[tuple] | None:
     """
     Read the interactions from the input. The code will always read as many interactions 
     from each input line as there are entities in the dataset.
@@ -238,7 +236,7 @@ def read_inter(**kwargs: Any) -> Optional[list[tuple]]:
         raise ValueError(f"Unknown type {type(kwargs[KW_INTER])} found for ")
 
 
-def read_data(inter: Optional[list[tuple]], data_args: Union[list, dict]) -> list[DataSet]:
+def read_data(inter: list[tuple] | None, data_args: list | dict) -> list[DataSet]:
     """
     Read data from the input arguments.
 
@@ -252,8 +250,8 @@ def read_data(inter: Optional[list[tuple]], data_args: Union[list, dict]) -> lis
         data_args = [data_args]
     return [
         read_data_type(data_kwargs[KW_TYPE])(
-            data_kwargs[KW_DATA], data_kwargs[KW_WEIGHTS], data_kwargs[KW_STRAT], data_kwargs[KW_SIM], 
-            data_kwargs[KW_DIST], inter, i, data_kwargs[KW_CLUSTERS], data_kwargs[KW_ARGS],
+            data_kwargs[KW_DATA], data_kwargs.get(KW_WEIGHTS, None), data_kwargs.get(KW_STRAT, None), data_kwargs.get(KW_SIM, None), 
+            data_kwargs.get(KW_DIST, None), inter, i, data_kwargs.get(KW_CLUSTERS, None), data_kwargs.get(KW_ARGS, ""),
         ) for i, data_kwargs in enumerate(data_args)
     ]
 

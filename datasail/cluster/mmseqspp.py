@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Optional
 import shutil
 
 import pandas as pd
@@ -10,7 +9,7 @@ from datasail.dataset import DataSet
 from datasail.constants import LOGGER, MMSEQS2, INSTALLED, MMSEQSPP
 
 
-def run_mmseqspp(dataset: DataSet, threads: int, log_dir: Optional[Path] = None) -> None:
+def run_mmseqspp(dataset: DataSet, threads: int, log_dir: Path | None = None) -> None:
     """
     Run MMseqs2 on a dataset in clustering mode.
 

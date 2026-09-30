@@ -3,8 +3,8 @@ from typing import Optional
 
 from pytest_cases import lazy_value
 
-from datasail.reader.utils import read_data
-from datasail.dataset import DataSet
+from datasail.constants import KW_DATA, KW_SIM, KW_TYPE, KW_WEIGHTS
+from datasail.routine import read_data
 from datasail.sail import datasail
 from tests.pipeline_package_fixtures import *
 
@@ -84,18 +84,6 @@ def test_pipeline_inputs(
         interactions, combo,
         mave_dataset, mibig_dataset, sabdab_ag_dataset, sabdab_vh_dataset,
 ):
-    def read_data_sub(
-            inter=None, e_type=None, e_data=None, e_weights=None, e_sim=None, f_type=None, f_data=None,
-            f_weights=None, f_sim=None,
-    ) -> tuple[DataSet, DataSet, Optional[list[tuple]]]:
-        kwargs = dict(
-            inter=inter, e_type=e_type, e_data=e_data, e_weights=e_weights, e_sim=e_sim, e_dist=None, e_args="",
-            e_strat=None, e_clusters=50, f_type=f_type, f_data=f_data, f_weights=f_weights, f_sim=f_sim, f_dist=None,
-            f_args="", f_strat=None, f_clusters=50,
-        )
-        # read e-entities and f-entities
-        return read_data(**kwargs)
-
     def reference_dataset(name: str):
         if name == "mave":
             return mave_dataset
@@ -103,10 +91,14 @@ def test_pipeline_inputs(
             return mibig_dataset
         return sabdab_ag_dataset if name == "sabdab_ag" else sabdab_vh_dataset
 
-    e_dataset, f_dataset, interactions = read_data_sub(
-        inter=interactions, e_type=ligand_type, e_data=ligand_data, e_weights=ligand_weights, e_sim=ligand_sim,
-        f_type=protein_type, f_data=protein_data, f_weights=protein_weights, f_sim=protein_sim,
-    )
+    e_dataset, f_dataset = read_data(inter=interactions, data_args=[
+        {KW_TYPE: ligand_type, KW_DATA: ligand_data, KW_WEIGHTS: ligand_weights, KW_SIM: ligand_sim},
+        {KW_TYPE: protein_type, KW_DATA: protein_data, KW_WEIGHTS: protein_weights, KW_SIM: protein_sim}
+    ])
+    # e_dataset, f_dataset, interactions = read_data(
+    #     inter=interactions, e_type=ligand_type, e_data=ligand_data, e_weights=ligand_weights, e_sim=ligand_sim,
+    #     f_type=protein_type, f_data=protein_data, f_weights=protein_weights, f_sim=protein_sim,
+    # )
     if e_dataset.type is not None:
         e_dataset = cluster(e_dataset, threads=1, logdir="", linkage="average")
     if f_dataset.type is not None:

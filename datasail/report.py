@@ -1,6 +1,5 @@
 import math
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -123,7 +122,7 @@ def individual_report(
     # print(stats_string(sum(dataset.weights.values()), split_counts))
 
 
-def save_inter_assignment(save_dir: Path, inter_split_map: Optional[dict[tuple, str]]) -> None:
+def save_inter_assignment(save_dir: Path, inter_split_map: dict[tuple, str] | None) -> None:
     """
     Save the assignment of interactions to splits in a TSV file.
 
@@ -140,7 +139,7 @@ def save_inter_assignment(save_dir: Path, inter_split_map: Optional[dict[tuple, 
     ).to_csv(save_dir / "inter.tsv", sep="\t", columns=["E_ID", "F_ID", "Split"], index=False)
 
 
-def save_assignment(save_dir: Path, dataset: DataSet, name_split_map: Optional[dict[str, str]]) -> None:
+def save_assignment(save_dir: Path, dataset: DataSet, name_split_map: dict[str, str] | None) -> None:
     """
     Save an assignment from data points to splits.
 
@@ -210,8 +209,8 @@ def save_t_sne(
 
 
 def save_matrix_tsne(
-        similarities: Optional[np.ndarray],
-        distances: Optional[np.ndarray],
+        similarities: np.ndarray | None,
+        distances: np.ndarray | None,
         names: list[str],
         dataset: DataSet,
         entity_split_map: dict[str, str],

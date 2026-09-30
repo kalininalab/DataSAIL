@@ -2,7 +2,6 @@ import os
 import re
 import shutil
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 
@@ -11,7 +10,7 @@ from datasail.dataset import DataSet
 from datasail.constants import INSTALLED, MMSEQS2, DIAMOND, LOGGER
 
 
-def run_diamond(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
+def run_diamond(dataset: DataSet, threads: int = 1, log_dir: Path | None = None) -> None:
     """
     Run Diamond on a dataset in clustering mode.
 
