@@ -10,7 +10,7 @@ from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, INSTALLED, MASH
 
 
-def run_mash(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
+def run_mash(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None, tmp_dir: Optional[Path] = None) -> None:
     """
     Run MASH on the provided dataset.
 
@@ -25,18 +25,21 @@ def run_mash(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None)
     sketch_args = parser.get_user_arguments(dataset.args, [], 0)
     dist_args = parser.get_user_arguments(dataset.args, [], 1)
 
-    results_folder = Path("mash_results")
+    if tmp_dir is None:
+        tmp_dir = Path(".")
 
-    tmp = Path("tmp")
+    results_folder = tmp_dir / Path("mash_results")
+
+    tmp = tmp_dir / Path("tmp")
     tmp.mkdir(parents=True, exist_ok=True)
     for name, filepath in dataset.data.items():
         shutil.copy(filepath, tmp)
 
-    cmd = f"mkdir {results_folder} && " \
-          f"cd mash_results && " \
-          f"mash sketch -p {threads} -o ./cluster ../tmp/*.fna {sketch_args} && " \
+    cmd = f"mkdir {str(results_folder)} && " \
+          f"cd {str(results_folder)} && " \
+          f"mash sketch -p {threads} -o ./cluster {str(tmp.resolve())}/*.fna {sketch_args} && " \
           f"mash dist -p {threads} {dist_args} -t cluster.msh cluster.msh > cluster.tsv && " \
-          f"rm -rf ../tmp"
+          f"rm -rf {str(tmp)}"
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"
@@ -44,7 +47,7 @@ def run_mash(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None)
         cmd += f"> {(log_dir / f'{dataset.get_name()}_mash.log').resolve()}"
 
     if results_folder.exists():
-        cmd = f"rm -rf {results_folder} && " + cmd
+        cmd = f"rm -rf {str(results_folder)} && " + cmd
 
     LOGGER.info("Start MASH clustering")
     LOGGER.info(cmd)

@@ -26,3 +26,4 @@ dist/*
 noarch/*
 channeldata/*
 index.html
+build/

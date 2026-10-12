@@ -1,4 +1,5 @@
 import os
+import faulthandler
 from pathlib import Path
 from typing import Dict, List, Callable, Generator, Union, Literal
 
@@ -7,6 +8,8 @@ from datasail.eval import eval_split
 from datasail.reader.utils import DATA_INPUT, MATRIX_INPUT
 from datasail.routine import datasail_main
 from datasail.settings import *
+
+faulthandler.enable()
 
 
 def error(msg: str, error_code: int, cli: bool) -> None:
@@ -43,6 +46,12 @@ def validate_args(**kwargs) -> Dict[str, object]:
     if kwargs[KW_OUTDIR] is not None and not kwargs[KW_OUTDIR].is_dir():
         output_created = True
         kwargs[KW_OUTDIR].mkdir(parents=True, exist_ok=True)
+
+    if kwargs[KW_TMPDIR] is None:
+        kwargs[KW_TMPDIR] = Path("tmp")
+    if not kwargs[KW_TMPDIR].is_dir() and not kwargs[KW_TMPDIR].exists():
+        kwargs[KW_TMPDIR].mkdir(parents=True, exist_ok=True)
+        kwargs[KW_TMPDIR] = kwargs[KW_TMPDIR].resolve()
 
     LOGGER.setLevel(VERB_MAP[kwargs[KW_VERBOSE]])
     LOGGER.handlers[0].setLevel(level=VERB_MAP[kwargs[KW_VERBOSE]])
@@ -152,20 +161,22 @@ def datasail(
         inter: Optional[
             Union[str, Path, List[Tuple[str, str]], Callable[..., List[str]], Generator[str, None, None]]
         ] = None,
+        inter_strat: DATA_INPUT = None,
         output: Optional[Union[str, Path]] = None,
+        tmp_dir: str | Path | None = None,
         max_sec: int = 100,
         verbose: str = "W",
-        splits: List[float] = None,
-        names: List[str] = None,
+        splits: List[float] | None = None,
+        names: List[str] | None = None,
         delta: float = 0.05,
         epsilon: float = 0.05,
         runs: int = 1,
         solver: str = SOLVER_SCIP,
         cache: bool = False,
-        cache_dir: Union[str, Path] = None,
+        cache_dir: str | Path | None = None,
         linkage: Literal["average", "single", "complete"] = "average",
         overflow: Literal["assign", "break"] = "assign",
-        e_type: str = None,
+        e_type: str | None = None,
         e_data: DATA_INPUT = None,
         e_weights: DATA_INPUT = None,
         e_strat: DATA_INPUT = None,
@@ -173,7 +184,7 @@ def datasail(
         e_dist: MATRIX_INPUT = None,
         e_args: str = "",
         e_clusters: int = 50,
-        f_type: str = None,
+        f_type: str | None = None,
         f_data: DATA_INPUT = None,
         f_weights: DATA_INPUT = None,
         f_strat: DATA_INPUT = None,
@@ -224,7 +235,7 @@ def datasail(
     """
 
     kwargs = validate_args(
-        output=to_path(output), techniques=techniques, inter=to_path(inter), max_sec=max_sec, verbosity=verbose,
+        output=to_path(output), tmp_dir=to_path(tmp_dir), techniques=techniques, inter=to_path(inter), inter_strat=to_path(inter_strat), max_sec=max_sec, verbosity=verbose,
         splits=splits, names=names, delta=delta, epsilon=epsilon, runs=runs, solver=solver, cache=cache,
         cache_dir=to_path(cache_dir), linkage=linkage, e_type=e_type, e_data=to_path(e_data),
         e_weights=to_path(e_weights), e_strat=to_path(e_strat), e_sim=to_path(e_sim), e_dist=to_path(e_dist),
@@ -232,7 +243,11 @@ def datasail(
         f_strat=to_path(f_strat), f_sim=to_path(f_sim), f_dist=to_path(f_dist), f_args=f_args, f_clusters=f_clusters,
         threads=threads, cli=False, overflow=overflow,
     )
-    return datasail_main(**kwargs)
+    try:
+        return datasail_main(**kwargs)
+    finally:
+        if kwargs[KW_TMPDIR] is not None:
+            shutil.rmtree(str(kwargs[KW_TMPDIR]))
 
 
 def sail(args=None, **kwargs) -> None:
@@ -242,7 +257,7 @@ def sail(args=None, **kwargs) -> None:
     """
     if kwargs is None or len(kwargs) == 0:
         kwargs = parse_datasail_args(args or sys.argv[1:])
-    kwargs = {key: (kwargs[key] if key in kwargs else val) for key, val in DEFAULT_KWARGS.items()}
+    kwargs = {key: kwargs.get(key, val) for key, val in DEFAULT_KWARGS.items()}
     kwargs[KW_CLI] = True
     if kwargs[KW_OUTDIR] is None:
         error("When calling from the commmandline, you have to set the ", 25, True)
@@ -251,4 +266,8 @@ def sail(args=None, **kwargs) -> None:
         if kwarg in kwargs:
             kwargs[kwarg] = to_path(kwargs[kwarg])
     kwargs = validate_args(**kwargs)
-    datasail_main(**kwargs)
+    try:
+        datasail_main(**kwargs)
+    finally:
+        if kwargs[KW_TMPDIR] is not None:
+            shutil.rmtree(str(kwargs[KW_TMPDIR]))

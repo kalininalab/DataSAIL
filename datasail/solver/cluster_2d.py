@@ -10,6 +10,7 @@ from datasail.solver.utils import solve, compute_limits, stratification_constrai
 def solve_c2(
         e_clusters: list[Union[str, int]],
         e_s_matrix: Optional[np.ndarray],
+        eis_matrix: Optional[np.ndarray],
         e_similarities: Optional[np.ndarray],
         e_distances: Optional[np.ndarray],
         e_weights: Optional[np.ndarray],
@@ -17,6 +18,7 @@ def solve_c2(
         e_names: list[str],
         f_clusters: list[Union[str, int]],
         f_s_matrix: Optional[np.ndarray],
+        fis_matrix: Optional[np.ndarray],
         f_similarities: Optional[np.ndarray],
         f_distances: Optional[np.ndarray],
         f_weights: Optional[np.ndarray],
@@ -35,6 +37,7 @@ def solve_c2(
     Args:
         e_clusters: List of cluster names to split from the e-dataset
         e_s_matrix: Stratification for the e-dataset
+        eis_matrix: Interaction stratification for the e-dataset
         e_similarities: Pairwise similarity matrix of clusters in the order of their names
         e_distances: Pairwise distance matrix of clusters in the order of their names
         e_weights: Weights of the clusters in the order of their names in e_clusters
@@ -42,6 +45,7 @@ def solve_c2(
         e_names: List of names of the splits of the e-dataset in the order of the splits argument
         f_clusters: List of cluster names to split from the f-dataset
         f_s_matrix: Stratification for the f-dataset
+        fis_matrix: Interaction stratification for the f-dataset
         f_similarities: Pairwise similarity matrix of clusters in the order of their names
         f_distances: Pairwise distance matrix of clusters in the order of their names
         f_weights: Weights of the clusters in the order of their names in f_clusters
@@ -57,10 +61,11 @@ def solve_c2(
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
         dataset
     """
-    e_splits = convert(e_splits)
-    f_splits = convert(f_splits)
-    min_lim_e = compute_limits(epsilon, sum(e_weights), e_splits)
-    min_lim_f = compute_limits(epsilon, sum(f_weights), f_splits)
+    new_e_splits = convert(e_splits)
+    new_f_splits = convert(f_splits)
+    min_lim_e = compute_limits(epsilon, sum(e_weights), new_e_splits)
+    min_lim_f = compute_limits(epsilon, sum(f_weights), new_f_splits)
+    print(min_lim_e, min_lim_f)
 
     x_e = cvxpy.Variable((len(e_splits), len(e_clusters)), boolean=True)
     x_f = cvxpy.Variable((len(f_splits), len(f_clusters)), boolean=True)
@@ -79,8 +84,12 @@ def solve_c2(
 
     if e_s_matrix is not None:
         constraints.append(stratification_constraints(e_s_matrix, e_splits, delta, x_e))
+    if eis_matrix is not None:
+        constraints.append(stratification_constraints(eis_matrix, new_e_splits, delta, x_e))
     if f_s_matrix is not None:
         constraints.append(stratification_constraints(f_s_matrix, f_splits, delta, x_f))
+    if fis_matrix is not None:
+        constraints.append(stratification_constraints(fis_matrix, new_f_splits, delta, x_f))
 
     e_tmp = [[e_weights[e1] * e_weights[e2] * e_intra_weights[e1, e2] * cvxpy.max(
         cvxpy.vstack([x_e[s, e1] - x_e[s, e2] for s in range(len(e_splits))])

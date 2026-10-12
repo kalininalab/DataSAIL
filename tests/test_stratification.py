@@ -34,6 +34,7 @@ def test_stratification(tech):
         f_sim="mmseqs",
         epsilon=0.2,
         delta=0.2,
+        tmp_dir=base / "tmp",
     )
     assert e_splits is not None
     if tech in e_splits:
@@ -59,6 +60,7 @@ def test_multiclass(clustering: bool):
         e_type="O",
         e_data={"A": np.array([1]), "B": np.array([2]), "C": np.array([3]), "D": np.array([4])},
         e_strat=strats,
+        tmp_dir=Path("tmp"),
     )
     if clustering:
         kwargs["techniques"] = ["C1e"]

@@ -1,32 +1,34 @@
 from pathlib import Path
+import random
+import numpy as np
 import pytest
 
 from datasail.sail import datasail
 from datasail.reader.read_proteins import read_protein_data
 from datasail.cluster.clustering import cluster
-from datasail.settings import KW_THREADS, KW_LOGDIR, KW_LINKAGE
+from datasail.settings import KW_THREADS, KW_LOGDIR, KW_LINKAGE, KW_TMPDIR
 from datasail.solver.overflow import check_dataset
 
 
-@pytest.mark.todo
+@pytest.mark.flaky(reruns=3, only_rerun=["AssertionError"])
 def test_overflow_break():
+    random.seed(42)
+    np.random.seed(42)
+    Path("tmp").mkdir(exist_ok=True, parents=True)
     dataset = read_protein_data(
         Path("data") / "rw_data" / "overflow_data" / "goldstandard.protein_sequences.fasta",
         Path("data") / "rw_data" / "overflow_data" / "weight_map_for_datasail.tsv",
         sim="mmseqs",
         num_clusters=50,
     )
-    dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average"})
+    dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average", KW_TMPDIR: Path("tmp")})
     dataset, pre_e_name_split_map, pre_e_cluster_split_map, e_split_ratios, e_split_names = check_dataset(
         dataset, 
         [0.2, 0.2, 0.2, 0.2, 0.2], 
         ["S1", "S2", "S3", "S4", "S5"], 
         "break", 
         "single", 
-        None, 
-        False,
-        "C1e",
-        False,
+        ["C1e"],
     )
     assert len(dataset.cluster_names) == 51
     assert "C1e" in pre_e_name_split_map
@@ -37,26 +39,25 @@ def test_overflow_break():
     assert e_split_names == {"C1e": ["S1", "S2", "S3", "S4", "S5"]}
 
 
-
-@pytest.mark.todo
+@pytest.mark.flaky(reruns=3, only_rerun=["AssertionError"])
 def test_overflow_assign():
+    random.seed(42)
+    np.random.seed(42)
+    Path("tmp").mkdir(exist_ok=True, parents=True)
     dataset = read_protein_data(
         Path("data") / "rw_data" / "overflow_data" / "goldstandard.protein_sequences.fasta",
         Path("data") / "rw_data" / "overflow_data" / "weight_map_for_datasail.tsv",
         sim="mmseqs",
         num_clusters=50,
     )
-    dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average"})
+    dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average", KW_TMPDIR: Path("tmp")})
     dataset, pre_e_name_split_map, pre_e_cluster_split_map, e_split_ratios, e_split_names = check_dataset(
         dataset, 
         [0.2, 0.2, 0.2, 0.2, 0.2], 
         ["S1", "S2", "S3", "S4", "S5"], 
         "assign", 
         "average", 
-        None, 
-        False,
-        "C1e",
-        False,
+        ["C1e"],
     )
     assert len(dataset.cluster_names) == 49
     assert "C1e" in pre_e_name_split_map
@@ -67,7 +68,6 @@ def test_overflow_assign():
     assert e_split_names == {"C1e": ["S2", "S3", "S4", "S5"]}
 
 
-@pytest.mark.todo
 @pytest.mark.parametrize("overflow", ["break", "assign"])
 def test_overflow_full(overflow):
     e_splits, _, _ = datasail(

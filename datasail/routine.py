@@ -1,4 +1,5 @@
 import random
+import shutil
 import time
 import pickle
 from typing import Dict, Tuple, Optional
@@ -10,7 +11,7 @@ from datasail.cluster.clustering import cluster
 from datasail.reader.read import read_data
 from datasail.reader.utils import DataSet
 from datasail.report import report
-from datasail.settings import DIM_1, KW_CLI, LOGGER, KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
+from datasail.settings import DIM_1, KW_CLI, KW_TMPDIR, LOGGER, KW_INTER, KW_TECHNIQUES, KW_EPSILON, KW_RUNS, KW_SPLITS, KW_NAMES, \
     KW_MAX_SEC, KW_SOLVER, KW_LOGDIR, NOT_ASSIGNED, KW_OUTDIR, MODE_E, MODE_F, DIM_2, SRC_CL, KW_DELTA, \
     KW_E_CLUSTERS, KW_F_CLUSTERS, KW_CC, CDHIT, INSTALLED, FOLDSEEK, TMALIGN, CDHIT_EST, DIAMOND, MMSEQS, MASH, TEC_R, TEC_I1, TEC_C1, TEC_I2, TEC_C2, MODE_E, MODE_F, KW_LINKAGE, KW_OVERFLOW
 from datasail.solver.overflow import check_dataset
@@ -57,6 +58,9 @@ def datasail_main(**kwargs) -> Optional[Tuple[Optional[Dict], Optional[Dict], Op
         LOGGER.info("Cluster second set of entities.")
         f_dataset = cluster(f_dataset, **kwargs)
 
+    print(e_dataset.cluster_weights)
+    print(f_dataset.cluster_weights)
+
     if inter is not None:
         if e_dataset.type is not None and f_dataset.type is not None:
             new_inter = [(e_dataset.id_map[x[0]], f_dataset.id_map[x[1]])
@@ -76,10 +80,11 @@ def datasail_main(**kwargs) -> Optional[Tuple[Optional[Dict], Optional[Dict], Op
         kwargs[KW_NAMES],
         kwargs[KW_OVERFLOW],
         kwargs[KW_LINKAGE],
-        (TEC_I1 + MODE_E) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_I1 + MODE_E, TEC_I2]) else None, 
-        TEC_I2 in kwargs[KW_TECHNIQUES],
-        (TEC_C1 + MODE_E) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_C1 + MODE_E, TEC_C2]) else None,
-        TEC_C2 in kwargs[KW_TECHNIQUES],
+        [t for t in [TEC_I1 + MODE_E, TEC_I2, TEC_C1 + MODE_E, TEC_C2] if t in kwargs[KW_TECHNIQUES]],
+        # (TEC_I1 + MODE_E) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_I1 + MODE_E, TEC_I2]) else None, 
+        # TEC_I2 in kwargs[KW_TECHNIQUES],
+        # (TEC_C1 + MODE_E) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_C1 + MODE_E, TEC_C2]) else None,
+        # TEC_C2 in kwargs[KW_TECHNIQUES],
     )
     f_dataset, pre_f_name_split_map, pre_f_cluster_split_map, f_split_ratios, f_split_names = check_dataset(
         f_dataset,
@@ -87,13 +92,19 @@ def datasail_main(**kwargs) -> Optional[Tuple[Optional[Dict], Optional[Dict], Op
         kwargs[KW_NAMES],
         kwargs[KW_OVERFLOW],
         kwargs[KW_LINKAGE],
-        (TEC_I1 + MODE_F) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_I1 + MODE_F, TEC_I2]) else None,
-        TEC_I2 in kwargs[KW_TECHNIQUES],
-        (TEC_C1 + MODE_F) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_C1 + MODE_F, TEC_C2]) else None,
-        TEC_C2 in kwargs[KW_TECHNIQUES],
+        [t for t in [TEC_I1 + MODE_F, TEC_I2, TEC_C1 + MODE_F, TEC_C2] if t in kwargs[KW_TECHNIQUES]],
+        # (TEC_I1 + MODE_F) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_I1 + MODE_F, TEC_I2]) else None,
+        # TEC_I2 in kwargs[KW_TECHNIQUES],
+        # (TEC_C1 + MODE_F) if any(x in kwargs[KW_TECHNIQUES] for x in [TEC_C1 + MODE_F, TEC_C2]) else None,
+        # TEC_C2 in kwargs[KW_TECHNIQUES],
     )
-    split_ratios = e_split_ratios | f_split_ratios
-    split_names = e_split_names | f_split_names
+
+    def append(key, mode):
+        if key[-1] == mode:
+            return key
+        return key + mode
+    split_ratios = {append(k, MODE_E): v for k, v in e_split_ratios.items()} | {append(k, MODE_F): v for k, v in f_split_ratios.items()}
+    split_names = {append(k, MODE_E): v for k, v in e_split_names.items()} | {append(k, MODE_F): v for k, v in f_split_names.items()}
 
     LOGGER.info("Split data")
 

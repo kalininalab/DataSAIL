@@ -19,6 +19,7 @@ def cluster_param_binary_search(
         args2str: Callable,
         gen_args: Callable,
         log_dir: Path,
+        tmp_dir: Path,
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Perform binary search on the parameter space for clustering algorithms. So far, this is used to find optimal number
@@ -62,7 +63,8 @@ def cluster_param_binary_search(
         args2str(init_args),
         user_args,
         threads,
-        args2log(init_args)
+        args2log(init_args),
+        tmp_dir,
     )
     num_clusters = len(cluster_names)
     LOGGER.info(f"First round of clustering found {num_clusters} clusters for {len(dataset.names)} samples.")
@@ -87,7 +89,7 @@ def cluster_param_binary_search(
         max_clusters = num_clusters
         max_cluster_names, max_cluster_map, max_cluster_sim = cluster_names, cluster_map, cluster_sim
         min_cluster_names, min_cluster_map, min_cluster_sim = \
-            trial(dataset, args2str(min_args), user_args, threads, args2log(min_args))
+            trial(dataset, args2str(min_args), user_args, threads, args2log(min_args), tmp_dir)
         min_clusters = len(min_cluster_names)
         LOGGER.info(f"Second round of clustering found {min_clusters} clusters for {len(dataset.names)} samples.")
 

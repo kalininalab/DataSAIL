@@ -1,8 +1,10 @@
+from math import prod
+from pathlib import Path
 from collections import defaultdict
 from typing import Dict, Tuple, List, Union, Optional, Literal
 
-import numpy as np
 import sklearn
+import numpy as np
 from sklearn.cluster import AgglomerativeClustering, SpectralClustering
 
 from datasail.cluster.caching import load_from_cache, store_to_cache
@@ -20,7 +22,7 @@ if np.version.version < "2":
     from datasail.cluster.wlk import run_wlk
 from datasail.reader.utils import DataSet
 from datasail.report import whatever
-from datasail.settings import DIST_OPTIONS, FP_OPTIONS, LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, SIM_OPTIONS, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
+from datasail.settings import DIST_OPTIONS, FP_OPTIONS, KW_TMPDIR, LOGGER, KW_THREADS, KW_LOGDIR, KW_OUTDIR, SIM_OPTIONS, WLK, MMSEQS, MMSEQS2, MMSEQSPP, \
     FOLDSEEK, CDHIT, CDHIT_EST, ECFP, DIAMOND,TANIMOTO, KW_LINKAGE
 
 
@@ -40,10 +42,10 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         return cache
 
     if isinstance(dataset.similarity, str):  # compute the similarity
-        similarity_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR])
+        similarity_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR], kwargs[KW_TMPDIR])
 
     elif isinstance(dataset.distance, str):  # compute the distance
-        distance_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR])
+        distance_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR], kwargs[KW_TMPDIR])
 
     # if the similarity/distance is already given, store it
     elif isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
@@ -58,19 +60,19 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         return dataset
 
     # if there are too many clusters, reduce their number based on some cluster algorithms.
-    if any(isinstance(m, np.ndarray) for m in
-           [dataset.similarity, dataset.distance, dataset.cluster_similarity, dataset.cluster_distance]):
+    if (isinstance(dataset.cluster_similarity, np.ndarray) and np.sum(dataset.cluster_similarity) > prod(dataset.cluster_similarity.shape) * 0.001) or \
+        (isinstance(dataset.cluster_distance, np.ndarray) and np.sum(dataset.cluster_distance) < prod(dataset.cluster_distance.shape) * 0.999):
         num_old_cluster = len(dataset.cluster_names) + 1
         while dataset.num_clusters < len(dataset.cluster_names) < num_old_cluster:
             num_old_cluster = len(dataset.cluster_names)
             dataset = additional_clustering(dataset, dataset.num_clusters, kwargs[KW_LINKAGE])
 
-        if isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
-            whatever(dataset.names, dataset.cluster_map, dataset.distance, dataset.similarity)
-            metric = dataset.similarity if dataset.similarity is not None else dataset.distance
-            form = "similarity" if dataset.similarity is not None else "distance"
-            if kwargs[KW_OUTDIR] is not None:
-                heatmap(metric, kwargs[KW_OUTDIR] / (dataset.get_name() + f"_{form}.png"))
+        # if isinstance(dataset.similarity, np.ndarray) or isinstance(dataset.distance, np.ndarray):
+        #     whatever(dataset.names, dataset.cluster_map, dataset.distance, dataset.similarity)
+        #     metric = dataset.similarity if dataset.similarity is not None else dataset.distance
+        #     form = "similarity" if dataset.similarity is not None else "distance"
+        #     if kwargs[KW_OUTDIR] is not None:
+        #         heatmap(metric, kwargs[KW_OUTDIR] / (dataset.get_name() + f"_{form}.png"))
 
     if len(dataset.cluster_names) > dataset.num_clusters:
         dataset = force_clustering(dataset, kwargs[KW_LINKAGE])
@@ -80,7 +82,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     return dataset
 
 
-def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[str] = None) -> None:
+def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[str] = None, tmp_dir: Optional[Path] = None) -> None:
     """
     Compute the similarity based cluster based on a cluster method.
 
@@ -88,6 +90,7 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
         dataset: Mapping from molecule names to molecule description (fasta, PDB, SMILES, ...)
         threads: number of threads to use for one CD-HIT run
         log_dir: Absolute path to the directory to store all the logs in
+        tmp_dir: Temporary directory to store intermediate files.
 
     Returns:
         A tuple consisting of
@@ -100,19 +103,19 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
     if dataset.similarity.lower() == WLK:
         run_wlk(dataset)
     elif dataset.similarity.lower() == CDHIT:
-        run_cdhit(dataset, threads, log_dir)
+        run_cdhit(dataset, threads, log_dir, tmp_dir)
     elif dataset.similarity.lower() == CDHIT_EST:
-        run_cdhit_est(dataset, threads, log_dir)
+        run_cdhit_est(dataset, threads, log_dir, tmp_dir)
     elif dataset.similarity.lower() == DIAMOND:
-        run_diamond(dataset, threads, log_dir)
+        run_diamond(dataset, threads, log_dir, tmp_dir)
     elif dataset.similarity.lower() == ECFP:
         run_ecfp(dataset)
     elif dataset.similarity.lower() == FOLDSEEK:
-        run_foldseek(dataset, threads, log_dir)
+        run_foldseek(dataset, threads, log_dir, tmp_dir)
     elif dataset.similarity.lower() in [MMSEQS, MMSEQS2]:
-        run_mmseqs(dataset, threads, log_dir)
+        run_mmseqs(dataset, threads, log_dir, tmp_dir)
     elif dataset.similarity.lower() == MMSEQSPP:
-        run_mmseqspp(dataset, threads, log_dir)
+        run_mmseqspp(dataset, threads, log_dir, tmp_dir)
     elif dataset.similarity.lower() in SIM_OPTIONS:
         if isinstance(dataset.data[dataset.names[0]], str):
             run_ecfp(dataset, method=dataset.similarity.lower())
@@ -127,7 +130,7 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
     finish_clustering(dataset)
 
 
-def distance_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[str] = None) -> None:
+def distance_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[str] = None, tmp_dir: Optional[str] = None) -> None:
     """
     Compute the distance based cluster based on a cluster method or a file to extract pairwise distance from.
 
@@ -135,6 +138,7 @@ def distance_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[st
         dataset: DataSet with all information what and how to cluster
         threads: number of threads to use for one CD-HIT run
         log_dir: Absolute path to the directory to store all the logs in
+        tmp_dir: Temporary directory to store intermediate files.
 
     Returns:
         A tuple consisting of
@@ -145,7 +149,7 @@ def distance_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[st
           - Mapping from current clusters to their weights
     """
     if dataset.distance.lower() == "mash":
-        run_mash(dataset, threads, log_dir)
+        run_mash(dataset, threads, log_dir, tmp_dir)
     elif dataset.distance.lower() in DIST_OPTIONS:
         if isinstance(dataset.data[dataset.names[0]], str):
             run_ecfp(dataset, method=dataset.distance.lower())
@@ -164,6 +168,22 @@ def finish_clustering(dataset: DataSet) -> None:
     Args:
         dataset: The dataset to finish clustering on
     """
+    # Add missing names to the cluster information (e.g., left outs from third-party clustering algorithms)
+    missing_names = list(set(dataset.names) - set(dataset.cluster_map.keys()))
+    old_size = len(dataset.cluster_names)
+    dataset.cluster_names += missing_names
+    dataset.cluster_map.update({name: name for name in missing_names})
+    if dataset.cluster_similarity is not None:
+        tmp = np.zeros((len(dataset.cluster_names), len(dataset.cluster_names)))
+        tmp[0:old_size, 0:old_size] = dataset.cluster_similarity
+        dataset.cluster_similarity = tmp
+    elif dataset.cluster_distance is not None:
+        tmp = np.ones((len(dataset.cluster_names), len(dataset.cluster_names)))
+        tmp[0:old_size, 0:old_size] = dataset.cluster_distance
+        dataset.cluster_distance = tmp
+    else:
+        LOGGER.warning("Neither cluster similarity nor cluster distance is available.")
+
     # compute the weights and the stratification for the clusters
     dataset.cluster_weights = defaultdict(float)
     for key, value in dataset.cluster_map.items():

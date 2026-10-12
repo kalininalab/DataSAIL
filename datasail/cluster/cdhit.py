@@ -11,17 +11,21 @@ from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, CDHIT, INSTALLED
 
 
-def run_cdhit(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
+def run_cdhit(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None, tmp_dir: Optional[Path] = None) -> None:
     """
     Run the CD-HIT tool for protein input.
 
     Args:
         dataset: DataSet holding all information on the dta to be clustered
-        log_dir: Absolute path to the directory to store all the logs in
         threads: number of threads to use for one CD-HIT run
+        log_dir: Absolute path to the directory to store all the logs in
+        tmp_dir: Temporary directory to store intermediate files.
     """
     if not INSTALLED[CDHIT]:
         raise ValueError("CD-HIT is not installed.")
+
+    if tmp_dir is None:
+        tmp_dir = Path(".")
 
     user_args = MultiYAMLParser(CDHIT).get_user_arguments(dataset.args, ["c", "n"])
     vals = (dataset.args.c, dataset.args.n)  # values to be optimized
@@ -37,6 +41,7 @@ def run_cdhit(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None
         lambda x: f"-c {x[0]} -n {x[1]} -l {x[1] - 1}",
         lambda x, y: ((x[0] + y[0]) / 2, c2n((x[0] + y[0]) / 2)),
         log_dir,
+        tmp_dir,
     )
 
 
@@ -45,7 +50,8 @@ def cdhit_trial(
         tune_args: Tuple,
         user_args: str,
         threads: int = 1,
-        log_file: Optional[Path] = None
+        log_file: Optional[Path] = None,
+        tmp_dir: Optional[Path] = None,
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run CD-HIT on the dataset with the given sequence similarity defined by add_args.
@@ -56,6 +62,7 @@ def cdhit_trial(
         user_args: Additional arguments specifying the sequence similarity parameter, those can be set by the user
         threads: number of threads to use for one CD-HIT run
         log_file: Filepath to log the output to
+        tmp_dir: Temporary directory to store intermediate files.
 
     Returns:
         A tuple containing
@@ -63,14 +70,17 @@ def cdhit_trial(
           - the mapping from cluster members to the cluster names (cluster representatives)
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
-    results_folder = Path("cdhit_results")
 
-    with open("cdhit.fasta", "w") as out:
+    if tmp_dir is None:
+        tmp_dir = Path(".")
+    results_folder = tmp_dir / "cdhit_results"
+
+    with open(tmp_dir / "cdhit.fasta", "w") as out:
         for name, seq in dataset.data.items():
             out.write(f">{name}\n{seq}\n")
 
-    cmd = f"mkdir {results_folder} && " \
-          f"cd {results_folder} && " \
+    cmd = f"mkdir {str(results_folder)} && " \
+          f"cd {str(results_folder)} && " \
           f"cd-hit " \
           f"-i ../cdhit.fasta " \
           f"-o clusters " \
@@ -84,8 +94,8 @@ def cdhit_trial(
     else:
         cmd += f"> {log_file.resolve()}"
 
-    if results_folder.exists:
-        cmd = f"rm -rf {results_folder} && " + cmd
+    if results_folder.exists():
+        cmd = f"rm -rf {str(results_folder)} && " + cmd
 
     LOGGER.info(cmd)
     os.system(cmd)

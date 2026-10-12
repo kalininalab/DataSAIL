@@ -14,7 +14,7 @@ from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, FOLDSEEK, INSTALLED
 
 
-def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
+def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None, tmp_dir: Optional[Path] = None) -> None:
     """
     Run FoldSeek to cluster the proteins based on their structure.
 
@@ -22,20 +22,24 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
         dataset: DataSet holding all information on the dta to be clustered
         threads: number of threads to use for one CD-HIT run
         log_dir: Absolute path to the directory to store all the logs in
+        tmp_dir: Temporary directory to store intermediate files.
     """
     if not INSTALLED[FOLDSEEK]:
         raise ValueError("Foldseek is not installed.")
     user_args = MultiYAMLParser(FOLDSEEK).get_user_arguments(dataset.args, [])
 
-    results_folder = Path("fs_results")
+    if tmp_dir is None:
+        tmp_dir = Path(".")
+    
+    results_folder = tmp_dir / Path("fs_results")
 
-    tmp = Path("fs_tmp")
+    tmp = tmp_dir / Path("fs_tmp")
     tmp.mkdir(parents=True, exist_ok=True)
     for name in dataset.names:
         shutil.copy(dataset.data[name], tmp)
 
-    cmd = f"mkdir {results_folder} && " \
-          f"cd {results_folder} && " \
+    cmd = f"mkdir {str(results_folder)} && " \
+          f"cd {str(results_folder)} && " \
           f"foldseek " \
           f"easy-search " \
           f"{str(tmp.resolve())} " \
@@ -47,7 +51,7 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
           f"--threads {threads} " \
           f"{user_args} " \
           f"--exhaustive-search 1 &&" \
-          f"rm -rf ../tmp"
+          f"rm -rf ../fs_tmp"
 
     if log_dir is None:
         cmd += "> /dev/null 2>&1"
@@ -55,7 +59,7 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
         cmd += f"> {(log_dir / f'{dataset.get_name()}_foldseek.log').resolve()}"
 
     if results_folder.exists():
-        cmd = f"rm -rf {results_folder} && " + cmd
+        cmd = f"rm -rf {str(results_folder)} && " + cmd
 
     LOGGER.info("Start FoldSeek clustering")
     LOGGER.info(cmd)
@@ -64,10 +68,10 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
     if not (results_folder / "aln.m8").exists():
         raise ValueError("Something went wrong with foldseek. The output file does not exist.")
 
-    ds = read_with_pyarrow(f"{results_folder}/aln.m8")
+    ds = read_with_pyarrow(results_folder / "aln.m8")
     namap = dict((n, i) for i, n in enumerate(dataset.names))
     cluster_sim = np.zeros((len(dataset.names), len(dataset.names)))
-    with open(f"{results_folder}/aln.m8", "r") as data:
+    with open(results_folder / "aln.m8", "r") as data:
         for line in data.readlines():
             q1, q2, sim = line.strip().split("\t")[:3]
             if "_" in q1 and "." in q1 and q1.rindex("_") > q1.index("."):

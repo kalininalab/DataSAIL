@@ -78,6 +78,13 @@ def parse_datasail_args(args) -> Dict[str, object]:
         help="Output directory to store the splits in.",
     )
     parser.add_argument(
+        "--tmp-dir",
+        type=Path,
+        default=None,
+        dest=KW_TMPDIR,
+        help="Temporary directory to store intermediate files."
+    )
+    parser.add_argument(
         "-i",
         "--inter",
         type=Path,

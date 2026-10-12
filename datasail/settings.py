@@ -200,10 +200,12 @@ KW_F_TYPE = "f_type"
 KW_F_CLUSTERS = "f_clusters"
 
 KW_INTER = "inter"
+KW_INTER_STRAT = "inter_strat"
 KW_LOGDIR = "logdir"
 KW_MAX_SEC = "max_sec"
 KW_NAMES = "names"
 KW_OUTDIR = "output"
+KW_TMPDIR = "tmp_dir"
 KW_RUNS = "runs"
 KW_SOLVER = "solver"
 KW_SPLITS = "splits"
@@ -219,6 +221,7 @@ DEFAULT_KWARGS = {
     KW_CLI: False,
     KW_DELTA: 0.1,
     KW_EPSILON: 0.1,
+    KW_TMPDIR: None,
 
     KW_E_ARGS: None,
     KW_E_CLUSTERS: 50,
@@ -241,6 +244,7 @@ DEFAULT_KWARGS = {
     KW_F_TYPE: None,
 
     KW_INTER: None,
+    KW_INTER_STRAT: None,
     KW_LOGDIR: None,
     KW_MAX_SEC: 1000,
     KW_NAMES: ["train", "val", "test"],

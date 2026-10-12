@@ -11,6 +11,7 @@ def solve_i1(
         entities: list[str],
         weights: Optional[list[float]],
         stratification: Optional[np.ndarray],
+        interaction_strat: Optional[np.ndarray],
         delta: float,
         epsilon: float,
         splits: list[float],
@@ -47,6 +48,8 @@ def solve_i1(
 
     if stratification is not None:
         constraints.append(stratification_constraints(stratification, splits, delta, x))
+    if interaction_strat is not None:
+        constraints.append(stratification_constraints(interaction_strat, splits, delta, x))
 
     problem = solve(1, constraints, max_sec, solver, log_file)
 

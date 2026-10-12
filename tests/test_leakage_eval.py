@@ -16,6 +16,7 @@ def test_eval_split():
         distance=None,
         dist_conv=None,
         split_assignment={seq: ("test" if i % 4 == 0 else "train") for i, seq in enumerate(seqs)},
+        tmp_dir=Path("tmp"),
     )
     assert 0 < scaled_dl and scaled_dl < 1
     assert 0 < total_dl
@@ -46,6 +47,7 @@ def test_esol():
         distance=None,
         dist_conv=None,
         split_assignment=i_assi,
+        tmp_dir=Path("tmp"),
     )
     sim_c = eval_split(
         datatype=M_TYPE,
@@ -55,6 +57,7 @@ def test_esol():
         distance=None,
         dist_conv=None,
         split_assignment=c_assi,
+        tmp_dir=Path("tmp"),
     )
     dist_i = eval_split(
         datatype=M_TYPE,
@@ -64,6 +67,7 @@ def test_esol():
         distance="jaccard",
         dist_conv=None,
         split_assignment=i_assi,
+        tmp_dir=Path("tmp"),
     )
     dist_c = eval_split(
         datatype=M_TYPE,
@@ -73,6 +77,7 @@ def test_esol():
         distance="jaccard",
         dist_conv=None,
         split_assignment=c_assi,
+        tmp_dir=Path("tmp"),
     )
 
     assert 0 < sim_c[0] < sim_i[0] <= 1

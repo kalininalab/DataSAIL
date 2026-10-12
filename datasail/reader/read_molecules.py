@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Any
 
 import numpy as np
 import rdkit
@@ -37,6 +37,7 @@ def read_molecule_data(
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
         inter: Optional[List[Tuple[str, str]]] = None,
+        inter_strat: Optional[dict[Tuple[str, str], Any]] = None,
         index: Optional[int] = None,
         num_clusters: Optional[int] = None,
         tool_args: str = "",
@@ -79,7 +80,7 @@ def read_molecule_data(
 
     read_data_input(data, dataset, read_dir)
 
-    dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
+    dataset = read_data(weights, strats, sim, dist, inter, inter_strat, index, num_clusters, tool_args, dataset)
     if detect_duplicates:
         dataset = remove_molecule_duplicates(dataset)
 

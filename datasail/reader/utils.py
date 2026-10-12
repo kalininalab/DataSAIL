@@ -14,9 +14,8 @@ from rdkit import Chem
 from datasail.reader.validate import validate_user_args
 from datasail.settings import DIST_OPTIONS, SIM_OPTIONS, get_default, SIM_ALGOS, DIST_ALGOS, UNK_LOCATION, format2ending, FASTA_FORMATS
 
-DATA_INPUT = Optional[Union[str, Path, Dict[str, Union[str, np.ndarray]],
-    Callable[..., Dict[str, Union[str, np.ndarray]]], Generator[Tuple[str, Union[str, np.ndarray]], None, None]]]
-MATRIX_INPUT = Optional[Union[str, Path, Tuple[List[str], np.ndarray], Callable[..., Tuple[List[str], np.ndarray]]]]
+DATA_INPUT = Optional[Union[str, Path, Dict[str, Union[str, np.ndarray]]]]
+MATRIX_INPUT = Optional[Union[str, Path, Tuple[List[str], np.ndarray]]]
 DictMap = Dict[str, List[Dict[str, str]]]
 
 
@@ -42,6 +41,9 @@ class DataSet:
     cluster_similarity: Optional[Union[np.ndarray, str]] = None
     distance: Optional[Union[np.ndarray, str]] = None
     cluster_distance: Optional[Union[np.ndarray, str]] = None
+    interaction_stratification: Optional[Dict[Tuple[str, str], Any]] = None
+    interaction_classes: Optional[Dict[Any, int]] = None
+    interaction_class_oh: Optional[np.ndarray] = None
 
     def __hash__(self) -> int:
         """
@@ -194,7 +196,7 @@ def read_clustering_file(filepath: Path, sep: str = "\t") -> Tuple[List[str], np
     return names, np.array(measures)
 
 
-def read_csv(filepath: Path, sep: str = ",") -> Generator[Tuple[str, str], None, None]:
+def read_csv(filepath: Path, sep: str = ",", count: int = 2) -> Generator[Tuple, None, None]:
     """
     Read in a CSV file as pairs of data.
 
@@ -207,7 +209,7 @@ def read_csv(filepath: Path, sep: str = ",") -> Generator[Tuple[str, str], None,
     """
     df = pd.read_csv(filepath, sep=sep)  # , header=0 if has_csv_header(filepath, sep) else None) Does only work for columns with non-string values
     for index in range(df.shape[0]):
-        yield df.iloc[index, :2]
+        yield tuple(df.iloc[index, :count])
 
 
 def has_csv_header(filepath: Path, sep: str = ",") -> bool:
@@ -258,6 +260,7 @@ def read_data(
         sim: MATRIX_INPUT,
         dist: MATRIX_INPUT,
         inter: Optional[List[Tuple[str, str]]],
+        inter_strat: Optional[dict[Tuple[str, str], Any]],
         index: Optional[int],
         num_clusters: Optional[int],
         tool_args: str,
@@ -332,10 +335,23 @@ def read_data(
     else:
         dataset.stratification = {k: 0 for k in dataset.data.keys()}
     
-    dataset.stratification = convert_stratification(dataset)
-    num_classes = len(next(iter(dataset.stratification.values())))
-    dataset.class_oh = np.eye(num_classes)
-    dataset.classes = {s: i for i, s in enumerate(range(num_classes))}
+    dataset.stratification = convert_stratification(dataset.stratification, dataset.names)
+    dataset.classes = {s: i for i, s in enumerate(range(len(next(iter(dataset.stratification.values())))))}
+    dataset.class_oh = np.eye(len(dataset.classes))
+
+    if inter_strat is not None:
+        inter_strat = convert_stratification(inter_strat, inter_strat.keys())
+        interaction_stratification = {}
+        for name in dataset.names:
+            tmp = np.zeros_like(next(iter(inter_strat.values())))
+            occurrences = [v for k, v in inter_strat.items() if k[index] == name]
+            if occurrences:
+                tmp = np.sum(np.stack(occurrences), axis=0)
+            interaction_stratification[name] = tmp
+            # dataset.stratification[name] = np.concatenate([dataset.stratification[name], tmp])
+        dataset.interaction_stratification = interaction_stratification
+        dataset.interaction_classes = {s: i for i, s in enumerate(range(len(next(iter(inter_strat.values())))))}
+        dataset.interaction_class_oh = np.eye(len(dataset.interaction_classes))
 
     # # .classes maps the individual classes to their index in one-hot encoding, important for non-numeric classes
     # tmp_classes = set()
@@ -353,23 +369,23 @@ def read_data(
     return dataset
 
 
-def convert_stratification(dataset: DataSet) -> dict[str, Any]:
-    if dataset.stratification is None:
-        stratification = {name: [0] for name in dataset.names}
+def convert_stratification(stratification, names) -> dict[str, Any]:
+    if stratification is None:
+        out_stratification = {name: [0] for name in names}
     else:
-        val = next(iter(dataset.stratification.values()))
+        val = next(iter(stratification.values()))
         if isinstance(val, set):
-            classes = list(sorted(set.union(*[set(x) for x in dataset.stratification.values()])))
+            classes = list(sorted(set.union(*[set(x) for x in stratification.values()])))
             ohe = np.eye(len(classes))
             ohe_map = {c: ohe[i] for i, c in enumerate(classes)}
-            stratification = {name: np.sum(np.stack([ohe_map[n] for n in dataset.stratification[name]]), axis=0) for name in dataset.names}
+            out_stratification = {name: np.sum(np.stack([ohe_map[n] for n in stratification[name]]), axis=0) for name in names}
         elif not hasattr(val, "__getitem__") or isinstance(val, str):
-            classes = list(set(dataset.stratification.values()))
+            classes = list(set(stratification.values()))
             ohe = np.eye(len(classes))
             ohe_map = {c: ohe[i] for i, c in enumerate(classes)}
-            stratification = {name: ohe_map[dataset.stratification[name]] for name in dataset.names}
+            out_stratification = {name: ohe_map[stratification[name]] for name in names}
         else:
-            strat = pd.DataFrame(dataset.stratification).T
+            strat = pd.DataFrame(stratification).T
             for col in strat.columns:
                 vals = strat[col].unique().size
                 if vals > 2:
@@ -379,8 +395,8 @@ def convert_stratification(dataset: DataSet) -> dict[str, Any]:
                     strat = strat.astype({c: int for c in ohe.columns}, errors="ignore")
                 if vals != 2:
                     strat.drop(columns=col, inplace=True, errors="ignore")
-            stratification = strat.T.to_dict(orient="list")
-    return stratification
+            out_stratification = strat.T.to_dict(orient="list")
+    return out_stratification
 
 
 def read_folder(folder_path: Path, file_extension: Optional[str] = None) -> Generator[Tuple[str, str], None, None]:
@@ -435,10 +451,6 @@ def read_data_input(data: DATA_INPUT, dataset: DataSet, read_dir: Callable[[Data
         dataset.data = dict(data)
     elif isinstance(data, dict):
         dataset.data = data
-    elif isinstance(data, Callable):
-        dataset.data = data()
-    elif isinstance(data, Generator):
-        dataset.data = dict(data)
     else:
         raise ValueError("Unknown data input type.")
 

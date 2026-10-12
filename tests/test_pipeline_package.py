@@ -54,6 +54,7 @@ def test_pipeline(data):
         f_sim=prot_sim,
         f_dist=prot_dist,
         solver="SCIP",
+        tmp_dir=base / "tmp",
     )
 
     assert any(mode in x for x in [e_name_split_map, f_name_split_map, inter_split_map])
@@ -139,6 +140,7 @@ def test_report():
         f_data=root / "prot.fasta",
         f_sim=root / "prot_sim.tsv",
         solver="SCIP",
+        tmp_dir=root / "tmp",
     )
 
     assert "I1e" in e_name_split_map

@@ -40,20 +40,41 @@ def read_data(**kwargs) -> Tuple[DataSet, DataSet, Optional[List[Tuple[str, str]
         inter = list(kwargs[KW_INTER])
     else:
         raise ValueError()
+    
+    if kwargs[KW_INTER_STRAT] is None:
+        inter_strat = None
+    elif isinstance(kwargs[KW_INTER_STRAT], Path):
+        if kwargs[KW_INTER_STRAT].is_file():
+            if kwargs[KW_INTER_STRAT].suffix[1:] == "tsv":
+                inter_strat = {x[:2]: x[2] for x in read_csv(kwargs[KW_INTER_STRAT], "\t", 3)}
+            elif kwargs[KW_INTER_STRAT].suffix[1:] == "csv":
+                inter_strat = {x[:2]: x[2] for x in read_csv(kwargs[KW_INTER_STRAT], ",", 3)}
+            else:
+                raise ValueError()
+        else:
+            raise ValueError()
+    elif isinstance(kwargs[KW_INTER_STRAT], dict):
+        inter_strat = kwargs[KW_INTER_STRAT]
+    elif isinstance(kwargs[KW_INTER_STRAT], Callable):
+        inter_strat = kwargs[KW_INTER_STRAT]()
+    elif isinstance(kwargs[KW_INTER_STRAT], Generator):
+        inter_strat = list(kwargs[KW_INTER_STRAT])
+    else:
+        raise ValueError()
 
     e_dataset = read_data_type(kwargs[KW_E_TYPE])(
-        kwargs[KW_E_DATA], kwargs[KW_E_WEIGHTS], kwargs[KW_E_STRAT], kwargs[KW_E_SIM], kwargs[KW_E_DIST], inter, 0,
+        kwargs[KW_E_DATA], kwargs[KW_E_WEIGHTS], kwargs[KW_E_STRAT], kwargs[KW_E_SIM], kwargs[KW_E_DIST], inter, inter_strat, 0,
         kwargs[KW_E_CLUSTERS], kwargs[KW_E_ARGS],
     )
     f_dataset = read_data_type(kwargs[KW_F_TYPE])(
-        kwargs[KW_F_DATA], kwargs[KW_F_WEIGHTS], kwargs[KW_F_STRAT], kwargs[KW_F_SIM], kwargs[KW_F_DIST], inter, 1,
+        kwargs[KW_F_DATA], kwargs[KW_F_WEIGHTS], kwargs[KW_F_STRAT], kwargs[KW_F_SIM], kwargs[KW_F_DIST], inter, inter_strat, 1,
         kwargs[KW_F_CLUSTERS], kwargs[KW_F_ARGS],
     )
 
     return e_dataset, f_dataset, inter
 
 
-def read_data_type(data_type: chr) -> Callable:
+def read_data_type(data_type: str) -> Callable:
     """
     Convert single-letter representation of the type of data to handle to the full name.
 

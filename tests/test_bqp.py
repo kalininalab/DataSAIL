@@ -26,6 +26,7 @@ def test_perf_bin_2(root_dir: Path, mode: Tuple[str, str]):
         f_data=root_dir / "prot.tsv",
         solver="SCIP",
         max_sec=500,
+        tmp_dir=base / "tmp",
     )
 
     check_folder(base / mode[0], 0.5 if mode[0] == "I2" else 0.05, None, None, "Molecule_lig_splits.tsv", "Protein_prot_splits.tsv")

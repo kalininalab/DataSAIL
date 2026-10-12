@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Any
 
 from datasail.reader.read_genomes import read_folder
 from datasail.reader.read_molecules import remove_duplicate_values
@@ -14,6 +14,7 @@ def read_other_data(
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
         inter: Optional[List[Tuple[str, str]]] = None,
+        inter_strat: Optional[dict[Tuple[str, str], Any]] = None,
         index: Optional[int] = None,
         num_clusters: Optional[int] = None,
         tool_args: str = "",
@@ -44,7 +45,7 @@ def read_other_data(
 
     read_data_input(data, dataset, read_dir)
 
-    dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
+    dataset = read_data(weights, strats, sim, dist, inter, inter_strat, index, num_clusters, tool_args, dataset)
     # dataset = remove_duplicate_values(dataset, dataset.data)
     dataset.id_map = {n: n for n in dataset.names}
 

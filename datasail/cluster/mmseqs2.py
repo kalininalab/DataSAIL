@@ -11,7 +11,7 @@ from datasail.reader.utils import DataSet
 from datasail.settings import LOGGER, MMSEQS2, INSTALLED
 
 
-def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path]) -> None:
+def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path], tmp_dir: Optional[Path] = None) -> None:
     """
     Run mmseqs in the commandline and read in the results into clusters.
 
@@ -19,9 +19,13 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path]) -> None:
         dataset: DataSet holding all information on the dta to be clustered
         threads: number of threads to use for one CD-HIT run
         log_dir: Absolute path to the directory to store all the logs in
+        tmp_dir: Absolute path to the temporary directory to store intermediate results in
     """
     if not INSTALLED[MMSEQS2]:
         raise ValueError("MMseqs is not installed.")
+
+    if tmp_dir is None:
+        tmp_dir = Path(".")
 
     user_args = MultiYAMLParser(MMSEQS2).get_user_arguments(dataset.args, ["c"])
     optim_vals = (dataset.args.c,)  # values to be optimized
@@ -37,6 +41,7 @@ def run_mmseqs(dataset: DataSet, threads: int, log_dir: Optional[Path]) -> None:
         lambda x: f"-c {x[0]}",
         lambda x, y: ((x[0] + y[0]) / 2,),
         log_dir,
+        tmp_dir,
     )
 
 
@@ -44,8 +49,9 @@ def mmseqs_trial(
         dataset: DataSet,
         tune_args: Tuple,
         user_args: str,
-        threads: int = 1,
-        log_file: Optional[Path] = None
+        threads: int,
+        log_file: Path | None,
+        tmp_dir: Path,
 ) -> Tuple[List[str], Dict[str, str], np.ndarray]:
     """
     Run MMseqs2 on the dataset with the given sequence similarity defined by add_args.
@@ -56,6 +62,7 @@ def mmseqs_trial(
         user_args: Additional arguments specifying the sequence similarity parameter
         threads: number of threads to use for one CD-HIT run
         log_file: Filepath to log the output to
+        tmp_dir: Absolute path to the temporary directory to store intermediate results in
 
     Returns:
         A tuple containing
@@ -64,9 +71,9 @@ def mmseqs_trial(
           - the similarity matrix of the clusters (a symmetric matrix filled with 1s)
     """
 
-    results_folder = Path("mmseqs_results")
+    results_folder = tmp_dir / "mmseqs_results"
 
-    with open("mmseqs.fasta", "w") as out:
+    with open(tmp_dir / "mmseqs.fasta", "w") as out:
         for name, seq in dataset.data.items():
             out.write(f">{name}\n{seq}\n")
 
@@ -88,7 +95,7 @@ def mmseqs_trial(
         cmd += f"> {log_file.resolve()}"
 
     if results_folder.exists():
-        cmd = f"rm -rf {results_folder} && " + cmd
+        cmd = f"rm -rf {str(results_folder)} && " + cmd
 
     LOGGER.info(cmd)
     os.system(cmd)

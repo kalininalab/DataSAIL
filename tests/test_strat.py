@@ -16,7 +16,7 @@ def dataset():
 
 def test_none_stratification(dataset):
     dataset.stratification = None
-    result = convert_stratification(dataset)
+    result = convert_stratification(dataset.stratification, dataset.names)
     assert isinstance(result, dict)
     assert all(isinstance(v, list) for v in result.values())
     assert all(len(v) == 1 for v in result.values())
@@ -24,7 +24,7 @@ def test_none_stratification(dataset):
 
 def test_multiclass_stratification(dataset):
     dataset.stratification = {name: [i % 3] for i, name in enumerate(dataset.names)}
-    result = convert_stratification(dataset)
+    result = convert_stratification(dataset.stratification, dataset.names)
     assert isinstance(result, dict)
     assert all(isinstance(v, (list, np.ndarray)) for v in result.values())
     assert all(len(v) == 3 for v in result.values())
@@ -33,7 +33,7 @@ def test_multiclass_stratification(dataset):
 
 def test_multiclass_stratification_str(dataset):
     dataset.stratification = {name: str([i % 3]) for i, name in enumerate(dataset.names)}
-    result = convert_stratification(dataset)
+    result = convert_stratification(dataset.stratification, dataset.names)
     assert isinstance(result, dict)
     assert all(isinstance(v, (list, np.ndarray)) for v in result.values())
     assert all(len(v) == 3 for v in result.values())
@@ -42,7 +42,7 @@ def test_multiclass_stratification_str(dataset):
 
 def test_multilabel_stratification(dataset):
     dataset.stratification = {name: [int(x) for x in bin(i)[2:].zfill(4)] for i, name in enumerate(dataset.names)}
-    result = convert_stratification(dataset)
+    result = convert_stratification(dataset.stratification, dataset.names)
     assert isinstance(result, dict)
     assert all(isinstance(v, (list, np.ndarray)) for v in result.values())
     assert all(len(v) == 4 for v in result.values())
@@ -50,7 +50,7 @@ def test_multilabel_stratification(dataset):
 
 def test_multilabel_multiclass_stratification(dataset):
     dataset.stratification = {name: [int(x) for x in bin(i)[2:].zfill(4)] + [str([i % 3]), i % 3] for i, name in enumerate(dataset.names)}
-    result = convert_stratification(dataset)
+    result = convert_stratification(dataset.stratification, dataset.names)
     print(result)
     assert isinstance(result, dict)
     assert all(isinstance(v, (list, np.ndarray)) for v in result.values())

@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 import copy
@@ -6,7 +7,7 @@ import numpy as np
 from datasail.reader.read import read_data_type
 from datasail.cluster.clustering import cluster
 from datasail.reader.utils import MATRIX_INPUT
-from datasail.settings import DIST_OPTIONS, KW_OUTDIR, KW_THREADS, KW_LOGDIR, KW_LINKAGE
+from datasail.settings import DIST_OPTIONS, KW_OUTDIR, KW_THREADS, KW_LOGDIR, KW_LINKAGE, KW_TMPDIR
 
 SPLIT_ASSIGNMENT_TYPE = Union[dict[str, Any], str, Path]
 
@@ -20,6 +21,7 @@ def eval_split(
         dist_conv: Optional[Union[int, float, Callable]], 
         split_assignment: Union[dict[str, Any], str, Path],
         return_matrix: bool = False,
+        tmp_dir: Optional[Path] = None,
     ) -> tuple[float, float, float, Optional[np.ndarray]]:
     """
     Evaluate the leakage of a single split assignment on a dataset. The inputs are mostly the same as for a normal DataSAIL run.
@@ -38,6 +40,7 @@ def eval_split(
         dist_conv: Optional distance conversion function or maximum distance value.
         split_assignment: A single split assignment, can be a dictionary, string (path), or Path object.
         return_matrix: Whether to return the similarity/distance matrix used for evaluation. If True, the function will return a tuple of (leakage_ratio, leakage_value, total_value, matrix).
+        tmp_dir: Optional[Path] = None, optional temporary directory to store intermediate files.
 
     Returns:
         A tuple containing 
@@ -46,6 +49,12 @@ def eval_split(
             - the total metric value for the split assignment (maximal leakage possible).
             - the similarity/distance matrix used for evaluation (if return_matrix is True otherwise this will be None).
     """
+    if tmp_dir is None:
+        tmp_dir = Path("tmp")
+    if not tmp_dir.is_dir() and not tmp_dir.exists():
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        tmp_dir = tmp_dir.resolve()
+    
     if distance is not None:
         if dist_conv is None:
             if not isinstance(distance, str):
@@ -76,7 +85,7 @@ def eval_split(
         split_assignment = Path(split_assignment)
     
     dataset = read_data_type(datatype)(data=data, weights=weights, sim=similarity, dist=distance, num_clusters=np.inf, detect_duplicates=False)
-    dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average", KW_OUTDIR: None})
+    dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average", KW_OUTDIR: None, KW_TMPDIR: Path("tmp")})
     in_split_mask = np.zeros((len(dataset.cluster_names), len(dataset.cluster_names)))
     for split in set(split_assignment.values()):
         if split == "not assigned":
@@ -100,4 +109,8 @@ def eval_split(
     if mode == "dist":
         total = np.sum((1 - metric) * weight_matrix)
         leakage = np.sum((1 - in_split_mask) * weight_matrix * (1 - metric))
+
+    if tmp_dir is not None:
+        shutil.rmtree(tmp_dir)
+    
     return leakage / total, leakage, total, metric if return_matrix else None

@@ -1,5 +1,6 @@
 import platform
 from pathlib import Path
+import shutil
 from typing import get_args
 
 import numpy as np
@@ -28,7 +29,7 @@ from datasail.reader.utils import DataSet, read_csv, parse_fasta
 from datasail.reader.validate import check_cdhit_arguments, check_foldseek_arguments, check_mmseqs_arguments, \
     check_mash_arguments, check_mmseqspp_arguments, check_diamond_arguments
 from datasail.sail import datasail
-from datasail.settings import P_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN, MMSEQSPP, \
+from datasail.settings import KW_TMPDIR, P_TYPE, FORM_FASTA, MMSEQS, CDHIT, KW_LOGDIR, KW_THREADS, FOLDSEEK, TMALIGN, MMSEQSPP, \
     DIAMOND, MASH
 
 
@@ -361,6 +362,10 @@ def test_wlkernel_molecule():
 def test_clustering(algo):
     base = Path("data") / "rw_data"
     seqs = parse_fasta(base / "pdbbind_clean.fasta")
+    tmp_dir = Path("tmp")
+    if not tmp_dir.is_dir() and not tmp_dir.exists():
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        tmp_dir = tmp_dir.resolve()
     dataset = cluster(
         DataSet(
             type=P_TYPE,
@@ -377,8 +382,9 @@ def test_clustering(algo):
         ),
         num_clusters=50,
         linkage="average",
-        **{KW_THREADS: 1, KW_LOGDIR: Path()})
+        **{KW_THREADS: 1, KW_LOGDIR: Path(), KW_TMPDIR: tmp_dir})
     assert len(dataset.cluster_names) <= 100
+    shutil.rmtree(tmp_dir)
 
 
 def test_distance_input():

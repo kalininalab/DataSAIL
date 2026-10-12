@@ -4,8 +4,7 @@
 
 - [ ] Multi-threading support for pre-solving (Snakemake as backbone)
 - [ ] Make (more) deterministic ([Issue #6](https://github.com/kalininalab/DataSAIL/issues/6))
-- [ ] Reports of results with plots and tables a PDF and or HTML
-- [ ] Replace GraKel with something "modern" and fully "conda-installable" to make DataSAIL fully conda-installable
+- [ ] Reports of results with plots and tables as a PDF and/or HTML
 - [ ] Include [MashMap3](https://github.com/marbl/MashMap)
 - [ ] Include MASH for amino acid sequences
 
@@ -26,6 +25,12 @@
 - [ ] "Stratification" based on continuous labels (e.g., regression tasks)
 
 ## Change Log
+
+## planned - v1.4.1 (2026-09-??)
+
+- temporary directory support for intermediate files to keep them in a user-specified location and not the current working directory.
+- Support for interaction stratification, e.g., binding classification datasets
+- Minor bug fixes
 
 ## v1.4.0 (2026-06-16)
 

@@ -129,7 +129,8 @@ def test_pdbbind_splits():
         f_type="P",
         f_data=df[["ids", "Target"]].values.tolist(),
         solver="SCIP",
-        threads=1
+        threads=1,
+        tmp_dir=out / "tmp",
     )
 
     assert out.is_dir()

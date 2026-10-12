@@ -11,7 +11,7 @@ from datasail.reader.utils import DataSet
 from datasail.settings import INSTALLED, MMSEQS2, DIAMOND, LOGGER
 
 
-def run_diamond(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None) -> None:
+def run_diamond(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None, tmp_dir: Optional[Path] = None) -> None:
     """
     Run Diamond on a dataset in clustering mode.
 
@@ -19,23 +19,27 @@ def run_diamond(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = No
         dataset: Dataset to be clustered.
         threads: Number of threads to be used by the clustering algorithm.
         log_dir: Directory to store the logs.
+        tmp_dir: Temporary directory to store intermediate files.
     """
     if not INSTALLED[DIAMOND]:
         raise ValueError("DIAMOND is not installed.")
+
+    if tmp_dir is None:
+        tmp_dir = Path(".")
 
     parser = MultiYAMLParser(DIAMOND)
     makedb_args = parser.get_user_arguments(dataset.args, [], 0)
     blastp_args = parser.get_user_arguments(dataset.args, [], 1)
 
-    with open("diamond.fasta", "w") as out:
+    with open(tmp_dir / "diamond.fasta", "w") as out:
         for name, seq in dataset.data.items():
             seq = re.sub(r'[^ACDEFGHIKLMNPQRSTVWY]', 'G', seq)
             out.write(f">{name}\n{seq}\n")
 
-    result_folder = Path("diamond_results")
+    result_folder = tmp_dir / Path("diamond_results")
 
-    cmd = lambda x: f"mkdir {result_folder} && " \
-                    f"cd {result_folder} && " \
+    cmd = lambda x: f"mkdir {str(result_folder)} && " \
+                    f"cd {str(result_folder)} && " \
                     f"diamond makedb --in ../diamond.fasta --db seqs.dmnd {makedb_args} {x} --threads {threads} && " \
                     f"diamond blastp --db seqs.dmnd --query ../diamond.fasta --out alis.tsv --outfmt 6 qseqid sseqid pident " \
                     f"--threads {threads} {blastp_args} {x} && " \
@@ -47,7 +51,7 @@ def run_diamond(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = No
         cmd = cmd(f">> {(Path(log_dir) / f'{dataset.get_name()}_diamond.log').resolve()}")
 
     if result_folder.exists():
-        cmd = f"rm -rf {result_folder} && " + cmd
+        cmd = f"rm -rf {str(result_folder)} && " + cmd
 
     LOGGER.info("Start DIAMOND")
     LOGGER.info(cmd)

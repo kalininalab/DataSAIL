@@ -8,46 +8,71 @@ from datasail.settings import LOGGER
 from datasail.solver.cluster_2d import convert
 
 
+def blub(cluster, dataset, tmp_split_ratios, tmp_split_names, strategy, linkage, i):
+    if not cluster:
+        return check_points(dataset, tmp_split_ratios, tmp_split_names, i)
+    else:
+        return check_clusters(dataset, tmp_split_ratios, tmp_split_names, strategy, linkage, i)
+
+
 def check_dataset(
     dataset,
     split_ratios,
     split_names,
     strategy: Literal["break", "assign"],
     linkage: Literal["average", "single", "complete"],
-    id_tec: Optional[str],
-    id_2d_tec: bool,
-    cluster_tec: Optional[str],
-    cluster_2d_tec: bool,
+    techniques: list[str],
+    # id_tec: Optional[str],
+    # id_2d_tec: bool,
+    # cluster_tec: Optional[str],
+    # cluster_2d_tec: bool,
 ) -> tuple[DataSet, DictMap, DictMap,  list[float], list[str]]:
     name_split_map, cluster_split_map = {}, {}
-    id_split_names, id_split_ratios = copy.deepcopy(split_names), copy.deepcopy(split_ratios)
     tec_split_names, tec_split_ratios = {}, {}
-    if id_tec is not None:
-        if id_2d_tec:
-            id_split_ratios = convert(id_split_ratios)
-        name_split_map[id_tec] = {}
-        cluster_split_map[id_tec] = {}
+    for tech in techniques:
+        if tech[-1] == "2":
+            tmp_split_ratios = convert(split_ratios)
+        else:
+            tmp_split_ratios = copy.deepcopy(split_ratios)
+        tmp_split_names = copy.deepcopy(split_names)
+        name_split_map[tech] = {}
+        cluster_split_map[tech] = {}
+
         i = 0
-        while (fixes := check_points(dataset, id_split_ratios, id_split_names, i)) is not None:
+        while (fixes := blub(tech[0] == "C", dataset, tmp_split_ratios, tmp_split_names, strategy, linkage, i)) is not None:
             i += 1
-            dataset, tmp_name_split_map, tmp_cluster_split_map, id_split_ratios, id_split_names = fixes
-            name_split_map[id_tec].update(tmp_name_split_map)
-            cluster_split_map[id_tec].update(tmp_cluster_split_map)
-        tec_split_names[id_tec] = id_split_names
-        tec_split_ratios[id_tec] = id_split_ratios
-    if cluster_tec is not None:
-        if cluster_2d_tec:
-            split_ratios = convert(split_ratios)
-        name_split_map[cluster_tec] = {}
-        cluster_split_map[cluster_tec] = {}
-        i = 0
-        while (fixes := check_clusters(dataset, split_ratios, split_names, strategy, linkage, i)) is not None:
-            i += 1
-            dataset, tmp_name_split_map, tmp_cluster_split_map, split_ratios, split_names = fixes
-            name_split_map[cluster_tec].update(tmp_name_split_map)
-            cluster_split_map[cluster_tec].update(tmp_cluster_split_map)
-        tec_split_names[cluster_tec] = split_names
-        tec_split_ratios[cluster_tec] = split_ratios
+            dataset, tmp_name_split_map, tmp_cluster_split_map, tmp_split_ratios, tmp_split_names = fixes
+            name_split_map[tech].update(tmp_name_split_map)
+            cluster_split_map[tech].update(tmp_cluster_split_map)
+        tec_split_names[tech] = tmp_split_names
+        tec_split_ratios[tech] = tmp_split_ratios
+        
+    # if id_tec is not None:
+    #     if id_2d_tec:
+    #         id_split_ratios = convert(id_split_ratios)
+    #     name_split_map[id_tec] = {}
+    #     cluster_split_map[id_tec] = {}
+    #     i = 0
+    #     while (fixes := check_points(dataset, id_split_ratios, id_split_names, i)) is not None:
+    #         i += 1
+    #         dataset, tmp_name_split_map, tmp_cluster_split_map, id_split_ratios, id_split_names = fixes
+    #         name_split_map[id_tec].update(tmp_name_split_map)
+    #         cluster_split_map[id_tec].update(tmp_cluster_split_map)
+    #     tec_split_names[id_tec] = id_split_names
+    #     tec_split_ratios[id_tec] = id_split_ratios
+    # if cluster_tec is not None:
+    #     if cluster_2d_tec:
+    #         split_ratios = convert(split_ratios)
+    #     name_split_map[cluster_tec] = {}
+    #     cluster_split_map[cluster_tec] = {}
+    #     i = 0
+    #     while (fixes := check_clusters(dataset, split_ratios, split_names, strategy, linkage, i)) is not None:
+    #         i += 1
+    #         dataset, tmp_name_split_map, tmp_cluster_split_map, split_ratios, split_names = fixes
+    #         name_split_map[cluster_tec].update(tmp_name_split_map)
+    #         cluster_split_map[cluster_tec].update(tmp_cluster_split_map)
+    #     tec_split_names[cluster_tec] = split_names
+    #     tec_split_ratios[cluster_tec] = split_ratios
     return dataset, name_split_map, cluster_split_map, tec_split_ratios, tec_split_names
 
 

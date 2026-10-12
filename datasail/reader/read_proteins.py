@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple, Dict, List, Optional, Set
+from typing import Any, Tuple, Dict, List, Optional, Set
 
 import numpy as np
 
@@ -15,6 +15,7 @@ def read_protein_data(
         sim: MATRIX_INPUT = None,
         dist: MATRIX_INPUT = None,
         inter: Optional[List[Tuple[str, str]]] = None,
+        inter_strat: Optional[dict[Tuple[str, str], Any]] = None,
         index: Optional[int] = None,
         num_clusters: Optional[int] = None,
         tool_args: str = "",
@@ -46,7 +47,7 @@ def read_protein_data(
 
     dataset.format = FORM_PDB if str(next(iter(dataset.data.values()))).endswith(".pdb") else FORM_FASTA
 
-    dataset = read_data(weights, strats, sim, dist, inter, index, num_clusters, tool_args, dataset)
+    dataset = read_data(weights, strats, sim, dist, inter, inter_strat, index, num_clusters, tool_args, dataset)
     if detect_duplicates:
         dataset = remove_duplicate_values(dataset, dataset.data)
 

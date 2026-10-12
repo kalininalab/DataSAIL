@@ -88,10 +88,16 @@ def run_solver(
                                                          dataset.similarity.lower() in [CDHIT, MMSEQS, MMSEQS2]):
                         names = dataset.cluster_names
                         weights = [dataset.cluster_weights.get(x, 0) for x in dataset.cluster_names]
+                        
                         if dataset.stratification is None or len(dataset.classes) <= 1:
                             stratification = None
                         else:
                             stratification = np.stack([dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes))) for c in dataset.cluster_names])
+                        
+                        if dataset.interaction_stratification is None or len(dataset.interaction_classes) <= 1:
+                            interaction_stratification = None
+                        else:
+                            interaction_stratification = np.stack([dataset.interaction_stratification.get(c, np.zeros(len(dataset.interaction_classes))) for c in dataset.cluster_names])
                     else:
                         names = dataset.names
                         weights = [dataset.weights.get(x, 0) for x in dataset.names]
@@ -99,11 +105,17 @@ def run_solver(
                             stratification = None
                         else:
                             stratification = np.stack([dataset.stratification[n] for n in dataset.names])
+                        
+                        if dataset.interaction_stratification is None or len(dataset.interaction_classes) <= 1:
+                            interaction_stratification = None
+                        else:
+                            interaction_stratification = np.stack([dataset.interaction_stratification.get(n, np.zeros(len(dataset.interaction_classes))) for n in dataset.names])
 
                     solution = solve_i1(
                         entities=names,
                         weights=weights,
                         stratification=stratification,
+                        interaction_strat=interaction_stratification,
                         delta=delta,
                         epsilon=epsilon,
                         splits=split_ratios[technique],
@@ -134,18 +146,18 @@ def run_solver(
                     solution = solve_i2(
                         e_entities=e_dataset.names,
                         e_stratification=np.stack([
-                            e_dataset.stratification.get(n, np.zeros(len(dataset.classes))) for n in e_dataset.names
+                            e_dataset.stratification.get(n, np.zeros(len(e_dataset.classes))) for n in e_dataset.names
                         ]) if e_dataset.stratification is not None and len(e_dataset.classes) > 1 else None,
                         e_weights=[e_dataset.weights.get(c, 0) for c in e_dataset.names],
-                        e_splits=split_ratios[TEC_I1 + MODE_E],
-                        e_names=split_names[TEC_I1 + MODE_E],
+                        e_splits=split_ratios[TEC_I2 + MODE_E],
+                        e_names=split_names[TEC_I2 + MODE_E],
                         f_entities=f_dataset.names,
                         f_stratification=np.stack([
-                            f_dataset.stratification.get(n, np.zeros(len(dataset.classes))) for n in f_dataset.names
+                            f_dataset.stratification.get(n, np.zeros(len(f_dataset.classes))) for n in f_dataset.names
                         ]) if f_dataset.stratification is not None and len(f_dataset.classes) > 1 else None,
                         f_weights=[f_dataset.weights.get(c, 0) for c in f_dataset.names],
-                        f_splits=split_ratios[TEC_I1 + MODE_F],
-                        f_names=split_names[TEC_I1 + MODE_F],
+                        f_splits=split_ratios[TEC_I2 + MODE_F],
+                        f_names=split_names[TEC_I2 + MODE_F],
                         delta=delta,
                         epsilon=epsilon,
                         max_sec=max_sec,
@@ -186,24 +198,32 @@ def run_solver(
                     cluster_split = solve_c2(
                         e_clusters=e_dataset.cluster_names,
                         e_s_matrix=np.stack([
-                            e_dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
+                            e_dataset.cluster_stratification.get(c, np.zeros(len(e_dataset.classes)))
                             for c in e_dataset.cluster_names
                         ]) if e_dataset.cluster_stratification is not None and len(e_dataset.classes) > 1 else None,
+                        eis_matrix=np.stack([
+                            e_dataset.interaction_stratification.get(c, np.zeros(len(e_dataset.classes)))
+                            for c in e_dataset.cluster_names
+                        ]) if e_dataset.interaction_stratification is not None and len(e_dataset.interaction_classes) > 1 else None,
                         e_similarities=e_dataset.cluster_similarity,
                         e_distances=e_dataset.cluster_distance,
                         e_weights=np.array([e_dataset.cluster_weights.get(c, 1) for c in e_dataset.cluster_names]),
-                        e_splits=split_ratios[TEC_C1 + MODE_E],
-                        e_names=split_names[TEC_C1 + MODE_E],
+                        e_splits=split_ratios[TEC_C2 + MODE_E],
+                        e_names=split_names[TEC_C2 + MODE_E],
                         f_clusters=f_dataset.cluster_names,
                         f_s_matrix=np.stack([
-                            f_dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
+                            f_dataset.cluster_stratification.get(c, np.zeros(len(f_dataset.classes)))
                             for c in f_dataset.cluster_names
                         ]) if f_dataset.cluster_stratification is not None and len(f_dataset.classes) > 1 else None,
+                        fis_matrix=np.stack([
+                            f_dataset.interaction_stratification.get(c, np.zeros(len(f_dataset.classes)))
+                            for c in f_dataset.cluster_names
+                        ]) if f_dataset.interaction_stratification is not None and len(f_dataset.interaction_classes) > 1 else None,
                         f_similarities=f_dataset.cluster_similarity,
                         f_distances=f_dataset.cluster_distance,
                         f_weights=np.array([f_dataset.cluster_weights.get(c, 1) for c in f_dataset.cluster_names]),
-                        f_splits=split_ratios[TEC_C1 + MODE_F],
-                        f_names=split_names[TEC_C1 + MODE_F],
+                        f_splits=split_ratios[TEC_C2 + MODE_F],
+                        f_names=split_names[TEC_C2 + MODE_F],
                         delta=delta,
                         epsilon=epsilon,
                         max_sec=max_sec,
