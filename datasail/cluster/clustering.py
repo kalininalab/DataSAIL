@@ -60,8 +60,8 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         return dataset
 
     # if there are too many clusters, reduce their number based on some cluster algorithms.
-    if (isinstance(dataset.cluster_similarity, np.ndarray) and np.sum(dataset.cluster_similarity) > prod(dataset.cluster_similarity.shape) * 0.001) or \
-        (isinstance(dataset.cluster_distance, np.ndarray) and np.sum(dataset.cluster_distance) < prod(dataset.cluster_distance.shape) * 0.999):
+    if (isinstance(dataset.cluster_similarity, np.ndarray) and np.sum(dataset.cluster_similarity) < prod(dataset.cluster_similarity.shape) * 0.999) or \
+        (isinstance(dataset.cluster_distance, np.ndarray) and np.sum(dataset.cluster_distance) > prod(dataset.cluster_distance.shape) * 0.001):
         num_old_cluster = len(dataset.cluster_names) + 1
         while dataset.num_clusters < len(dataset.cluster_names) < num_old_cluster:
             num_old_cluster = len(dataset.cluster_names)
@@ -262,7 +262,7 @@ def labels2clusters(
         labels: List of labels
         dataset: The dataset that is clustered
         cluster_matrix: Matrix storing distance or similarity values
-        linkage: List of linkage methods to use for the agglomerative clustering
+        linkage: List of linkage methods to use for the clustering
 
     Returns:
         The updated dataset and the converged-flag
@@ -339,29 +339,13 @@ def force_clustering(dataset: DataSet, linkage: Literal["average", "single", "co
     LOGGER.info(f"Enforce clustering from {len(dataset.cluster_names)} clusters to {dataset.num_clusters} clusters")
 
     # define the list of clusters, the current sizes of the individual clusters, and how big they shall become
-    labels = []
+    labels = {}
     sizes = np.zeros(dataset.num_clusters, dtype=float)
-    fraction = sum(dataset.cluster_weights.values()) / dataset.num_clusters
-
     for name, weight in sorted(dataset.cluster_weights.items(), key=lambda x: x[1], reverse=True):
-        assigned = False
-        overlap = np.zeros(dataset.num_clusters)
-        for i in range(dataset.num_clusters):
-            # if the entity can be assigned to cluster i without exceeding the target size, assign it there, ...
-            if sizes[i] + weight < fraction:
-                labels.append(i)
-                sizes[i] += weight
-                assigned = True
-                break
-            # ... otherwise store the absolute overhead
-            else:
-                overlap[i] += weight + sizes[i] - fraction
-
-        # if the entity hasn't been assigned, assign to the cluster where it causes the smallest overhead
-        if not assigned:
-            idx = overlap.argmin()
-            labels.append(idx)
-            sizes[idx] += weight
+        idx = sizes.argmin()
+        labels[name] = idx
+        sizes[idx] += weight
+    labels = [labels[name] for name in dataset.cluster_names]
 
     # cluster the dataset based on the list of new clusters and return
     matrix = dataset.cluster_similarity if dataset.cluster_similarity is not None else dataset.cluster_distance

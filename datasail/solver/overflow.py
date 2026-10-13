@@ -119,6 +119,7 @@ def assign_cluster(dataset: DataSet, cluster_name: Any, split_ratios, split_name
             if dataset.cluster_map[n] == cluster_name:
                 name_split_map[n] = split_name
         dataset.cluster_names = dataset.cluster_names[:cluster_index] + dataset.cluster_names[cluster_index + 1:]
+        del dataset.cluster_weights[cluster_name]
         if dataset.cluster_similarity is not None:
             dataset.cluster_similarity = np.delete(dataset.cluster_similarity, cluster_index, axis=0)
             dataset.cluster_similarity = np.delete(dataset.cluster_similarity, cluster_index, axis=1)
@@ -130,6 +131,7 @@ def assign_cluster(dataset: DataSet, cluster_name: Any, split_ratios, split_name
         cluster_split_map = {}
         name_index = dataset.names.index(cluster_name)
         dataset.names =  dataset.names[:name_index] + dataset.names[name_index + 1:]
+        del dataset.weights[cluster_name]
         if dataset.similarity is not None:
             dataset.similarity = np.delete(dataset.similarity, name_index, axis=0)
             dataset.similarity = np.delete(dataset.similarity, name_index, axis=1)

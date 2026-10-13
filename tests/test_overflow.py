@@ -10,7 +10,7 @@ from datasail.settings import KW_THREADS, KW_LOGDIR, KW_LINKAGE, KW_TMPDIR
 from datasail.solver.overflow import check_dataset
 
 
-@pytest.mark.flaky(reruns=3, only_rerun=["AssertionError"])
+# @pytest.mark.flaky(reruns=3, only_rerun=["AssertionError"])
 def test_overflow_break():
     random.seed(42)
     np.random.seed(42)
@@ -24,22 +24,27 @@ def test_overflow_break():
     dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average", KW_TMPDIR: Path("tmp")})
     dataset, pre_e_name_split_map, pre_e_cluster_split_map, e_split_ratios, e_split_names = check_dataset(
         dataset, 
-        [0.2, 0.2, 0.2, 0.2, 0.2], 
-        ["S1", "S2", "S3", "S4", "S5"], 
+        [1/11] * 11, 
+        ["S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10", "S11"], 
         "break", 
         "single", 
         ["C1e"],
     )
     assert len(dataset.cluster_names) == 51
+    assert len(dataset.cluster_weights) == 51
+    assert dataset.cluster_similarity.shape == (51, 51)
+
     assert "C1e" in pre_e_name_split_map
-    assert len(pre_e_name_split_map["C1e"].keys()) == 0
+    assert len(pre_e_name_split_map["C1e"]) == 0
     assert "C1e" in pre_e_cluster_split_map
-    assert len(pre_e_cluster_split_map["C1e"].keys()) == 0
-    assert e_split_ratios == {"C1e": [0.2, 0.2, 0.2, 0.2, 0.2]}
-    assert e_split_names == {"C1e": ["S1", "S2", "S3", "S4", "S5"]}
+    assert len(pre_e_cluster_split_map["C1e"]) == 0
+    
+    assert "C1e" in e_split_ratios
+    assert all(np.isclose(e_split_ratios["C1e"], [1/11] * 11))
+    assert e_split_names == {"C1e": ["S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10", "S11"]}
 
 
-@pytest.mark.flaky(reruns=3, only_rerun=["AssertionError"])
+# @pytest.mark.flaky(reruns=3, only_rerun=["AssertionError"])
 def test_overflow_assign():
     random.seed(42)
     np.random.seed(42)
@@ -53,19 +58,24 @@ def test_overflow_assign():
     dataset = cluster(dataset, **{KW_THREADS: 1, KW_LOGDIR: None, KW_LINKAGE: "average", KW_TMPDIR: Path("tmp")})
     dataset, pre_e_name_split_map, pre_e_cluster_split_map, e_split_ratios, e_split_names = check_dataset(
         dataset, 
-        [0.2, 0.2, 0.2, 0.2, 0.2], 
-        ["S1", "S2", "S3", "S4", "S5"], 
+        [1/11] * 11, 
+        ["S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10", "S11"], 
         "assign", 
         "average", 
         ["C1e"],
     )
     assert len(dataset.cluster_names) == 49
+    assert len(dataset.cluster_weights) == 49
+    assert dataset.cluster_similarity.shape == (49, 49)
+
     assert "C1e" in pre_e_name_split_map
     assert len(pre_e_name_split_map["C1e"].keys()) > 0
     assert "C1e" in pre_e_cluster_split_map
     assert len(pre_e_cluster_split_map["C1e"]) == 1
-    assert e_split_ratios == {"C1e": [0.25, 0.25, 0.25, 0.25]}
-    assert e_split_names == {"C1e": ["S2", "S3", "S4", "S5"]}
+
+    assert "C1e" in e_split_ratios
+    assert all(np.isclose(e_split_ratios["C1e"], [0.1] * 10))
+    assert e_split_names == {"C1e": ["S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10", "S11"]}
 
 
 @pytest.mark.parametrize("overflow", ["break", "assign"])
