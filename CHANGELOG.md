@@ -26,11 +26,11 @@
 
 ## Change Log
 
-## planned - v1.4.1 (2026-09-??)
+## planned - v1.4.1 (2026-10-??)
 
 - temporary directory support for intermediate files to keep them in a user-specified location and not the current working directory.
 - Support for interaction stratification, e.g., binding classification datasets
-- Minor bug fixes
+- Bug fixes
 
 ## v1.4.0 (2026-06-16)
 

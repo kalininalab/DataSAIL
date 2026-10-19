@@ -44,13 +44,13 @@ Until version 1.3.0, DataSAIL was available in two versions. From version 1.4.0 
 By default, DataSAIL v1.4 installs NumPy v2. If you want to use DataSAIL with NumPy v1, please use 
 
 ```shell
-pip install datasail numpy<2
+pip install datasail numpy"<2" pyarrow"<26"
 ```
 
 for installing from the PyPI or
 
 ```shell
-mamba install -c conda-forge -c kalininalab datasail numpy<2
+mamba install -c conda-forge -c kalininalab datasail numpy"<2" pyarrow"<26"
 ```
 
 to install from conda/mamba.

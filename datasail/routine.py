@@ -58,9 +58,6 @@ def datasail_main(**kwargs) -> Optional[Tuple[Optional[Dict], Optional[Dict], Op
         LOGGER.info("Cluster second set of entities.")
         f_dataset = cluster(f_dataset, **kwargs)
 
-    print(e_dataset.cluster_weights)
-    print(f_dataset.cluster_weights)
-
     if inter is not None:
         if e_dataset.type is not None and f_dataset.type is not None:
             new_inter = [(e_dataset.id_map[x[0]], f_dataset.id_map[x[1]])

@@ -148,6 +148,9 @@ def run_solver(
                         e_stratification=np.stack([
                             e_dataset.stratification.get(n, np.zeros(len(e_dataset.classes))) for n in e_dataset.names
                         ]) if e_dataset.stratification is not None and len(e_dataset.classes) > 1 else None,
+                        e_interaction_stratification=np.stack([
+                            e_dataset.interaction_stratification.get(n, np.zeros(len(e_dataset.interaction_classes))) for n in e_dataset.names
+                        ]) if e_dataset.interaction_stratification is not None and len(e_dataset.interaction_classes) > 1 else None,
                         e_weights=[e_dataset.weights.get(c, 0) for c in e_dataset.names],
                         e_splits=split_ratios[TEC_I2 + MODE_E],
                         e_names=split_names[TEC_I2 + MODE_E],
@@ -155,6 +158,9 @@ def run_solver(
                         f_stratification=np.stack([
                             f_dataset.stratification.get(n, np.zeros(len(f_dataset.classes))) for n in f_dataset.names
                         ]) if f_dataset.stratification is not None and len(f_dataset.classes) > 1 else None,
+                        f_interaction_stratification=np.stack([
+                            f_dataset.interaction_stratification.get(n, np.zeros(len(f_dataset.interaction_classes))) for n in f_dataset.names
+                        ]) if f_dataset.interaction_stratification is not None and len(f_dataset.interaction_classes) > 1 else None,
                         f_weights=[f_dataset.weights.get(c, 0) for c in f_dataset.names],
                         f_splits=split_ratios[TEC_I2 + MODE_F],
                         f_names=split_names[TEC_I2 + MODE_F],
@@ -175,6 +181,10 @@ def run_solver(
                             dataset.cluster_stratification.get(c, np.zeros(len(dataset.classes)))
                             for c in dataset.cluster_names
                         ]) if dataset.cluster_stratification is not None and len(dataset.classes) > 1 else None,
+                        is_matrix=np.stack([
+                            dataset.cluster_interaction_stratification.get(c, np.zeros(len(dataset.interaction_classes)))
+                            for c in dataset.cluster_names
+                        ]) if dataset.cluster_interaction_stratification is not None and len(dataset.interaction_classes) > 1 else None,
                         similarities=dataset.cluster_similarity,
                         distances=dataset.cluster_distance,
                         delta=delta,
@@ -202,7 +212,7 @@ def run_solver(
                             for c in e_dataset.cluster_names
                         ]) if e_dataset.cluster_stratification is not None and len(e_dataset.classes) > 1 else None,
                         eis_matrix=np.stack([
-                            e_dataset.interaction_stratification.get(c, np.zeros(len(e_dataset.classes)))
+                            e_dataset.interaction_stratification.get(c, np.zeros(len(e_dataset.interaction_classes)))
                             for c in e_dataset.cluster_names
                         ]) if e_dataset.interaction_stratification is not None and len(e_dataset.interaction_classes) > 1 else None,
                         e_similarities=e_dataset.cluster_similarity,
@@ -216,7 +226,7 @@ def run_solver(
                             for c in f_dataset.cluster_names
                         ]) if f_dataset.cluster_stratification is not None and len(f_dataset.classes) > 1 else None,
                         fis_matrix=np.stack([
-                            f_dataset.interaction_stratification.get(c, np.zeros(len(f_dataset.classes)))
+                            f_dataset.interaction_stratification.get(c, np.zeros(len(f_dataset.interaction_classes)))
                             for c in f_dataset.cluster_names
                         ]) if f_dataset.interaction_stratification is not None and len(f_dataset.interaction_classes) > 1 else None,
                         f_similarities=f_dataset.cluster_similarity,

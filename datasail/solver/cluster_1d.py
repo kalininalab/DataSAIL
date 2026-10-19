@@ -4,6 +4,7 @@ from pathlib import Path
 import cvxpy
 import numpy as np
 
+from datasail.solver.cluster_2d import convert
 from datasail.solver.utils import solve, compute_limits, stratification_constraints
 
 
@@ -11,6 +12,7 @@ def solve_c1(
         clusters: list[Union[str, int]],
         weights: list[float],
         s_matrix: Optional[np.ndarray],
+        is_matrix: Optional[np.ndarray],
         similarities: Optional[np.ndarray],
         distances: Optional[np.ndarray],
         delta: float,
@@ -28,6 +30,7 @@ def solve_c1(
         clusters: List of cluster names to split
         weights: Weights of the clusters in the order of their names in e_clusters
         s_matrix: Stratification for the clusters
+        is_matrix: Interaction stratification for the clusters
         similarities: Pairwise similarity matrix of clusters in the order of their names
         distances: Pairwise distance matrix of clusters in the order of their names.
         delta: Additive bound for stratification imbalance
@@ -53,6 +56,9 @@ def solve_c1(
 
     if s_matrix is not None:
         constraints.append(stratification_constraints(s_matrix, splits, delta, x))
+    if is_matrix is not None:
+        # new_splits = convert(splits)
+        constraints.append(stratification_constraints(is_matrix, splits, delta, x))
 
     intra_weights = similarities if similarities is not None else np.max(distances) - distances
 

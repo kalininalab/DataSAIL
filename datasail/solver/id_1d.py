@@ -4,6 +4,7 @@ from typing import Optional
 import cvxpy
 import numpy as np
 
+from datasail.solver.cluster_2d import convert
 from datasail.solver.utils import solve, compute_limits, stratification_constraints
 
 
@@ -49,6 +50,7 @@ def solve_i1(
     if stratification is not None:
         constraints.append(stratification_constraints(stratification, splits, delta, x))
     if interaction_strat is not None:
+        # new_splits = convert(splits)
         constraints.append(stratification_constraints(interaction_strat, splits, delta, x))
 
     problem = solve(1, constraints, max_sec, solver, log_file)

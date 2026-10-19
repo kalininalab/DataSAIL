@@ -10,7 +10,6 @@ from datasail.settings import KW_THREADS, KW_LOGDIR, KW_LINKAGE, KW_TMPDIR
 from datasail.solver.overflow import check_dataset
 
 
-# @pytest.mark.flaky(reruns=3, only_rerun=["AssertionError"])
 def test_overflow_break():
     random.seed(42)
     np.random.seed(42)
@@ -44,7 +43,6 @@ def test_overflow_break():
     assert e_split_names == {"C1e": ["S01", "S02", "S03", "S04", "S05", "S06", "S07", "S08", "S09", "S10", "S11"]}
 
 
-# @pytest.mark.flaky(reruns=3, only_rerun=["AssertionError"])
 def test_overflow_assign():
     random.seed(42)
     np.random.seed(42)

@@ -41,9 +41,10 @@ class DataSet:
     cluster_similarity: Optional[Union[np.ndarray, str]] = None
     distance: Optional[Union[np.ndarray, str]] = None
     cluster_distance: Optional[Union[np.ndarray, str]] = None
-    interaction_stratification: Optional[Dict[Tuple[str, str], Any]] = None
+    interaction_stratification: Optional[Dict[str, Any]] = None
     interaction_classes: Optional[Dict[Any, int]] = None
     interaction_class_oh: Optional[np.ndarray] = None
+    cluster_interaction_stratification: Optional[Dict[str, np.ndarray]] = None
 
     def __hash__(self) -> int:
         """

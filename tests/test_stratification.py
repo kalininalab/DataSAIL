@@ -47,6 +47,45 @@ def test_stratification(tech):
     assert inter_splits is not None
 
 
+def test_stratification(tech):
+    e_splits, f_splits, inter_splits = datasail(
+        techniques=["C1e", "C2"],
+        splits=[7, 2, 1],
+        names=["train", "valid", "test"],
+        runs=1,
+        solver="SCIP",
+        inter=[("A", "a"), ("B", "a"), ("C", "a"), ("D", "a"), 
+               ("A", "b"), ("B", "b"), ("C", "b"), ("D", "b"), 
+               ("A", "c"), ("B", "c"), ("C", "c"), ("D", "c"), 
+               ("A", "d"), ("B", "d"), ("C", "d"), ("D", "d")],
+        inter_strat={
+            ("A", "a"):,
+            ("B", "a"):, 
+            ("C", "a"):, 
+            ("D", "a"):, 
+            ("A", "b"):, 
+            ("B", "b"):, 
+            ("C", "b"):,
+            ("D", "b"):, 
+            ("A", "c"):, 
+            ("B", "c"):, 
+            ("C", "c"):, 
+            ("D", "c"):, 
+            ("A", "d"):, 
+            ("B", "d"):, 
+            ("C", "d"):, 
+            ("D", "d"):
+        },
+        e_type="O",
+        e_data={"A": 1, "B": 2, "C": 3, "D": 4},
+        f_type="O",
+        f_data={"a": 1, "b": 2, "c": 3, "d": 4},
+        epsilon=0.025,
+        delta=0.025,
+        tmp_dir=base / "tmp",
+    )
+
+
 @pytest.mark.parametrize("clustering", [True, False])
 def test_multiclass(clustering: bool):
     strats = {"A": {1}, "B": {1, 2}, "C": {2, 1}, "D": {2}}

@@ -82,7 +82,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     return dataset
 
 
-def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[str] = None, tmp_dir: Optional[Path] = None) -> None:
+def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None, tmp_dir: Optional[Path] = None) -> None:
     """
     Compute the similarity based cluster based on a cluster method.
 
@@ -196,6 +196,13 @@ def finish_clustering(dataset: DataSet) -> None:
     else:
         dataset.cluster_stratification = None
 
+    if dataset.interaction_stratification is not None and len(dataset.interaction_classes) > 1:
+        dataset.cluster_interaction_stratification = defaultdict(lambda: np.zeros(len(dataset.interaction_classes)))
+        for key, value in dataset.cluster_map.items():
+            dataset.cluster_interaction_stratification[value] += dataset.interaction_stratification[key]
+    else:
+        dataset.cluster_interaction_stratification = None
+
 
 def additional_clustering(
         dataset: DataSet,
@@ -259,7 +266,7 @@ def labels2clusters(
     distance or similarity metrics.
 
     Args:
-        labels: List of labels
+        labels: List of nwe cluster labels in the order of dataset.cluster_names
         dataset: The dataset that is clustered
         cluster_matrix: Matrix storing distance or similarity values
         linkage: List of linkage methods to use for the clustering
@@ -305,13 +312,20 @@ def labels2clusters(
             new_cluster_stratification[new_cluster] += dataset.cluster_stratification[name]
     else:
         new_cluster_stratification = None
-
+    if dataset.cluster_interaction_stratification is not None:
+        new_cluster_interaction_stratification = defaultdict(lambda: np.zeros(len(dataset.interaction_classes)))
+        for i, name in enumerate(dataset.cluster_names):
+            new_cluster = labels[i]
+            new_cluster_interaction_stratification[new_cluster] += dataset.cluster_interaction_stratification[name]
+    else:
+        new_cluster_interaction_stratification = None
     LOGGER.info(f"Reduced number of clusters to {len(new_cluster_names)}.")
 
     dataset.cluster_names = new_cluster_names
     dataset.cluster_map = new_cluster_map
     dataset.cluster_weights = new_cluster_weights
     dataset.cluster_stratification = new_cluster_stratification
+    dataset.cluster_interaction_stratification = new_cluster_interaction_stratification
 
     # store the matrix at the correct field and set the main diagonal to either 1 or 0 depending on dist or sim
     if dataset.cluster_similarity is not None:
