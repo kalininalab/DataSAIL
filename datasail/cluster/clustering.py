@@ -55,6 +55,7 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         dataset.cluster_distance = dataset.distance
         dataset.cluster_weights = dataset.weights
         dataset.cluster_stratification = dataset.stratification
+        dataset.cluster_interaction_stratification = dataset.interaction_stratification
 
     if dataset.cluster_names is None:  # No clustering to do?!
         return dataset

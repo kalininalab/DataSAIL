@@ -45,7 +45,6 @@ def solve_c1(
         Mapping from clusters to splits optimizing the objective function
     """
     min_lim = compute_limits(epsilon, sum(weights), splits)
-    print(min_lim)
 
     x = cvxpy.Variable((len(splits), len(clusters)), boolean=True)  # 19
 

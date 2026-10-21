@@ -27,7 +27,9 @@ def compute_limits(epsilon: float, total: int, splits: List[float]) -> List[floa
     Returns:
         lower and upper limits for the splits
     """
-    return [int(split * (1 - epsilon) * total) for split in splits]
+    limits = np.maximum(np.floor(np.array(splits) * (1 - epsilon) * total), np.ones_like(splits))
+    print("Limits:", limits)
+    return limits
 
 
 def stratification_constraints(
@@ -50,6 +52,8 @@ def stratification_constraints(
     """
     c = np.sum(s_matrix, axis=0)
     slbo = np.array([[c[e] * split * (1 - delta) for e in range(s_matrix.shape[1])] for split in splits])
+    slbo = np.maximum(np.floor(slbo), np.ones_like(slbo))
+    print("SLBO:", slbo)
     return (x @ s_matrix) >= slbo
 
 
