@@ -21,3 +21,4 @@ myst_parser
 importlib-resources
 pyarrow
 tqdm
+sphinx-copybutton
