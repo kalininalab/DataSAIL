@@ -70,12 +70,16 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
 
     ds = read_with_pyarrow(results_folder / "aln.m8")
     namap = dict((n, i) for i, n in enumerate(dataset.names))
+    filename_ids = {name for name in dataset.names if Path(dataset.data[name]).name == name}
     cluster_sim = np.zeros((len(dataset.names), len(dataset.names)))
     with open(results_folder / "aln.m8", "r") as data:
         for line in data.readlines():
             q1, q2, sim = line.strip().split("\t")[:3]
-            q1, _ = extract(q1.split("_"))
-            q2, _ = extract(q2.split("_"))
+            # Exact source filenames already identify entities, including underscores.
+            if q1 not in filename_ids:
+                q1, _ = extract(q1.split("_"))
+            if q2 not in filename_ids:
+                q2, _ = extract(q2.split("_"))
             cluster_sim[namap[q1], namap[q2]] = sim
             cluster_sim[namap[q2], namap[q1]] = sim
     for i, name1 in enumerate(dataset.names):

@@ -201,7 +201,7 @@ def break_cluster(dataset: DataSet, cluster_name: Any, split_ratio: float, linka
     if dataset.stratification is not None and len(dataset.classes) > 1:
         cluster_stratification = defaultdict(lambda: np.zeros(len(dataset.classes)))
         for name in dataset.names:  # key, value in dataset.cluster_map.items():
-            cluster_stratification[dataset.cluster_map[name]] += dataset.stratification[name]
+            cluster_stratification[cluster_map[name]] += dataset.stratification[name]
     else:
         cluster_stratification = None
     

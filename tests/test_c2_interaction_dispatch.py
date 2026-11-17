@@ -283,3 +283,121 @@ def test_public_break_keeps_counts_and_constraints_consistent(monkeypatch, axis,
     assert len(inspected) == 1
     if native:
         assert all(len(mapping["C2"][0]) == 20 for mapping in result[:2])
+
+
+def entity_incidence_counts(labels, membership, cluster_names):
+    """Count original entity labels in final cluster order, independently of aggregation."""
+    rows = {cluster: i for i, cluster in enumerate(cluster_names)}
+    counts = np.zeros((len(cluster_names), 2))
+    for entity, label in labels.items():
+        counts[rows[membership[entity]], label] += 1
+    return counts
+
+
+@pytest.mark.parametrize("axis", [0, 1])
+def test_break_rebuilds_entity_and_interaction_classes_together(axis):
+    from datasail.solver.overflow import break_cluster
+
+    dataset, _ = isolated_dataset(axis)
+    # Integer old IDs survive renumbering, hiding wrong rows behind conserved totals.
+    old_ids = {old: i for i, old in enumerate(dataset.cluster_names)}
+    dataset.cluster_names = [0, 1]
+    dataset.cluster_map = {n: old_ids[c] for n, c in dataset.cluster_map.items()}
+    dataset.cluster_weights = {old_ids[c]: w for c, w in dataset.cluster_weights.items()}
+    dataset.cluster_interaction_stratification = {old_ids[c]: row for c, row in dataset.cluster_interaction_stratification.items()}
+    labels = {n: int((i == 2) != bool(axis)) for i, n in enumerate(dataset.names)}
+    dataset.classes = {0: 0, 1: 1}
+    dataset.stratification = {n: np.eye(2)[label] for n, label in labels.items()}
+    initial = entity_incidence_counts(labels, dataset.cluster_map, dataset.cluster_names)
+    dataset.cluster_stratification = dict(zip(dataset.cluster_names, initial))
+    break_cluster(dataset, 0, .4, "average")
+    names = dataset.names
+    assert dataset.cluster_map == {names[0]: 0, names[1]: 0, names[2]: 2, names[3]: 1}
+    assert dataset.cluster_names == [0, 1, 2]
+    expected = entity_incidence_counts(labels, dataset.cluster_map, dataset.cluster_names)
+    literal = [[2, 0], [1, 0], [0, 1]] if axis == 0 else [[0, 2], [0, 1], [1, 0]]
+    np.testing.assert_array_equal(expected, literal)
+    actual = np.stack([dataset.cluster_stratification.get(c, np.zeros(2)) for c in dataset.cluster_names])
+    np.testing.assert_array_equal(actual.sum(axis=0), initial.sum(axis=0))
+    np.testing.assert_array_equal(actual, expected)
+    interaction_expected = incidence_counts(INTERACTIONS, LABELS, dataset.cluster_map, dataset.cluster_names, axis)
+    np.testing.assert_array_equal(np.stack([dataset.cluster_interaction_stratification[c] for c in dataset.cluster_names]), interaction_expected)
+    np.testing.assert_array_equal(interaction_expected.sum(axis=0), [4, 4])
+
+
+@pytest.mark.parametrize("axis,native", [(0, False), (1, False), (0, True), (1, True)])
+def test_public_break_with_nonuniform_entity_and_interaction_classes(monkeypatch, axis, native):
+    if native and "SCIP" not in cp.installed_solvers():
+        pytest.skip("SCIP is unavailable")
+    kwargs, interactions, interaction_labels = public_fixture()
+    # First broken seven: 5 A/2 B; second: 2 A/5 B; survivors: 3 A/3 B.
+    class_a = {0, 1, 2, 3, 4, 7, 8, 14, 15, 16}
+    entity_labels = []
+    for side, key in enumerate(("e_data", "f_data")):
+        labels = {n: int((i not in class_a) != bool(side)) for i, n in enumerate(kwargs[key])}
+        kwargs["e_strat" if side == 0 else "f_strat"] = {n: {label} for n, label in labels.items()}
+        entity_labels.append(labels)
+    prefix = "e" if axis == 0 else "f"
+    similarities = np.eye(20)
+    similarities[:14, :14] = 1
+    kwargs.update({f"{prefix}_sim": (list(kwargs[f"{prefix}_data"]), similarities),
+                   f"{prefix}_clusters": 7, "overflow": "break"})
+    expected = {}
+    roots = np.sqrt([8, 1, 1])
+    targets = roots / roots.sum()
+    inspected = []
+
+    def observe_dispatch(**arguments):
+        np.testing.assert_allclose(arguments["split_ratios"]["C2e"], targets, rtol=0, atol=1e-8)
+        np.testing.assert_allclose(arguments["split_ratios"]["C2f"], targets, rtol=0, atol=1e-8)
+        for side, key in enumerate(("e_dataset", "f_dataset")):
+            dataset = arguments[key]
+            entities = entity_incidence_counts(entity_labels[side], dataset.cluster_map, dataset.cluster_names)
+            projected = incidence_counts(interactions, interaction_labels, dataset.cluster_map, dataset.cluster_names, side)
+            assert len(np.unique(entities, axis=0)) > 1
+            np.testing.assert_array_equal(entities.sum(axis=0), [10, 10])
+            np.testing.assert_array_equal(projected.sum(axis=0), [20, 20])
+            np.testing.assert_array_equal(np.stack([dataset.cluster_stratification.get(c, np.zeros(2)) for c in dataset.cluster_names]), entities)
+            np.testing.assert_array_equal(np.stack([dataset.cluster_interaction_stratification[c] for c in dataset.cluster_names]), projected)
+            if side == axis:
+                assert len(dataset.cluster_names) == 8
+                assert {tuple(row) for row in entities if row.sum() == 7} == {(5, 2), (2, 5)}
+            expected[len(dataset.cluster_names)] = (entities, projected)
+        return run_solver(**arguments)
+
+    def inspect_model(loss, constraints, max_sec, solver, log_file):
+        if native:
+            from datasail.solver.utils import solve
+            problem = solve(loss, constraints, max_sec, solver, log_file)
+            assert problem is not None and problem.status in (cp.OPTIMAL, cp.OPTIMAL_INACCURATE)
+            assert all(np.max(c.violation()) < 1e-7 for c in constraints)
+            inspected.append(problem.status)
+            return problem
+        from tests.test_split_ratios import Model
+        model = Model(constraints)
+        for variable in model.variables:
+            entities, projected = expected[variable.shape[1]]
+            families = {tuple(counts.sum(axis=0)): (counts, limits) for counts, limits in model.class_bounds(variable)}
+            assert len(families) == 2
+            np.testing.assert_array_equal(families[(10, 10)][0], entities)
+            np.testing.assert_array_equal(families[(20, 20)][0], projected)
+            np.testing.assert_array_equal(families[(10, 10)][1], [[5, 5], [1, 1], [1, 1]])
+            np.testing.assert_array_equal(families[(20, 20)][1], [[11, 11], [3, 3], [3, 3]])
+            np.testing.assert_array_equal(model.lower_bounds(variable)[1], [11, 3, 3])
+        inspected.append("constructed")
+        return None
+
+    monkeypatch.setattr("datasail.routine.run_solver", observe_dispatch)
+    monkeypatch.setattr("datasail.solver.cluster_2d.solve", inspect_model)
+    result = datasail(**kwargs)
+    assert len(inspected) == 1
+    if native:
+        for side, output in enumerate(result[:2]):
+            assignment = output["C2"][0]
+            assert set(assignment) == set(entity_labels[side])
+            names = kwargs["names"]
+            counts = entity_incidence_counts(entity_labels[side], assignment, names)
+            projected = incidence_counts(interactions, interaction_labels, assignment, names, side)
+            np.testing.assert_array_less(np.array([[5, 5], [1, 1], [1, 1]]) - 1e-7, counts)
+            np.testing.assert_array_less(np.array([[11, 11], [3, 3], [3, 3]]) - 1e-7, projected)
+            assert all(sum(v == name for v in assignment.values()) >= minimum for name, minimum in zip(names, [11, 3, 3]))
