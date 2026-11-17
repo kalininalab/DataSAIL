@@ -31,16 +31,20 @@ def test_ics():
 
 
 def test_icd():
+    splits = np.sqrt([0.7, 0.3])
+    splits /= splits.sum()
     solution = solve_i2(
         e_entities=["D1", "D2", "D3", "D4", "D5"],
         e_stratification=None,
+        e_interaction_stratification=None,
         e_weights=np.array([1, 1, 1, 1, 1]),
-        e_splits=[0.7, 0.3],
+        e_splits=splits,
         e_names=["train", "test"],
         f_entities=["P1", "P2", "P3", "P4", "P5"],
         f_stratification=None,
+        f_interaction_stratification=None,
         f_weights=np.array([1, 1, 1, 1, 1]),
-        f_splits=[0.7, 0.3],
+        f_splits=splits,
         f_names=["train", "test"],
         epsilon=0.01,
         delta=0.01,
@@ -57,6 +61,8 @@ def test_icd():
 
 
 def test_ccd():
+    splits = np.sqrt([0.7, 0.3])
+    splits /= splits.sum()
     solution = solve_c2(
         e_clusters=["D1", "D2", "D3", "D4", "D5"],
         e_similarities=np.asarray([
@@ -70,7 +76,7 @@ def test_ccd():
         e_s_matrix=None,
         eis_matrix=None,
         e_weights=np.array([3, 3, 3, 3, 3]),
-        e_splits=[0.7, 0.3],
+        e_splits=splits,
         e_names=["train", "test"],
         f_clusters=["P1", "P2", "P3", "P4", "P5"],
         f_similarities=np.asarray([
@@ -84,7 +90,7 @@ def test_ccd():
         f_s_matrix=None,
         fis_matrix=None,
         f_weights=np.array([3, 3, 3, 3, 3]),
-        f_splits=[0.7, 0.3],
+        f_splits=splits,
         f_names=["train", "test"],
         epsilon=0.05,
         delta=0.05,
