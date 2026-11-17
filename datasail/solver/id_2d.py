@@ -4,7 +4,6 @@ from pathlib import Path
 import cvxpy
 import numpy as np
 
-from datasail.solver.cluster_2d import convert
 from datasail.solver.utils import solve, compute_limits, stratification_constraints
 
 
@@ -31,18 +30,21 @@ def solve_i2(
     Solve identity-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
     programming.
 
+    Split fractions are per-axis targets, already converted and adjusted for overflow.
+    Entity and projected interaction-class counts use these same fractions.
+
     Args:
         e_entities: List of entity names to split in e-dataset
         e_weights: Weights of the entities in the e-dataset
         e_stratification: Stratification for the e-dataset
-        e_interaction_stratification: Interaction stratification for the e-dataset
-        e_splits: List of split sizes for the e-dataset
+        e_interaction_stratification: Interaction-class counts projected onto the e-entities
+        e_splits: Normalized per-axis targets for the e-dataset after overflow handling
         e_names: List of names of the splits for the e-dataset in the order of the splits argument
         f_entities: List of entity names to split in f-dataset
         f_weights: Weights of the entities in the f-dataset
         f_stratification: Stratification for the f-dataset
-        f_interaction_stratification: Interaction stratification for the f-dataset
-        f_splits: List of split sizes for the f-dataset
+        f_interaction_stratification: Interaction-class counts projected onto the f-entities
+        f_splits: Normalized per-axis targets for the f-dataset after overflow handling
         f_names: List of names of the splits for the f-dataset in the order of the splits argument
         inter: List of interactions
         delta: Additive bound for stratification imbalance
@@ -55,8 +57,6 @@ def solve_i2(
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
         dataset
     """
-    e_splits = convert(e_splits)
-    f_splits = convert(f_splits)
     min_lim_e = compute_limits(epsilon, sum(e_weights), e_splits)
     min_lim_f = compute_limits(epsilon, sum(f_weights), f_splits)
 
@@ -73,14 +73,12 @@ def solve_i2(
     if e_stratification is not None:
         constraints.append(stratification_constraints(e_stratification, e_splits, delta, x_e))
     if e_interaction_stratification is not None:
-        new_e_splits = convert(e_splits)
-        constraints.append(stratification_constraints(e_interaction_stratification, new_e_splits, delta, x_e))
+        constraints.append(stratification_constraints(e_interaction_stratification, e_splits, delta, x_e))
     
     if f_stratification is not None:
         constraints.append(stratification_constraints(f_stratification, f_splits, delta, x_f))
     if f_interaction_stratification is not None:
-        new_f_splits = convert(f_splits)
-        constraints.append(stratification_constraints(f_interaction_stratification, new_f_splits, delta, x_f))
+        constraints.append(stratification_constraints(f_interaction_stratification, f_splits, delta, x_f))
 
     problem = solve(1, constraints, max_sec, solver, log_file)
 
