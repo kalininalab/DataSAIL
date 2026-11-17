@@ -205,6 +205,13 @@ def break_cluster(dataset: DataSet, cluster_name: Any, split_ratio: float, linka
     else:
         cluster_stratification = None
     
+    if dataset.interaction_stratification is not None and len(dataset.interaction_classes) > 1:
+        cluster_interaction_stratification = defaultdict(lambda: np.zeros(len(dataset.interaction_classes)))
+        for name, cluster in cluster_map.items():
+            cluster_interaction_stratification[cluster] += dataset.interaction_stratification[name]
+    else:
+        cluster_interaction_stratification = None
+
     cluster_matrix = dataset.cluster_similarity if dataset.cluster_similarity is not None else dataset.cluster_distance
     row = np.delete(cluster_matrix[cluster_index], cluster_index)
     col = np.delete(cluster_matrix[:, cluster_index], cluster_index)
@@ -220,6 +227,7 @@ def break_cluster(dataset: DataSet, cluster_name: Any, split_ratio: float, linka
     dataset.cluster_map = cluster_map
     dataset.cluster_weights = cluster_weights
     dataset.cluster_stratification = cluster_stratification
+    dataset.cluster_interaction_stratification = cluster_interaction_stratification
     dataset.cluster_similarity = new_cluster_matrix if dataset.cluster_similarity is not None else None
 
     return dataset
