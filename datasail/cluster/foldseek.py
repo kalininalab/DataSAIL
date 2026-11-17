@@ -74,12 +74,8 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
     with open(results_folder / "aln.m8", "r") as data:
         for line in data.readlines():
             q1, q2, sim = line.strip().split("\t")[:3]
-            if "_" in q1 and "." in q1 and q1.rindex("_") > q1.index("."):
-                q1 = "_".join(q1.split("_")[:-1])
-            if "_" in q2 and "." in q2 and q2.rindex("_") > q2.index("."):
-                q2 = "_".join(q2.split("_")[:-1])
-            q1 = q1.replace(".pdb", "")
-            q2 = q2.replace(".pdb", "")
+            q1, _ = extract(q1.split("_"))
+            q2, _ = extract(q2.split("_"))
             cluster_sim[namap[q1], namap[q2]] = sim
             cluster_sim[namap[q2], namap[q1]] = sim
     for i, name1 in enumerate(dataset.names):
@@ -100,6 +96,12 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
 
 
 def extract(tmp):
+    """Extract the filename stem and optional chain from a Foldseek PDB label."""
+    label = "_".join(tmp)
+    if label.endswith(".pdb"):
+        return label[:-4], "?"
+    if ".pdb_" in label:
+        return tuple(label.rsplit(".pdb_", 1))
     if len(tmp) == 1:
         return tmp[0], "?"
     else:
