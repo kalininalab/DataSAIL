@@ -80,7 +80,7 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
             cluster_sim[namap[q2], namap[q1]] = sim
     for i, name1 in enumerate(dataset.names):
         cluster_sim[i, i] = 1
-        for j, name2 in enumerate(dataset.names[i + 1:]):
+        for j, name2 in enumerate(dataset.names[i + 1:], start=i + 1):
             if name2 in ds[name1]:
                 cluster_sim[i, j] = ds[name1][name2][2] / ds[name1][name2][3]
             if name1 in ds[name2]:
