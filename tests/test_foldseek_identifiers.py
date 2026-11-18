@@ -2,7 +2,8 @@
 import pytest
 
 import datasail.cluster.foldseek as foldseek
-from datasail.cluster.foldseek import extract, read_with_pyarrow
+from datasail.cluster.foldseek import extract
+from tests.foldseek_helpers import read_scores
 from datasail.reader.read_proteins import read_protein_data
 from datasail.settings import FOLDSEEK
 
@@ -56,7 +57,7 @@ def test_folder_names_match_aggregation(tmp_path):
     dataset = read_protein_data(inputs, sim="foldseek", detect_duplicates=False)
     alignment = tmp_path / "aln.m8"
     alignment.write_text(MULTICHAIN_ALIGNMENT)
-    scores = read_with_pyarrow(alignment)
+    scores = read_scores(alignment, tmp_path)
     assert set(dataset.names) == names
     assert set(scores) == names
     assert all(set(targets) == names for targets in scores.values())
@@ -65,7 +66,7 @@ def test_folder_names_match_aggregation(tmp_path):
 def test_query_length_weighting_and_greedy_chain_non_reuse(tmp_path):
     alignment = tmp_path / "aln.m8"
     alignment.write_text(MULTICHAIN_ALIGNMENT)
-    scores = read_with_pyarrow(alignment)
+    scores = read_scores(alignment, tmp_path)
     # Lddt ranks A-X before the competing A-Y and B-X, then accepts B-Y.
     # P->Q: (0.8*100 + 0.2*50)/150 = 0.6; Q->P: (0.5*80 + 0.1*20)/100 = 0.42.
     expected = {
@@ -89,7 +90,7 @@ def test_equal_lddt_uses_descending_fident(tmp_path):
         "P.pdb_B\tQ.pdb_X\t0.2\t50\t0.8\n"
     )
     # A-Y wins the lddt tie, allowing B-X: numerator 90+10, denominator 100+50.
-    assert read_with_pyarrow(alignment)["P"]["Q"] == ["AB", "YX", 100, 150]
+    assert read_scores(alignment, tmp_path)["P"]["Q"] == ["AB", "YX", 100, 150]
 
 
 @pytest.mark.parametrize("reverse, expected", [
@@ -102,7 +103,7 @@ def test_exact_rank_ties_preserve_row_order(tmp_path, reverse, expected):
     if reverse:
         tied.reverse()
     alignment.write_text("".join(tied) + "P.pdb_B\tQ.pdb_X\t0.2\t50\t0.8\n")
-    assert read_with_pyarrow(alignment)["P"]["Q"] == expected
+    assert read_scores(alignment, tmp_path)["P"]["Q"] == expected
 
 
 @pytest.mark.parametrize("name", ["protein_with_underscores", "protein.pdb_copy"])

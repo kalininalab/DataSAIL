@@ -1,6 +1,4 @@
 """Matrix placement tests, including an explicitly isolated indexing regression."""
-from collections import defaultdict
-
 import numpy as np
 import pytest
 
@@ -38,14 +36,10 @@ def run_alignment(tmp_path, monkeypatch, names, alignment, suffix=".pdb"):
 
 
 def test_isolated_indexing_places_distinct_scores(tmp_path, monkeypatch):
-    # Controlled canonical aggregation isolates the index error from the label error.
-    scores = defaultdict(foldseek.outer_dict)
     rows = []
     for a, b, value in [("P", "Q", 0.2), ("P", "R", 0.4), ("Q", "R", 0.6)]:
         for query, target in [(a, b), (b, a)]:
-            scores[query][target] = ["A", "A", value, 1]
             rows.append(f"{query}.pdb_A\t{target}.pdb_A\t{value}\t100\t0.9\n")
-    monkeypatch.setattr(foldseek, "read_with_pyarrow", lambda path: scores)
     matrix = run_alignment(tmp_path, monkeypatch, ["P", "Q", "R"], "".join(rows))
     np.testing.assert_array_equal(matrix, [[1, 0.2, 0.4], [0.2, 1, 0.6], [0.4, 0.6, 1]])
 
