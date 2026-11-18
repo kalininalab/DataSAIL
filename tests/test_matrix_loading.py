@@ -213,7 +213,7 @@ def test_streaming_does_not_read_the_complete_file(tmp_path, monkeypatch):
 
 
 def test_real_hiqbind_expected_matrix(tmp_path):
-    fixture = json.loads((Path(__file__).parent / "fixtures/hiqbind_nan_expected.json").read_text())
+    fixture = json.loads((Path(__file__).parent / "fixtures/foldseek_nan_expected.json").read_text())
     expected = np.array(fixture["expected"], dtype=np.float64)
     path = write_matrix(tmp_path / "hiqbind.tsv", fixture["names"],
                         [[repr(float(value)) for value in row] for row in expected])

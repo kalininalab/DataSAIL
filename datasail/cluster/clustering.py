@@ -226,15 +226,22 @@ def additional_clustering(
     LOGGER.info(f"Cluster {len(dataset.cluster_names)} items based on "
                 f"{'similarities' if dataset.cluster_similarity is not None else 'distances'}")
     # set up the cluster algorithm for similarity or distance based cluster w/o specifying the number of clusters
+    matrix = dataset.cluster_similarity if dataset.cluster_similarity is not None else dataset.cluster_distance
+    cluster_matrix = np.asarray(matrix, dtype=float)
+    if not (cluster_matrix.flags.c_contiguous or cluster_matrix.flags.f_contiguous):
+        # Preserve the order-K layout of the old copy for strided inputs.
+        cluster_matrix = np.array(matrix, dtype=float)
+    # Precomputed clustering reads this matrix; Laplacian/linkage workspaces
+    # are separate. A read-only view protects caller data without changing its flags.
+    cluster_matrix = cluster_matrix.view()
+    cluster_matrix.flags.writeable = False
     if dataset.cluster_similarity is not None:
-        cluster_matrix = np.array(dataset.cluster_similarity, dtype=float)
         ca = SpectralClustering(
             n_clusters=n_clusters,
             affinity="precomputed",
             random_state=42,
         )
     else:
-        cluster_matrix = np.array(dataset.cluster_distance, dtype=float)
         if sklearn.__version__ < '1.2':
             ca = AgglomerativeClustering(
                 n_clusters=n_clusters,
