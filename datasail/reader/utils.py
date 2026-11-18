@@ -177,24 +177,47 @@ def count_inter(inter: List[Tuple[str, str]], mode: int) -> Generator[Tuple[str,
 
 
 def read_clustering_file(filepath: Path, sep: str = "\t") -> Tuple[List[str], np.ndarray]:
-    """
-    Read a similarity or distance matrix from a file.
+    """Read a labelled square matrix into one dense float64 array.
 
     Args:
-        filepath: Path to the file storing the matrix in CSV format
-        sep: Separator used to separate the values of the matrix
+        filepath: Matrix file with entity labels in the first row and column.
+        sep: Field separator; matrix-file inputs use tabs by default.
 
     Returns:
-        A list of names of the entities and their pairwise interactions in and numpy array
+        Entity labels in file order and their pairwise matrix. The final array
+        requires O(N squared) memory; only one row is parsed at a time.
     """
-    names = []
-    measures = []
     with open(filepath, "r") as data:
-        for line in data.readlines()[1:]:
+        header = data.readline()
+        if not header:
+            raise ValueError(f"{filepath}: empty matrix file")
+        names = header.rstrip("\r\n").split(sep)[1:]
+        width = len(names)
+        if not width or any(not name.strip() for name in names):
+            raise ValueError(f"{filepath}: header requires nonempty entity labels (separator {sep!r})")
+        if len(set(names)) != width:
+            raise ValueError(f"{filepath}: duplicate entity labels in matrix header")
+        measures = np.empty((width, width), dtype=np.float64)
+        rows = 0
+        for index, line in enumerate(data):
+            number = index + 2
+            if index >= width:
+                raise ValueError(f"{filepath}: row {number}: too many rows; expected {width}")
             parts = line.strip().split(sep)
-            names.append(parts[0])
-            measures.append([float(x) for x in parts[1:]])
-    return names, np.array(measures)
+            if len(parts) != width + 1:
+                raise ValueError(f"{filepath}: row {number}: expected {width} values, got {len(parts) - 1}")
+            if parts[0] != names[index]:
+                raise ValueError(f"{filepath}: row {number}: label {parts[0]!r} does not match header label {names[index]!r}")
+            try:
+                # Keep the reference float parser and precision, without a row
+                # of boxed floats or a second full dense allocation.
+                measures[index] = np.fromiter(map(float, parts[1:]), dtype=np.float64, count=width)
+            except ValueError as error:
+                raise ValueError(f"{filepath}: row {number}: invalid numeric value: {error}") from error
+            rows += 1
+        if rows != width:
+            raise ValueError(f"{filepath}: expected {width} matrix rows, got {rows}")
+    return names, measures
 
 
 def read_csv(filepath: Path, sep: str = ",", count: int = 2) -> Generator[Tuple, None, None]:
