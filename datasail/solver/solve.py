@@ -212,9 +212,9 @@ def run_solver(
                             for c in e_dataset.cluster_names
                         ]) if e_dataset.cluster_stratification is not None and len(e_dataset.classes) > 1 else None,
                         eis_matrix=np.stack([
-                            e_dataset.interaction_stratification.get(c, np.zeros(len(e_dataset.interaction_classes)))
+                            e_dataset.cluster_interaction_stratification.get(c, np.zeros(len(e_dataset.interaction_classes)))
                             for c in e_dataset.cluster_names
-                        ]) if e_dataset.interaction_stratification is not None and len(e_dataset.interaction_classes) > 1 else None,
+                        ]) if e_dataset.cluster_interaction_stratification is not None and len(e_dataset.interaction_classes) > 1 else None,
                         e_similarities=e_dataset.cluster_similarity,
                         e_distances=e_dataset.cluster_distance,
                         e_weights=np.array([e_dataset.cluster_weights.get(c, 1) for c in e_dataset.cluster_names]),
@@ -226,9 +226,9 @@ def run_solver(
                             for c in f_dataset.cluster_names
                         ]) if f_dataset.cluster_stratification is not None and len(f_dataset.classes) > 1 else None,
                         fis_matrix=np.stack([
-                            f_dataset.interaction_stratification.get(c, np.zeros(len(f_dataset.interaction_classes)))
+                            f_dataset.cluster_interaction_stratification.get(c, np.zeros(len(f_dataset.interaction_classes)))
                             for c in f_dataset.cluster_names
-                        ]) if f_dataset.interaction_stratification is not None and len(f_dataset.interaction_classes) > 1 else None,
+                        ]) if f_dataset.cluster_interaction_stratification is not None and len(f_dataset.interaction_classes) > 1 else None,
                         f_similarities=f_dataset.cluster_similarity,
                         f_distances=f_dataset.cluster_distance,
                         f_weights=np.array([f_dataset.cluster_weights.get(c, 1) for c in f_dataset.cluster_names]),

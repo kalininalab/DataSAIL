@@ -34,22 +34,25 @@ def solve_c2(
     Solve cluster-based double-cold splitting using disciplined quasi-convex programming and binary quadratic
     programming.
 
+    Split fractions are per-axis targets, already converted and adjusted for overflow.
+    Entity and projected interaction-class counts use these same fractions.
+
     Args:
         e_clusters: List of cluster names to split from the e-dataset
         e_s_matrix: Stratification for the e-dataset
-        eis_matrix: Interaction stratification for the e-dataset
+        eis_matrix: Interaction-class counts projected onto the e-clusters
         e_similarities: Pairwise similarity matrix of clusters in the order of their names
         e_distances: Pairwise distance matrix of clusters in the order of their names
         e_weights: Weights of the clusters in the order of their names in e_clusters
-        e_splits: List of split sizes of the e-dataset
+        e_splits: Normalized per-axis targets for the e-dataset after overflow handling
         e_names: List of names of the splits of the e-dataset in the order of the splits argument
         f_clusters: List of cluster names to split from the f-dataset
         f_s_matrix: Stratification for the f-dataset
-        fis_matrix: Interaction stratification for the f-dataset
+        fis_matrix: Interaction-class counts projected onto the f-clusters
         f_similarities: Pairwise similarity matrix of clusters in the order of their names
         f_distances: Pairwise distance matrix of clusters in the order of their names
         f_weights: Weights of the clusters in the order of their names in f_clusters
-        f_splits: List of split sizes of the f-dataset
+        f_splits: Normalized per-axis targets for the f-dataset after overflow handling
         f_names: List of names of the splits of the f-dataset in the order of the splits argument
         delta: Additive bound for stratification imbalance
         epsilon: Additive bound for exceeding the requested split size
@@ -61,10 +64,8 @@ def solve_c2(
         A list of interactions and their assignment to a split and two mappings from entities to splits, one for each
         dataset
     """
-    new_e_splits = convert(e_splits)
-    new_f_splits = convert(f_splits)
-    min_lim_e = compute_limits(epsilon, sum(e_weights), new_e_splits)
-    min_lim_f = compute_limits(epsilon, sum(f_weights), new_f_splits)
+    min_lim_e = compute_limits(epsilon, sum(e_weights), e_splits)
+    min_lim_f = compute_limits(epsilon, sum(f_weights), f_splits)
 
     x_e = cvxpy.Variable((len(e_splits), len(e_clusters)), boolean=True)
     x_f = cvxpy.Variable((len(f_splits), len(f_clusters)), boolean=True)
@@ -84,11 +85,11 @@ def solve_c2(
     if e_s_matrix is not None:
         constraints.append(stratification_constraints(e_s_matrix, e_splits, delta, x_e))
     if eis_matrix is not None:
-        constraints.append(stratification_constraints(eis_matrix, new_e_splits, delta, x_e))
+        constraints.append(stratification_constraints(eis_matrix, e_splits, delta, x_e))
     if f_s_matrix is not None:
         constraints.append(stratification_constraints(f_s_matrix, f_splits, delta, x_f))
     if fis_matrix is not None:
-        constraints.append(stratification_constraints(fis_matrix, new_f_splits, delta, x_f))
+        constraints.append(stratification_constraints(fis_matrix, f_splits, delta, x_f))
 
     e_tmp = [[e_weights[e1] * e_weights[e2] * e_intra_weights[e1, e2] * cvxpy.max(
         cvxpy.vstack([x_e[s, e1] - x_e[s, e2] for s in range(len(e_splits))])

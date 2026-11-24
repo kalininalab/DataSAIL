@@ -47,10 +47,11 @@ def test_stratification(tech):
     assert inter_splits is not None
 
 
-def test_stratification(tech):
+def test_interaction_stratification(tmp_path):
     e_splits, f_splits, inter_splits = datasail(
         techniques=["C1e", "C2"],
-        splits=[7, 2, 1],
+        # Four entities can fill three nonempty splits as 2:1:1, not 7:2:1.
+        splits=[2, 1, 1],
         names=["train", "valid", "test"],
         runs=1,
         solver="SCIP",
@@ -58,32 +59,43 @@ def test_stratification(tech):
                ("A", "b"), ("B", "b"), ("C", "b"), ("D", "b"), 
                ("A", "c"), ("B", "c"), ("C", "c"), ("D", "c"), 
                ("A", "d"), ("B", "d"), ("C", "d"), ("D", "d")],
+        # As in test_multiclass: A has class 1, D class 2, and B/C both.
         inter_strat={
-            ("A", "a"):,
-            ("B", "a"):, 
-            ("C", "a"):, 
-            ("D", "a"):, 
-            ("A", "b"):, 
-            ("B", "b"):, 
-            ("C", "b"):,
-            ("D", "b"):, 
-            ("A", "c"):, 
-            ("B", "c"):, 
-            ("C", "c"):, 
-            ("D", "c"):, 
-            ("A", "d"):, 
-            ("B", "d"):, 
-            ("C", "d"):, 
-            ("D", "d"):
+            ("A", "a"): 1,
+            ("B", "a"): 1,
+            ("C", "a"): 1,
+            ("D", "a"): 2,
+            ("A", "b"): 1,
+            ("B", "b"): 1,
+            ("C", "b"): 2,
+            ("D", "b"): 2,
+            ("A", "c"): 1,
+            ("B", "c"): 2,
+            ("C", "c"): 1,
+            ("D", "c"): 2,
+            ("A", "d"): 1,
+            ("B", "d"): 2,
+            ("C", "d"): 2,
+            ("D", "d"): 2
         },
         e_type="O",
         e_data={"A": 1, "B": 2, "C": 3, "D": 4},
+        e_sim=(list("ABCD"), np.eye(4)),
         f_type="O",
         f_data={"a": 1, "b": 2, "c": 3, "d": 4},
+        f_sim=(list("abcd"), np.eye(4)),
         epsilon=0.025,
         delta=0.025,
-        tmp_dir=base / "tmp",
+        tmp_dir=tmp_path,
     )
+    for tech in ("C1e", "C2"):
+        assignment = e_splits[tech][0]
+        assert set(assignment) == set("ABCD")
+        assert assignment["A"] == assignment["D"] == "train"
+        assert {assignment["B"], assignment["C"]} == {"valid", "test"}
+        assert set(inter_splits[tech][0]) == {(e, f) for e in "ABCD" for f in "abcd"}
+    assert set(f_splits["C2"][0]) == set("abcd")
+    assert set(f_splits["C2"][0].values()) == {"train", "valid", "test"}
 
 
 @pytest.mark.parametrize("clustering", [True, False])
