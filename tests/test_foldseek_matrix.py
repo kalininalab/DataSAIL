@@ -45,7 +45,7 @@ def test_isolated_indexing_places_distinct_scores(tmp_path, monkeypatch):
         for query, target in [(a, b), (b, a)]:
             scores[query][target] = ["A", "A", value, 1]
             rows.append(f"{query}.pdb_A\t{target}.pdb_A\t{value}\t100\t0.9\n")
-    monkeypatch.setattr(foldseek, "read_with_pyarrow", lambda path: scores)
+    monkeypatch.setattr(foldseek, "read_with_pyarrow", lambda path, names=(): scores)
     matrix = run_alignment(tmp_path, monkeypatch, ["P", "Q", "R"], "".join(rows))
     np.testing.assert_array_equal(matrix, [[1, 0.2, 0.4], [0.2, 1, 0.6], [0.4, 0.6, 1]])
 
