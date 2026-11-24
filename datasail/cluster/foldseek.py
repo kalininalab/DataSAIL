@@ -88,9 +88,12 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
     dataset.cluster_similarity = cluster_sim
 
 
-def extract(tmp):
+def extract(tmp, names=()):
     """Extract the filename stem and optional chain from a Foldseek PDB label."""
     label = "_".join(tmp)
+    # Foldseek 10 omits the .pdb suffix for single-chain structures.
+    if label in names and not (".pdb_" in label and label.rsplit(".pdb_", 1)[0] in names):
+        return label, "?"
     if label.endswith(".pdb"):
         return label[:-4], "?"
     if ".pdb_" in label:
@@ -149,7 +152,7 @@ def _scan_alignment(alignment, dataset, matrix, index):
                         integers[column] = False
             ids = []
             for value in (fields[0].lstrip(), fields[1]):
-                entity = value if value in filename_ids else extract(value.split("_"))[0]
+                entity = value if value in filename_ids else extract(value.split("_"), index)[0]
                 if entity not in index:
                     raise ValueError(f"unknown identifier {value!r} (resolved to {entity!r})")
                 ids.append(index[entity])
@@ -179,8 +182,8 @@ def _stage_alignment(alignment, spool, index, integers):
     with spool.open("x") as output:
         for number, fields in _alignment_rows(alignment):
             query, target = fields[:2]
-            qi, qc = extract(query.split("_"))
-            ti, tc = extract(target.split("_"))
+            qi, qc = extract(query.split("_"), index)
+            ti, tc = extract(target.split("_"), index)
             # Unused legacy aliases still undergo greedy arithmetic in the
             # reference. Tag them on disk without retaining an alias dictionary.
             qi = str(index[qi]) if qi in index else "u" + qi

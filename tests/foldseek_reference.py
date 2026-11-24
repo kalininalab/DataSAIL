@@ -71,7 +71,7 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
     if not (results_folder / "aln.m8").exists():
         raise ValueError("Something went wrong with foldseek. The output file does not exist.")
 
-    ds = read_with_pyarrow(results_folder / "aln.m8")
+    ds = read_with_pyarrow(results_folder / "aln.m8", dataset.names)
     namap = dict((n, i) for i, n in enumerate(dataset.names))
     filename_ids = {name for name in dataset.names if Path(dataset.data[name]).name == name}
     cluster_sim = np.zeros((len(dataset.names), len(dataset.names)))
@@ -80,9 +80,9 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
             q1, q2, sim = line.strip().split("\t")[:3]
             # Exact source filenames already identify entities, including underscores.
             if q1 not in filename_ids:
-                q1, _ = extract(q1.split("_"))
+                q1, _ = extract(q1.split("_"), namap)
             if q2 not in filename_ids:
-                q2, _ = extract(q2.split("_"))
+                q2, _ = extract(q2.split("_"), namap)
             cluster_sim[namap[q1], namap[q2]] = sim
             cluster_sim[namap[q2], namap[q1]] = sim
     for i, name1 in enumerate(dataset.names):
@@ -102,9 +102,12 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
     dataset.cluster_similarity = cluster_sim
 
 
-def extract(tmp):
+def extract(tmp, names=()):
     """Extract the filename stem and optional chain from a Foldseek PDB label."""
     label = "_".join(tmp)
+    # Foldseek 10 omits the .pdb suffix for single-chain structures.
+    if label in names and not (".pdb_" in label and label.rsplit(".pdb_", 1)[0] in names):
+        return label, "?"
     if label.endswith(".pdb"):
         return label[:-4], "?"
     if ".pdb_" in label:
@@ -123,7 +126,7 @@ def outer_dict():
     return defaultdict(inner_list)
 
 
-def read_with_pyarrow(file_path):
+def read_with_pyarrow(file_path, names=()):
     table = csv.read_csv(
         file_path,
         read_options=csv.ReadOptions(use_threads=True, column_names=["qid_chainid", "tid_chainid", "fident", "qlen", "lddt"]),
@@ -133,8 +136,8 @@ def read_with_pyarrow(file_path):
     indices = compute.sort_indices(table, [("lddt", "descending"), ("fident", "descending")])
     ds = defaultdict(outer_dict)
     for idx in tqdm(indices):
-        q_id, q_chain = extract(table["qid_chainid"][idx.as_py()].as_py().split("_"))
-        t_id, t_chain = extract(table["tid_chainid"][idx.as_py()].as_py().split("_"))
+        q_id, q_chain = extract(table["qid_chainid"][idx.as_py()].as_py().split("_"), names)
+        t_id, t_chain = extract(table["tid_chainid"][idx.as_py()].as_py().split("_"), names)
         record = ds[q_id][t_id]
         if q_chain in record[0] or t_chain in record[1]:
             continue
