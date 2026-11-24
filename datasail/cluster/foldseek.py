@@ -1,5 +1,6 @@
 import csv
 import itertools
+from functools import lru_cache
 import math
 import os
 import re
@@ -130,47 +131,8 @@ def _number(token, integer=False):
     return int(token) if integer else float(token)
 
 
-def _scan_alignment(alignment, dataset, matrix, index):
-    """Infer numeric column types globally, matching the corrected CSV reader."""
-    # Arrow's whole-table reader promotes an entire numeric column to double
-    # when any nonnull token is not an int64. Streaming CSV inference alone
-    # freezes the first block's types, changing later conversion/accumulation.
-    integers = [True, True, True]
-    filename_ids = {name for name in dataset.names if Path(dataset.data[name]).name == name}
-    count = 0
-    for number, fields in _alignment_rows(alignment):
-        try:
-            for column, token in enumerate(fields[2:]):
-                if token in _NULL_VALUES:
-                    continue
-                float(token)
-                if integers[column]:
-                    try:
-                        value = int(token)
-                        integers[column] = -(2 ** 63) <= value < 2 ** 63 and not token.lstrip().startswith("+")
-                    except ValueError:
-                        integers[column] = False
-            ids = []
-            for value in (fields[0].lstrip(), fields[1]):
-                entity = value if value in filename_ids else extract(value.split("_"), index)[0]
-                if entity not in index:
-                    raise ValueError(f"unknown identifier {value!r} (resolved to {entity!r})")
-                ids.append(index[entity])
-            # Preserve the reference's last-row symmetric fallback, including
-            # pairs for which only one directional aggregate is available.
-            matrix[ids[0], ids[1]] = matrix[ids[1], ids[0]] = float(fields[2])
-        except (ValueError, OverflowError) as error:
-            raise ValueError(f"{alignment}: row {number}: {error}") from error
-        count = number
-    if not count:
-        raise ValueError(f"{alignment}: empty Foldseek alignment")
-    return integers, count
-
-
 def _rank(value):
     # Arrow: ordinary numbers (including infinities), then NaNs, then nulls.
-    # Normalize NaN sort tokens so fident breaks their ties, then --stable
-    # retains original row order even across external-sort merge files.
     if value is None:
         return 2, "0"
     if isinstance(value, float) and math.isnan(value):
@@ -178,28 +140,85 @@ def _rank(value):
     return 0, repr(value)
 
 
-def _stage_alignment(alignment, spool, index, integers):
+def _bounded_cache(function, size, max_length):
+    """Cache repeated short fields without retaining arbitrarily long input."""
+    cached = lru_cache(maxsize=size)(function)
+    return lambda value: cached(value) if len(value) <= max_length else function(value)
+
+
+def _prepare_alignment(alignment, spool, dataset, matrix, index):
+    """Infer global types, set raw fallbacks and spool in one ordered pass.
+
+    Both integer and double ranking keys are staged. Only after the entire
+    input has been checked can sorting select the correct column-wide type.
+    This preserves late promotion and int64 distinctions above 2**53 without
+    rereading the alignment or retaining its rows in memory.
+    """
+    integers = [True, True, True]
+    filename_ids = {name for name in dataset.names if Path(dataset.data[name]).name == name}
+    floating = _bounded_cache(float, 8192, 128)
+
+    def numeric(token):
+        if token in _NULL_VALUES:
+            return None, True, "", 2, "0"
+        value = floating(token)
+        try:
+            integer = int(token)
+            valid = -(2 ** 63) <= integer < 2 ** 63 and not token.lstrip().startswith("+")
+        except ValueError:
+            valid = False
+        rank, key = _rank(value)
+        return value, valid, str(integer) if valid else "", rank, key
+
+    numeric = _bounded_cache(numeric, 8192, 128)
+
+    def resolve(label):
+        entity, chain = extract(label.split("_"), index)
+        staged = str(index[entity]) if entity in index else "u" + entity
+        fallback = index.get(label) if label in filename_ids else index.get(entity)
+        return entity, staged, chain, fallback
+
+    resolve = _bounded_cache(resolve, 65536, 512)
+    count = 0
     with spool.open("x") as output:
         for number, fields in _alignment_rows(alignment):
-            query, target = fields[:2]
-            qi, qc = extract(query.split("_"), index)
-            ti, tc = extract(target.split("_"), index)
-            # Unused legacy aliases still undergo greedy arithmetic in the
-            # reference. Tag them on disk without retaining an alias dictionary.
-            qi = str(index[qi]) if qi in index else "u" + qi
-            ti = str(index[ti]) if ti in index else "u" + ti
-            fident = _number(fields[2], integers[0])
-            quality = _number(fields[4], integers[2])
-            qr, qv = _rank(quality)
-            fr, fv = _rank(fident)
-            output.write(f"{qi}\t{ti}\t{qc}\t{tc}\t{qr}\t{qv}\t{fr}\t{fv}\t{fields[2]}\t{fields[3]}\t{number}\n")
+            try:
+                values = [numeric(token) for token in fields[2:]]
+                for column in range(3):
+                    integers[column] = integers[column] and values[column][1]
+                query = resolve(fields[0])
+                target = resolve(fields[1])
+                raw_query = resolve(fields[0].lstrip())
+                for value, record in ((fields[0].lstrip(), raw_query), (fields[1], target)):
+                    if record[3] is None:
+                        raise ValueError(f"unknown identifier {value!r} (resolved to {record[0]!r})")
+                a, b = raw_query[3], target[3]
+                # Scalar stores follow input order, retaining the final symmetric
+                # raw fallback and its exact Python float bit pattern.
+                raw_identity = values[0][0]
+                if raw_identity is None:
+                    raw_identity = floating(fields[2])
+                matrix[a, b] = matrix[b, a] = raw_identity
+                _, qi, qc, _ = query
+                _, ti, tc, _ = target
+                qr, qv = values[2][3:]
+                fr, fv = values[0][3:]
+                output.write(f"{qi}\t{ti}\t{qc}\t{tc}\t{qr}\t{qv}\t{fr}\t{fv}\t{fields[2]}\t{fields[3]}\t{number}\t{values[2][2]}\t{values[0][2]}\n")
+            except (ValueError, OverflowError) as error:
+                raise ValueError(f"{alignment}: row {number}: {error}") from error
+            count = number
+    if not count:
+        raise ValueError(f"{alignment}: empty Foldseek alignment")
+    return integers, count
 
 
-def _sort_alignment(spool, sorted_path, scratch, threads, sort_memory, sort_executable, *, timeout=None):
+def _sort_alignment(spool, sorted_path, scratch, threads, sort_memory, sort_executable, *, timeout=None, integers=None):
+    quality_key = 12 if integers is not None and integers[2] else 6
+    identity_key = 13 if integers is not None and integers[0] else 8
     try:
         subprocess.run(
             [sort_executable, "--stable", "--field-separator=\t", "-k1,1", "-k2,2",
-             "-k5,5n", "-k6,6gr", "-k7,7n", "-k8,8gr", f"--parallel={threads}",
+             "-k5,5n", f"-k{quality_key},{quality_key}gr", "-k7,7n", f"-k{identity_key},{identity_key}gr", f"--parallel={threads}",
              f"--buffer-size={sort_memory}", f"--temporary-directory={scratch}",
              "-o", str(sorted_path), str(spool)],
             check=True, stderr=subprocess.PIPE, text=True, timeout=timeout,
@@ -245,8 +264,10 @@ def _check_sort():
 
 def _chain_scores(sorted_path, alignment, integers):
     """Keep only one entity pair's original greedy chain-selection state."""
+    identity = _bounded_cache(lambda token: _number(token, integers[0]), 8192, 128)
+    length_value = _bounded_cache(lambda token: _number(token, integers[1]), 8192, 128)
     with sorted_path.open() as source:
-        rows = (line.rstrip("\n").split("\t") for line in source)
+        rows = (line.rstrip("\n").split("\t", 11) for line in source)
         for (qi, ti), group in itertools.groupby(rows, key=lambda row: (row[0], row[1])):
             queries, targets, numerator, denominator = "", "", 0, 0
             for row in group:
@@ -255,7 +276,7 @@ def _chain_scores(sorted_path, alignment, integers):
                 # rather than silently selecting different chain semantics.
                 if qc in queries or tc in targets:
                     continue
-                fident, length = _number(row[8], integers[0]), _number(row[9], integers[1])
+                fident, length = identity(row[8]), length_value(row[9])
                 if fident is None or length is None:
                     raise ValueError(f"{alignment}: row {row[10]}: selected chain has null fident or qlen")
                 queries += qc
@@ -307,13 +328,12 @@ def _read_foldseek_similarity(
     alignment = Path(alignment)
     matrix = np.zeros((len(names), len(names)), dtype=np.float64)
     LOGGER.info("Read Foldseek alignment %s", alignment)
-    integers, count = _scan_alignment(alignment, dataset, matrix, index)
     with tempfile.TemporaryDirectory(prefix="datasail-foldseek-", dir=tmp_dir) as directory:
         scratch = Path(directory)
         spool, sorted_path = scratch / "chains.tsv", scratch / "chains.sorted.tsv"
-        _stage_alignment(alignment, spool, index, integers)
+        integers, count = _prepare_alignment(alignment, spool, dataset, matrix, index)
         LOGGER.info("Sort %s Foldseek rows with buffer %s and %s threads", count, sort_memory, threads)
-        _sort_alignment(spool, sorted_path, scratch, threads, sort_memory, sort_executable)
+        _sort_alignment(spool, sorted_path, scratch, threads, sort_memory, sort_executable, integers=integers)
         LOGGER.info("Aggregate Foldseek chain scores")
         for qi, ti, record in _chain_scores(sorted_path, alignment, integers):
             if not qi.startswith("u") and not ti.startswith("u") and qi != ti:

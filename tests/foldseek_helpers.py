@@ -42,10 +42,9 @@ def read_scores(alignment, root, memory="1K"):
                     for _, fields in foldseek._alignment_rows(alignment) for i in (0, 1)})
     index = {n: i for i, n in enumerate(names)}
     matrix = np.zeros((len(names), len(names)))
-    integers, _ = foldseek._scan_alignment(alignment, dataset(names), matrix, index)
     spool, sorted_path = root / "spool", root / "sorted"
-    foldseek._stage_alignment(alignment, spool, index, integers)
-    foldseek._sort_alignment(spool, sorted_path, root, 1, memory, sort_executable)
+    integers, _ = foldseek._prepare_alignment(alignment, spool, dataset(names), matrix, index)
+    foldseek._sort_alignment(spool, sorted_path, root, 1, memory, sort_executable, integers=integers)
     records = {}
     for q, t, record in foldseek._chain_scores(sorted_path, alignment, integers):
         records.setdefault(names[int(q)], {})[names[int(t)]] = list(record)

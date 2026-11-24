@@ -358,8 +358,7 @@ def test_sort_preflight_blocks_expensive_work_and_preserves_files(tmp_path, monk
 
     monkeypatch.setattr(foldseek.os, "system", forbidden)
     monkeypatch.setattr(foldseek.np, "zeros", forbidden)
-    monkeypatch.setattr(foldseek, "_scan_alignment", forbidden)
-    monkeypatch.setattr(foldseek, "_stage_alignment", forbidden)
+    monkeypatch.setattr(foldseek, "_prepare_alignment", forbidden)
     with pytest.raises(RuntimeError, match="GNU sort from coreutils"):
         if normal_search:
             # Missing sources also prove the check precedes structure copying.
