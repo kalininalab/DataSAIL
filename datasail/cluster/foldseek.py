@@ -5,6 +5,7 @@ import math
 import os
 import re
 import shutil
+import shlex
 import subprocess
 import tempfile
 from pathlib import Path
@@ -21,7 +22,7 @@ from datasail.settings import LOGGER, FOLDSEEK, INSTALLED
 _NULL_VALUES = frozenset(ConvertOptions().null_values)
 
 
-def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None, tmp_dir: Optional[Path] = None) -> None:
+def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None, tmp_dir: Optional[Path] = None, *, sort_memory: str = "256M") -> None:
     """
     Run FoldSeek to cluster the proteins based on their structure.
 
@@ -46,12 +47,12 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
     for name in dataset.names:
         shutil.copy(dataset.data[name], tmp)
 
-    cmd = f"mkdir {str(results_folder)} && " \
-          f"cd {str(results_folder)} && " \
+    cmd = f"mkdir {shlex.quote(str(results_folder))} && " \
+          f"cd {shlex.quote(str(results_folder))} && " \
           f"foldseek " \
           f"easy-search " \
-          f"{str(tmp.resolve())} " \
-          f"{str(tmp.resolve())} " \
+          f"{shlex.quote(str(tmp.resolve()))} " \
+          f"{shlex.quote(str(tmp.resolve()))} " \
           f"aln.m8 " \
           f"tmp " \
           f"--format-output 'query,target,fident,qlen,lddt' " \
@@ -64,10 +65,10 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
     if log_dir is None:
         cmd += "> /dev/null 2>&1"
     else:
-        cmd += f"> {(log_dir / f'{dataset.get_name()}_foldseek.log').resolve()}"
+        cmd += f"> {shlex.quote(str((log_dir / f'{dataset.get_name()}_foldseek.log').resolve()))}"
 
     if results_folder.exists():
-        cmd = f"rm -rf {str(results_folder)} && " + cmd
+        cmd = f"rm -rf {shlex.quote(str(results_folder))} && " + cmd
 
     LOGGER.info("Start FoldSeek clustering")
     LOGGER.info(cmd)
@@ -79,7 +80,7 @@ def run_foldseek(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = N
 
     cluster_sim = _read_foldseek_similarity(
         results_folder / "aln.m8", dataset, tmp_dir=tmp_dir, threads=threads,
-        sort_executable=sort_executable,
+        sort_executable=sort_executable, sort_memory=sort_memory,
     )
     shutil.rmtree(results_folder, ignore_errors=True)
     shutil.rmtree(tmp, ignore_errors=True)

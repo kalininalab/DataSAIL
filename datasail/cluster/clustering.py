@@ -43,7 +43,8 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         return cache
 
     if isinstance(dataset.similarity, str):  # compute the similarity
-        similarity_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR], kwargs[KW_TMPDIR])
+        similarity_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR], kwargs[KW_TMPDIR],
+                              foldseek_sort_memory=kwargs.get("foldseek_sort_memory", "256M"))
 
     elif isinstance(dataset.distance, str):  # compute the distance
         distance_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR], kwargs[KW_TMPDIR])
@@ -84,7 +85,8 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     return dataset
 
 
-def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None, tmp_dir: Optional[Path] = None) -> None:
+def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None, tmp_dir: Optional[Path] = None,
+                          *, foldseek_sort_memory: str = "256M") -> None:
     """
     Compute the similarity based cluster based on a cluster method.
 
@@ -113,7 +115,8 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
     elif dataset.similarity.lower() == ECFP:
         run_ecfp(dataset)
     elif dataset.similarity.lower() == FOLDSEEK:
-        run_foldseek(dataset, threads, log_dir, tmp_dir)
+        options = {"sort_memory": foldseek_sort_memory} if foldseek_sort_memory != "256M" else {}
+        run_foldseek(dataset, threads, log_dir, tmp_dir, **options)
     elif dataset.similarity.lower() in [MMSEQS, MMSEQS2]:
         run_mmseqs(dataset, threads, log_dir, tmp_dir)
     elif dataset.similarity.lower() == MMSEQSPP:

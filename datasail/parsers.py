@@ -110,6 +110,11 @@ def parse_datasail_args(args) -> Dict[str, object]:
              "clustering programs used internally. If 0, all available CPUs will be used."
     )
     parser.add_argument(
+        "--foldseek-sort-memory", default="256M", type=str,
+        dest=KW_FOLDSEEK_SORT_MEMORY,
+        help="GNU sort buffer for Foldseek alignment processing (positive bytes or K/M/G suffix); not a total memory limit.",
+    )
+    parser.add_argument(
         "--verbose",
         default="W",
         type=str,
