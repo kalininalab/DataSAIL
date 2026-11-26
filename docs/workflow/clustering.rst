@@ -241,7 +241,8 @@ The general command to run FoldSeek in DataSAIL is
 
 .. code-block:: shell
 
-    foldseek easy-search <pdb_dir> <pdb_dir> aln.m8 tmp --alignment-type 1 --tmscore-threshold 0.0 --format-output 'query,target,fident' --exhaustive-search 1 -e inf
+    foldseek easy-search <pdb_dir> <pdb_dir> aln.m8 tmp --format-output 'query,target,fident,qlen,lddt' --exhaustive-search 1 -e inf
+
 
 MASH
 ====

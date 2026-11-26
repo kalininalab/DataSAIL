@@ -26,6 +26,17 @@ and :code:`tests/data/pipeline/drug_dist.csv` (`Link <https://github.com/kalinin
 Here, the first row and column contain the names of the samples and the rest of the matrix the similarities or
 distances between the samples.
 
+Matrix-file arguments use tab-separated values, regardless of filename extension.
+The header's first cell is unused; its remaining labels must be nonempty,
+unique and match the row labels in the same order. The numeric block must be
+square. Invalid dimensions or labels raise an error; rows are not reordered.
+The lower-level ``read_clustering_file(path, sep=",")`` also reads comma-separated
+matrices.
+
+Loading streams rows into one dense float64 array in a single pass, without
+temporary files. The final matrix still requires ``8 * N * N`` bytes for ``N``
+entities; subsequent clustering may require additional memory.
+
 CSV and TSV files can also be used to transport interactions. An example is given in
 :code:`tests/data/pipeline/inter.tsv` (`Link <https://github.com/kalininalab/DataSAIL/tree/main/tests/data/pipeline/inter.tsv>`__).
 Again, only the first two columns matter which specify which sample from the e-entity with which sample from the

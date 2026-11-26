@@ -1,4 +1,5 @@
 import os
+import re
 import faulthandler
 from pathlib import Path
 from typing import Dict, List, Callable, Generator, Union, Literal
@@ -33,7 +34,7 @@ def validate_args(**kwargs) -> Dict[str, object]:
     Validate the arguments given to the program.
 
     Notes:
-        next error code: 26
+        next error code: 28
 
     Args:
         **kwargs: Arguments in kwargs-format
@@ -41,6 +42,10 @@ def validate_args(**kwargs) -> Dict[str, object]:
     Returns:
         The kwargs in case something has been adjusted, e.g. splits normalization or naming
     """
+    memory = kwargs.setdefault(KW_FOLDSEEK_SORT_MEMORY, "256M")
+    if not isinstance(memory, str) or not re.fullmatch(r"[1-9][0-9]*[KMG]?", memory):
+        error("Foldseek sort memory must be positive bytes or a K/M/G size, e.g. 1G.", 27, kwargs[KW_CLI])
+
     # create output directory
     output_created = False
     if kwargs[KW_OUTDIR] is not None and not kwargs[KW_OUTDIR].is_dir():
@@ -193,6 +198,7 @@ def datasail(
         f_args: str = "",
         f_clusters: int = 50,
         threads: int = 1,
+        foldseek_sort_memory: str = "256M",
 ) -> Tuple[Dict, Dict, Dict]:
     """
     Entry point for the package usage of DataSAIL.
@@ -211,6 +217,7 @@ def datasail(
         solver: Solving algorithm to use.
         cache: Boolean flag indicating to store or load results from cache.
         cache_dir: Directory to store the cache in if not the default location.
+        foldseek_sort_memory: GNU sort buffer for Foldseek alignments (default 256M); not a total RSS cap.
         linkage: Linkage method to use to compute metrics between merged clusters.
         e_type: Data format of the first batch of data
         e_data: Data file of the first batch of data
@@ -242,6 +249,7 @@ def datasail(
         e_args=e_args, e_clusters=e_clusters, f_type=f_type, f_data=to_path(f_data), f_weights=to_path(f_weights),
         f_strat=to_path(f_strat), f_sim=to_path(f_sim), f_dist=to_path(f_dist), f_args=f_args, f_clusters=f_clusters,
         threads=threads, cli=False, overflow=overflow,
+        foldseek_sort_memory=foldseek_sort_memory,
     )
     try:
         return datasail_main(**kwargs)

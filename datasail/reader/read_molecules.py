@@ -156,11 +156,18 @@ def remove_duplicate_values(dataset, data) -> DataSet:
             ids.add(i)
     dataset.names = [name for i, name in enumerate(dataset.names) if i not in ids]
     ids = list(ids)
-    if isinstance(dataset.similarity, np.ndarray):
-        dataset.similarity = np.delete(dataset.similarity, ids, axis=0)
-        dataset.similarity = np.delete(dataset.similarity, ids, axis=1)
-    if isinstance(dataset.distance, np.ndarray):
-        dataset.distance = np.delete(dataset.distance, ids, axis=0)
-        dataset.distance = np.delete(dataset.distance, ids, axis=1)
+    for field in ("similarity", "distance"):
+        matrix = getattr(dataset, field)
+        if not isinstance(matrix, np.ndarray):
+            continue
+        if not ids and matrix.ndim == 2 and type(matrix) in (np.ndarray, np.memmap):
+            # Keep np.delete's detached, writable, column-major result with
+            # one copy instead of two, including for views and memory maps.
+            matrix = np.array(matrix.T, order="C", copy=True).T
+        else:
+            matrix = np.delete(matrix, ids, axis=0)
+            setattr(dataset, field, matrix)
+            matrix = np.delete(matrix, ids, axis=1)
+        setattr(dataset, field, matrix)
 
     return dataset

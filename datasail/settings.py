@@ -211,6 +211,7 @@ KW_SOLVER = "solver"
 KW_SPLITS = "splits"
 KW_TECHNIQUES = "techniques"
 KW_THREADS = "threads"
+KW_FOLDSEEK_SORT_MEMORY = "foldseek_sort_memory"
 KW_VERBOSE = "verbosity"
 KW_LINKAGE = "linkage"
 KW_OVERFLOW = "overflow"
@@ -254,6 +255,7 @@ DEFAULT_KWARGS = {
     KW_SPLITS: [0.7, 0.2, 0.1],
     KW_TECHNIQUES: None,
     KW_THREADS: 1,
+    KW_FOLDSEEK_SORT_MEMORY: "256M",
     KW_VERBOSE: "E",
     KW_LINKAGE: "average",
     KW_OVERFLOW: "break",  # break or assign

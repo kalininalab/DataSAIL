@@ -37,6 +37,13 @@ data and clustering the input.
 The number of threads to use throughout the computation. This number of threads is also forwarded to clustering
 programs used internally. If 0, all available CPUs will be used.
 
+-\-foldseek-sort-memory
+=======================
+GNU sort working buffer for Foldseek alignment processing, for example ``1G``.
+The default is ``256M``. Accepted values are positive byte counts or sizes with
+``K``, ``M`` or ``G`` suffixes. This does not limit total process memory.
+Temporary files use ``--tmp-dir``; select storage with sufficient free space.
+
 -\-verbose
 ==========
 The verbosity level of the program. Choices are: [C]ritical, [F]atal, [E]rror, [W]arning, [I]nfo, [D]ebug

@@ -7,6 +7,7 @@ import sklearn
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering, SpectralClustering
 
+from datasail.cluster.aggregation import aggregate_cluster_matrix
 from datasail.cluster.caching import load_from_cache, store_to_cache
 from datasail.cluster.cdhit import run_cdhit
 from datasail.cluster.cdhit_est import run_cdhit_est
@@ -42,7 +43,8 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
         return cache
 
     if isinstance(dataset.similarity, str):  # compute the similarity
-        similarity_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR], kwargs[KW_TMPDIR])
+        similarity_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR], kwargs[KW_TMPDIR],
+                              foldseek_sort_memory=kwargs.get("foldseek_sort_memory", "256M"))
 
     elif isinstance(dataset.distance, str):  # compute the distance
         distance_clustering(dataset, kwargs[KW_THREADS], kwargs[KW_LOGDIR], kwargs[KW_TMPDIR])
@@ -83,7 +85,8 @@ def cluster(dataset: DataSet, **kwargs) -> DataSet:
     return dataset
 
 
-def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None, tmp_dir: Optional[Path] = None) -> None:
+def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[Path] = None, tmp_dir: Optional[Path] = None,
+                          *, foldseek_sort_memory: str = "256M") -> None:
     """
     Compute the similarity based cluster based on a cluster method.
 
@@ -112,7 +115,8 @@ def similarity_clustering(dataset: DataSet, threads: int = 1, log_dir: Optional[
     elif dataset.similarity.lower() == ECFP:
         run_ecfp(dataset)
     elif dataset.similarity.lower() == FOLDSEEK:
-        run_foldseek(dataset, threads, log_dir, tmp_dir)
+        options = {"sort_memory": foldseek_sort_memory} if foldseek_sort_memory != "256M" else {}
+        run_foldseek(dataset, threads, log_dir, tmp_dir, **options)
     elif dataset.similarity.lower() in [MMSEQS, MMSEQS2]:
         run_mmseqs(dataset, threads, log_dir, tmp_dir)
     elif dataset.similarity.lower() == MMSEQSPP:
@@ -225,15 +229,22 @@ def additional_clustering(
     LOGGER.info(f"Cluster {len(dataset.cluster_names)} items based on "
                 f"{'similarities' if dataset.cluster_similarity is not None else 'distances'}")
     # set up the cluster algorithm for similarity or distance based cluster w/o specifying the number of clusters
+    matrix = dataset.cluster_similarity if dataset.cluster_similarity is not None else dataset.cluster_distance
+    cluster_matrix = np.asarray(matrix, dtype=float)
+    if not (cluster_matrix.flags.c_contiguous or cluster_matrix.flags.f_contiguous):
+        # Preserve the order-K layout of the old copy for strided inputs.
+        cluster_matrix = np.array(matrix, dtype=float)
+    # Precomputed clustering reads this matrix; Laplacian/linkage workspaces
+    # are separate. A read-only view protects caller data without changing its flags.
+    cluster_matrix = cluster_matrix.view()
+    cluster_matrix.flags.writeable = False
     if dataset.cluster_similarity is not None:
-        cluster_matrix = np.array(dataset.cluster_similarity, dtype=float)
         ca = SpectralClustering(
             n_clusters=n_clusters,
             affinity="precomputed",
             random_state=42,
         )
     else:
-        cluster_matrix = np.array(dataset.cluster_distance, dtype=float)
         if sklearn.__version__ < '1.2':
             ca = AgglomerativeClustering(
                 n_clusters=n_clusters,
@@ -280,24 +291,8 @@ def labels2clusters(
     new_cluster_names = list(np.unique(labels))
     new_cluster_map = dict((n, labels[old_cluster_map[c]]) for n, c in dataset.cluster_map.items())
 
-    # compute the distance or similarity matrix for the new clusters as the average sim/dist between their members
-    # new_cluster_matrix = np.zeros((len(new_cluster_names), len(new_cluster_names)))
-    new_cluster_matrix = [[[] for _ in new_cluster_names] for _ in new_cluster_names]
-    for i in range(len(dataset.cluster_names)):
-        new_cluster_matrix[labels[i]][labels[i]].append(cluster_matrix[i, i])
-        for j in range(i + 1, len(dataset.cluster_names)):
-            if labels[i] != labels[j]:
-                new_cluster_matrix[labels[i]][labels[j]].append(cluster_matrix[i, j])
-                new_cluster_matrix[labels[j]][labels[i]].append(cluster_matrix[j, i])
-
-    links = {"average": np.mean, "single": np.min, "complete": np.max}
-    for i in range(len(new_cluster_matrix)):
-        for j in range(len(new_cluster_matrix[i])):
-            if len(new_cluster_matrix[i][j]) > 0:
-                new_cluster_matrix[i][j] = links[linkage](new_cluster_matrix[i][j])
-            else:
-                new_cluster_matrix[i][j] = 0
-    new_cluster_matrix = np.array(new_cluster_matrix)
+    # Preserve each linkage reduction's contribution order without boxed score lists.
+    new_cluster_matrix = aggregate_cluster_matrix(labels, cluster_matrix, linkage)
 
     # compute the mapping of new clusters to their weights as the sum of their members weights
     new_cluster_weights = {}
@@ -330,9 +325,15 @@ def labels2clusters(
 
     # store the matrix at the correct field and set the main diagonal to either 1 or 0 depending on dist or sim
     if dataset.cluster_similarity is not None:
-        dataset.cluster_similarity = np.maximum(new_cluster_matrix, np.eye(len(new_cluster_matrix)))
+        np.maximum(new_cluster_matrix, 0, out=new_cluster_matrix)
+        diagonal = np.diag_indices(len(new_cluster_matrix))
+        new_cluster_matrix[diagonal] = np.maximum(new_cluster_matrix[diagonal], 1)
+        dataset.cluster_similarity = new_cluster_matrix
     else:
-        dataset.cluster_distance = np.minimum(new_cluster_matrix, 1 - np.eye(len(new_cluster_matrix)))
+        np.minimum(new_cluster_matrix, 1, out=new_cluster_matrix)
+        diagonal = np.diag_indices(len(new_cluster_matrix))
+        new_cluster_matrix[diagonal] = np.minimum(new_cluster_matrix[diagonal], 0)
+        dataset.cluster_distance = new_cluster_matrix
 
     return dataset
 
