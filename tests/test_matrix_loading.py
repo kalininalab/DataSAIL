@@ -212,10 +212,10 @@ def test_streaming_does_not_read_the_complete_file(tmp_path, monkeypatch):
     assert list(tmp_path.iterdir()) == [path]
 
 
-def test_real_hiqbind_expected_matrix(tmp_path):
+def test_real_foldseek_expected_matrix(tmp_path):
     fixture = json.loads((Path(__file__).parent / "fixtures/foldseek_nan_expected.json").read_text())
     expected = np.array(fixture["expected"], dtype=np.float64)
-    path = write_matrix(tmp_path / "hiqbind.tsv", fixture["names"],
+    path = write_matrix(tmp_path / "foldseek.tsv", fixture["names"],
                         [[repr(float(value)) for value in row] for row in expected])
     result = utils.read_clustering_file(path)
     assert_same(reference.read_clustering_file(path), result)

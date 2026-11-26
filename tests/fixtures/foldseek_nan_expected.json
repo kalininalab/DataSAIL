@@ -1,16 +1,16 @@
 {
   "names": [
-    "1qbq_HFP_B_2001",
-    "1yc5_NCA_A_2001",
-    "2gmx_877_A_901",
-    "2gmx_877_B_1001",
-    "2hqu_DUP_B_777",
-    "2ybp_2HG_A_1359",
-    "2ybp_2HG_B_1358",
-    "2ybs_S2G_A_1359",
-    "2ybs_S2G_B_1358",
-    "3hqu_UN9_A_500",
-    "5ax3_5ID_A_401"
+    "1aaa_L01_B_2001",
+    "1aab_L02_A_2001",
+    "2aaa_001_A_901",
+    "2aaa_001_B_1001",
+    "2aab_DUP_B_777",
+    "2aac_2XX_A_1359",
+    "2aac_2XX_B_1358",
+    "2aad_X2Y_A_1359",
+    "2aad_X2Y_B_1358",
+    "3aaa_XX9_A_500",
+    "5aaa_5XX_A_401"
   ],
   "expected": [
     [
@@ -159,8 +159,8 @@
   ],
   "selected_nan_pairs": [
     [
-      "2hqu_DUP_B_777",
-      "2hqu_DUP_B_777"
+      "2aab_DUP_B_777",
+      "2aab_DUP_B_777"
     ]
   ],
   "derivation": "Independent set-based chain selection, finite ranking before NaN, descending fident ties; query-length-weighted means and directional symmetrization."

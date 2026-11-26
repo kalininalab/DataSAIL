@@ -62,7 +62,7 @@ def test_long_cache_keys_are_not_retained():
 
 
 @pytest.mark.parametrize('threads,memory', [(1, '1K'), (4, '64K')])
-def test_cached_bare_hiq_style_identifiers(tmp_path, threads, memory):
+def test_cached_bare_refined_structure_identifiers(tmp_path, threads, memory):
     names = ['5abc_LIG_A_101_protein_refined', '6def_LIG_B_202_protein_refined']
     alignment = tmp_path / 'bare.m8'
     alignment.write_text(f'{names[0]}\t{names[1]}\t0.25\t4\t0.9\n'
