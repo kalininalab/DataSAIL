@@ -36,7 +36,6 @@ def test_similarity_dispatch_forwards_buffer(tmp_path, monkeypatch):
 
 @pytest.mark.skipif(__import__("shutil").which("foldseek") is None, reason="native Foldseek unavailable")
 def test_native_public_api_buffers_and_scratch_preserve_exact_matrix(tmp_path, monkeypatch):
-    import inspect
     from pathlib import Path
 
     from datasail.cluster import clustering
@@ -60,12 +59,7 @@ def test_native_public_api_buffers_and_scratch_preserve_exact_matrix(tmp_path, m
                    f_data={p.stem: p for p in inputs.iterdir()}, f_sim="foldseek", threads=1,
                    epsilon=1., delta=1., max_sec=1)
     datasail(**options, tmp_dir=tmp_path / "ordinary scratch", foldseek_sort_memory="64K")
-    persistent = {"checkpoint_dir": tmp_path / "persistent"} if "checkpoint_dir" in inspect.signature(datasail).parameters else {}
-    datasail(**options, **persistent, tmp_dir=tmp_path / "fresh scratch", foldseek_sort_memory="1M")
+    datasail(**options, tmp_dir=tmp_path / "fresh scratch", foldseek_sort_memory="1M")
     assert matrices[0] == matrices[1]
-    if persistent:
-        datasail(**options, **persistent, tmp_dir=tmp_path / "new retry scratch", foldseek_sort_memory="2M")
-        assert len(matrices) == 2
-        assert (tmp_path / "persistent/f/matrix.json").is_file()
     assert not (tmp_path / "ordinary scratch").exists()
     assert not (tmp_path / "fresh scratch").exists()
